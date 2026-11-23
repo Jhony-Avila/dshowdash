@@ -30,7 +30,7 @@ $row = function (int $id) use ($pdo) { $s = $pdo->prepare('SELECT * FROM eq_suge
 // ---- massa (SQL): catálogo com nomes que a C6 lê, Pitch e Tipo do LED, e as quatro situações ---------------------------------------
 $pdo->exec('CREATE TABLE `product_catalog` (`id` INT UNSIGNED NOT NULL PRIMARY KEY, `name` VARCHAR(120) NOT NULL, `category` VARCHAR(40) NOT NULL, `subcategory` VARCHAR(60) NULL,
     `active` TINYINT(1) NOT NULL DEFAULT 1, `deleted` TINYINT(1) NOT NULL DEFAULT 0) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci');
-foreach ([201, 202, 203, 204] as $pid) $pdo->exec("INSERT INTO product_catalog VALUES ($pid, 'Módulo P.2.5 Indoor 320mm x 160mm 3840Hz', 'LED_PANEL', 'LED_MODULE', 1, 0)");
+foreach ([201, 202, 203, 204, 205] as $pid) $pdo->exec("INSERT INTO product_catalog VALUES ($pid, 'Módulo P.2.5 Indoor 320mm x 160mm 3840Hz', 'LED_PANEL', 'LED_MODULE', 1, 0)");
 $pdo->exec("INSERT INTO eq_unidade (simbolo, nome, grandeza) VALUES ('mm', 'milímetro', 'comprimento'), ('Hz', 'hertz', 'frequencia')");
 $mm = (int) $um("SELECT id FROM eq_unidade WHERE simbolo = 'mm'");
 $pdo->prepare("INSERT INTO eq_atributo (codigo, rotulo, tipo, unidade_id) VALUES ('pitch_138', 'Pitch', 'numero', ?), ('tipo_do_led_87', 'Tipo do LED', 'opcao', NULL)")->execute([$mm]);
@@ -45,17 +45,19 @@ $orig201 = $ins(201, '2.5', 'recusada'); $suc201 = $ins(201, '3', 'pendente', $o
 $orig202 = $ins(202, '9', 'pendente');                                                         // original pendente (a C6 antiga revisa)
 $ign203 = $ins(203, '2.5', 'ignorada');                                                        // ignorada
 $sub204 = $ins(204, '1', 'substituida'); $suc204 = $ins(204, '2', 'pendente', $sub204);        // substituída + sucessora
+// DSHOW-105 D: cadeia longa — a chave ORIGINAL (nome_produto|205|P) está ocupada por uma recusada; a pendente é a 3ª (r:<2ª>)
+$a205 = $ins(205, '2.5', 'recusada'); $b205 = $ins(205, '4', 'recusada', $a205); $c205 = $ins(205, '5', 'pendente', $b205);
 $antes = ['suc201' => $row($suc201), 'suc204' => $row($suc204), 'n' => (int) $um('SELECT COUNT(*) FROM eq_sugestao')];
 
 // ---- o FILHO roda o código ANTERIOR sobre esta base ------------------------------------------------------------------------------------
 $cmd = implode(' ', array_map('escapeshellarg', [PHP_BINARY, __DIR__ . '/_sugestoes-c-antigo-filho.php'])) . ' 2>&1';
-$env = ['EQ_TEST_CNF' => $cnf, 'EQ_TEST_DB' => $db, 'SUGC_ANTIGO' => $antigo, 'SUGC_IDS' => json_encode(compact('orig201', 'suc201', 'orig202', 'ign203', 'sub204', 'suc204', 'P', 'TL'))];
+$env = ['EQ_TEST_CNF' => $cnf, 'EQ_TEST_DB' => $db, 'SUGC_ANTIGO' => $antigo, 'SUGC_IDS' => json_encode(compact('orig201', 'suc201', 'orig202', 'ign203', 'sub204', 'suc204', 'c205', 'P', 'TL'))];
 $proc = proc_open($cmd, [1 => ['pipe', 'w']], $pipes, null, $env + getenv());
 $saida = stream_get_contents($pipes[1]); fclose($pipes[1]); $rc = proc_close($proc);
 $j = preg_match('/^FILHO_JSON (.+)$/m', $saida, $m) ? json_decode($m[1], true) : null;
 $ok('filho (código antigo) rodou até o fim', $rc === 0 && is_array($j), $saida);
 $j ??= [];
-$ok('antigo GET conferencia: só pendentes (202 e as duas sucessoras); ignorada e substituída fora', ($j['fila_nome'] ?? null) === [$suc201, $orig202, $suc204], json_encode($j['fila_nome'] ?? null));
+$ok('antigo GET conferencia: só pendentes (202 e as duas sucessoras); ignorada e substituída fora', ($j['fila_nome'] ?? null) === [$suc201, $orig202, $suc204, $c205], json_encode($j['fila_nome'] ?? null));
 $ok('antigo POST sugestao recusar na ignorada → sem_mudanca; linha intacta', ($j['decidir_ignorada'] ?? null) === 'sem_mudanca' && $row($ign203)['estado'] === 'ignorada');
 $ok('antigo sugestoes_lote [ignorada, substituida] → as duas ja_decidida, 0 aceitas', ($j['lote_aceitas'] ?? null) === 0 && ($j['lote_motivos'] ?? null) === ['ja_decidida', 'ja_decidida']);
 $ok('antigo aceitar a sucessora 201 (pendente r:) → aceita com valor', ($j['aceitar_sucessora'] ?? null) === 'aceitar' && $row($suc201)['estado'] === 'aceita' && $row($suc201)['decidido_por_id'] === null);
@@ -63,6 +65,11 @@ $ok('carga C6 ANTIGA 1ª: não toca nas linhas da 201/204 e revisa a original pe
     && $row($suc204)['valor_proposto'] === $antes['suc204']['valor_proposto'] && (int) $row($suc204)['versao'] === (int) $antes['suc204']['versao'], json_encode($j['c6_1'] ?? null));
 $ok('carga C6 antiga não insere Pitch para identidades com linha antiga (ja_existiam) e só cria Tipo do LED novos', (int) $um('SELECT COUNT(*) FROM eq_sugestao WHERE atributo_id = ?', [$P]) === $antes['n']);
 $ok('carga C6 antiga 2ª: nada novo (idempotente)', ($j['c6_2']['sugestoes'] ?? -1) === 0 && ($j['c6_2']['revistas'] ?? 0) === 0 && ($j['n_depois_c6_2'] ?? -1) === ($j['n_depois_c6_1'] ?? -2), json_encode($j['c6_2'] ?? null));
+$ok('cadeia longa (205): a carga antiga não duplica, não altera a 3ª pendente e não para', $row($c205)['valor_proposto'] === '5' && (int) $row($c205)['versao'] === 1
+    && (int) $um('SELECT COUNT(*) FROM eq_sugestao WHERE product_id = 205 AND atributo_id = ?', [$P]) === 3);
+$ok('invariante: toda identidade com linhas tem a linha da chave ORIGINAL (a carga antiga nunca tenta inserir em cima de uma sucessora)',
+    (int) $um("SELECT COUNT(*) FROM (SELECT fonte, tipo, product_id, atributo_id FROM eq_sugestao GROUP BY fonte, tipo, product_id, atributo_id
+        HAVING SUM(chave = CONCAT(fonte, '|', product_id, '|', atributo_id, IF(tipo = 'conferencia', '|conferencia', ''))) <> 1) x") === 0);
 $ok('o hash GERADO acompanhou a revisão feita pelo código antigo (202)', $row($orig202)['conteudo_hash'] === Cargas::hashConteudo(null, '2.5', null, $mm));
 $ok('nenhuma 2ª pendente por identidade depois do código antigo', (int) $um("SELECT COUNT(*) FROM (SELECT pendente_identidade FROM eq_sugestao WHERE pendente_identidade IS NOT NULL GROUP BY pendente_identidade HAVING COUNT(*) > 1) d") === 0);
 // a carga NOVA depois do código antigo continua coerente: na 202 (revisada para 2.5) nada; na 203 (ignorada 2.5) nada; na 204 a sucessora '2' ≠ '2.5' → revista

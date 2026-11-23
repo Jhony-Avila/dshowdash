@@ -199,9 +199,15 @@ $rD = $decidir(['acao' => 'ignorar', 'itens' => $it(...$D), 'confirmar' => true]
 $ok('deadlock uma vez → repete o item e aplica (3 aplicadas)', $rD['resumo']['aplicadas'] === 3 && $vezes === 2, json_encode($rD['itens']));
 $D2 = [$nova(9044, $P, '2.5'), $nova(9045, $P, '2.5'), $nova(9046, $P, '2.5')];
 StmtGanchoC::$apos = function (string $sql, array $p) use ($D2, $deadlock) { if (str_contains($sql, 'UPDATE') && str_contains($sql, 'eq_sugestao') && str_contains($sql, 'versao = versao + 1') && in_array($D2[1], $p, true)) throw $deadlock(); };
-$rD = $decidir(['acao' => 'recusar', 'itens' => $it(...$D2), 'confirmar' => true], 'k-c-dead-002'); StmtGanchoC::$apos = null;
-$ok('deadlock persistente → item 2 não aplicada erro_tecnico (nunca "Recusada"); itens 1 e 3 seguem', $motivos($rD['itens']) === [null, 'erro_tecnico', null]
-    && $sugRow($D2[1])['estado'] === 'pendente' && $sugRow($D2[0])['estado'] === 'recusada' && $sugRow($D2[2])['estado'] === 'recusada', json_encode($rD['itens']));
+$corpoD2 = ['acao' => 'recusar', 'itens' => $it(...$D2), 'confirmar' => true];
+$eD = $erro(fn() => $decidir($corpoD2, 'k-c-dead-002')); StmtGanchoC::$apos = null;
+$ok('deadlock persistente (DSHOW-105 C) → 503 OPERATION_INTERRUPTED; item 2 PENDENTE (não "não aplicada"); itens 1 e 3 recusados', $eD instanceof AtributosErro && $eD->codigo === 'OPERATION_INTERRUPTED'
+    && array_column($eD->meta['itens'] ?? [], 'desfecho') === ['aplicada', 'pendente', 'aplicada'] && $sugRow($D2[1])['estado'] === 'pendente' && $sugRow($D2[0])['estado'] === 'recusada' && $sugRow($D2[2])['estado'] === 'recusada',
+    json_encode($eD?->meta['itens'] ?? null));
+$cf = $ops->conferir('k-c-dead-002');
+$ok('conferir: interrompida, 1 pendente no livro (o item com erro técnico não tem desfecho)', $cf['resultado'] === 'interrompida' && ($cf['itens_resumo']['pendente'] ?? 0) === 1 && ($cf['itens_resumo']['nao_aplicada'] ?? 0) === 0, json_encode($cf['itens_resumo'] ?? null));
+$rD2 = $decidir($corpoD2, 'k-c-dead-002');   // interrompida: o reenvio assume na hora (não precisa esperar os 300 s)
+$ok('"Concluir este lote" depois do erro técnico: o item 2 é recusado; os outros não repetem', $sugRow($D2[1])['estado'] === 'recusada' && $rD2['resumo'] === ['aplicadas' => 3, 'nao_aplicadas' => 0, 'pendentes' => 0], json_encode($rD2['resumo'] ?? null));
 
 // ===================================== (7) CARGA — regra única, ciclo da revisão, substituída, idempotência ==============================
 $cargas = new Cargas($pdo, $db, false, static fn() => null);
@@ -234,6 +240,45 @@ $propor(9104, '960'); $idAc = (int) $linhasId(9104)[0]['id']; $sug->decidir(['id
 $ok('aceita + conteúdo novo → nada (D10)', $propor(9104, '7680') === 'ja_existia' && count($linhasId(9104)) === 1);
 $nLinhas = (int) $um('SELECT COUNT(*) FROM eq_sugestao'); foreach ([9101 => '1920', 9102 => 'B', 9103 => 'Y', 9104 => '7680'] as $pid => $v) $propor($pid, $v);
 $ok('reexecução da carga inteira sem efeito (idempotente)', (int) $um('SELECT COUNT(*) FROM eq_sugestao') === $nLinhas);
+
+// ---- (7b) DSHOW-105 A: hash inequívoco, PHP == coluna gerada, decimal normalizado, NULL ≠ '' ---------------------------------------------
+$casos = [[null, '2,50', null, 1], [null, '2.500', null, 1], [null, '2.5', null, 1], [null, ' 3 ', null, null], [null, '007', null, null], [null, '-00.10', null, null], [null, '100.0', null, null],
+    [null, '', null, null], [null, null, null, null], [null, 'a|b', null, null], [1, '2', null, null], [12, '', null, null], [null, '1e3', null, null], [null, 'Indoor', 5, null], [null, 'ação "x"', null, null]];
+$pid = 9700; $hs = [];
+foreach ($casos as $i => [$alt, $val, $opc, $uni]) {
+    $pdo->prepare("INSERT INTO eq_sugestao (chave, product_id, atributo_id, atributo_alternativo_id, fonte, tipo, valor_proposto, opcao_id, unidade_id, estado) VALUES (?, ?, ?, ?, 'precifica', 'valor', ?, NULL, ?, 'recusada')")
+        ->execute(["h|$i", $pid + $i, $P, $alt === null ? null : $T, $val, $uni === null ? null : $U['mm']]);
+    $id = (int) $pdo->lastInsertId();
+    $hs[$i] = (string) $um('SELECT conteudo_hash FROM eq_sugestao WHERE id = ?', [$id]);
+    $esperado = Cargas::hashConteudo($alt === null ? null : $T, $val, null, $uni === null ? null : $U['mm']);
+    $ok("hash PHP == coluna gerada: " . json_encode($val), $hs[$i] === $esperado);
+}
+$ok('decimal normalizado: "2,50" = "2.500" = "2.5"', $hs[0] === $hs[1] && $hs[1] === $hs[2]);
+$ok('NULL ≠ texto vazio', $hs[7] !== $hs[8]);
+$ok('sem ambiguidade de separador: (alt T, "2") ≠ (alt T, "") e campos não se misturam', $hs[10] !== $hs[11] && count(array_unique($hs)) === count($hs) - 2);
+$ok('texto NÃO é normalizado ("1e3", "Indoor" ficam como estão)', Cargas::normalizarValor('1e3') === '1e3' && Cargas::normalizarValor(' Indoor') === ' Indoor' && Cargas::normalizarValor('007') === '7' && Cargas::normalizarValor('-00.10') === '-0.1');
+// a regra vale quando um código ANTIGO revisa a linha no lugar (só UPDATE de valor_proposto): o hash gerado acompanha, normalizado
+$pdo->prepare("UPDATE eq_sugestao SET valor_proposto = '2,5000' WHERE chave = 'h|3'")->execute();
+$ok('revisão "antiga" (UPDATE cru de valor) → hash gerado recalculado e normalizado', (string) $um("SELECT conteudo_hash FROM eq_sugestao WHERE chave = 'h|3'") === Cargas::hashConteudo(null, '2.5', null, null));
+
+// ---- (7c) DSHOW-105 B: corrida entre CARGA e DECISÃO com DUAS conexões — a trava da identidade serializa; o índice segura o resto -------
+$pdo2 = new PDO($dsn, $tira($c['user'] ?? ''), $tira($c['password'] ?? ''), [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+$pdo2->exec('SET SESSION innodb_lock_wait_timeout = 1');
+$repo2 = new AtributosRepoPdo($pdo2, '');
+$sug2 = new SugestoesService($repo2, new AtributosService($repo2, 80, $OUT['email'], $cat), new KitsService($repo2, 80, $OUT['email'], $cat, true, $OUT['id']), 80, $OUT['email'], $OUT['id']);
+$propor(9150, 'X'); $idR = (int) $linhasId(9150)[0]['id']; $sug->decidir(['id' => $idR, 'versao' => 1, 'decisao' => 'ignorar']);
+$visto = null;   // no meio da carga (identidade TRAVADA), outra conexão tenta Devolver a ignorada
+StmtGanchoC::$apos = function (string $sql) use (&$visto, $sug2, $idR, $erro) {
+    if ($visto === null && str_contains($sql, 'FOR UPDATE') && str_contains($sql, 'eq_sugestao') && str_contains($sql, 'fonte = ?')) {
+        $visto = $erro(fn() => $sug2->decidir(['id' => $idR, 'versao' => 2, 'decisao' => 'devolver']));
+    }
+};
+$res = $propor(9150, 'Y'); StmtGanchoC::$apos = null;
+$ok('corrida: com a carga segurando a identidade, o Devolver da outra conexão ESPERA e desiste (nada gravado por ela)', $visto instanceof AtributosErro && $visto->http === 409 && $res === 'sucessora', $visto ? $visto->getMessage() : 'não esperou');
+$ok('corrida: depois, a ignorada é substituida e há UMA pendente na identidade', $sugRow($idR)['estado'] === 'substituida' && (int) $um("SELECT COUNT(*) FROM eq_sugestao WHERE product_id = 9150 AND atributo_id = ? AND estado = 'pendente'", [$T]) === 1);
+$eDv = $erro(fn() => $sug2->decidir(['id' => $idR, 'versao' => (int) $sugRow($idR)['versao'], 'decisao' => 'devolver']));
+$ok('corrida (ordem inversa): Devolver depois da carga → 409 (substituída não volta); o índice único segura a 2ª pendente', $eDv instanceof AtributosErro && $eDv->http === 409);
+$pdo2 = null;
 
 // ===================================== (8) TOTAL E PAGINAÇÃO =========================================================================
 $leit = $leitDe();

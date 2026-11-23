@@ -1354,11 +1354,14 @@ final class OperacoesGravacao
             }
             if ($adiado) $ops->descartarAdiada();
             $commitou = !$adiado && $antes !== null && $this->repo->confirmacoes() > $antes;
-            if ($commitou && $lote !== null) {
+            // DSHOW-105 C: o serviço de lote pode encerrar como INTERROMPIDO mesmo sem COMMIT (itens com erro técnico ficaram 'pendente')
+            $interrompidoPeloServico = $t instanceof AtributosErro && $t->codigo === 'OPERATION_INTERRUPTED';
+            if (($commitou || $interrompidoPeloServico) && $lote !== null) {
                 // P1-1: lote parado no meio — os itens com desfecho estão gravados (com o desfecho), os demais seguem 'pendente'.
                 error_log('[atributos] ' . $rota . ': lote interrompido depois de COMMIT(s): ' . get_class($t) . ': ' . $t->getMessage());
                 $this->marcarSemFalhar($ops, $chave, $tentativa, 'interrompida', null, ['codigo' => $t instanceof AtributosErro ? $t->codigo : 'INTERNAL_ERROR', 'http' => $t instanceof AtributosErro ? $t->http : 500,
                     'mensagem' => 'Lote interrompido no meio.', 'campos' => []]);
+                if ($interrompidoPeloServico) throw $t;   // a mensagem e o resumo por item vêm do serviço
                 $e = new AtributosErro('OPERATION_INTERRUPTED', 503, 'O lote parou no meio: parte já foi gravada. Reenvie com a mesma chave para concluir só os pendentes, ou use "Conferir gravação".');
                 $e->meta = ['desfecho' => 'interrompida', 'gravado' => 'parcial', 'itens' => $lote->itens()];
                 throw $e;

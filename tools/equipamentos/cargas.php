@@ -257,11 +257,21 @@ final class Cargas
     /** Valores do legado 2025 (E0B §3b, decisões D1–D6): A1–A4 e B1 viram valor 'importado' (lote próprio, só onde não existe); C1/C2 viram
      *  sugestão de CONFERÊNCIA (D5); X não entra. Integração (Código Bling, Id ML) entra no kit Integrações (A9). */
     // ===================================================================================================== PARTE C (013) — uma regra só
-    /** O MESMO conteúdo canônico da coluna gerada eq_sugestao.conteudo_hash (013): SHA2(CONCAT_WS('|', alt, valor, opção, unidade), 256). */
+    /** Normalização decimal da 013 (espelho exato da coluna gerada): só quando o valor (TRIM, vírgula→ponto) é ^-?\d+(\.\d+)?$. */
+    public static function normalizarValor(?string $v): ?string
+    {
+        if ($v === null) return null;
+        $d = str_replace(',', '.', trim($v, ' '));
+        if (!preg_match('/^-?[0-9]+(\.[0-9]+)?$/', $d)) return $v;
+        if (str_contains($d, '.')) $d = rtrim(rtrim($d, '0'), '.');
+        return (string) preg_replace('/^(-?)0+([0-9])/', '$1$2', $d);
+    }
+
+    /** O MESMO conteúdo canônico da coluna gerada eq_sugestao.conteudo_hash (013, DSHOW-105 A): 'N' ou 'S<n>:<texto>' por campo, sem separador. */
     public static function hashConteudo(mixed $alt, mixed $valor, mixed $opcao, mixed $unidade): string
     {
-        $f = static fn($x) => $x === null ? '-' : (string) $x;
-        return hash('sha256', implode('|', [$f($alt), $f($valor), $f($opcao), $f($unidade)]));
+        $f = static fn($x) => $x === null ? 'N' : 'S' . mb_strlen((string) $x, 'UTF-8') . ':' . (string) $x;
+        return hash('sha256', $f($alt) . $f(self::normalizarValor($valor === null ? null : (string) $valor)) . $f($opcao) . $f($unidade));
     }
 
     private ?bool $tem013 = null;

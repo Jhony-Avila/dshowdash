@@ -216,10 +216,21 @@ final class SugestoesService
         }
         $resumo = ['aplicadas' => 0, 'nao_aplicadas' => 0, 'pendentes' => 0];
         foreach ($saida as $x) $resumo[match ($x['desfecho']) { 'aplicada' => 'aplicadas', 'pendente' => 'pendentes', default => 'nao_aplicadas' }]++;
+        if ($resumo['pendentes'] > 0) {   // DSHOW-105 C: o lote NÃO termina — fica interrompido para "Concluir este lote" (mesma chave, só os pendentes)
+            $e = new AtributosErro('OPERATION_INTERRUPTED', 503, "O lote parou: {$resumo['pendentes']} item(ns) tiveram erro técnico momentâneo e continuam pendentes. Use \"Concluir este lote\".");
+            $e->meta = ['desfecho' => 'interrompida', 'gravado' => $resumo['aplicadas'] + $resumo['nao_aplicadas'] > 0 ? 'parcial' : false, 'itens' => $saida, 'resumo' => $resumo];
+            throw $e;
+        }
         return ['acao' => $acao, 'itens' => $saida, 'resumo' => $resumo, 'sem_mudanca' => $resumo['aplicadas'] === 0];
     }
 
-    /** @return array{0:string,1:array} um item do lote; nunca devolve 'pendente' (pendente = não processado, fica no livro). */
+    /** Item com erro TÉCNICO transitório: nada foi gravado, o livro continua 'pendente' (não é desfecho; "Concluir" refaz só ele). */
+    private static function itemPendente(): array
+    {
+        return ['pendente', ['motivo' => 'erro_tecnico', 'mensagem' => 'Erro técnico momentâneo; nada foi gravado neste item. Use "Concluir este lote".']];
+    }
+
+    /** @return array{0:string,1:array} um item do lote: 'aplicada', 'nao_aplicada' (negócio) ou 'pendente' (técnico; NÃO registrado). */
     private function itemDoLote(string $acao, int $id, int $versao, ?string $motivo, LoteDaOperacao $lote): array
     {
         for ($tentativa = 1; ; $tentativa++) {
@@ -228,9 +239,7 @@ final class SugestoesService
                 if (OperacoesGravacao::ehTomada($e)) throw $e;   // outra tentativa assumiu a chave: para o lote, sem efeito
                 if (($e->meta['motivo'] ?? null) === 'passageiro') {   // deadlock/espera de trava (AtributosRepoPdo::traduzir): técnico, não conflito
                     if ($tentativa < 2) continue;
-                    $det = ['motivo' => 'erro_tecnico', 'mensagem' => 'Erro técnico momentâneo; nada foi gravado neste item. Tente de novo.'];
-                    $lote->registrarSozinho($id, 'nao_aplicada', $det);
-                    return ['nao_aplicada', $det];
+                    return self::itemPendente();   // DSHOW-105 C: a transação do item voltou atrás → fica 'pendente' para "Concluir este lote"
                 }
                 $det = ['motivo' => $e->codigo, 'mensagem' => $e->getMessage()] + (isset($e->meta['motivo']) ? ['detalhe' => $e->meta['motivo']] : []);
                 $lote->registrarSozinho($id, 'nao_aplicada', $det);
@@ -238,9 +247,7 @@ final class SugestoesService
             } catch (PDOException $e) {
                 if (!in_array((int) ($e->errorInfo[1] ?? 0), self::PDO_PASSAGEIROS, true)) throw $e;   // outro erro de banco: o lote PARA (interrompida)
                 if ($tentativa < 2) continue;   // uma repetição do mesmo item
-                $det = ['motivo' => 'erro_tecnico', 'mensagem' => 'Erro técnico momentâneo; nada foi gravado neste item. Tente de novo.'];
-                $lote->registrarSozinho($id, 'nao_aplicada', $det);
-                return ['nao_aplicada', $det];
+                return self::itemPendente();
             }
         }
     }

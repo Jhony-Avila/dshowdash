@@ -18,7 +18,7 @@ $tira = fn($v) => trim((string) $v, " \t\"'");
 $pdo = new PDO('mysql:' . (isset($c['socket']) ? 'unix_socket=' . $tira($c['socket']) : 'host=' . $tira($c['host'] ?? '127.0.0.1') . ';port=' . (int) ($c['port'] ?? 3306)) . ";dbname=$db;charset=utf8mb4",
     $tira($c['user'] ?? ''), $tira($c['password'] ?? ''), [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 $cat = new CatalogoMemoria(); $cat->p = [];
-foreach ([201, 202, 203, 204] as $pid) $cat->p[$pid] = ['id' => $pid, 'nome' => 'Módulo P.2.5 Indoor 320mm x 160mm 3840Hz', 'categoria' => 'LED_PANEL', 'subcategoria' => 'LED_MODULE', 'ativo' => true, 'excluido' => false, 'sincronizado_em' => null];
+foreach ([201, 202, 203, 204, 205] as $pid) $cat->p[$pid] = ['id' => $pid, 'nome' => 'Módulo P.2.5 Indoor 320mm x 160mm 3840Hz', 'categoria' => 'LED_PANEL', 'subcategoria' => 'LED_MODULE', 'ativo' => true, 'excluido' => false, 'sincronizado_em' => null];
 $repo = new AtributosRepoPdo($pdo, '');
 $email = 'antigo@exemplo.invalid';
 $kits = new KitsService($repo, 80, $email, $cat, true, 2001);
