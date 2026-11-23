@@ -144,7 +144,7 @@ class IntegrationMercadoLivreComponent {
     const i = this._element.querySelector(".integration-indicator");
     if (v) v.textContent = s.ordersPending > 0 ? `${s.ordersPending} pend.` : "\u2713";
     if (i) {
-      i.className = `integration-indicator ${s.status === "online" ? "status-ok" : "status-error"}`;
+      i.className = `integration-indicator ${s.status === "online" ? "status-ok" : "status-error"}`, i.title = String(s.data?.resumo ?? "");
     }
   }
   healthCheck() {

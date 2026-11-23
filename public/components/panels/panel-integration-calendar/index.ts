@@ -152,7 +152,7 @@ export class IntegrationCalendarComponent {
     const valueEl = this._element.querySelector('.integration-value');
     const indicatorEl = this._element.querySelector('.integration-indicator');
     if (valueEl) valueEl.textContent = state.eventsToday > 0 ? `${state.eventsToday} eventos` : '✓';
-    if (indicatorEl) indicatorEl.className = `integration-indicator ${state.status === 'online' ? 'status-ok' : 'status-error'}`;
+    if (indicatorEl) indicatorEl.className = `integration-indicator ${state.status === 'online' ? 'status-ok' : 'status-error'}`, indicatorEl.title = String((state as any).data?.resumo ?? '');
   }
 
   attachEvents() { this._unsubscribe = this.store.subscribe((state: Record<string, unknown>, prev: Record<string, unknown>) => { if (state.eventsToday !== prev.eventsToday || state.status !== prev.status) this._updateDisplay(); }); }

@@ -144,7 +144,7 @@ class IntegrationPipedriveComponent {
     const i = this._element.querySelector(".integration-indicator");
     if (v) v.textContent = s.dealsOpen > 0 ? `${s.dealsOpen} deals` : "\u2713";
     if (i) {
-      i.className = `integration-indicator ${s.status === "online" ? "status-ok" : "status-error"}`;
+      i.className = `integration-indicator ${s.status === "online" ? "status-ok" : "status-error"}`, i.title = String(s.data?.resumo ?? "");
     }
   }
   healthCheck() {
