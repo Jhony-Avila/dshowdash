@@ -13,6 +13,9 @@ CorsPolicy::setupApiEndpoint([
     'methods' => ['GET', 'OPTIONS'],
     'no_cache' => true
 ]);
+// PORTÃO DE ACESSO (DSHOW-106): este endpoint não inclui o _init.php — o portão vem direto.
+require_once __DIR__ . '/_acesso.php';
+StatusAcesso::exigir();
 
 ApiResponse::success([
     'endpoints' => [

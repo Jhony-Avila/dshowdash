@@ -33,6 +33,11 @@ CorsPolicy::setupApiEndpoint([
     'no_cache' => true
 ]);
 
+// PORTÃO DE ACESSO (Codex DSHOW-106 item 4, 23/11/2026): sessão e permissão ANTES do cache e de qualquer consulta.
+// Sem acesso → resposta mínima e o handler nem roda (nem o cache quente dele). Ver _acesso.php.
+require_once __DIR__ . '/_acesso.php';
+StatusAcesso::exigir();
+
 // TTL padrão para status endpoints (disponível globalmente)
 if (!defined('STATUS_CACHE_TTL')) {
     define('STATUS_CACHE_TTL', RedisConfig::TTL_STATUS);

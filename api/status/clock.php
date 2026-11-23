@@ -13,6 +13,9 @@ require_once __DIR__ . '/../core/CorsPolicy.php';
 require_once __DIR__ . '/../_helpers/ApiResponse.php';
 
 CorsPolicy::setupApiEndpoint(['methods' => ['GET', 'OPTIONS']]);
+// PORTÃO DE ACESSO (DSHOW-106): este endpoint não inclui o _init.php — o portão vem direto.
+require_once __DIR__ . '/_acesso.php';
+StatusAcesso::exigir();
 
 $tz = new DateTimeZone('America/Sao_Paulo');
 $now = new DateTime('now', $tz);

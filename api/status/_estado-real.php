@@ -168,7 +168,7 @@ final class StatusEstadoReal
 
     private const STATUS_UI = ['ok' => 'online', 'atrasado' => 'degraded', 'parcial' => 'degraded', 'erro' => 'error',
         'nao_conectado' => 'error', 'nao_integrado' => 'not_configured', 'simulado' => 'not_configured', 'nao_verificado' => 'unknown',
-        'sem_fonte' => 'not_configured'];
+        'sem_fonte' => 'unknown'];   // DSHOW-106: sem fonte confiável = DESCONHECIDO, nunca "não configurado"
 
     private const MENSAGEM_PUBLICA = ['ok' => 'Sincronizando normalmente.', 'atrasado' => 'Sincronização atrasada.',
         'parcial' => 'Sincronizando com falhas em parte dos dados.', 'erro' => 'Sincronização com erro.', 'nao_conectado' => 'Conta não conectada.',
@@ -207,6 +207,35 @@ final class StatusEstadoReal
         if (!$e['integrado']) { $partes[] = $msg; }
         $d['resumo'] = implode(' · ', $partes);
         return $d;
+    }
+
+    /** Resumo agregado para integrations.php: os 3 com fonte real (só chega aqui quem passou pelo portão de acesso). */
+    public static function resumo(callable $conexao): array
+    {
+        $itens = []; $pior = 'online';
+        $ordem = ['online' => 0, 'unknown' => 1, 'degraded' => 2, 'error' => 3];
+        foreach (['pipedrive' => 'Pipedrive', 'calendar' => 'Google Calendar', 'bling' => 'Bling'] as $c => $nome) {
+            try { $e = self::estado($c, $conexao); $m = self::montar($c, $e, true); }
+            catch (Throwable) { $m = ['status' => 'unknown', 'estado' => 'desconhecido', 'ultima_sincronizacao_ok' => null]; }
+            $itens[] = ['id' => $c, 'nome' => $nome, 'status' => $m['status'], 'estado' => $m['estado'],
+                        'ultima_sincronizacao_ok' => $m['ultima_sincronizacao_ok'] ?? null, 'erro_atual' => $m['erro_atual']['codigo'] ?? null];
+            if (($ordem[$m['status']] ?? 1) > ($ordem[$pior] ?? 0)) { $pior = $m['status']; }
+        }
+        $ativas = count(array_filter($itens, fn($i) => $i['status'] !== 'unknown'));
+        return ['status' => $pior, 'configured' => $ativas > 0, 'integrations' => $itens,
+                'message' => $ativas . ' integração(ões) com sincronização real', 'details' => implode(' · ', array_map(fn($i) => $i['nome'] . ': ' . $i['estado'], $itens)),
+                'timestamp' => date(DATE_ATOM), 'fonte_verdade' => 'estado-real/' . self::VERSAO];
+    }
+
+    public static function responderResumo(?callable $conexao = null): void
+    {
+        try { $saida = ApiResponse::buildSuccess(self::resumo($conexao ?? [self::class, 'conexao'])); }
+        catch (Throwable $t) {
+            error_log('[status/integrations] resumo indisponível: ' . get_class($t));
+            $saida = ApiResponse::buildSuccess(['status' => 'unknown', 'estado' => 'indisponivel', 'message' => 'Não foi possível ler o estado agora.', 'timestamp' => date(DATE_ATOM)]);
+        }
+        if (!headers_sent()) { header('Cache-Control: private, no-store'); }
+        echo $saida;
     }
 
     // ── entrada HTTP (os 22 endpoints) ───────────────────────────────────────────────────────────────────────
