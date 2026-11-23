@@ -356,6 +356,10 @@ $ok('destino com valor → destino_atual informado (4 mm) e aceite_bloqueado COM
 $ok('não se aplica → bloqueado COM_VALOR com estado nao_se_aplica', ($x[$sNsa]['destino_atual']['estado'] ?? null) === 'nao_se_aplica' && $x[$sNsa]['aceite_bloqueado'] === 'COM_VALOR');
 $ok('destino vazio → estado vazio, aceite livre', ($x[$sVaz]['destino_atual'] ?? null) === ['estado' => 'vazio'] && $x[$sVaz]['aceite_bloqueado'] === null);
 $ok('atributo inativo → ATRIBUTO_INATIVO', ($x[$sIn]['aceite_bloqueado'] ?? null) === 'ATRIBUTO_INATIVO');
+$sFora = $nova(9505, $A['extra'], 'x');   // "extra" não está no kit "Todos": fora da ficha do produto
+$ok('atributo fora da ficha do produto → FORA_DA_FICHA (o aceite simples seria recusado)', ($porId()[$sFora]['aceite_bloqueado'] ?? null) === 'FORA_DA_FICHA');
+$rF = $decidir(['acao' => 'aceitar', 'itens' => $it($sFora), 'confirmar' => true], 'k-c-fora-001');
+$ok('aceitar fora da ficha → não aplicada ATTRIBUTE_NOT_APPLICABLE; nada gravado', ($rF['itens'][0]['motivo'] ?? null) === 'ATTRIBUTE_NOT_APPLICABLE' && $sugRow($sFora)['estado'] === 'pendente', json_encode($rF['itens'] ?? null));
 $ok('nível 50 → SEM_PERMISSAO', ($porId(50)[$sVaz]['aceite_bloqueado'] ?? null) === 'SEM_PERMISSAO');
 
 // ===================================== (10) PERMISSÕES, REABRIR (Q-SUG.6) E CHAVE ===================================================
