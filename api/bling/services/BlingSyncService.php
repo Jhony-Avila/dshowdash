@@ -577,6 +577,15 @@ final class BlingSyncService
         if ($this->repo->temColuna('bling_sales_orders', 'loja_bling_id')) {
             $d['loja_bling_id'] = $canalBling;
         }
+        // PORTÃO BLING SITUAÇÃO: sem a coluna (antes da migração 20261123-situacao), simplesmente não grava; id ausente na resposta
+        // nunca apaga um id já conhecido.
+        if (!$this->repo->temColuna('bling_sales_orders', 'situacao_bling_id')) {
+            unset($d['situacao_bling_id']);
+        } elseif ($d['situacao_bling_id'] === null) {
+            $conhecido = $this->repo->consultar('SELECT situacao_bling_id FROM bling_sales_orders WHERE account_id = ? AND bling_id = ?',
+                [$accountId, $d['bling_id']]);
+            if (($conhecido[0]['situacao_bling_id'] ?? null) !== null) { $d['situacao_bling_id'] = (string) $conhecido[0]['situacao_bling_id']; }
+        }
         // DSHOW-106 (2): resolução que FALHOU nunca troca uma associação válida por NULL
         $assoc = $this->repo->consultar('SELECT contact_id, sales_channel_id FROM bling_sales_orders WHERE account_id = ? AND bling_id = ?',
             [$accountId, $d['bling_id']]);
@@ -612,7 +621,8 @@ final class BlingSyncService
         // normalmente. Efeito único após a entrega: a 1ª releitura regrava cada pedido uma vez (hash novo).
         // DSHOW-106: com a coluna loja_bling_id criada, o hash muda uma vez → a releitura grava a loja também nos pedidos antigos
         $d['payload_hash'] = md5($d['payload_hash'] . '|canal=' . ($d['sales_channel_id'] ?? '') . '|contato=' . ($d['contact_id'] ?? '')
-            . (array_key_exists('loja_bling_id', $d) ? '|loja=' . ($d['loja_bling_id'] ?? '') : ''));
+            . (array_key_exists('loja_bling_id', $d) ? '|loja=' . ($d['loja_bling_id'] ?? '') : '')
+            . (array_key_exists('situacao_bling_id', $d) ? '|sitid=' . ($d['situacao_bling_id'] ?? '') : ''));   // muda 1x após a migração → a releitura grava
         $r = $this->repo->upsert('bling_sales_orders', $accountId, $d);
         $pedidoId = $this->repo->idPorBlingId('bling_sales_orders', $accountId, $d['bling_id']);
 
@@ -815,5 +825,134 @@ final class BlingSyncService
         $d['situacao'] = BlingVersionAdapter::situacaoTitulo($situacaoBling, $d['data_vencimento'],
                                                              $d['valor'], $d['valor_pago']);
         return $this->repo->upsert('bling_accounts_payable', $accountId, $d);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // PORTÃO BLING SITUAÇÃO (ACIMA_DIREITA, 23/11/2026) — releitura única dos pedidos e lista de situações do módulo de vendas.
+    // Só LEITURA no Bling (GET). Grava pelo MESMO gravarPedido da sincronização normal (mesmo hash, mesma regra de associação).
+    // Progresso próprio em bling_sync_state (recurso 'releitura_situacao') — não mexe no estado da sincronização de 'pedidos'.
+
+    public const RECURSO_RELEITURA = 'releitura_situacao';
+
+    /**
+     * Relê TODOS os pedidos de venda pela listagem (páginas de 100), em ritmo baixo, retomando da última página gravada.
+     * @param Closure():bool $parar  consultado entre páginas (arquivo de parada, sinal…) — true = para e deixa 'parcial'
+     * @param Closure(int):void $dormir  pausa entre páginas, em ms
+     * @return array{situacao:string, paginas:int, consultados:int, criados:int, atualizados:int, ignorados:int, erros:int, pagina_inicial:int}
+     */
+    public function releituraPedidos(int $accountId, Closure $parar, Closure $dormir, int $pausaMs = 1500, int $maxPaginas = 500): array
+    {
+        if (!$this->repo->temColuna('bling_sales_orders', 'situacao_bling_id')) {
+            return ['situacao' => 'sem_coluna', 'paginas' => 0, 'consultados' => 0, 'criados' => 0, 'atualizados' => 0, 'ignorados' => 0, 'erros' => 0, 'pagina_inicial' => 0];
+        }
+        $est = $this->repo->estadoSync($accountId, self::RECURSO_RELEITURA);
+        $paginaInicial = ($est && $est['situacao'] === 'parcial') ? max(1, (int) $est['pagina_atual']) : 1;
+        $c = ['consultados' => 0, 'criados' => 0, 'atualizados' => 0, 'ignorados' => 0, 'erros' => 0];
+        $paginas = 0; $parou = false;
+        $cliente = $this->auth->cliente($accountId);
+        $this->repo->salvarEstadoSync($accountId, self::RECURSO_RELEITURA, ['estrategia' => 'carga_inicial', 'situacao' => 'parcial',
+            'pagina_atual' => $paginaInicial, 'ultima_execucao_em' => gmdate('Y-m-d H:i:s')]);
+        try {
+            $r = $cliente->paginar(self::RECURSOS['pedidos']['endpoint'], [],
+                function (array $itens, int $pagina) use ($accountId, &$c, &$paginas, &$parou, $parar, $dormir, $pausaMs) {
+                    $this->repo->pdo()->beginTransaction();
+                    $erros = [];
+                    foreach ($itens as $bruto) {
+                        $c['consultados']++;
+                        $this->repo->pdo()->exec('SAVEPOINT bling_item');
+                        try {
+                            $res = $this->gravarPedido($accountId, $bruto);
+                            $c[match ($res) { 'criado' => 'criados', 'atualizado' => 'atualizados', default => 'ignorados' }]++;
+                            $this->repo->pdo()->exec('RELEASE SAVEPOINT bling_item');
+                        } catch (Throwable $e) {
+                            $this->repo->pdo()->exec('ROLLBACK TO SAVEPOINT bling_item');
+                            $c['erros']++;
+                            $erros[] = [is_array($bruto) ? (string) ($bruto['id'] ?? '') : null, $e->getMessage()];
+                        }
+                    }
+                    $this->repo->salvarEstadoSync($accountId, self::RECURSO_RELEITURA, ['estrategia' => 'carga_inicial', 'situacao' => 'parcial',
+                        'pagina_atual' => $pagina, 'registros_consultados' => $c['consultados'], 'registros_atualizados' => $c['atualizados'],
+                        'registros_criados' => $c['criados'], 'registros_ignorados' => $c['ignorados'], 'erros' => $c['erros']]);
+                    $this->repo->pdo()->commit();
+                    foreach ($erros as [$id, $msg]) {
+                        $this->repo->registrarErroSync($accountId, self::RECURSO_RELEITURA, $id, 'NORMALIZACAO', $msg, null, 1, 'releitura-situacao');
+                    }
+                    $paginas++;
+                    if (count($itens) < 100) { return null; }            // última página: fim natural
+                    if ($parar()) { $parou = true; return false; }
+                    $dormir($pausaMs);                                    // ritmo baixo: uma página por vez, com pausa
+                    return null;
+                }, 100, $maxPaginas, $paginaInicial);
+        } catch (Throwable $e) {
+            // falha de rede/HTTP depois das tentativas do cliente: fica 'parcial' na página gravada; rodar de novo retoma dali
+            return ['situacao' => 'erro', 'erro' => $e->getMessage(), 'paginas' => $paginas, 'pagina_inicial' => $paginaInicial] + $c;
+        }
+        $concluida = !$parou && ($r['estado'] ?? '') === 'concluida';
+        $this->repo->salvarEstadoSync($accountId, self::RECURSO_RELEITURA, ['situacao' => $concluida ? 'ok' : 'parcial',
+            'watermark' => $concluida ? gmdate('Y-m-d H:i:s') : null]);
+        return ['situacao' => $concluida ? 'concluida' : ($parou ? 'interrompida' : (string) ($r['estado'] ?? 'parcial')),
+                'paginas' => $paginas, 'pagina_inicial' => $paginaInicial] + $c;
+    }
+
+    /**
+     * Lista de situações do MÓDULO DE VENDAS (id e nome), para o Jhony escolher quais significam "finalizado".
+     * 2 GETs: situacoes/modulos → acha o módulo de vendas → situacoes/modulos/{id}. 403 = escopo ausente: só informa (sem reautorizar, sem repetir).
+     * Grava em bling_situacoes quando a tabela existe (migração 20261123-situacao); senão só devolve.
+     */
+    public function lerSituacoesVendas(int $accountId): array
+    {
+        $cliente = $this->auth->cliente($accountId);
+        $m = $cliente->get('situacoes/modulos');
+        if ($m->status === 403) { return ['situacao' => 'escopo_ausente', 'etapa' => 'situacoes/modulos', 'http' => 403]; }
+        if (!$m->ok() || !is_array($m->corpo['data'] ?? null)) { return ['situacao' => 'erro', 'etapa' => 'situacoes/modulos', 'http' => $m->status]; }
+        $modulos = $m->corpo['data'];
+        $vendas = null;
+        foreach ($modulos as $mod) {
+            $nome = mb_strtolower(trim((string) ($mod['nome'] ?? '')));
+            if ($nome === 'vendas' || $nome === 'pedidos de venda' || $nome === 'pedidos de vendas') { $vendas = $mod; break; }
+        }
+        if ($vendas === null) {
+            return ['situacao' => 'modulo_nao_encontrado', 'modulos' => array_map(static fn($x) => ['id' => (string) ($x['id'] ?? ''), 'nome' => (string) ($x['nome'] ?? '')], $modulos)];
+        }
+        $idModulo = (string) ($vendas['id'] ?? '');
+        if (!preg_match('/^[0-9]{1,20}$/', $idModulo)) { return ['situacao' => 'erro', 'etapa' => 'id do módulo inválido']; }
+        $s = $cliente->get('situacoes/modulos/' . $idModulo);
+        if ($s->status === 403) { return ['situacao' => 'escopo_ausente', 'etapa' => 'situacoes/modulos/{id}', 'http' => 403]; }
+        if (!$s->ok() || !is_array($s->corpo['data'] ?? null)) { return ['situacao' => 'erro', 'etapa' => 'situacoes/modulos/{id}', 'http' => $s->status]; }
+        $lista = [];
+        foreach ($s->corpo['data'] as $x) {
+            $id = (string) ($x['id'] ?? '');
+            if (!preg_match('/^[0-9]{1,20}$/', $id)) { continue; }
+            $lista[] = ['id' => $id, 'nome' => mb_substr((string) ($x['nome'] ?? ''), 0, 120),
+                        'id_herdado' => isset($x['idHerdado']) ? (string) $x['idHerdado'] : null, 'cor' => isset($x['cor']) ? mb_substr((string) $x['cor'], 0, 16) : null];
+        }
+        if ($this->repo->temColuna('bling_situacoes', 'situacao_id')) {
+            $st = $this->repo->pdo()->prepare('INSERT INTO bling_situacoes (account_id, modulo_id, modulo_nome, situacao_id, nome, id_herdado, cor, lido_em)
+                VALUES (?,?,?,?,?,?,?,UTC_TIMESTAMP()) ON DUPLICATE KEY UPDATE modulo_id=VALUES(modulo_id), modulo_nome=VALUES(modulo_nome), nome=VALUES(nome),
+                id_herdado=VALUES(id_herdado), cor=VALUES(cor), lido_em=VALUES(lido_em)');
+            foreach ($lista as $x) { $st->execute([$accountId, $idModulo, mb_substr((string) ($vendas['nome'] ?? ''), 0, 80), $x['id'], $x['nome'], $x['id_herdado'], $x['cor']]); }
+        }
+        return ['situacao' => 'ok', 'modulo' => ['id' => $idModulo, 'nome' => (string) ($vendas['nome'] ?? '')], 'situacoes' => $lista];
+    }
+
+    /** Contagem antes/depois da releitura (só SELECT no banco local). */
+    public function contagemSituacao(int $accountId): array
+    {
+        $temId = $this->repo->temColuna('bling_sales_orders', 'situacao_bling_id');
+        $temLoja = $this->repo->temColuna('bling_sales_orders', 'loja_bling_id');
+        $q = 'SELECT COUNT(*) pedidos, COALESCE(SUM(total),0) valor'
+           . ($temId ? ', SUM(situacao_bling_id IS NOT NULL) com_situacao_id' : '')
+           . ($temLoja ? ', SUM(loja_bling_id IS NOT NULL) com_loja' : '')
+           . ' FROM bling_sales_orders WHERE account_id = ? AND deletado_em IS NULL';
+        $base = $this->repo->consultar($q, [$accountId])[0] ?? [];
+        $out = ['tem_coluna_situacao_id' => $temId, 'tem_coluna_loja' => $temLoja, 'pedidos' => (int) ($base['pedidos'] ?? 0), 'valor' => (string) ($base['valor'] ?? '0'),
+                'com_situacao_id' => $temId ? (int) $base['com_situacao_id'] : null, 'com_loja' => $temLoja ? (int) $base['com_loja'] : null,
+                'por_valor_antigo' => $this->repo->consultar('SELECT situacao_bling cod, COUNT(*) n FROM bling_sales_orders WHERE account_id = ? AND deletado_em IS NULL GROUP BY 1 ORDER BY 1', [$accountId])];
+        if ($temId) {
+            $out['por_situacao_id'] = $this->repo->consultar('SELECT situacao_bling_id id, COUNT(*) n, COALESCE(SUM(total),0) valor FROM bling_sales_orders WHERE account_id = ? AND deletado_em IS NULL GROUP BY 1 ORDER BY 2 DESC', [$accountId]);
+        }
+        $est = $this->repo->estadoSync($accountId, self::RECURSO_RELEITURA);
+        $out['releitura'] = $est ? ['situacao' => $est['situacao'], 'pagina_atual' => (int) $est['pagina_atual']] : null;
+        return $out;
     }
 }

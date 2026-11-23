@@ -1709,6 +1709,8 @@ tools-golden/
 !/scripts/bling-smoke-bundle.mjs
 !/scripts/bling-worker.php
 !/scripts/bling-escopo-ausente-teste.php
+!/scripts/bling-releitura-situacao.php
+!/scripts/bling-situacao-teste.php
 !/scripts/check-all.sh
 !/scripts/ci/
 !/scripts/ci/**
