@@ -18,7 +18,9 @@ K3='$aact_prod_000TesteTresCCCCCCCCCCCCCCCCCCCCCCC::$aach_tres'
 K401='$aact_prod_000Recusada401DDDDDDDDDDDDDDDDDDDD'
 K429='$aact_prod_000Limite429EEEEEEEEEEEEEEEEEEEEEE'
 KH='$aact_hmlg_000SandboxFFFFFFFFFFFFFFFFFFFFFFFFFF'
-export K1 K2 K3 K401 K429 KH
+K4='$aact_prod_000OutraEmpresaGGGGGGGGGGGGGGGGGGGG::$aach_quatro'
+K5='$aact_prod_000SemDocumentoHHHHHHHHHHHHHHHHHHHH::$aach_cinco'
+export K1 K2 K3 K401 K429 KH K4 K5
 
 # curl falso: lê a config pelo stdin, registra argv e URL (NUNCA a chave), escreve a resposta em --output e o código em --write-out
 cat > "$W/bin/curl" <<'FAKE'
@@ -36,6 +38,8 @@ code=401; body='{"errors":[{"code":"invalid_access_token"}]}'
 [ "$key" = "$K3" ] && code=200 && body='{"companyName":"Empresa Teste Um","cpfCnpj":"12345678000199"}'
 [ "$key" = "$K429" ] && code=429 && body='{}'
 [ "$key" = "$KH" ] && code=200 && body='{"companyName":"Sandbox Teste"}'
+[ "$key" = "$K4" ] && code=200 && body='{"companyName":"Outra Empresa Teste","cpfCnpj":"98765432000111"}'
+[ "$key" = "$K5" ] && code=200 && body='{"companyName":"Sem Documento Teste"}'
 printf '%s' "$body" > "$out"; printf '%s' "$code"
 FAKE
 chmod 700 "$W/bin/curl"
@@ -122,11 +126,11 @@ $K1
 check "chave repetida em outro rótulo: recusada" 'grep -q "já está guardada no rótulo .dshow." $W/saida.txt && [ ! -e $DIRK/copia.key ]'
 # 9 confirmação negada
 rodar "outra
-$K3
-$K3
+$K4
+$K4
 n
 " --executar
-check "confirmação N: nada gravado" '[ ! -e $DIRK/outra.key ] && grep -q "Empresa Teste Um" $W/saida.txt'
+check "confirmação N: nada gravado (nem a identidade)" '[ ! -e $DIRK/outra.key ] && [ ! -e $DIRK/outra.id ] && grep -q "Outra Empresa Teste" $W/saida.txt'
 # 10 rótulo inválido
 rodar "../etc
 " --executar
@@ -143,7 +147,7 @@ check "substituição: chave nova" '[ "$(cat $DIRK/dshow.key)" = "$K3" ]'
 BKD="$(ls -d $W/backup/*-asaas-chaves 2>/dev/null | tail -1)"
 check "substituição: antiga no backup" '[ -n "$BKD" ] && [ "$(cat $BKD/dshow.key.antiga)" = "$K1" ]'
 bash "$BKD/revert-all.sh" > /dev/null
-check "revert-all devolve a antiga" '[ "$(cat $DIRK/dshow.key)" = "$K1" ] && [ "$(cat $BKD/dshow.key.novo-revertido)" = "$K3" ]'
+check "revert-all devolve a antiga (chave e identidade)" '[ "$(cat $DIRK/dshow.key)" = "$K1" ] && [ "$(cat $BKD/dshow.key.novo-revertido)" = "$K3" ] && [ -f $DIRK/dshow.id ]'
 # 12 a chave nunca vai por argumento; argumento desconhecido é recusado
 rodar "" --executar "$K1"
 check "chave como argumento: recusada e não exibida" '[ "$(cat $W/rc)" = 2 ] && grep -q "parece uma CHAVE" $W/saida.txt'
@@ -153,9 +157,37 @@ check "modo de teste recusa a config real" '[ "$rc" = 2 ] && grep -q "modo de te
 # 14 --listar mostra só rótulos
 rodar "" --listar
 check "--listar mostra os rótulos" 'grep -q "dshow " $W/saida.txt && grep -q "display-solutions" $W/saida.txt'
+# 16 B2 (Codex DSHOW-111): identidade presa ao rótulo; troca cruzada recusada
+check "identidade gravada (sha256, 0600) e sem o CNPJ em claro" '[ "$(stat -c %a $DIRK/dshow.id)" = 600 ] && grep -qE "^[0-9a-f]{64}$" $DIRK/dshow.id && ! grep -rq 12345678000199 $DIRK'
+check "identidade = sha256 dos dígitos do CNPJ" '[ "$(cat $DIRK/dshow.id)" = "$(printf %s 12345678000199 | sha256sum | cut -c1-64)" ]'
+rodar "dshow
+s
+$K4
+$K4
+" --executar
+check "TROCA CRUZADA: chave válida de outra empresa no rótulo dshow → recusada" 'grep -q "OUTRA conta/empresa" $W/saida.txt && [ "$(cat $DIRK/dshow.key)" = "$K1" ] && [ "$(cat $DIRK/dshow.id)" = "$(printf %s 12345678000199 | sha256sum | cut -c1-64)" ]'
+check "troca cruzada: nem o nome da outra empresa é confirmado" '! grep -q "É a conta da empresa" $W/saida.txt'
+rodar "copia-da-dshow
+$K3
+$K3
+" --executar
+check "mesma conta em OUTRO rótulo → recusada (uma conta por empresa)" 'grep -q "já está presa ao rótulo .dshow." $W/saida.txt && [ ! -e $DIRK/copia-da-dshow.key ]'
+rodar "sem-doc
+$K5
+$K5
+" --executar
+check "conta sem CPF/CNPJ na resposta → recusada" 'grep -q "identidade" $W/saida.txt && [ ! -e $DIRK/sem-doc.key ]'
+rodar "outra-empresa
+$K4
+$K4
+s
+n
+" --executar
+check "a outra empresa entra no SEU rótulo, com a sua identidade" '[ "$(cat $DIRK/outra-empresa.id)" = "$(printf %s 98765432000111 | sha256sum | cut -c1-64)" ]'
+check "nenhum CPF/CNPJ em nenhuma saída" '! grep -qE "12345678000199|11122233344|98765432000111" $W/todas-saidas.txt'
 # 15 GLOBAL: nenhuma chave em nenhuma saída nem em argv do curl
 vazou=0
-for k in "$K1" "$K2" "$K3" "$K401" "$K429" "$KH"; do
+for k in "$K1" "$K2" "$K3" "$K401" "$K429" "$KH" "$K4" "$K5"; do
   grep -qF -- "$k" "$W/todas-saidas.txt" && vazou=1
   grep -qF -- "${k#\$}" "$W/argv.log" && vazou=1
 done

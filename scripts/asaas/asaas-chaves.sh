@@ -68,7 +68,7 @@ listar() {
   if [ -d "$DIR" ]; then
     local n=0 f
     for f in "$DIR"/*.key; do [ -e "$f" ] || continue; n=$((n+1))
-      printf '       %-28s %s\n' "$(basename "$f" .key)" "$(stat -c '%U:%G %a' "$f")"; done
+      printf '       %-28s %s%s\n' "$(basename "$f" .key)" "$(stat -c '%U:%G %a' "$f")" "$([ -f "${f%.key}.id" ] && echo ' · identidade presa' || echo ' · SEM identidade')"; done
     [ "$n" -gt 0 ] || echo "       (nenhuma chave guardada)"
     echo "       pasta: $(stat -c '%U:%G %a' "$DIR")"
   else echo "       (pasta $DIR ainda não existe)"; fi
@@ -155,28 +155,45 @@ while :; do
     000) unset CH; echo "[ERRO] sem resposta do Asaas (rede/tempo esgotado) — nada foi gravado"; continue;;
     *)   unset CH; echo "[ERRO] o Asaas respondeu $HTTP — nada foi gravado"; continue;;
   esac
-  # só o nome da conta (companyName, senão name); nada mais da resposta é exibido
-  NOME="$(python3 -I -c 'import json,sys
+  # só o nome da conta é exibido. Codex DSHOW-111 (B2): a identidade estável da conta = sha256 dos dígitos do cpfCnpj, calculada em memória
+  # (o número NUNCA é exibido nem gravado); o rótulo fica PRESO a ela.
+  SAIDA="$(python3 -I -c 'import json,sys,hashlib,re
 try:
   d=json.load(open(sys.argv[1],encoding="utf-8"))
   n=(d.get("companyName") or d.get("name") or "").strip()
-  print("".join(c for c in n if c.isprintable())[:120])
-except Exception: print("")' "$TMPD/resp" 2>/dev/null || true)"
+  doc=re.sub(r"\D","",str(d.get("cpfCnpj") or ""))
+  h=hashlib.sha256(doc.encode()).hexdigest() if len(doc) in (11,14) else ""
+  print("".join(c for c in n if c.isprintable())[:120]); print(h)
+except Exception: print(""); print("")' "$TMPD/resp" 2>/dev/null || true)"
   rm -f -- "$TMPD/resp"
+  NOME="$(printf '%s\n' "$SAIDA" | sed -n 1p)"; IDENT="$(printf '%s\n' "$SAIDA" | sed -n 2p)"; unset SAIDA
   if [ -z "$NOME" ]; then unset CH; echo "[ERRO] o Asaas respondeu 200 mas sem nome de conta — nada foi gravado"; continue; fi
+  if ! [[ "$IDENT" =~ ^[0-9a-f]{64}$ ]]; then unset CH; echo "[ERRO] o Asaas não devolveu o CPF/CNPJ da conta (identidade) — nada foi gravado"; continue; fi
+  if [ -e "$ALVO" ]; then
+    ANTIGA="$( [ -f "$DIR/$ROT.id" ] && tr -d '\n' < "$DIR/$ROT.id" || true)"
+    if [ "$ANTIGA" != "$IDENT" ]; then unset CH; echo "[ERRO] esta chave é de OUTRA conta/empresa (identidade diferente da presa a '$ROT') — recusada; nada foi gravado"; continue; fi
+  fi
+  OUTRO=""
+  for f in "$DIR"/*.id; do [ -e "$f" ] || continue; [ "$f" = "$DIR/$ROT.id" ] && continue
+    if [ "$(tr -d '\n' < "$f")" = "$IDENT" ]; then OUTRO="$(basename "$f" .id)"; break; fi; done
+  if [ -n "$OUTRO" ]; then unset CH; echo "[ERRO] esta conta já está presa ao rótulo '$OUTRO' (uma conta por empresa) — nada foi gravado"; continue; fi
   echo "       conta no Asaas: $NOME"
   IFS= read -r -p "É a conta da empresa '$ROT'? [s/N]: " R || R=""
   if ! { [ "$R" = s ] || [ "$R" = S ]; }; then unset CH; echo "       nada foi gravado para $ROT"; continue; fi
 
   # gravação: backup da antiga (MOVIDA) → arquivo novo atômico (temporário na mesma pasta + mv)
   preparar_backup
-  if [ -e "$ALVO" ]; then
-    mv -- "$ALVO" "$BK/$ROT.key.antiga"
-    printf "mv -- '%s' '%s'\nmv -- '%s' '%s'\n" "$ALVO" "$BK/$ROT.key.novo-revertido" "$BK/$ROT.key.antiga" "$ALVO" >> "$BK/revert-all.sh"
-    echo "[OK]   chave antiga de $ROT movida para $BK/"
-  else
-    printf "[ -e '%s' ] && mv -- '%s' '%s' || true\n" "$ALVO" "$ALVO" "$BK/$ROT.key.novo-revertido" >> "$BK/revert-all.sh"
-  fi
+  for ext in key id; do
+    A="$DIR/$ROT.$ext"
+    if [ -e "$A" ]; then
+      mv -- "$A" "$BK/$ROT.$ext.antiga"
+      printf "mv -- '%s' '%s'\nmv -- '%s' '%s'\n" "$A" "$BK/$ROT.$ext.novo-revertido" "$BK/$ROT.$ext.antiga" "$A" >> "$BK/revert-all.sh"
+    else
+      printf "[ -e '%s' ] && mv -- '%s' '%s' || true\n" "$A" "$A" "$BK/$ROT.$ext.novo-revertido" >> "$BK/revert-all.sh"
+    fi
+  done
+  [ -e "$BK/$ROT.key.antiga" ] && echo "[OK]   chave antiga de $ROT movida para $BK/"
+  NID="$(mktemp "$DIR/.novo.XXXXXX")"; printf '%s\n' "$IDENT" > "$NID"; chown "$DASH_USER:$DASH_USER" "$NID"; chmod 0600 "$NID"; mv -- "$NID" "$DIR/$ROT.id"
   NOVO="$(mktemp "$DIR/.novo.XXXXXX")"
   printf '%s\n' "$CH" > "$NOVO"; unset CH
   chown "$DASH_USER:$DASH_USER" "$NOVO"; chmod 0600 "$NOVO"

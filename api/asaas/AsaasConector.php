@@ -17,7 +17,8 @@ declare(strict_types=1);
 
 final class AsaasErro extends RuntimeException
 {
-    /** @param string $codigo  rota_recusada|parametro_recusado|chave_ausente|chave_invalida|chave_recusada|acesso_negado|limite|indisponivel|resposta_invalida */
+    /** @param string $codigo  rota_recusada|parametro_recusado|chave_ausente|chave_invalida|chave_recusada|acesso_negado|limite|indisponivel|resposta_invalida|
+     *                       sem_identidade|conta_divergente */
     public function __construct(public readonly string $codigo, public readonly int $http = 0)
     {
         parent::__construct('asaas: ' . $codigo . ($http > 0 ? " (HTTP $http)" : ''));
@@ -55,6 +56,8 @@ final class AsaasRotas
             'offset' => self::OFFSET, 'limit' => self::LIMITE, 'startDate' => self::DATA, 'finishDate' => self::DATA, 'order' => '/^(asc|desc)$/',
         ]],
         'saldo' => ['caminho' => '/finance/balance', 'params' => []],
+        // Codex DSHOW-111 (B2): identidade estável da conta (cpfCnpj → sha256, nunca guardado em claro). Leitura, GET.
+        'conta' => ['caminho' => '/myAccount/commercialInfo', 'params' => []],
     ];
 
     /** @return string URL completa (base + caminho + query ordenada); lança AsaasErro antes de qualquer rede */
@@ -204,6 +207,18 @@ final class AsaasChaves
         $k = trim((string) @file_get_contents($f));
         if (preg_match(self::RE_CHAVE, $k) !== 1) throw new AsaasErro('chave_invalida');
         $amb = str_starts_with($k, '$aact_hmlg_') ? 'sandbox' : 'producao';
-        return ['chave' => $k, 'base' => AsaasRotas::BASES[$amb], 'ambiente' => $amb];
+        // Codex DSHOW-111 (B2): o rótulo é PRESO à identidade da conta (sha256 do cpfCnpj, gravado pelo asaas-chaves.sh em <rótulo>.id)
+        $fi = $this->pasta . '/' . $rotulo . '.id';
+        $id = is_file($fi) && !is_link($fi) ? trim((string) @file_get_contents($fi)) : '';
+        if (preg_match('/^[0-9a-f]{64}$/', $id) !== 1) throw new AsaasErro('sem_identidade');
+        return ['chave' => $k, 'base' => AsaasRotas::BASES[$amb], 'ambiente' => $amb, 'identidade' => $id];
+    }
+
+    /** identidade estável da conta a partir da resposta de /myAccount/commercialInfo: sha256 dos dígitos do cpfCnpj (nunca o número em si) */
+    public static function identidade(array $info): string
+    {
+        $d = preg_replace('/\D/', '', (string) ($info['cpfCnpj'] ?? ''));
+        if (!is_string($d) || (strlen($d) !== 11 && strlen($d) !== 14)) throw new AsaasErro('resposta_invalida', 200);
+        return hash('sha256', $d);
     }
 }

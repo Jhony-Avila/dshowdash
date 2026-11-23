@@ -45,7 +45,13 @@ $semSono = static function (int $s) use (&$sonos): void { $sonos[] = $s; };
 $sonos = [];
 
 // ================= A. lista fixa de rotas e parâmetros =================
-check('4 rotas permitidas', array_keys(AsaasRotas::ROTAS) === ['cobrancas', 'estatisticas_cobrancas', 'extrato', 'saldo']);
+check('5 rotas permitidas (as 4 de dados + identidade da conta)', array_keys(AsaasRotas::ROTAS) === ['cobrancas', 'estatisticas_cobrancas', 'extrato', 'saldo', 'conta']);
+// B3 (Codex DSHOW-111): centavos INTEIROS, conversão decimal exata
+foreach ([[1000.5, 100050], [199.99, 19999], [0.1, 10], [12345678.9, 1234567890], [2500.0, 250000], [7, 700], ['0.105', 11], ['-3.10', -310], ['19.999', 2000], [1.0E-7, null], ['1e3', null], [true, null], [NAN, null]] as [$e, $c]) {
+    check('centavos exatos: ' . var_export($e, true) . ' → ' . var_export($c, true), AsaasValor::centavosDe($e) === $c, var_export(AsaasValor::centavosDe($e), true));
+}
+check('soma de 0.1 três vezes em centavos = 0.30 exato', AsaasValor::deCentavos(AsaasValor::centavosDe(0.1) * 3) === '0.30');
+check('dinheiro() devolve o decimal montado dos centavos', AsaasValor::dinheiro(1000.5) === '1000.50' && AsaasValor::dinheiro(0.07) === '0.07');
 check('url cobranças', AsaasRotas::url($BASE, 'cobrancas', ['limit' => 100, 'offset' => 0]) === "$BASE/payments?limit=100&offset=0");
 check('url estatísticas', AsaasRotas::url($BASE, 'estatisticas_cobrancas', ['status' => 'PENDING']) === "$BASE/finance/payment/statistics?status=PENDING");
 check('url extrato', str_starts_with(AsaasRotas::url($BASE, 'extrato', ['startDate' => '2026-10-01', 'finishDate' => '2026-11-01']), "$BASE/financialTransactions?"));
@@ -105,14 +111,21 @@ if (!preg_match('#/asaas-conector\.[0-9a-f]{8}$#', $TMP) || !mkdir($TMP, 0700)) 
 file_put_contents("$TMP/conta-a.key", $CH_A . "\n"); file_put_contents("$TMP/conta-b.key", $CH_B . "\n");
 file_put_contents("$TMP/sandbox.key", $CH_S . "\n"); file_put_contents("$TMP/quebrada.key", "nao-e-chave\n");
 file_put_contents("$TMP/Maiuscula.key", $CH_A); symlink("$TMP/conta-a.key", "$TMP/link.key");
+$DOC = ['conta-a' => '11111111000111', 'conta-b' => '22222222000122', 'conta-c' => '33333333000133', 'conta-m' => '44444444000144', 'sandbox' => '55555555000155'];
+$prende = static function (string $r) use ($TMP, $DOC): void { file_put_contents("$TMP/$r.id", hash('sha256', $DOC[$r]) . "\n"); };
+foreach (['conta-a', 'conta-b', 'sandbox'] as $r) $prende($r);
+file_put_contents("$TMP/sem-id.key", '$aact_prod_000ChaveInventadaSemIdentidade::$aach_x' . "\n");
+$info = static fn(string $r) => fn() => json200(['companyName' => "Empresa $r", 'cpfCnpj' => $DOC[$r]]);
 $ks = new AsaasChaves($TMP);
-check('rótulos: só nomes válidos e sem link', $ks->rotulos() === ['conta-a', 'conta-b', 'quebrada', 'sandbox']);
+check('rótulos: só nomes válidos e sem link', $ks->rotulos() === ['conta-a', 'conta-b', 'quebrada', 'sandbox', 'sem-id']);
+check('B2: chave sem identidade presa → sem_identidade', erroDe(fn() => $ks->ler('sem-id')) === 'sem_identidade');
+check('B2: identidade lida é o sha256 do documento', $ks->ler('conta-a')['identidade'] === hash('sha256', '11111111000111') && AsaasChaves::identidade(['cpfCnpj' => '11.111.111/0001-11']) === hash('sha256', '11111111000111'));
 check('chave lida e ambiente produção', $ks->ler('conta-a')['ambiente'] === 'producao' && $ks->ler('conta-a')['base'] === $BASE);
 check('chave hmlg → sandbox', $ks->ler('sandbox')['base'] === AsaasRotas::BASES['sandbox']);
 check('conteúdo inválido → chave_invalida', erroDe(fn() => $ks->ler('quebrada')) === 'chave_invalida');
 check('rótulo com barra → chave_ausente', erroDe(fn() => $ks->ler('../conta-a')) === 'chave_ausente');
 check('link → chave_ausente', erroDe(fn() => $ks->ler('link')) === 'chave_ausente');
-foreach (['quebrada.key', 'sandbox.key', 'Maiuscula.key', 'link.key'] as $f) @unlink("$TMP/$f");
+foreach (['quebrada.key', 'sandbox.key', 'Maiuscula.key', 'link.key', 'sem-id.key', 'sandbox.id'] as $f) @unlink("$TMP/$f");
 
 // ================= E. portão HTTP: ordem =================
 function deps(ArrayObject $log, array $flagG, ?array $sess, array $situ, array $flagP, ?Closure $res = null): AsaasPortaoDeps
@@ -176,7 +189,7 @@ $limparBanco = function () use (&$pdo, $P): void {
 };
 register_shutdown_function(function () use ($limparBanco, $TMP): void {
     $limparBanco();
-    if (preg_match('#/asaas-conector\.[0-9a-f]{8}$#', $TMP) && is_dir($TMP)) { foreach (glob("$TMP/*.key") as $f) unlink($f); rmdir($TMP); }
+    if (preg_match('#/asaas-conector\.[0-9a-f]{8}$#', $TMP) && is_dir($TMP)) { foreach (array_merge(glob("$TMP/*.key"), glob("$TMP/*.id")) as $f) unlink($f); rmdir($TMP); }
 });
 
 if ($pdo !== null) {
@@ -193,6 +206,7 @@ if ($pdo !== null) {
     $estado = ['A' => ['nov' => $novA, 'out' => $outA, 'stats' => ['PENDING' => ['quantity' => 250, 'value' => 2500.0, 'netValue' => 2450.0], 'OVERDUE' => ['quantity' => 1, 'value' => 300.0]]]];
     $apiA = new AsaasFalso();
     $apiA->rotas = [
+        '/myAccount/commercialInfo' => $info('conta-a'),
         '/finance/balance' => fn() => json200(['balance' => 12345.67]),
         '/payments' => function ($p, $q) use (&$estado) {
             if (isset($q['paymentDate']['ge'])) return pagina([], $q);   // as pagas recentes já vêm na janela
@@ -205,13 +219,13 @@ if ($pdo !== null) {
                                                             'type' => 'PAYMENT_RECEIVED', 'date' => '2026-11-10', 'paymentId' => 'pay_comum', 'description' => 'NÃO GRAVAR']], $q),
     ];
     $apiB = new AsaasFalso();                      // conta B: limite sempre
-    $apiB->rotas = ['/finance/balance' => fn() => ['status' => 429, 'cabecalhos' => ['ratelimit-reset' => '3'], 'corpo' => '']];
+    $apiB->rotas = ['/myAccount/commercialInfo' => $info('conta-b'), '/finance/balance' => fn() => ['status' => 429, 'cabecalhos' => ['ratelimit-reset' => '3'], 'corpo' => '']];
     $apiC = new AsaasFalso();                      // conta C: tudo zero DE VERDADE, mesmo payment_id da A
-    $apiC->rotas = ['/finance/balance' => fn() => json200(['balance' => 0]),
+    $apiC->rotas = ['/myAccount/commercialInfo' => $info('conta-c'), '/finance/balance' => fn() => json200(['balance' => 0]),
         '/payments' => fn($p, $q) => pagina(($q['dateCreated']['ge'] ?? '') === '2026-09-01' ? [$cob('pay_comum', 'REFUNDED', '5.00', '2026-09-03')] : [], $q),
         '/finance/payment/statistics' => fn() => json200(['quantity' => 0, 'value' => 0]),
         '/financialTransactions' => fn($p, $q) => pagina([], $q)];
-    file_put_contents("$TMP/conta-c.key", '$aact_prod_000ChaveInventadaContaC::$aach_testeC' . "\n");
+    file_put_contents("$TMP/conta-c.key", '$aact_prod_000ChaveInventadaContaC::$aach_testeC' . "\n"); $prende('conta-c');
     $apis = ['conta-a' => $apiA, 'conta-b' => $apiB, 'conta-c' => $apiC];
     $pausas = [];
     $repo = new AsaasRepositorio($pdo, $P);
@@ -226,7 +240,7 @@ if ($pdo !== null) {
     check('páginas de 100 com offset 0/100/200', array_map(fn($c) => [$c['q']['limit'], $c['q']['offset']], $pg) === [['100', '0'], ['100', '100'], ['100', '200']]);
     check('pausa entre páginas (uma requisição por vez)', in_array(250, $pausas, true));
     check('só rotas da lista foram chamadas', array_diff(array_unique(array_merge(...array_values(array_map(fn($a) => array_column($a->chamadas, 'path'), $apis)))),
-        ['/finance/balance', '/payments', '/finance/payment/statistics', '/financialTransactions']) === []);
+        ['/myAccount/commercialInfo', '/finance/balance', '/payments', '/finance/payment/statistics', '/financialTransactions']) === []);
     check('janela de 13 meses por mês de criação', count(array_filter($apiA->chamadas, fn($c) => $c['path'] === '/payments' && isset($c['q']['dateCreated']))) === 12 + 3);
     $n = fn(string $sql, array $a = []) => (function () use ($pdo, $sql, $a) { $s = $pdo->prepare($sql); $s->execute($a); return $s->fetchColumn(); })();
     check('uma linha por (conta, payment_id): pay_comum em A e C', (int) $n("SELECT COUNT(*) FROM `{$P}asaas_cobrancas` WHERE payment_id='pay_comum'") === 2);
@@ -254,32 +268,58 @@ if ($pdo !== null) {
     array_splice($estado['A']['nov'], 249, 1);
     $estado['A']['stats']['PENDING'] = ['quantity' => 250, 'value' => 2500.0];
     $res2 = $sync->sincronizar('conta-a', $agora->modify('+1 hour'));
-    check('2ª rodada ok', $res2['resultado'] === 'ok');
-    check('sumida vira ausente=1 e continua no banco', $n("SELECT ausente FROM `{$P}asaas_cobrancas` WHERE conta='conta-a' AND payment_id='pay_a0250'") == 1);
+    check('2ª rodada ok, gravou na geração 1', $res2['resultado'] === 'ok' && $res2['geracao'] === 1);
+    check('sumida não está no retrato novo e continua no banco (geração anterior)', (int) $n("SELECT COUNT(*) FROM `{$P}asaas_cobrancas` WHERE conta='conta-a' AND geracao=1 AND payment_id='pay_a0250'") === 0
+        && (int) $n("SELECT COUNT(*) FROM `{$P}asaas_cobrancas` WHERE conta='conta-a' AND geracao=0 AND payment_id='pay_a0250'") === 1);
     $r2 = array_column($resumo->montar(['conta-a'], $agora->modify('+65 minutes'))['contas'], null, 'conta')['conta-a'];
     check('ausente sai do a receber (2490.00)', $r2['valores']['a_receber'] === '2490.00');
     check('divergência com a estatística do Asaas vira aviso, não troca o número', str_contains((string) $r2['aviso'], 'divergencia_pending'));
 
-    // 3ª rodada FALHA (5xx): dados preservados; dentro de 3 h continua com aviso; depois de 3 h → null (nunca zero)
-    $apiA->fila = array_fill(0, 3, ['status' => 503, 'cabecalhos' => [], 'corpo' => '']);
+    // B1 (Codex DSHOW-111) TESTE DECISIVO: 3ª rodada INTERROMPIDA depois da 1ª página (saldo novo já lido, 100 cobranças novas já gravadas)
+    $retrato2 = array_column($resumo->montar(['conta-a'], $agora->modify('+95 minutes'))['contas'], null, 'conta')['conta-a'];
+    $pag1 = []; for ($i = 1; $i <= 100; $i++) $pag1[] = $cob(sprintf('pay_n%04d', $i), 'RECEIVED', '777.77', '2025-12-02', '2026-11-20');
+    $apiA->fila = [json200(['companyName' => 'Empresa conta-a', 'cpfCnpj' => $DOC['conta-a']]), json200(['balance' => 99999.99]),
+                   json200(['object' => 'list', 'hasMore' => true, 'totalCount' => 300, 'limit' => 100, 'offset' => 0, 'data' => $pag1]),
+                   ['status' => 503, 'cabecalhos' => [], 'corpo' => ''], ['status' => 503, 'cabecalhos' => [], 'corpo' => ''], ['status' => 503, 'cabecalhos' => [], 'corpo' => '']];
     $res3 = $sync->sincronizar('conta-a', $agora->modify('+90 minutes'));
-    check('3ª rodada: erro indisponivel', $res3['erro'] === 'indisponivel');
-    check('falha preserva saldo e cobranças', $n("SELECT saldo FROM `{$P}asaas_contas` WHERE conta='conta-a'") === '12345.67'
-        && (int) $n("SELECT COUNT(*) FROM `{$P}asaas_cobrancas` WHERE conta='conta-a'") === 254);
+    check('3ª rodada: interrompida na 2ª página (indisponivel)', $res3['erro'] === 'indisponivel');
+    check('a 1ª página da rodada interrompida foi gravada só na geração INATIVA', (int) $n("SELECT COUNT(*) FROM `{$P}asaas_cobrancas` WHERE conta='conta-a' AND geracao=0 AND payment_id LIKE 'pay_n%'") === 100
+        && (int) $n("SELECT COUNT(*) FROM `{$P}asaas_cobrancas` WHERE conta='conta-a' AND geracao=1 AND payment_id LIKE 'pay_n%'") === 0);
     $r3 = array_column($resumo->montar(['conta-a'], $agora->modify('+95 minutes'))['contas'], null, 'conta')['conta-a'];
+    check('DECISIVO B1: o painel mostra o MESMO retrato completo de antes (valores e horário)', $r3['valores'] === $retrato2['valores'] && $r3['atualizado_em'] === $retrato2['atualizado_em'],
+        json_encode([$r3['valores'], $retrato2['valores']]));
+    check('DECISIVO B1: saldo continua o do retrato completo (não o 99999.99 da rodada interrompida)', $r3['valores']['saldo'] === '12345.67');
+    check('DECISIVO B1: sucesso NÃO marcado (geração ativa e horário de antes)', (int) $n("SELECT geracao_ativa FROM `{$P}asaas_contas` WHERE conta='conta-a'") === 1
+        && $n("SELECT ultima_sync_ok FROM `{$P}asaas_contas` WHERE conta='conta-a'") === $agora->modify('+1 hour')->format('Y-m-d H:i:s'));
     check('após falha, dentro de 3 h: valores reais + aviso de falha', $r3['disponivel'] === true && str_contains((string) $r3['aviso'], 'ultima_tentativa_falhou:indisponivel'));
     $r4 = array_column($resumo->montar(['conta-a'], $agora->modify('+5 hours'))['contas'], null, 'conta')['conta-a'];
     check('sem sincronização boa há > 3 h: null + desatualizada (nunca zero)', $r4['disponivel'] === false && $r4['valores'] === null && $r4['motivo'] === 'desatualizada');
     check('execuções registradas (ok/erro)', $n("SELECT GROUP_CONCAT(resultado ORDER BY id) FROM `{$P}asaas_execucoes` WHERE conta='conta-a'") === 'ok,ok,erro');
+    // ciclo completo seguinte: vira a geração 0; as linhas da rodada interrompida que não vieram de novo ficam presente=0 (nada apagado)
+    $res4 = $sync->sincronizar('conta-a', $agora->modify('+6 hours'));
+    check('4ª rodada completa troca o retrato (geração 0)', $res4['resultado'] === 'ok' && $res4['geracao'] === 0 && (int) $n("SELECT geracao_ativa FROM `{$P}asaas_contas` WHERE conta='conta-a'") === 0);
+    check('linhas da rodada interrompida não entram no retrato novo (presente=0) e não foram apagadas',
+        (int) $n("SELECT COUNT(*) FROM `{$P}asaas_cobrancas` WHERE conta='conta-a' AND geracao=0 AND payment_id LIKE 'pay_n%' AND presente=0") === 100);
+    $r5 = array_column($resumo->montar(['conta-a'], $agora->modify('+6 hours'))['contas'], null, 'conta')['conta-a'];
+    check('retrato novo correto (a receber 2490.00, recebido 1200.50)', $r5['valores']['a_receber'] === '2490.00' && $r5['valores']['recebido_mes'] === '1200.50', json_encode($r5['valores']));
+    // B2 (Codex DSHOW-111) no conector: rótulo preso a OUTRA empresa → não sincroniza, nada gravado, painel sem números
+    $antesC = (int) $n("SELECT COUNT(*) FROM `{$P}asaas_cobrancas` WHERE conta='conta-c'");
+    file_put_contents("$TMP/conta-c.id", hash('sha256', $DOC['conta-a']) . "\n");   // chave de C num rótulo preso à empresa A
+    $resC = $sync->sincronizar('conta-c', $agora->modify('+6 hours'));
+    check('TROCA CRUZADA no conector: conta_divergente', $resC['erro'] === 'conta_divergente', json_encode($resC));
+    check('troca cruzada: nenhuma cobrança nova gravada', (int) $n("SELECT COUNT(*) FROM `{$P}asaas_cobrancas` WHERE conta='conta-c'") === $antesC);
+    check('troca cruzada: só a identidade foi consultada (nem o saldo)', end($apiC->chamadas)['path'] === '/myAccount/commercialInfo');
+    $rc = array_column($resumo->montar(['conta-c'], $agora->modify('+6 hours'))['contas'], null, 'conta')['conta-c'];
+    check('troca cruzada: painel sem números, motivo conta_divergente', $rc['disponivel'] === false && $rc['valores'] === null && $rc['motivo'] === 'conta_divergente');
 
     // resposta malformada no meio da paginação: erro, nada vira zero
-    $apiM = new AsaasFalso(); $apiM->rotas = ['/finance/balance' => fn() => json200(['balance' => 'abc'])];
-    $apis['conta-m'] = $apiM; file_put_contents("$TMP/conta-m.key", '$aact_prod_000ChaveInventadaContaM::$aach_testeM' . "\n");
+    $apiM = new AsaasFalso(); $apiM->rotas = ['/myAccount/commercialInfo' => $info('conta-m'), '/finance/balance' => fn() => json200(['balance' => 'abc'])];
+    $apis['conta-m'] = $apiM; file_put_contents("$TMP/conta-m.key", '$aact_prod_000ChaveInventadaContaM::$aach_testeM' . "\n"); $prende('conta-m');
     $syncM = new AsaasSincronizador($repo, $ks, function (string $r) use ($apis, $ks, $semSono): AsaasCliente { $k = $ks->ler($r); return new AsaasCliente($apis[$r], $k['chave'], $k['base'], $semSono); }, fn(int $ms) => null);
     check('saldo não numérico → erro resposta_invalida', $syncM->sincronizar('conta-m', $agora)['erro'] === 'resposta_invalida');
-    $apiM->rotas = ['/finance/balance' => fn() => json200(['balance' => 1]), '/payments' => fn($p, $q) => json200(['hasMore' => true, 'data' => []])];
+    $apiM->rotas = ['/myAccount/commercialInfo' => $info('conta-m'), '/finance/balance' => fn() => json200(['balance' => 1]), '/payments' => fn($p, $q) => json200(['hasMore' => true, 'data' => []])];
     check('hasMore sem itens → erro (sem laço infinito)', $syncM->sincronizar('conta-m', $agora)['erro'] === 'resposta_invalida');
-    $apiM->rotas = ['/finance/balance' => fn() => json200(['balance' => 1]), '/payments' => fn($p, $q) => json200(['hasMore' => true, 'data' => [$cob('pay_x' . $q['offset'], 'PENDING', '1', '2026-11-01')]])];
+    $apiM->rotas = ['/myAccount/commercialInfo' => $info('conta-m'), '/finance/balance' => fn() => json200(['balance' => 1]), '/payments' => fn($p, $q) => json200(['hasMore' => true, 'data' => [$cob('pay_x' . $q['offset'], 'PENDING', '1', '2026-11-01')]])];
     check('volume inesperado (200 páginas) → erro', $syncM->sincronizar('conta-m', $agora)['erro'] === 'volume_inesperado');
 }
 
