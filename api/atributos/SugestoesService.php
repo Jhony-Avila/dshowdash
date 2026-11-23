@@ -226,6 +226,12 @@ final class SugestoesService
             try { return $lote->item($id, fn() => $this->umaDecisao($acao, $id, $versao, $motivo)); }
             catch (AtributosErro $e) {
                 if (OperacoesGravacao::ehTomada($e)) throw $e;   // outra tentativa assumiu a chave: para o lote, sem efeito
+                if (($e->meta['motivo'] ?? null) === 'passageiro') {   // deadlock/espera de trava (AtributosRepoPdo::traduzir): técnico, não conflito
+                    if ($tentativa < 2) continue;
+                    $det = ['motivo' => 'erro_tecnico', 'mensagem' => 'Erro técnico momentâneo; nada foi gravado neste item. Tente de novo.'];
+                    $lote->registrarSozinho($id, 'nao_aplicada', $det);
+                    return ['nao_aplicada', $det];
+                }
                 $det = ['motivo' => $e->codigo, 'mensagem' => $e->getMessage()] + (isset($e->meta['motivo']) ? ['detalhe' => $e->meta['motivo']] : []);
                 $lote->registrarSozinho($id, 'nao_aplicada', $det);
                 return ['nao_aplicada', $det];

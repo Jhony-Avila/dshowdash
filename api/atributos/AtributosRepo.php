@@ -107,8 +107,11 @@ final class AtributosRepoPdo implements AtributosRepositorio, ModuloRepositorio,
     /** V5 Lote 3 (P1-09): impasse (1213) ou espera de trava esgotada (1205) com outra gravação simultânea = conflito visível, nunca 500 */
     private static function traduzir(Throwable $t): Throwable
     {
-        if ($t instanceof PDOException && in_array((int) ($t->errorInfo[1] ?? 0), [1205, 1213], true))
-            return new AtributosErro('CONFLICT', 409, 'Outra gravação simultânea neste atributo. Recarregue e tente de novo.');
+        if ($t instanceof PDOException && in_array((int) ($t->errorInfo[1] ?? 0), [1205, 1213], true)) {
+            $e = new AtributosErro('CONFLICT', 409, 'Outra gravação simultânea neste atributo. Recarregue e tente de novo.');
+            $e->meta = ['motivo' => 'passageiro'];   // Parte C: o lote reconhece o erro TÉCNICO passageiro (repete 1×; depois erro_tecnico)
+            return $e;
+        }
         return $t;
     }
 
