@@ -3,7 +3,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import type { AtributoDicionario, EventoHistorico, Ficha as TFicha, ItemFicha, KitResumo, Sugestao } from '../lib/tipos';
-import { enviar, ErroApi, obter } from '../lib/api';
+import { ErroApi, obter } from '../lib/api';
 import { campoPrecifica, dataHora, decimal, precifica as fmtPrecifica, pctDe, sugestaoTexto, valor as fmtValor } from '../lib/formatar';
 import { ESTADO, FAMILIAS_PRECIFICA, FONTE_SUGESTAO, IMPORTANCIA, MOTIVO_KIT, rotuloCategoria, rotuloSubcategoria, tituloFamilia } from '../lib/rotulos';
 import { useModulo } from '../app/contexto';
@@ -12,6 +12,7 @@ import { Icone, type NomeIcone } from '../ui/Icones';
 import { TabelaDados, type ColunaTabela } from '../ui/TabelaDados';
 import type { Ordenacao } from '../lib/ordenar';
 import { EditorValor, type ControleEditor } from '../ui/EditorValor';
+import { EstadoVinculo, useGravacaoVinculo } from '../ui/GravacaoVinculo';
 import { ROTULO_SITUACAO, situacaoDe } from '../lib/situacao';
 
 type AbaFicha = 'atributos' | 'vinculos' | 'fotos' | 'precifica' | 'historico';
@@ -121,6 +122,7 @@ export function Ficha({ id }: { id: number }) {
 // ---- Aba Atributos -------------------------------------------------------------------------------------------------------------------
 function AbaAtributos({ f, recarregar, focoInicial = null, aoConsumirFoco, filtro, setFiltro, slotFiltros = null, slotTitulo = null }: { f: TFicha; recarregar: () => Promise<boolean> | void; focoInicial?: number | null; aoConsumirFoco?: () => void; filtro: FiltroAtr; setFiltro: (v: FiltroAtr) => void; slotFiltros?: HTMLElement | null; slotTitulo?: HTMLElement | null }) {
   const m = useModulo();
+  const gLeg = useGravacaoVinculo(recarregar); const gExc = useGravacaoVinculo(recarregar);   // vínculos com chave + recibo (ui/GravacaoVinculo)
   const [agrup, setAgrup] = React.useState<'kit' | 'grupo' | 'nenhum'>('kit');
   const [ordenacao, setOrdenacao] = React.useState<Ordenacao | null>(null);   // null = ordem da ficha (posição no kit)
   const pendentes = React.useMemo(() => new Set(f.completude.obrigatorios_vazios), [f]);   // UX-1: a MESMA lista do contador (servidor)
@@ -217,18 +219,20 @@ function AbaAtributos({ f, recarregar, focoInicial = null, aoConsumirFoco, filtr
       {f.legado_nao_vinculado.length > 0 && (
         <div className="at-bloco at-bloco--legado">
           <div className="at-bloco__titulo"><strong>Do legado, sem vínculo</strong><span className="at-filtro__n">{f.legado_nao_vinculado.length}</span><span className="at-fraco at-bloco__desc">Atribuídos a este produto no sistema antigo, mas fora dos kits atuais (ex.: atributos cadastrais inativos).</span></div>
+          <EstadoVinculo g={gLeg} />
           {f.legado_nao_vinculado.map((i) => (
             <div key={i.atributo_id} className="at-attr at-attr--legado">
               <div className="at-attr__nome"><span className="at-attr__marca" aria-hidden /><div><div className="at-attr__rotulo">{i.rotulo}</div><div className="at-attr__meta">{!i.atributo_ativo && <Etiqueta tom="aviso">inativo</Etiqueta>}{i.legado?.kit_origem && <ChipKit nome={`Legado: ${i.legado.kit_origem}`} pequeno />}</div></div></div>
-              <div className="at-vazio">sem valor</div><div /><div>{f.pode_vincular && i.atributo_ativo && <Botao aoClicar={() => enviar('produto_atributo', { product_id: f.produto.id, versao_vinculos: f.versao_vinculos, atributo_id: i.atributo_id, modo: 'incluir' }).then(() => { m.aviso('Atributo vinculado a este produto.'); recarregar(); }).catch((e) => m.aviso(e.message, 'erro'))}>Vincular a este produto</Botao>}</div>
+              <div className="at-vazio">sem valor</div><div /><div>{f.pode_vincular && i.atributo_ativo && <Botao desligado={gLeg.travado} aoClicar={() => gLeg.gravar('produto_atributo', { product_id: f.produto.id, versao_vinculos: f.versao_vinculos, atributo_id: i.atributo_id, modo: 'incluir' }, i.rotulo, 'Atributo vinculado a este produto.')}>Vincular a este produto</Botao>}</div>
             </div>))}
         </div>)}
       {f.excecoes.length > 0 && (
         <div className="at-bloco">
           <div className="at-bloco__titulo"><strong>Exceções deste produto</strong><span className="at-filtro__n">{f.excecoes.length}</span><span className="at-fraco at-bloco__desc">Atributos de kit excluídos só neste produto.</span></div>
+          <EstadoVinculo g={gExc} />
           {f.excecoes.map((e) => (
             <div key={e.atributo_id} className="at-attr"><div className="at-attr__nome"><div><div className="at-attr__rotulo">{e.rotulo}</div><div className="at-attr__meta">motivo: {e.motivo ?? '—'}</div></div></div><div /><div />
-              <div>{f.pode_vincular && <Botao aoClicar={() => enviar('produto_atributo', { product_id: f.produto.id, versao_vinculos: f.versao_vinculos, atributo_id: e.atributo_id, modo: null }).then(() => { m.aviso('Exceção desfeita.'); recarregar(); }).catch((x) => m.aviso(x.message, 'erro'))}>Desfazer exceção</Botao>}</div></div>))}
+              <div>{f.pode_vincular && <Botao desligado={gExc.travado} aoClicar={() => gExc.gravar('produto_atributo', { product_id: f.produto.id, versao_vinculos: f.versao_vinculos, atributo_id: e.atributo_id, modo: null }, e.rotulo, 'Exceção desfeita.')}>Desfazer exceção</Botao>}</div></div>))}
         </div>)}
       <HistoricoCampo produto={f.produto.id} item={hist} aoFechar={() => setHist(null)} />
     </section>
@@ -311,34 +315,36 @@ function DetalhesAtributo({ item: i, aoFechar, aoHistorico }: { item: ItemFicha 
 
 function SugestaoLinha({ s, i, f, recarregar }: { s: Sugestao; i: ItemFicha; f: TFicha; recarregar: () => Promise<boolean> | void }) {
   const m = useModulo();
-  const [trab, setTrab] = React.useState(false);
+  const g = useGravacaoVinculo(recarregar);   // chave por intenção + recibo + "Conferir gravação" (ui/GravacaoVinculo)
+  const trab = g.travado;
   const un = s.unidade_id ? i.unidades.find((u) => u.id === s.unidade_id)?.simbolo ?? '' : '';
   const decidir = (decisao: 'aceitar' | 'recusar') => {
-    setTrab(true);
-    enviar('sugestao', { id: s.id, versao: s.versao, decisao }).then(() => { m.aviso(decisao === 'aceitar' ? 'Sugestão aceita.' : 'Sugestão recusada.'); recarregar(); })
-      .catch((e) => { m.aviso(e instanceof ErroApi ? e.message : 'Falha.', 'erro'); setTrab(false); });
+    const ok = decisao === 'aceitar' ? 'Sugestão aceita.' : 'Sugestão recusada.';
+    g.gravar('sugestao', { id: s.id, versao: s.versao, decisao }, `Sugestão de ${i.rotulo}`, ok, () => m.aviso(ok));
   };
   if (s.tipo === 'conferencia') return <div className="at-sugestao" title={s.evidencia ?? ''}><span className="at-sugestao__rot">conferir ({FONTE_SUGESTAO[s.fonte]}):</span> {s.valor_proposto} {un} <button type="button" className="at-link" onClick={() => m.ir('conferencia')}>resolver na Conferência</button></div>;
   return (
     <div className="at-sugestao" title={s.evidencia ?? ''}>
       <span className="at-sugestao__rot" title={`Fonte: ${FONTE_SUGESTAO[s.fonte]}`}>Sugestão:</span> <span className="at-sugestao__val">{sugestaoTexto(s, i)}</span>
       {f.pode_editar && <>{i.valor ? <span className="at-fraco" title="Sugestão não sobrescreve (D10)"> · campo já preenchido</span> : <> · <button type="button" className="at-link" disabled={trab} onClick={() => decidir('aceitar')}>Usar</button></>} · <button type="button" className="at-link at-link--fraco" disabled={trab} onClick={() => decidir('recusar')}>Recusar</button></>}
+      <EstadoVinculo g={g} />
     </div>);
 }
 
 function SecaoFora({ f, recarregar }: { f: TFicha; recarregar: () => Promise<boolean> | void }) {
-  const m = useModulo();
+  const gFora = useGravacaoVinculo(recarregar);
   const [paraKit, setParaKit] = React.useState<ItemFicha | null>(null);
   return (
     <div className="at-bloco at-bloco--fora">
       <div className="at-bloco__titulo"><strong>Fora da ficha</strong><span className="at-filtro__n">{f.fora_da_ficha.length}</span><span className="at-fraco at-bloco__desc">Há valor gravado, mas o atributo não está vinculado a este produto (nem por kit nem avulso).</span></div>
+      <EstadoVinculo g={gFora} />
       {f.fora_da_ficha.map((i) => (
         <div key={i.atributo_id} className="at-attr at-attr--fora">
           <div className="at-attr__nome"><span className="at-attr__marca" aria-hidden /><div><div className="at-attr__rotulo">{i.rotulo}</div><div className="at-attr__meta">{!i.atributo_ativo && <Etiqueta tom="aviso">inativo</Etiqueta>}{i.codigo && <code className="at-codigo">{i.codigo}</code>}</div></div></div>
           <div className="at-attr__valor"><strong>{i.valor ? fmtValor(i.valor, i.unidades.find((u) => u.id === i.valor?.unidade_id)?.simbolo ?? i.unidade_efetiva?.simbolo ?? null) : '—'}</strong></div>
           <div className="at-attr__precifica">{i.precifica ? fmtPrecifica(i.precifica.chave, i.precifica.valor) : <span className="at-fraco">—</span>}</div>
           <div className="at-attr__origem">{f.pode_vincular && i.atributo_ativo && <>
-            <Botao aoClicar={() => enviar('produto_atributo', { product_id: f.produto.id, versao_vinculos: f.versao_vinculos, atributo_id: i.atributo_id, modo: 'incluir' }).then(() => { m.aviso('Vinculado a este produto.'); recarregar(); }).catch((e) => m.aviso(e.message, 'erro'))}>Vincular a este produto</Botao>
+            <Botao desligado={gFora.travado} aoClicar={() => gFora.gravar('produto_atributo', { product_id: f.produto.id, versao_vinculos: f.versao_vinculos, atributo_id: i.atributo_id, modo: 'incluir' }, i.rotulo, 'Vinculado a este produto.')}>Vincular a este produto</Botao>
             <Botao aoClicar={() => setParaKit(i)}>Adicionar ao kit…</Botao></>}</div>
         </div>))}
       <AdicionarAoKit f={f} item={paraKit} aoFechar={() => setParaKit(null)} aoFeito={() => { setParaKit(null); recarregar(); }} />
@@ -350,21 +356,23 @@ function AdicionarAoKit({ f, item, aoFechar, aoFeito }: { f: TFicha; item: ItemF
   const m = useModulo();
   const [kit, setKit] = React.useState<number | ''>('');
   const [trab, setTrab] = React.useState(false);
+  const g = useGravacaoVinculo(() => undefined);   // quem recarrega é o aoFeito (depois do recibo)
   const kits = f.kits.filter((k) => !k.motivos.some((x) => x.tipo === 'todos'));
   const confirmar = async () => {
-    if (!item || kit === '') return;
+    if (!item || kit === '' || g.travado) return;
     setTrab(true);
     try {
       const d = await obter<{ kit: { id: number; versao: number; atributos: { atributo_id: number; posicao: number; obrigatorio: number; visivel: number; destaque: number; importancia: string | null; unidade_id: number | null }[] } }>('kit', { id: kit });
       const itens = d.kit.atributos.map((a) => ({ atributo_id: a.atributo_id, posicao: a.posicao, obrigatorio: a.obrigatorio, visivel: a.visivel, destaque: a.destaque, importancia: a.importancia, unidade_id: a.unidade_id }));
       itens.push({ atributo_id: item.atributo_id, posicao: Math.max(0, ...itens.map((x) => x.posicao)) + 1, obrigatorio: 0, visivel: 1, destaque: 0, importancia: null, unidade_id: null });
-      await enviar('kit_itens', { id: kit, versao: d.kit.versao, itens });
-      m.aviso(`"${item.rotulo}" adicionado ao kit.`); aoFeito();
-    } catch (e) { m.aviso(e instanceof ErroApi ? e.message : 'Falha.', 'erro'); } finally { setTrab(false); }
+      // a LEITURA do kit não grava nada; a gravação é UMA intenção: corpo montado e congelado com a sua chave ("Tentar de novo" reenvia igual)
+      const ok = `"${item.rotulo}" adicionado ao kit.`; const nome = kits.find((k) => k.id === kit)?.nome ?? `Kit ${kit}`;
+      await g.gravar('kit_itens', { id: kit, versao: d.kit.versao, itens }, `Kit ${nome}`, ok, () => { m.aviso(ok); aoFeito(); });
+    } catch (e) { m.aviso(e instanceof ErroApi ? `Não foi possível ler o kit agora (${e.message}). Nada foi gravado.` : 'Não foi possível ler o kit agora. Nada foi gravado.', 'erro'); } finally { setTrab(false); }
   };
   return (
     <Dialogo titulo={`Adicionar "${item?.rotulo ?? ''}" a um kit`} aberto={item !== null} aoFechar={aoFechar}
-      rodape={<><Botao aoClicar={aoFechar}>Cancelar</Botao><Botao primario desligado={kit === ''} trabalhando={trab} aoClicar={confirmar}>Adicionar ao kit</Botao></>}>
+      rodape={<><Botao aoClicar={aoFechar}>Cancelar</Botao><EstadoVinculo g={g} /><Botao primario desligado={kit === '' || g.travado} trabalhando={trab} aoClicar={confirmar}>Adicionar ao kit</Botao></>}>
       {kits.length === 0 ? <p>Este produto não tem kit específico. Vincule o atributo só a este produto ou aplique um kit na aba Vínculos.</p> : <>
         <p>O atributo passa a valer para <strong>todos</strong> os produtos que recebem o kit escolhido.</p>
         <label className="at-rotulo-campo">Kit<select className="at-campo" value={kit} onChange={(e) => setKit(e.target.value ? Number(e.target.value) : '')}><option value="">Escolha…</option>{kits.map((k) => <option key={k.id} value={k.id}>{k.nome}</option>)}</select></label></>}
@@ -423,23 +431,26 @@ function AbaVinculos({ f, recarregar }: { f: TFicha; recarregar: () => Promise<b
   const [excluir, setExcluir] = React.useState<ItemFicha | null>(null);
   const [motivo, setMotivo] = React.useState('');
   const pid = f.produto.id;
-  const chamar = (rota: string, corpo: Record<string, unknown>, ok: string) => enviar(rota, corpo).then(() => { m.aviso(ok); recarregar(); }).catch((e) => m.aviso(e instanceof ErroApi ? e.message : 'Falha.', 'erro'));
+  // chave de operação por intenção + recibo + "Conferir gravação" (ui/GravacaoVinculo), como no editor de valor
+  const gKits = useGravacaoVinculo(recarregar); const gAtr = useGravacaoVinculo(recarregar);
   const pode = f.pode_vincular;
   return (
     <div className="at-vinculos">
       <section className="at-painel">
         <div className="at-painel__cabeca"><h3>Kits deste produto</h3><span className="at-fraco">de onde vem cada atributo</span></div>
+        <EstadoVinculo g={gKits} />
         <div className="at-painel__corpo">
           {f.kits.length === 0 ? <p className="at-fraco">Nenhum kit vale para este produto.</p> : (
             <ul className="at-kits-produto">{f.kits.map((k) => (
               <li key={k.id}><ChipKit nome={k.nome} /><span>{k.motivos.map((x) => x.tipo === 'escopo' ? `pela subcategoria ${rotuloSubcategoria(x.subcategoria || null)}${x.subcategoria ? '' : ' (categoria inteira)'}` : MOTIVO_KIT[x.tipo]).join(' · ')}</span>
-                {pode && k.motivos.some((x) => x.tipo === 'direto') && <Botao aoClicar={() => chamar('produto_kit', { product_id: pid, versao_vinculos: f.versao_vinculos, grupo_id: k.id, ativo: 0 }, 'Kit removido deste produto.')}>Remover kit direto</Botao>}
+                {pode && k.motivos.some((x) => x.tipo === 'direto') && <Botao desligado={gKits.travado} aoClicar={() => gKits.gravar('produto_kit', { product_id: pid, versao_vinculos: f.versao_vinculos, grupo_id: k.id, ativo: 0 }, `Kit ${k.nome}`, 'Kit removido deste produto.')}>Remover kit direto</Botao>}
                 <button type="button" className="at-link" onClick={() => m.ir('kits', { kit: k.id })}>abrir kit</button></li>))}</ul>)}
           {pode && <div style={{ marginTop: 12 }}><SeletorAdicionar f={f} aoFeito={() => recarregar()} /></div>}
         </div>
       </section>
       <section className="at-painel">
         <div className="at-painel__cabeca"><h3>Atributos e origem</h3><span className="at-fraco">exclua um atributo só aqui (exceção ao kit) ou defina a unidade deste produto</span></div>
+        <EstadoVinculo g={gAtr} />
         <div className="bl-rola-x">
           <table className="at-tabela">
             <thead><tr><th>Atributo</th><th>Vem de</th><th>Unidade deste produto</th><th>Ações</th></tr></thead>
@@ -448,21 +459,21 @@ function AbaVinculos({ f, recarregar }: { f: TFicha; recarregar: () => Promise<b
                 <td>{i.rotulo}{i.obrigatorio && <span className="at-obrig">*</span>}</td>
                 <td>{i.origens.map((o, k) => <span key={k} className="at-origem">{o.tipo === 'avulso' ? 'avulso' : `${o.grupo_nome} (${(o.motivos ?? []).map((x) => MOTIVO_KIT[x.tipo]).join(', ')})`}</span>)}</td>
                 <td>{(i.tipo === 'numero' || i.tipo === 'inteiro') && i.unidades.length > 0 ? (
-                  <select className="at-campo at-campo--unid" aria-label={`Unidade deste produto para ${i.rotulo}`} disabled={!pode} value={i.unidade_produto_id ?? ''}
+                  <select className="at-campo at-campo--unid" aria-label={`Unidade deste produto para ${i.rotulo}`} disabled={!pode || gAtr.travado} value={i.unidade_produto_id ?? ''}
                     onChange={(e) => { const u = e.target.value ? Number(e.target.value) : null; const avul = i.origens.some((o) => o.tipo === 'avulso');
-                      chamar('produto_atributo', { product_id: pid, versao_vinculos: f.versao_vinculos, atributo_id: i.atributo_id, modo: u === null ? (avul ? 'incluir' : null) : (avul ? 'incluir' : 'ajustar'), unidade_id: u }, 'Unidade deste produto definida.'); }}>
+                      gAtr.gravar('produto_atributo', { product_id: pid, versao_vinculos: f.versao_vinculos, atributo_id: i.atributo_id, modo: u === null ? (avul ? 'incluir' : null) : (avul ? 'incluir' : 'ajustar'), unidade_id: u }, `Unidade de ${i.rotulo}`, 'Unidade deste produto definida.'); }}>
                     <option value="">padrão ({i.unidades.find((u) => u.padrao)?.simbolo ?? i.unidade_efetiva?.simbolo ?? '—'})</option>
                     {i.unidades.map((u) => <option key={u.id} value={u.id}>{u.simbolo}</option>)}
                   </select>) : <span className="at-fraco">—</span>}</td>
                 <td>{pode && (i.origens.every((o) => o.tipo === 'avulso')
-                  ? <Botao aoClicar={() => chamar('produto_atributo', { product_id: pid, versao_vinculos: f.versao_vinculos, atributo_id: i.atributo_id, modo: null }, 'Atributo avulso removido.')}>Remover avulso</Botao>
+                  ? <Botao desligado={gAtr.travado} aoClicar={() => gAtr.gravar('produto_atributo', { product_id: pid, versao_vinculos: f.versao_vinculos, atributo_id: i.atributo_id, modo: null }, i.rotulo, 'Atributo avulso removido.')}>Remover avulso</Botao>
                   : <Botao aoClicar={() => { setExcluir(i); setMotivo(''); }}>Excluir só neste produto</Botao>)}</td>
               </tr>))}</tbody>
           </table>
         </div>
       </section>
       <Dialogo titulo={`Excluir "${excluir?.rotulo ?? ''}" só neste produto`} aberto={excluir !== null} aoFechar={() => setExcluir(null)}
-        rodape={<><Botao aoClicar={() => setExcluir(null)}>Cancelar</Botao><Botao primario desligado={motivo.trim().length < 3} aoClicar={() => { if (excluir) chamar('produto_atributo', { product_id: pid, versao_vinculos: f.versao_vinculos, atributo_id: excluir.atributo_id, modo: 'excluir', motivo }, 'Exceção registrada: o atributo some só neste produto.'); setExcluir(null); }}>Excluir neste produto</Botao></>}>
+        rodape={<><Botao aoClicar={() => setExcluir(null)}>Cancelar</Botao><Botao primario desligado={motivo.trim().length < 3} aoClicar={() => { if (excluir) gAtr.gravar('produto_atributo', { product_id: pid, versao_vinculos: f.versao_vinculos, atributo_id: excluir.atributo_id, modo: 'excluir', motivo }, excluir.rotulo, 'Exceção registrada: o atributo some só neste produto.'); setExcluir(null); }}>Excluir neste produto</Botao></>}>
         <p>O atributo continua no kit para os outros produtos. Aqui ele deixa de aparecer (o valor, se houver, vai para "Fora da ficha").</p>
         <label className="at-rotulo-campo">Motivo (obrigatório)<input className="at-campo" value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Ex.: este modelo não tem esse componente" /></label>
       </Dialogo>
@@ -476,21 +487,22 @@ function SeletorAdicionar({ f, aoFeito }: { f: TFicha; aoFeito: (alvo: { atribut
   const [kitNovo, setKitNovo] = React.useState<number | ''>('');
   const [avulso, setAvulso] = React.useState(false);
   const [trab, setTrab] = React.useState(false);
+  const g = useGravacaoVinculo(() => undefined);   // quem recarrega é o aoFeito (depois do recibo)
   React.useEffect(() => { obter<{ kits: KitResumo[] }>('kits').then((d) => setKits(d.kits.filter((k) => k.ativo && k.itens > 0))).catch(() => setKits([])); }, []);
   const aplicarKit = () => {
-    if (kitNovo === '') return; const k = kitNovo; setTrab(true);
-    enviar('produto_kit', { product_id: f.produto.id, versao_vinculos: f.versao_vinculos, grupo_id: k, ativo: 1 })
-      .then(() => { m.aviso('Kit aplicado a este produto.'); setKitNovo(''); aoFeito({ kit: k }); })
-      .catch((e) => m.aviso(e instanceof ErroApi ? e.message : 'Falha.', 'erro')).finally(() => setTrab(false));
+    if (kitNovo === '' || g.travado) return; const k = kitNovo; const nome = kits.find((x) => x.id === k)?.nome ?? `Kit ${k}`; setTrab(true);
+    g.gravar('produto_kit', { product_id: f.produto.id, versao_vinculos: f.versao_vinculos, grupo_id: k, ativo: 1 }, `Kit ${nome}`, 'Kit aplicado a este produto.', () => { setKitNovo(''); aoFeito({ kit: k }); })
+      .finally(() => setTrab(false));
   };
   return (
     <div className="at-acoes">
       <select className="at-campo" aria-label="Kit para aplicar" value={kitNovo} onChange={(e) => setKitNovo(e.target.value ? Number(e.target.value) : '')}>
         <option value="">Aplicar um kit a este produto…</option>{kits.filter((k) => !f.kits.some((x) => x.id === k.id)).map((k) => <option key={k.id} value={k.id}>{k.nome} ({k.itens} atributos)</option>)}
       </select>
-      <Botao primario desligado={kitNovo === ''} trabalhando={trab} aoClicar={aplicarKit}>Aplicar kit</Botao>
+      <Botao primario desligado={kitNovo === '' || g.travado} trabalhando={trab} aoClicar={aplicarKit}>Aplicar kit</Botao>
       <Botao aoClicar={() => setAvulso(true)}>Adicionar atributo avulso</Botao>
       <BuscaAvulso aberto={avulso} f={f} aoFechar={() => setAvulso(false)} aoFeito={(aid) => { setAvulso(false); aoFeito({ atributo: aid }); }} />
+      <EstadoVinculo g={g} />
     </div>);
 }
 
@@ -507,10 +519,11 @@ function BuscaAvulso({ aberto, f, aoFechar, aoFeito }: { aberto: boolean; f: TFi
   // ao sair dos resultados (busca/filtro), ela é limpa. O botão e a confirmação conferem de novo.
   const escolhido = esc === null ? null : lista.find((a) => a.id === esc) ?? null;
   React.useEffect(() => { if (esc !== null && !escolhido) setEsc(null); }, [esc, escolhido]);
-  const confirmar = () => { if (esc === null || !escolhido) return; setTrab(true); enviar('produto_atributo', { product_id: f.produto.id, versao_vinculos: f.versao_vinculos, atributo_id: esc, modo: 'incluir' }).then(() => { m.aviso('Atributo avulso adicionado.'); aoFeito(esc); }).catch((e) => m.aviso(e.message, 'erro')).finally(() => setTrab(false)); };
+  const g = useGravacaoVinculo(() => undefined);   // quem recarrega é o aoFeito (depois do recibo)
+  const confirmar = () => { if (esc === null || !escolhido || g.travado) return; const aid = esc; setTrab(true); g.gravar('produto_atributo', { product_id: f.produto.id, versao_vinculos: f.versao_vinculos, atributo_id: aid, modo: 'incluir' }, escolhido.rotulo, 'Atributo avulso adicionado.', () => { m.aviso('Atributo avulso adicionado.'); aoFeito(aid); }).finally(() => setTrab(false)); };
   return (
     <Dialogo titulo="Adicionar atributo avulso a este produto" aberto={aberto} aoFechar={aoFechar} largura={640}
-      rodape={<><Botao aoClicar={aoFechar}>Cancelar</Botao><Botao primario desligado={!escolhido} trabalhando={trab} aoClicar={confirmar}>{escolhido ? `Adicionar ${escolhido.rotulo}` : 'Adicionar'}</Botao></>}>
+      rodape={<><Botao aoClicar={aoFechar}>Cancelar</Botao><EstadoVinculo g={g} /><Botao primario desligado={!escolhido || g.travado} trabalhando={trab} aoClicar={confirmar}>{escolhido ? `Adicionar ${escolhido.rotulo}` : 'Adicionar'}</Botao></>}>
       <div className="at-acoes" style={{ marginBottom: 10 }}>
         <input className="at-campo" style={{ flex: 1 }} type="search" placeholder="Buscar no dicionário (rótulo ou código)" aria-label="Buscar atributo" value={q} onChange={(e) => setQ(e.target.value)} />
         <select className="at-campo" aria-label="Tipo" value={tipo} onChange={(e) => setTipo(e.target.value)}><option value="">Todos os tipos</option><option value="numero">Número</option><option value="inteiro">Inteiro</option><option value="texto">Texto</option><option value="opcao">Opção</option><option value="booleano">Sim/Não</option><option value="data">Data</option></select>
