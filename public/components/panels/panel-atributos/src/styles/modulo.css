@@ -686,3 +686,83 @@ html[data-theme="dark"] body [data-bl-root] .at-v3-situacao--pendente { color: v
   background: var(--bl-superficie); color: var(--bl-texto); font-size: 11.5px; font-weight: 500; text-decoration: none; opacity: 1; }
 [data-bl-root] .at-v3-sit .at-sugestao .at-link:first-of-type { border-color: var(--bl-info); color: var(--bl-info); }
 [data-bl-root] .at-v3-sit .at-sugestao .at-link:hover, [data-bl-root] .at-v3-sit .at-sugestao .at-link:focus-visible { background: color-mix(in srgb, var(--bl-info) 12%, var(--bl-superficie)); outline: none; }
+/* ══ PREENCHER V2 (proposta do Jhony, 19/11 · BRIEFING-PREENCHER-V2.md) ═══════════════════════════════════════════════════════════════
+   Faixa única de filtros no bloco travado; grade em DOIS painéis: Foto/ID/Produto fixos (divisória) + atributos com rolagem horizontal própria
+   (a barra começa depois do bloco fixo). Cabeçalho travado logo abaixo do bloco (top = topo da área visível + altura do bloco). Linhas de 40 px,
+   zebra muito suave nos DOIS painéis; editores de 28 px; valor + unidade num conjunto com borda única; mensagens da célula sobrepostas. */
+[data-bl-root] .pv2-filtros { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 4px 0 8px; }
+[data-bl-root] .pv2-campo, [data-bl-root] .at-preencher--v2 .pv2-filtros .bl-botao { height: 32px; font-size: 13px; font-weight: 400; display: inline-flex; align-items: center; gap: 6px; }
+[data-bl-root] .pv2-filtros select.pv2-campo { min-width: 200px; max-width: 280px; }
+[data-bl-root] .pv2-busca { display: inline-flex; align-items: center; gap: 6px; height: 32px; width: 260px; padding: 0 10px; border: 1px solid var(--bl-borda-forte); border-radius: 8px; background: var(--bl-superficie); color: var(--bl-texto-3); }
+[data-bl-root] .pv2-busca input { all: unset; flex: 1; min-width: 0; font-size: 13px; color: var(--bl-texto); }
+[data-bl-root] .pv2-colunas { position: relative; margin-left: auto; }
+[data-bl-root] .pv2-colunas__menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 40; width: 300px; max-height: 60vh; overflow: auto; padding: 8px; background: var(--bl-superficie); border: 1px solid var(--bl-borda-forte); border-radius: 8px; box-shadow: var(--bl-sombra, 0 6px 24px rgba(0,0,0,.18)); }
+[data-bl-root] .pv2-colunas__topo { display: flex; justify-content: space-between; align-items: center; font-weight: 500; font-size: 12.5px; margin-bottom: 4px; }
+[data-bl-root] .pv2-colunas__item { display: flex; align-items: center; gap: 8px; padding: 4px 2px; font-size: 13px; font-weight: 400; cursor: pointer; }
+[data-bl-root] .pv2-colunas__menu .at-fraco { font-size: 11.5px; margin: 6px 0 0; }
+[data-bl-root] .pv2-grade { display: grid; grid-template-columns: 360px minmax(0, 1fr); border: 1px solid var(--bl-borda); border-radius: 10px; background: var(--bl-superficie); }
+[data-bl-root] .pv2-cab, [data-bl-root] .pv2-corpo { grid-column: 1 / -1; display: grid; grid-template-columns: 360px minmax(0, 1fr); }
+[data-bl-root] .pv2-cab { position: sticky; top: calc(var(--at-topo-tela, 0px) + var(--at-topo-fixo, 0px)); z-index: 6; background: var(--bl-superficie-2); border-bottom: 1px solid var(--bl-borda); border-radius: 10px 10px 0 0; }
+[data-bl-root] .pv2-cab__fixo, [data-bl-root] .pv2-linha--fixa { display: grid; grid-template-columns: 44px 64px minmax(0, 1fr); border-right: 1px solid var(--bl-borda-forte); }
+[data-bl-root] .pv2-cab__rola { overflow: hidden; }
+[data-bl-root] .pv2-linha-cab, [data-bl-root] .pv2-linha { display: grid; width: max-content; min-width: 100%; }
+[data-bl-root] .pv2-corpo__rola { overflow-x: auto; overflow-y: hidden; padding-bottom: 64px; margin-bottom: -64px; }   /* espaço para a mensagem das últimas linhas, sem mudar o layout */
+[data-bl-root] .pv2-corpo__fixo { padding-bottom: 0; }
+[data-bl-root] .pv2-linha, [data-bl-root] .pv2-linha--fixa { height: 40px; }
+[data-bl-root] .pv2-corpo__fixo > .pv2-linha--fixa:nth-child(even), [data-bl-root] .pv2-corpo__rola > .pv2-linha:nth-child(even) { background: color-mix(in srgb, #e9eef6 55%, transparent); }
+html[data-theme="dark"] body [data-bl-root] .pv2-corpo__fixo > .pv2-linha--fixa:nth-child(even), html[data-theme="dark"] body [data-bl-root] .pv2-corpo__rola > .pv2-linha:nth-child(even) { background: color-mix(in srgb, var(--bl-superficie-2) 40%, transparent); }
+[data-bl-root] .pv2-linha > .pv2-td, [data-bl-root] .pv2-linha--fixa > .pv2-td { border-bottom: 1px solid color-mix(in srgb, var(--bl-borda) 60%, transparent); }
+[data-bl-root] .pv2-th { display: flex; flex-direction: column; justify-content: center; gap: 2px; height: 56px; padding: 0 8px; min-width: 0; font-size: 13px; font-weight: 500; color: var(--bl-texto-2); }
+[data-bl-root] .pv2-th--foto { align-items: center; }
+[data-bl-root] .pv2-ordenar { all: unset; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; min-width: 0; }
+[data-bl-root] .pv2-ordenar:focus-visible { outline: 2px solid var(--bl-verde); outline-offset: 2px; border-radius: 4px; }
+[data-bl-root] .pv2-th__rot { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.25; }
+[data-bl-root] .pv2-th__rot .at-obrig { color: var(--bl-erro); margin-left: 2px; }
+[data-bl-root] .pv2-th__lote { font-size: 11px; font-weight: 400; align-self: flex-start; }
+[data-bl-root] .pv2-setas { display: inline-flex; flex-direction: column; line-height: 0.75; font-size: 8px; color: var(--bl-texto-3); opacity: .55; }
+[data-bl-root] .pv2-setas--asc span:first-child, [data-bl-root] .pv2-setas--desc span:last-child { color: var(--bl-info); opacity: 1; }
+[data-bl-root] .pv2-setas--asc, [data-bl-root] .pv2-setas--desc { opacity: 1; }
+[data-bl-root] .pv2-td { position: relative; display: flex; align-items: center; min-width: 0; padding: 0 8px; font-size: 13px; font-weight: 400; }
+[data-bl-root] .pv2-td--foto { justify-content: center; padding: 0 4px; }
+[data-bl-root] .pv2-td--foto .at-foto { width: 26px; height: 26px; border-radius: 4px; overflow: hidden; }
+[data-bl-root] .pv2-td--nome .at-link-produto { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400; text-align: left; }
+[data-bl-root] .pv2-oculta { visibility: hidden; padding: 0; overflow: hidden; }
+[data-bl-root] .pv2-celula { position: relative; display: flex; align-items: center; gap: 4px; width: 100%; }
+[data-bl-root] .pv2-celula .at-editor { flex: 1 1 auto; min-width: 0; }
+[data-bl-root] .pv2-celula .at-editor__linha { display: flex; align-items: stretch; height: 28px; border: 1px solid var(--bl-borda-forte); border-radius: 6px; overflow: hidden; background: var(--bl-superficie); }
+[data-bl-root] .pv2-celula .at-editor__linha:focus-within { outline: 2px solid var(--bl-info); outline-offset: -1px; }
+[data-bl-root] .pv2-celula .at-editor__linha .at-campo { flex: 1 1 auto; min-width: 0; height: 26px; border: 0; border-radius: 0; box-shadow: none; font-size: 13px; font-weight: 400; background: transparent; }
+[data-bl-root] .pv2-celula .at-editor__linha .at-campo--unid { flex: 0 0 auto; width: auto; max-width: 76px; border-left: 1px solid var(--bl-borda); padding: 0 4px; }
+[data-bl-root] .pv2-celula .at-editor__linha .at-unid-fixa { align-self: center; padding: 0 6px; border-left: 1px solid var(--bl-borda); color: var(--bl-texto-2); }
+[data-bl-root] .pv2-celula .at-segmentado { border: 0; height: 26px; }
+[data-bl-root] .pv2-celula input, [data-bl-root] .pv2-celula select, [data-bl-root] .pv2-celula button { scroll-margin-top: calc(var(--at-topo-tela, 0px) + var(--at-topo-fixo, 0px) + 64px); scroll-margin-left: 8px; }
+/* mensagens da célula: sobrepostas logo abaixo do campo (a linha não cresce); andando/salvo viram um selo no canto */
+[data-bl-root] .pv2-celula .at-salvo { position: absolute; top: calc(100% + 2px); left: 0; z-index: 8; width: max-content; max-width: 300px; padding: 4px 8px; font-size: 12px; white-space: normal; background: var(--bl-superficie); border: 1px solid var(--bl-borda-forte); border-radius: 6px; box-shadow: 0 4px 14px rgba(0,0,0,.14); }
+[data-bl-root] .pv2-celula .at-salvo--andando, [data-bl-root] .pv2-celula .at-salvo--ok { top: -7px; left: auto; right: -4px; padding: 0 5px; font-size: 10.5px; border-radius: 999px; box-shadow: none; }
+[data-bl-root] .pv2-celula .at-salvo--ok { color: #fff; background: var(--bl-sucesso); border-color: var(--bl-sucesso); }
+[data-bl-root] .pv2-cel-obrig { color: var(--bl-erro); font-size: 13px; }
+[data-bl-root] .pv2-sugestao { all: unset; flex: 0 0 auto; padding: 1px 5px; border-radius: 999px; font-size: 10.5px; color: var(--bl-info); border: 1px solid color-mix(in srgb, var(--bl-info) 45%, transparent); cursor: pointer; }
+[data-bl-root] .pv2-sugestao:focus-visible { outline: 2px solid var(--bl-verde); }
+[data-bl-root] .pv2-fora { color: var(--bl-texto-3); }
+[data-bl-root] .pv2-aviso-ocultas { margin: 0 0 6px; }
+[data-bl-root] .pv2-td--nome { overflow: hidden; }
+/* PREENCHER V2 · barra de rolagem horizontal ESPELHO, grudada embaixo da área visível (a nativa da grade fica escondida para não duplicar) */
+[data-bl-root] .pv2-corpo__rola { scrollbar-width: none; }
+[data-bl-root] .pv2-corpo__rola::-webkit-scrollbar { display: none; }
+[data-bl-root] .pv2-barra { grid-column: 2 / -1; position: sticky; bottom: 0; z-index: 7; height: 14px; overflow-x: auto; overflow-y: hidden; background: var(--bl-superficie); border-top: 1px solid var(--bl-borda); }
+/* ACABAMENTO (Jhony, 19/11 ~14h30) · Preencher: coluna Produto contida (reticências, sem passar do divisor; divisor contínuo) e indicação de
+   colunas à direita (além da barra espelho embaixo) */
+[data-bl-root] .pv2-td--nome { overflow: hidden; }
+[data-bl-root] .pv2-td--nome { min-width: 0; }
+[data-bl-root] .pv2-td--nome .at-link-produto { flex: 1 1 auto; min-width: 0; max-width: 100%; }
+[data-bl-root] .pv2-corpo__fixo > .pv2-linha--fixa { min-width: 0; width: 100%; box-sizing: border-box; }
+[data-bl-root] .pv2-linha--fixa { border-right: 0; }
+[data-bl-root] .pv2-corpo__fixo { position: relative; overflow: hidden; }
+/* divisor contínuo POR CIMA das linhas (zebra e foco não o cobrem); as linhas ficam inteiras dentro da coluna */
+[data-bl-root] .pv2-corpo__fixo::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 1px; background: var(--bl-borda-forte); z-index: 3; pointer-events: none; }
+[data-bl-root] .pv2-cab__fixo { border-right: 1px solid var(--bl-borda-forte); }
+[data-bl-root] .pv2-cab__rola { position: relative; }
+[data-bl-root] .pv2-cab { position: sticky; }
+[data-bl-root] .pv2-mais { position: absolute; right: 0; top: 0; z-index: 2; height: 56px; width: 48px; border: 0; border-radius: 0 10px 0 0; cursor: pointer;
+  background: linear-gradient(to right, transparent, var(--bl-superficie-2) 55%); color: var(--bl-info); font-size: 24px; font-weight: 500; }
+[data-bl-root] .pv2-mais:focus-visible { outline: 2px solid var(--bl-info); outline-offset: -2px; }

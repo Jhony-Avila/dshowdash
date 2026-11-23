@@ -18,7 +18,7 @@ const afirma = (nome, cond, extra = '') => { if (cond) { ok++; console.log('ok  
   await ir('#/panel-atributos/produto/154', '.at-ficha');
   const abaAtiva = await pg.$eval('.at-abas [aria-selected="true"]', (e) => e.textContent);
   afirma('Ficha: abre na aba Atributos com o botão "Adicionar atributo a este produto" à vista', /^Atributos/.test(abaAtiva) && !!(await pg.$('button:has-text("Adicionar atributo a este produto")')));
-  afirma('Ficha: colunas "Valor DSHOW" e "Referência do Precifica · somente leitura"', await pg.$eval('.at-tabela-ficha thead', (e) => e.textContent.includes('Valor DSHOW') && e.textContent.includes('Referência do Precifica · somente leitura')));
+  afirma('Ficha: colunas (V3: "Valor" + "Situação"; Precifica sob demanda em "Comparar com Precifica" | antes: "Valor DSHOW" + "Referência do Precifica · somente leitura")', await pg.$eval('.at-tabela-ficha thead', (e) => (e.textContent.includes('Valor') && e.textContent.includes('Situação') && !e.textContent.includes('Valor DSHOW')) || (e.textContent.includes('Valor DSHOW') && e.textContent.includes('Referência do Precifica · somente leitura'))));
   afirma('Ficha: aviso de preço fora do cabeçalho', !(await pg.$eval('.at-fontes', (e) => /Preço/.test(e.textContent))));
   await pg.click('button:has-text("Detalhes")'); await pg.waitForTimeout(300);
   afirma('Ficha: aviso de preço em Detalhes', await pg.$eval('.at-portal-modal [role="dialog"]', (e) => /Preço/.test(e.textContent) && /Precifica/.test(e.textContent))); await pg.keyboard.press('Escape'); await pg.waitForTimeout(300);
@@ -45,9 +45,12 @@ const afirma = (nome, cond, extra = '') => { if (cond) { ok++; console.log('ok  
   await bt.click(); await pg.waitForTimeout(600);
   afirma('Produtos: o botão mantém o termo, tira os filtros e inclui inativos', (await pg.inputValue('input[type="search"]')) === 'zzqx tubo' && (await pg.$eval('select[aria-label="Situação"]', (s) => s.value)) === 'todos' && !(await pg.$('button.at-filtro--ativo')));
   await pg.fill('input[type="search"]', ''); await pg.waitForTimeout(500);
-  const marcar = pg.locator('label.at-cartao__marcar').first();
+  const marcar = pg.locator('label.at-cartao__sel, label.at-cartao__marcar').first();
   await marcar.click(); await pg.waitForTimeout(400);
-  afirma('Produtos: clicar em "Selecionar" marca o produto e NÃO abre a ficha', !(await pg.$('.at-ficha')) && (await pg.locator('article.at-cartao--sel').count()) === 1);
+  afirma('Produtos: clicar na caixa do canto da foto marca o produto e NÃO abre a ficha', !(await pg.$('.at-ficha')) && (await pg.locator('article.at-cartao--sel').count()) === 1);
+  const card = await pg.evaluate(() => { const c = document.querySelector('article.at-cartao'); const s = c.querySelector('label.at-cartao__sel, label.at-cartao__marcar'); const i = s.querySelector('input'); const f = c.querySelector('.at-cartao__abrir > :first-child').getBoundingClientRect(); const r = s.getBoundingClientRect();
+    return { area: r.width >= 24 && r.height >= 24, naFoto: r.top >= f.top && r.right <= f.right + 1 && r.top < f.top + 40, rotulo: i.getAttribute('aria-label'), nome: c.querySelector('.at-cartao__nome').textContent, semFaixa: !c.querySelector('.at-cartao__marcar'), rodape: c.querySelector('.at-cartao__rodape').getBoundingClientRect().height < 30 }; });
+  afirma(`Produtos (cards novos): caixa no canto superior direito da foto, área ≥ 24 px, rótulo "Selecionar <nome>", sem a faixa "Selecionar", rodapé numa linha`, card.area && card.naFoto && card.rotulo === `Selecionar ${card.nome}` && card.semFaixa && card.rodape, JSON.stringify(card));
   await marcar.click(); await pg.waitForTimeout(300);
   await pg.locator('button.at-cartao__abrir').first().click(); await pg.waitForSelector('.at-ficha', { timeout: 15000 }).catch(() => {});
   afirma('Produtos: clicar no cartão abre a ficha', !!(await pg.$('.at-ficha')));
@@ -55,14 +58,22 @@ const afirma = (nome, cond, extra = '') => { if (cond) { ok++; console.log('ok  
   // 3. PREENCHER (kit Cabos)
   await ir('#/panel-atributos/preencher', 'select[aria-label="Kit"]');
   const opt = await pg.$$eval('select[aria-label="Kit"] option', (os) => os.find((o) => o.textContent.startsWith('Cabos'))?.value);
-  await pg.selectOption('select[aria-label="Kit"]', opt); await pg.waitForSelector('table.at-tabela--grade', { timeout: 40000 }); await pg.waitForTimeout(1500);
-  const pre = await pg.evaluate(() => ({ preencher: [...document.querySelectorAll('.at-tabela--grade input[placeholder="Preencher"], .at-tabela--grade select option')].filter((e) => e.tagName === 'INPUT' || e.textContent === 'Preencher').length,
-    estrelaCab: [...document.querySelectorAll('.at-tabela--grade thead .at-obrig')].length, etiquetaCel: [...document.querySelectorAll('.at-tabela--grade tbody')].some((t) => /\bobrigatório\b/.test(t.textContent)),
-    fora: document.querySelectorAll('.at-fora-ficha').length, travessao: [...document.querySelectorAll('.at-grade-cel > span.at-fraco')].filter((e) => e.textContent.trim() === '—').length,
-    sugestao: [...document.querySelectorAll('.at-sugestao--cel')].map((e) => e.textContent.trim()).slice(0, 1) }));
+  await pg.selectOption('select[aria-label="Kit"]', opt); await pg.waitForSelector('.pv2-grade, table.at-tabela--grade', { timeout: 40000 }); await pg.waitForTimeout(1500);
+  const v2 = !!(await pg.$('.pv2-grade'));
+  const pre = await pg.evaluate(() => ({ preencher: [...document.querySelectorAll('.pv2-grade input[placeholder="Preencher"], .at-tabela--grade input[placeholder="Preencher"]')].length + [...document.querySelectorAll('.pv2-grade select option, .at-tabela--grade select option')].filter((o) => o.textContent === 'Preencher').length,
+    estrelaCab: [...document.querySelectorAll('.pv2-cab .at-obrig, .at-tabela--grade thead .at-obrig')].length, etiquetaCel: [...document.querySelectorAll('.at-tabela--grade tbody, .pv2-corpo__rola')].some((t) => /\bobrigatório\b/.test(t.textContent)),
+    fora: document.querySelectorAll('.at-fora-ficha').length, foraExplica: [...document.querySelectorAll('.at-fora-ficha')].every((e) => /não está na ficha/.test(e.getAttribute('title') || '')),
+    travessao: [...document.querySelectorAll('.at-grade-cel > span.at-fraco')].filter((e) => e.textContent.trim() === '—').length,
+    sugestao: [...document.querySelectorAll('.at-sugestao--cel, .pv2-sugestao')].map((e) => (e.getAttribute('title') || e.textContent).trim()).slice(0, 1) }));
+  if (v2) {   // PREENCHER V2 (briefing do Jhony): sem "Preencher" repetido; obrigatório com indicação visível; fora da ficha = "—" com explicação
+    afirma('Preencher V2: SEM o "Preencher" repetido nas células (campo vazio; seletor com "—")', pre.preencher === 0, JSON.stringify(pre));
+    afirma('Preencher V2: fora da ficha = "—" discreto com a explicação no título', pre.foraExplica, `fora=${pre.fora}`);
+    afirma('Preencher V2: nenhuma etiqueta "obrigatório" escrita na célula (indicação por "*")', !pre.etiquetaCel);
+  } else {
   afirma('Preencher: células vazias editáveis dizem "Preencher"', pre.preencher > 0, JSON.stringify(pre));
   afirma('Preencher: uma só marcação de obrigatório (sem "*" no cabeçalho e sem etiqueta na célula; fica o texto "Obrigatório" da coluna)', pre.estrelaCab === 0 && !pre.etiquetaCel);
   afirma('Preencher: sem vínculo = "Fora da ficha" (nenhum "—" solto)', pre.travessao === 0, `fora=${pre.fora}`);
+  }
   console.log(`info  Preencher (Cabos): ${pre.fora} célula(s) "Fora da ficha"; sugestão: ${pre.sugestao[0] ?? '(nenhuma na grade)'}`);
 
   // 4. ATRIBUTOS (novo, com opções)

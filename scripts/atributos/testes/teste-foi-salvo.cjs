@@ -3,7 +3,7 @@
 // (eq_operacao). Valores originais restaurados no fim. Uso: flock /srv/dshow-modularizacao/locks/navegador.lock nice -n 10 node teste-foi-salvo.cjs
 const { chromium } = require('/srv/dshow-work/atributos-web-wt/node_modules/playwright-core');
 const { execFileSync } = require('child_process');
-const B = 'http://127.0.0.1:8112'; const CRED = '/srv/dshow-modularizacao/atributos-web/validacao/credenciais/atrweb_val.ini';
+const B = `http://127.0.0.1:${process.env.PORTA || 8112}`; const CRED = '/srv/dshow-modularizacao/atributos-web/validacao/credenciais/atrweb_val.ini';
 const sql = (q) => execFileSync('mysql', [`--defaults-extra-file=${CRED}`, '-N', '-B', 'ATRWEB_VAL_EQ', '-e', q]).toString().trim();
 let ok = 0, falhas = 0;
 const afirma = (n, c, x = '') => { if (c) { ok++; console.log('ok    ' + n); } else { falhas++; console.log('FALHA ' + n + (x ? ' · ' + x : '')); } };
@@ -88,12 +88,12 @@ const recibo = (chave) => sql(`SELECT estado FROM eq_operacao WHERE chave='${cha
 
   // G) Preencher com 550 e 158: a falha do 158 não pinta o 550; Enter só avança depois da confirmação
   await ir('#/panel-atributos', 'input[type="search"]');
-  for (const p of [P1, P2]) { await pg.fill('input[type="search"]', String(p)); await pg.waitForTimeout(500); await pg.locator('label.at-cartao__marcar').first().click(); await pg.waitForTimeout(200); }
-  await pg.click('button.at-nav__item:has-text("Preencher")'); await pg.waitForSelector(`table.at-tabela--grade ${CAMPO(P2)}`, { timeout: 40000 }); await pg.waitForTimeout(600);
-  const cel = (p) => `table.at-tabela--grade td:has(${CAMPO(p)}) .at-salvo`;
+  for (const p of [P1, P2]) { await pg.fill('input[type="search"]', String(p)); await pg.waitForTimeout(500); await pg.locator('label.at-cartao__sel, label.at-cartao__marcar').first().click(); await pg.waitForTimeout(200); }
+  await pg.click('button.at-nav__item:has-text("Preencher")'); await pg.waitForSelector(`.pv2-grade ${CAMPO(P2)}`, { timeout: 40000 }); await pg.waitForTimeout(600);
+  const cel = (p) => `[data-l]:has(${CAMPO(p)}) .at-salvo`;
   const txtCel = async (p) => ((await pg.$(cel(p))) ? (await pg.textContent(cel(p))).trim() : '');
   // ordem das linhas na grade: o teste de "Enter avança" precisa de uma linha ABAIXO
-  const ordem = await pg.$$eval(`table.at-tabela--grade input[id$="-${A}"]`, (xs) => xs.map((x) => Number(x.id.split('-')[1])));
+  const ordem = await pg.$$eval(`[data-l] input[id$="-${A}"]`, (xs) => xs.map((x) => Number(x.id.split('-')[1])));
   const [PA, PB] = ordem.filter((p) => p === P1 || p === P2);
   afirma(`G) grade com os dois produtos (ordem ${PA}, ${PB})`, !!PA && !!PB);
   await pg.route('**/api/atributos/index.php?r=valor', async (r) => { if (!ehPost(r.request(), PA)) return r.continue(); await r.fetch(); await r.fulfill({ status: 200, body: 'xx' }); }, { times: 1 });

@@ -1,7 +1,7 @@
 // UX-1 (a) e (b): coluna de origem mista no Preencher; "Obrigatórios pendentes" na Ficha pela lista do servidor.
 // Harness 8112, banco de validação. 1 navegador, 1 aba. Kit de teste criado e DESATIVADO no fim; valores limpos. Uso: nice -n 10 node teste-ux1b.cjs
 const { chromium } = require('/srv/dshow-work/atributos-web-wt/node_modules/playwright-core');
-const B = 'http://127.0.0.1:8112';
+const B = `http://127.0.0.1:${process.env.PORTA || 8112}`;
 let ok = 0, falhas = 0;
 const afirma = (nome, cond, extra = '') => { if (cond) { ok++; console.log('ok    ' + nome); } else { falhas++; console.log('FALHA ' + nome + (extra ? ' · ' + extra : '')); } };
 (async () => {
@@ -33,15 +33,15 @@ const afirma = (nome, cond, extra = '') => { if (cond) { ok++; console.log('ok  
   await api('POST', 'produto_kit', { product_id: P, versao_vinculos: (await ficha(P)).versao_vinculos, grupo_id: kid, ativo: 1 });
 
   // (a) origem mista aparece pelo kit E por "Usar selecionados"; opcional só do kit geral não aparece por "Usar selecionados"
-  const colunas = () => pg.$$eval('table.at-tabela--grade thead th', (ths) => ths.map((t) => t.textContent));
+  const colunas = () => pg.$$eval('.pv2-cab .pv2-th, table.at-tabela--grade thead th', (ths) => ths.map((t) => t.textContent));
   await ir('#/panel-atributos/preencher', 'select[aria-label="Kit"]');
   const opt = String(kid);   // o kit criado AGORA (pelo ID, não pelo nome)
-  await pg.selectOption('select[aria-label="Kit"]', opt); await pg.waitForSelector('table.at-tabela--grade', { timeout: 40000 }); await pg.waitForTimeout(800);
+  await pg.selectOption('select[aria-label="Kit"]', opt); await pg.waitForSelector('.pv2-grade, table.at-tabela--grade', { timeout: 40000 }); await pg.waitForTimeout(800);
   afirma(`(a) pelo kit de teste: a coluna "${X.rotulo}" (origem mista) aparece`, (await colunas()).some((c) => c.includes(X.rotulo)));
-  await ir('#/panel-atributos', 'label.at-cartao__marcar');
+  await ir('#/panel-atributos', 'label.at-cartao__sel, label.at-cartao__marcar');
   await pg.fill('input[type="search"]', String(P)); await pg.waitForTimeout(600);
-  await pg.locator('label.at-cartao__marcar').first().click(); await pg.waitForTimeout(300);
-  await pg.click('button.at-nav__item:has-text("Preencher")'); await pg.waitForSelector('table.at-tabela--grade', { timeout: 40000 }); await pg.waitForTimeout(800);
+  await pg.locator('label.at-cartao__sel, label.at-cartao__marcar').first().click(); await pg.waitForTimeout(300);
+  await pg.click('button.at-nav__item:has-text("Preencher")'); await pg.waitForSelector('.pv2-grade, table.at-tabela--grade', { timeout: 40000 }); await pg.waitForTimeout(800);
   const cs = await colunas();
   afirma(`(a) por "Usar selecionados": "${X.rotulo}" (geral + kit de teste) aparece`, cs.some((c) => c.includes(X.rotulo)), cs.join(' | ').slice(0, 300));
   afirma(`(a) por "Usar selecionados": "${Xsó?.rotulo}" (opcional SÓ do kit geral) segue fora`, !Xsó || !cs.some((c) => c.includes(Xsó.rotulo)));

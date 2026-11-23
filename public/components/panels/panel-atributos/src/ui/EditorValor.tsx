@@ -172,7 +172,7 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
     campo = (
       <select id={id} className="at-campo" value={txt} disabled={ro || travado} aria-label={item.rotulo} autoFocus={autoFoco}
         onChange={(e) => { setTxt(e.target.value); if (e.target.value === '') { if (item.valor) chamar('valor_limpar', { versao }); } else gravar(Number(e.target.value)); }}>
-        <option value="">{rotuloVazio ?? '—'}</option>
+        <option value="">{rotuloVazio || '—'}</option>
         {item.opcoes.filter((o) => o.ativo || String(o.id) === txt).map((o) => <option key={o.id} value={o.id}>{o.rotulo}{o.ativo ? '' : ' (desativada)'}</option>)}
       </select>);
   } else if (item.tipo === 'multiopcao') {
