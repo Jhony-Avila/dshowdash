@@ -27,7 +27,7 @@
 import { createUiPorts } from '/core/runtime/ports-profiles.js';
 import { isStrict, recordViolation } from '/core/runtime/enterprise/strict-mode.js';
 
-export const VERSION = '10.2.0-P2-ENTERPRISE';
+export const VERSION = '10.3.0-NONFATAL-WARN';
 export const MODULE_ID = 'header.panel-chatgpt.api.fetch';
 
 const Ports = createUiPorts({ moduleId: MODULE_ID });

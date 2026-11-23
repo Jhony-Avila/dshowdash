@@ -27,7 +27,7 @@
 
 import { createUiPorts } from '/core/runtime/ports-profiles.js';
 
-const VERSION = '6.1.0-ES6';
+const VERSION = '6.2.0-NONFATAL-WARN';
 const MODULE_ID = 'header.whatsapp-integration.api.fetch';
 
 const Ports = createUiPorts({ moduleId: MODULE_ID });
