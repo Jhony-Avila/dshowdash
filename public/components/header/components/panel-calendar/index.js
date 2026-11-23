@@ -5,7 +5,12 @@ const VERSION = "8.8.0-ES6";
 const id = "panel-calendar";
 const capabilities = { type: "panel", reorderable: true, hideable: true, critical: false, rendersUI: true };
 const MODULE_ID = "header/components/panel-calendar";
-const PANEL_CONFIG = { id: "panel-calendar", label: "Calend\xE1rio", route: "#/integrations/calendar", icon: "/assets/icons/system/header/calendar.svg" };
+// route repontada em 2026-07-29 para o módulo Google Calendar.
+// #/panel-google-calendar resolve pelo fallback por convenção do panel-paths.js
+// (AO VIVO). A rota anterior, #/integrations/calendar, resolvia pelo
+// routes-integrations.js, que está BUNDLEADO em app-router.bundle.js e
+// main.bundle.js — mexer lá obrigaria a rebuildar bundles de boot.
+const PANEL_CONFIG = { id: "panel-calendar", label: "Google Calendar", route: "#/panel-google-calendar", icon: "/assets/icons/system/header/calendar.svg" };
 const Ports = createUiPorts({ moduleId: MODULE_ID });
 function _initPorts() {
   Ports.init();
