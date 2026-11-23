@@ -40,7 +40,7 @@ export function FilaSugestoes({ atributos, podeDecidir, administra, aoMudarTotai
   const [atr, setAtr] = React.useState<string>('todos');
   const [busca, setBusca] = React.useState(''); const [q, setQ] = React.useState('');
   const [pags, setPags] = React.useState<Paginas>(PAGINAS0);
-  const [resp, setResp] = React.useState<RespFila<ItemFila> | null>(null);
+  const [resp, setResp] = React.useState<(RespFila<ItemFila> & { indice: number }) | null>(null);   // indice = a página que ESTÁ na tela (o rodapé sai dela)
   const [erro, setErro] = React.useState<string | null>(null);
   const [lendo, setLendo] = React.useState(false);
   const [sel, setSel] = React.useState<Set<number>>(new Set());
@@ -56,7 +56,7 @@ export function FilaSugestoes({ atributos, podeDecidir, administra, aoMudarTotai
   const ler = React.useCallback(() => {
     const g = ++geracao.current; setLendo(true); setErro(null);
     obter<RespFila<ItemFila>>('conferencia_fila', { fila: 'nome', estado, ...(atr !== 'todos' ? { atributo_id: atr } : {}), ...(q ? { q } : {}), ...(pags.cursores[pags.indice] ? { cursor: pags.cursores[pags.indice]! } : {}) })
-      .then((r) => { if (g === geracao.current) { setResp(r); setSel(new Set()); } })
+      .then((r) => { if (g === geracao.current) { setResp({ ...r, indice: pags.indice }); setSel(new Set()); } })
       .catch((e) => { if (g !== geracao.current) return;
         // DSHOW-108 (B): o cursor é de outra consulta (filtros mudaram) → volta à 1ª página, sem erro na tela
         if (e instanceof ErroApi && e.codigo === 'CURSOR_CONTEXT_MISMATCH') { setPags(PAGINAS0); return; }
@@ -202,13 +202,13 @@ export function FilaSugestoes({ atributos, podeDecidir, administra, aoMudarTotai
             renderExpansao={(it) => <Evidencia it={it} ultimo={ultimos[it.id]} larga={larga} />} />
         </div>)}
       {resp && (
-        <div className="cf-rodape" data-faixa={faixa(pags, resp.itens.length, resp.total)}>
-          <span>{faixa(pags, resp.itens.length, resp.total)} {estado === 'pendente' ? 'sugestões' : SITUACOES.find((s) => s.valor === estado)!.rotulo.toLowerCase()}</span>
+        <div className="cf-rodape" data-faixa={faixa({ ...pags, indice: resp.indice }, resp.itens.length, resp.total)}>
+          <span>{faixa({ ...pags, indice: resp.indice }, resp.itens.length, resp.total)} {estado === 'pendente' ? 'sugestões' : SITUACOES.find((s) => s.valor === estado)!.rotulo.toLowerCase()}</span>
           <span className="cf-fraco">Seleção restrita a esta página</span>
           <span className="cf-rodape__pag">
             <span className="cf-fraco">{POR_PAGINA} por página</span>
             <Botao desligado={pags.indice === 0 || lendo} aoClicar={() => setPags(anterior)}>Anterior</Botao>
-            <span>{pags.indice + 1} de {paginasTotais(resp.total)}</span>
+            <span>{resp.indice + 1} de {paginasTotais(resp.total)}</span>
             <Botao desligado={!resp.proximo_cursor || lendo} aoClicar={() => setPags((p) => proxima(p, resp.proximo_cursor))}>Próxima</Botao>
           </span>
         </div>)}
@@ -233,7 +233,7 @@ function AcoesLinha({ it, ultimo, estado, pode, administra, bloqueado, aoAcao, a
   if (estado === 'pendente') return (
     <span className="cf-acoes">
       <button type="button" className="bl-botao bl-botao--primario cf-btn" disabled={bloqueado || !!it.aceite_bloqueado}
-        title={it.aceite_bloqueado === 'COM_VALOR' ? 'O campo já tem valor: a sugestão não sobrescreve' : it.aceite_bloqueado ? 'Aceite indisponível' : undefined} onClick={() => aoAcao('aceitar')}>Aceitar</button>
+        title={it.aceite_bloqueado === 'COM_VALOR' ? 'O campo já tem valor: a sugestão não sobrescreve' : it.aceite_bloqueado === 'FORA_DA_FICHA' ? 'O atributo não faz parte da ficha deste produto: vincule antes' : it.aceite_bloqueado ? 'Aceite indisponível' : undefined} onClick={() => aoAcao('aceitar')}>Aceitar</button>
       <button type="button" className="bl-botao cf-btn" disabled={bloqueado} onClick={() => aoAcao('recusar')}>Recusar</button>
       <button type="button" className="bl-botao cf-btn" disabled={bloqueado} onClick={() => aoAcao('ignorar')}>Ignorar</button>
     </span>);
@@ -249,6 +249,7 @@ function Evidencia({ it, ultimo, larga }: { it: ItemFila; ultimo?: ResultadoItem
       <p className="cf-evid__texto">{it.evidencia ?? it.produto}</p>
       {!larga && <p className="cf-fraco">Atual: {textoAtual(it.destino_atual)} → Sugerido: {textoSugerido(it)}</p>}
       {aConferir(it, ultimo) && <p className="cf-aviso" role="note">Não conseguimos confirmar esta decisão. Confira a gravação antes de tentar outra ação.</p>}
+      {!aConferir(it, ultimo) && it.aceite_bloqueado === 'FORA_DA_FICHA' && <p className="cf-aviso" role="note">O atributo “{it.atributo}” não faz parte da ficha deste produto. Para aceitar, vincule-o antes (aba Fora da ficha ou Vincular).</p>}
       {!aConferir(it, ultimo) && it.aceite_bloqueado === 'COM_VALOR' && <p className="cf-aviso" role="note">Atual: {textoAtual(it.destino_atual)} · Sugerido: {textoSugerido(it)} · O valor atual será preservado. Revise na ficha para alterá-lo.</p>}
       {ultimo?.desfecho === 'nao_aplicada' && <p className="cf-aviso" role="note">Não aplicada: {motivoLegivel(ultimo)}</p>}
       {(it.estado === 'recusada' || it.estado === 'ignorada' || it.estado === 'aceita') && it.decidido_em && <p className="cf-fraco">Decidido por {it.decidido_por ?? '—'} em {new Date(it.decidido_em.replace(' ', 'T')).toLocaleString('pt-BR')}{it.motivo ? ` · ${it.motivo}` : ''}</p>}

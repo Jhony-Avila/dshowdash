@@ -16,7 +16,7 @@ export interface ItemFila {
   atributo_alternativo_id: number | null; atributo_alternativo: string | null; fonte: string; tipo: string;
   valor_proposto: string | null; unidade: string | null; confianca: string; evidencia: string | null; versao: number;
   estado: EstadoSugestao; decidido_por: string | null; decidido_em: string | null; motivo: string | null; substitui_id: number | null;
-  destino_atual: Atual; alternativo_atual: Atual | null; aceite_bloqueado: null | 'COM_VALOR' | 'ATRIBUTO_INATIVO' | 'SEM_PERMISSAO';
+  destino_atual: Atual; alternativo_atual: Atual | null; aceite_bloqueado: null | 'COM_VALOR' | 'ATRIBUTO_INATIVO' | 'FORA_DA_FICHA' | 'SEM_PERMISSAO';
   a_conferir: { chave: string } | null;
 }
 export interface RespFila<T> { fila: FilaId; estado?: EstadoSugestao; itens: T[]; total: number; proximo_cursor: string | null; por_pagina: number; gerado_em: string }
@@ -74,7 +74,7 @@ export function elegiveis(acao: Acao, selecionados: readonly ItemFila[], ultimos
     if (aConferir(it, u)) { fora.push({ it, motivo: 'a conferir' }); continue; }
     if (concluida(u)) { fora.push({ it, motivo: 'já decidida' }); continue; }
     if (it.estado !== origem[acao]) { fora.push({ it, motivo: 'situação diferente' }); continue; }
-    if (acao === 'aceitar' && it.aceite_bloqueado) { fora.push({ it, motivo: it.aceite_bloqueado === 'COM_VALOR' ? 'com valor' : it.aceite_bloqueado === 'ATRIBUTO_INATIVO' ? 'atributo inativo' : 'sem permissão' }); continue; }
+    if (acao === 'aceitar' && it.aceite_bloqueado) { fora.push({ it, motivo: ({ COM_VALOR: 'com valor', ATRIBUTO_INATIVO: 'atributo inativo', FORA_DA_FICHA: 'fora da ficha' } as Record<string, string>)[it.aceite_bloqueado] ?? 'sem permissão' }); continue; }
     vao.push(it);
   }
   return { vao, fora };
@@ -95,6 +95,7 @@ export function motivoLegivel(r: Pick<ResultadoItem, 'motivo' | 'detalhe' | 'men
     case 'CONFLICT': return r.detalhe === 'pendente_existente' ? 'Já existe uma sugestão mais nova em aberto para este campo.'
       : r.detalhe === 'tem_sucessora' ? 'Já existe uma sugestão mais nova para este campo.' : 'A sugestão mudou ou já foi decidida. Recarregue.';
     case 'NOT_FOUND': return 'A sugestão não existe mais.';
+    case 'ATTRIBUTE_NOT_APPLICABLE': return 'O atributo não faz parte da ficha deste produto. Vincule-o antes (aba Fora da ficha ou Vincular).';
     case 'INSUFFICIENT_LEVEL': case 'NOT_CATALOG_ADMIN': return 'Seu perfil não permite esta ação.';
     case 'erro_tecnico': return 'Erro técnico momentâneo; nada foi gravado neste item.';
     default: return r.mensagem ?? 'Não aplicada.';

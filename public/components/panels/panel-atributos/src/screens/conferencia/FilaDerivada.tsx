@@ -27,7 +27,7 @@ export function FilaDerivada({ fila, atributos, subcategorias, kits, podeVincula
   const [atr, setAtr] = React.useState('todos'); const [sub, setSub] = React.useState('todas');
   const [busca, setBusca] = React.useState(''); const [q, setQ] = React.useState('');
   const [pags, setPags] = React.useState<Paginas>(PAGINAS0);
-  const [resp, setResp] = React.useState<RespFila<Linha> | null>(null);
+  const [resp, setResp] = React.useState<(RespFila<Linha> & { indice: number }) | null>(null);
   const [erro, setErro] = React.useState<string | null>(null);
   const [lendo, setLendo] = React.useState(false);
   const [aberta, setAberta] = React.useState<string | null>(null);
@@ -41,7 +41,7 @@ export function FilaDerivada({ fila, atributos, subcategorias, kits, podeVincula
     const gen = ++geracao.current; setLendo(true); setErro(null);
     obter<RespFila<Linha>>('conferencia_fila', { fila, ...(atr !== 'todos' ? { atributo_id: atr } : {}), ...(sub !== 'todas' ? { subcategoria: sub } : {}), ...(q ? { q } : {}),
       ...(pags.cursores[pags.indice] ? { cursor: pags.cursores[pags.indice]! } : {}) })
-      .then((r) => { if (gen === geracao.current) { setResp(r); setFeitas({}); } })
+      .then((r) => { if (gen === geracao.current) { setResp({ ...r, indice: pags.indice }); setFeitas({}); } })
       .catch((e) => { if (gen !== geracao.current) return;
         // DSHOW-108 (B): o cursor é de outra consulta (filtros mudaram) → volta à 1ª página, sem erro na tela
         if (e instanceof ErroApi && e.codigo === 'CURSOR_CONTEXT_MISMATCH') { setPags(PAGINAS0); return; }
@@ -135,12 +135,12 @@ export function FilaDerivada({ fila, atributos, subcategorias, kits, podeVincula
             classeLinha={(x) => (feitas[chaveDe(fila, x)] ? 'cf-linha--concluida' : undefined)} />
         </div>)}
       {resp && (
-        <div className="cf-rodape" data-faixa={faixa(pags, resp.itens.length, resp.total)}>
-          <span>{faixa(pags, resp.itens.length, resp.total)} {resp.total === 1 ? um : varios}</span>
+        <div className="cf-rodape" data-faixa={faixa({ ...pags, indice: resp.indice }, resp.itens.length, resp.total)}>
+          <span>{faixa({ ...pags, indice: resp.indice }, resp.itens.length, resp.total)} {resp.total === 1 ? um : varios}</span>
           <span className="cf-rodape__pag">
             <span className="cf-fraco">{POR_PAGINA} por página</span>
             <Botao desligado={pags.indice === 0 || lendo} aoClicar={() => setPags(anterior)}>Anterior</Botao>
-            <span>{pags.indice + 1} de {paginasTotais(resp.total)}</span>
+            <span>{resp.indice + 1} de {paginasTotais(resp.total)}</span>
             <Botao desligado={!resp.proximo_cursor || lendo} aoClicar={() => setPags((p) => proxima(p, resp.proximo_cursor))}>Próxima</Botao>
           </span>
         </div>)}

@@ -78,3 +78,9 @@
 [data-bl-root] .cf-grade td.cf-col-kit { width: 230px; min-width: 230px; }
 [data-bl-root] .cf-kit { width: 214px; height: 28px; }
 [data-bl-root] .cf-evid__titulo { display: block; font-weight: 500; }
+/* as larguras do briefing INCLUEM o espaçamento: em 1440 a tabela cabe na área e a moldura não vira contêiner de rolagem horizontal
+   (o que soltaria o cabeçalho travado das colunas — mesmo caso do P2 dos Kits) */
+[data-bl-root] .cf-grade td, [data-bl-root] .cf-grade th { box-sizing: border-box; }
+[data-bl-root] .cf-grade td.cf-col-prod { min-width: 180px; }
+[data-bl-root] .cf-grade--fora_da_ficha td.cf-col-prod { min-width: 300px; }
+[data-bl-root] .cf-grade--obrigatorios_vazios td.cf-col-prod { min-width: 576px; }
