@@ -13,6 +13,7 @@ import type { Ordenacao } from '../lib/ordenar';
 import { MenuColunas, MenuEscolha } from '../ui/MenuBarra';
 import { IconeEstado, useGravacoes } from '../ui/CelulaEditavel';
 import { podeConferir } from '../ui/celula';
+import { congelarConfirmacao, elegiveisDaPagina, PAGINA_SUGESTOES, paginaExibida, type ConfirmacaoLote } from '../ui/conferencia-lote';
 import { livre } from '../ui/celula';
 import '../ui/celula.css';
 
@@ -34,6 +35,7 @@ export function Conferencia() {
   const [fila, setFila] = React.useState<Fila>('legado');
   const [filtroAtr, setFiltroAtr] = React.useState('');
   const [lote, setLote] = React.useState<number[] | null>(null);
+  const [confirmacao, setConfirmacao] = React.useState<ConfirmacaoLote | null>(null);   // DSHOW-105: ids + versões congelados ao confirmar
   // DSHOW-096: aceitar em LOTE com chave por intenção (criada ao CONFIRMAR; corpo e IDs congelados; a MESMA chave em todo reenvio).
   type FaseLote = 'confirmar' | 'enviando' | 'concluido' | 'desconhecido' | 'conferindo' | 'em_andamento' | 'interrompida' | 'nao_encontrada' | 'recusada';
   type EstadoLote = { fase: FaseLote; intencao: IntencaoLote | null; resumo: ResumoLote | null; msg: string | null; reenvioSeguro: boolean };
@@ -52,9 +54,13 @@ export function Conferencia() {
     try { await enviar('sugestao', { id: it.id, versao: it.versao, decisao, ...(destino ? { atributo_id: destino, vincular: true } : {}) }); m.aviso(decisao === 'aceitar' ? 'Decidido: valor gravado.' : 'Sugestão recusada.'); carregar(); }
     catch (e) { m.aviso(e instanceof ErroApi ? e.message : 'Falha.', 'erro'); } finally { setTrab(null); }
   };
-  const abrirLote = (ids: number[]) => { geracaoLote.current++; setEstLote(LOTE0); setLote(ids.slice(0, 200)); };
+  const abrirLote = (ids: number[], conf: ConfirmacaoLote | null = null) => {
+    // DSHOW-105: nada de cortar em silêncio (o .slice(0, 200) mandava um subconjunto que a tela não mostrava). Acima do limite = não abre.
+    if (ids.length === 0 || ids.length > PAGINA_SUGESTOES) { m.aviso(`Escolha de 1 a ${PAGINA_SUGESTOES} sugestões.`, 'erro'); return; }
+    geracaoLote.current++; setEstLote(LOTE0); setConfirmacao(conf); setLote([...(conf?.ids ?? ids)]);
+  };
   const ocupadoLote = estLote.fase === 'enviando' || estLote.fase === 'conferindo';
-  const fecharLote = () => { if (ocupadoLote) return; geracaoLote.current++; if (estLote.intencao) marcarPendencia(estLote.intencao.chave, false); setLote(null); };
+  const fecharLote = () => { if (ocupadoLote) return; geracaoLote.current++; if (estLote.intencao) marcarPendencia(estLote.intencao.chave, false); setLote(null); setConfirmacao(null); };
   const terminarLote = (i: IntencaoLote, g: number, resumo: ResumoLote | null) => {
     marcarPendencia(i.chave, false); if (g !== geracaoLote.current) return;
     setEstLote((l) => ({ ...l, fase: 'concluido', resumo, msg: null }));
@@ -64,6 +70,12 @@ export function Conferencia() {
   /** Envia (1ª vez: cria a intenção com os IDs congelados) ou RETOMA com a MESMA intenção (mesma chave, mesmo corpo). */
   const aceitarLote = async () => {
     if (!lote || trabLote) return;
+    // DSHOW-105: no 1º envio, as versões têm de ser as congeladas na confirmação; se a lista mudou nesse meio-tempo, NÃO envia e pede nova confirmação.
+    if (!estLote.intencao && confirmacao) {
+      const agora = new Map(d.filas.nome.map((x) => [x.id, x.versao]));
+      const mudou = confirmacao.ids.filter((id) => agora.get(id) !== confirmacao.versoes[id]);
+      if (mudou.length) { setEstLote((l) => ({ ...l, fase: 'recusada', msg: `${mudou.length} sugestão(ões) mudou(aram) desde a confirmação. Nada foi enviado: feche e confirme de novo.` })); return; }
+    }
     const g = geracaoLote.current; const i = estLote.intencao ?? novaIntencaoLote(lote);
     marcarPendencia(i.chave, true); setTrabLote(true); setEstLote((l) => ({ ...l, fase: 'enviando', intencao: i, msg: null }));
     try { const r = await enviarLoteSugestoes(i); terminarLote(i, g, resumoDoLote(r)); }
@@ -93,6 +105,9 @@ export function Conferencia() {
   };
   const atual = FILAS.find((x) => x.id === fila)!;
   const sugs = (fila === 'legado' || fila === 'nome') ? d.filas[fila].filter((x) => !filtroAtr || x.atributo === filtroAtr) : [];
+  // DSHOW-105: a PÁGINA exibida é a única coleção da fila "Sugestões do nome": tabela, contador, confirmação e payload saem dela.
+  const pagina = fila === 'nome' ? paginaExibida(d.filas.nome, filtroAtr) : [];
+  const elegiveis = elegiveisDaPagina(pagina);
   const atrs = (fila === 'legado' || fila === 'nome') ? [...new Set(d.filas[fila].map((x) => x.atributo ?? ''))].sort() : [];
 
   return (
@@ -105,7 +120,8 @@ export function Conferencia() {
         {fila !== 'legado' && <div className="at-painel__cabeca"><span className="at-fraco">{atual.desc}</span>
           {fila === 'nome' && <div className="at-acoes">
             <select className="at-campo" aria-label="Filtrar por atributo" value={filtroAtr} onChange={(e) => setFiltroAtr(e.target.value)}><option value="">Todos os atributos</option>{atrs.map((a) => <option key={a} value={a}>{a}</option>)}</select>
-            {fila === 'nome' && d.pode_decidir && sugs.length > 0 && <Botao aoClicar={() => abrirLote(sugs.filter((x) => !x.ja_tem_valor).map((x) => x.id))}>Aceitar as {Math.min(sugs.filter((x) => !x.ja_tem_valor).length, 200)} visíveis sem valor…</Botao>}
+            {fila === 'nome' && d.pode_decidir && elegiveis.length > 0 && <Botao aoClicar={() => { const c = congelarConfirmacao(pagina, elegiveis); abrirLote([...c.ids], c); }}>Aceitar as {elegiveis.length} desta página sem valor…</Botao>}
+            {fila === 'nome' && sugs.length > pagina.length && <span className="at-fraco" data-pagina-sugestoes>Mostrando {pagina.length} de {sugs.length}. O lote usa só as linhas desta página.</span>}
           </div>}
         </div>}</CabecalhoTravado>
       <section className="at-painel">
@@ -113,7 +129,7 @@ export function Conferencia() {
         {fila === 'nome' && (sugs.length === 0 ? <div className="at-painel__corpo"><Vazio titulo="Fila vazia">Nada pendente aqui.</Vazio></div> : (
           <div className="bl-rola-x"><table className="at-tabela">
             <thead><tr><th>Produto</th><th>Atributo</th><th>Proposto</th><th>Evidência</th><th>Decisão</th></tr></thead>
-            <tbody>{sugs.slice(0, 300).map((it) => (
+            <tbody>{pagina.map((it) => (
               <tr key={it.id}>
                 <td><button type="button" className="at-link-produto" onClick={() => m.abrirProduto(it.product_id)}><CapsulaId id={it.product_id} flutuante={false} /> {it.produto}</button></td>
                 <td>{it.atributo}{it.atributo_alternativo && <div className="at-fraco">ou {it.atributo_alternativo}?</div>}</td>
@@ -165,6 +181,7 @@ export function Conferencia() {
         </>}>
         <div data-at-lote={estLote.fase} data-at-chave={estLote.intencao?.chave ?? ''}>
           {estLote.fase === 'confirmar' && <p>Cada sugestão vira valor do produto, com histórico ("sugestão #id"). Só atinge campos sem valor; nada cadastrado à mão é sobrescrito.</p>}
+          {estLote.fase === 'confirmar' && confirmacao && <p className="at-fraco" data-lote-congelado={confirmacao.ids.length}>Vão exatamente as {confirmacao.ids.length} sugestões desta página, como estão agora (IDs e versões congelados).</p>}
           <div role="status" aria-live="polite">
             {estLote.fase === 'enviando' && <p>Aceitando {estLote.intencao?.ids.length} sugestões…</p>}
             {estLote.fase === 'conferindo' && <p>Conferindo no servidor…</p>}
