@@ -1775,6 +1775,7 @@ tools-golden/
 !/scripts/router/**
 !/scripts/shell/
 !/scripts/shell/**
+!/scripts/status-estado-real-teste.php
 !/scripts/theme-sweep.js
 !/scripts/validate-ts.sh
 !/scripts/validate.sh
