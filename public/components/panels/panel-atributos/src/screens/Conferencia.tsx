@@ -8,6 +8,13 @@ import { decimal } from '../lib/formatar';
 import { FONTE_SUGESTAO, rotuloSubcategoria } from '../lib/rotulos';
 import { useModulo } from '../app/contexto';
 import { Botao, CabecalhoTravado, CapsulaId, Carregando, Dialogo, Erro, Etiqueta, Vazio } from '../ui/Comuns';
+import { TabelaDados, type ColunaTabela } from '../ui/TabelaDados';
+import type { Ordenacao } from '../lib/ordenar';
+import { MenuColunas, MenuEscolha } from '../ui/MenuBarra';
+import { IconeEstado, useGravacoes } from '../ui/CelulaEditavel';
+import { podeConferir } from '../ui/celula';
+import { livre } from '../ui/celula';
+import '../ui/celula.css';
 
 type Fila = 'legado' | 'nome' | 'fora_da_ficha' | 'obrigatorios_vazios' | 'sem_kit';
 const FILAS: { id: Fila; rotulo: string; desc: string }[] = [
@@ -95,14 +102,15 @@ export function Conferencia() {
       <div className="at-abas" role="tablist" aria-label="Filas">
         {FILAS.map((x) => <button key={x.id} type="button" role="tab" aria-selected={fila === x.id} className={fila === x.id ? 'ativo' : ''} onClick={() => { setFila(x.id); setFiltroAtr(''); }}>{x.rotulo} <span className="at-filtro__n">{total(x.id)}</span></button>)}
       </div>
-        <div className="at-painel__cabeca"><span className="at-fraco">{atual.desc}</span>
-          {(fila === 'legado' || fila === 'nome') && <div className="at-acoes">
+        {fila !== 'legado' && <div className="at-painel__cabeca"><span className="at-fraco">{atual.desc}</span>
+          {fila === 'nome' && <div className="at-acoes">
             <select className="at-campo" aria-label="Filtrar por atributo" value={filtroAtr} onChange={(e) => setFiltroAtr(e.target.value)}><option value="">Todos os atributos</option>{atrs.map((a) => <option key={a} value={a}>{a}</option>)}</select>
             {fila === 'nome' && d.pode_decidir && sugs.length > 0 && <Botao aoClicar={() => abrirLote(sugs.filter((x) => !x.ja_tem_valor).map((x) => x.id))}>Aceitar as {Math.min(sugs.filter((x) => !x.ja_tem_valor).length, 200)} visíveis sem valor…</Botao>}
           </div>}
-        </div></CabecalhoTravado>
+        </div>}</CabecalhoTravado>
       <section className="at-painel">
-        {(fila === 'legado' || fila === 'nome') && (sugs.length === 0 ? <div className="at-painel__corpo"><Vazio titulo="Fila vazia">Nada pendente aqui.</Vazio></div> : (
+        {fila === 'legado' && <LegadoGrade itens={d.filas.legado} pode={!!d.pode_decidir} aoRecarregar={async () => { carregar(); }} aoLote={abrirLote} abrirProduto={m.abrirProduto} />}
+        {fila === 'nome' && (sugs.length === 0 ? <div className="at-painel__corpo"><Vazio titulo="Fila vazia">Nada pendente aqui.</Vazio></div> : (
           <div className="bl-rola-x"><table className="at-tabela">
             <thead><tr><th>Produto</th><th>Atributo</th><th>Proposto</th><th>Evidência</th><th>Decisão</th></tr></thead>
             <tbody>{sugs.slice(0, 300).map((it) => (
@@ -183,4 +191,178 @@ function ResumoLoteConferencia({ r }: { r: ResumoLote }) {
       {r.ignoradas.length > 0 && <><p className="at-fraco">Ignoradas:</p><ul>{lista(r.ignoradas)}</ul></>}
       {r.pendentes.length > 0 && <p className="at-fraco">Pendentes (ainda não decididas): {r.pendentes.slice(0, 12).join(', ')}{r.pendentes.length > 12 ? '…' : ''}</p>}
     </div>);
+}
+
+// ── CONFERÊNCIA · LEGADO (MOCKUP-CONFERENCIA-LEGADO, 19/11) ─────────────────────────────────────────────────────────────────────
+// Grade: [seleção + evidência] · ID · Produto · Atributo de origem · Valor do legado · Destino · Situação · Ações (Gravar / Recusar).
+// "Escolher destino" não grava; Gravar fica desabilitado até escolher. Cada decisão = UMA intenção com chave (contrato "foi salvo"): ícone e
+// pílula de situação pelo desfecho real; resposta perdida = "A conferir" + Conferir gravação (GET, mesma chave). O valor do legado nunca é
+// reinterpretado pelo nome do produto. Destino que já tem valor: a linha mostra o valor ATUAL (lido da ficha) e não grava (D10: sugestão não
+// sobrescreve). LOTE (com chave, resultado por item): só itens selecionados com destino = atributo de ORIGEM e sem valor — é o que o
+// sugestoes_lote do servidor faz hoje; destino alternativo vai pela linha (o lote não leva destino por item; mudar isso = pacote de servidor).
+type DestinoLegado = { id: number; rotulo: string };
+const destinosDe = (it: ItemConferencia): DestinoLegado[] => [
+  { id: it.atributo_id, rotulo: it.atributo ?? `#${it.atributo_id}` },
+  ...(it.atributo_alternativo_id ? [{ id: it.atributo_alternativo_id, rotulo: it.atributo_alternativo ?? `#${it.atributo_alternativo_id}` }] : []),
+];
+const temValorNo = (it: ItemConferencia, destino: number) => (destino === it.atributo_id ? it.ja_tem_valor : destino === it.atributo_alternativo_id ? it.alternativo_ja_tem_valor : false);
+const situacaoLegado = (fase: string): { rotulo: string; tom: string } => {
+  switch (fase) {
+    case 'salvando': return { rotulo: 'Gravando…', tom: 'neutro' };
+    case 'salvo': case 'sem_mudanca': return { rotulo: 'Gravado', tom: 'ativa' };
+    case 'desconhecido': case 'em_andamento': case 'conferindo': return { rotulo: 'A conferir', tom: 'aviso' };
+    case 'conflito': return { rotulo: 'Conflito', tom: 'aviso' };
+    case 'recusada': return { rotulo: 'Erro', tom: 'erro' };
+    default: return { rotulo: 'Pendente', tom: 'pendente' };
+  }
+};
+
+const PREF_COLUNAS_LEG = 'at-legado-colunas-v1';
+const OPCIONAIS_LEG = [{ chave: 'product_id', titulo: 'ID' }, { chave: 'atributo', titulo: 'Atributo de origem' }, { chave: 'valor_proposto', titulo: 'Valor do legado' }, { chave: 'situacao', titulo: 'Situação' }] as const;
+function LegadoGrade({ itens, pode, aoRecarregar, aoLote, abrirProduto }: {
+  itens: ItemConferencia[]; pode: boolean; aoRecarregar: () => Promise<unknown>; aoLote: (ids: number[]) => void; abrirProduto: (id: number) => void;
+}) {
+  const g = useGravacoes(aoRecarregar);
+  const [busca, setBusca] = React.useState('');
+  const [atrFiltro, setAtrFiltro] = React.useState('todos');
+  const [destinos, setDestinos] = React.useState<Record<number, number>>({});
+  const [sel, setSel] = React.useState<Set<number>>(new Set());
+  const [aberto, setAberto] = React.useState<number | null>(null);
+  const [atuais, setAtuais] = React.useState<Record<string, string>>({});   // "pid:aid" → valor atual lido da ficha (só quando o destino já tem valor)
+  const [ordenacao, setOrdenacao] = React.useState<Ordenacao>({ chave: 'product_id', direcao: 'asc' });
+  const [decididos, setDecididos] = React.useState<Record<number, string>>({});
+  const [ocultas, setOcultas] = React.useState<string[]>(() => { try { const v = JSON.parse(localStorage.getItem(PREF_COLUNAS_LEG) ?? 'null'); return Array.isArray(v) ? v : []; } catch { return []; } });
+  const mudarOcultas = (o: string[]) => { setOcultas(o); try { localStorage.setItem(PREF_COLUNAS_LEG, JSON.stringify(o)); } catch { /* sem armazenamento: vale só nesta visita */ } };   // id → desfecho recém-confirmado (a linha some na releitura)
+  const atrs = React.useMemo(() => [...new Set(itens.map((x) => x.atributo ?? ''))].filter(Boolean).sort((a, b) => a.localeCompare(b, 'pt-BR')), [itens]);
+  const filtrados = React.useMemo(() => {
+    const t = busca.trim().toLowerCase();
+    return itens.filter((x) => (atrFiltro === 'todos' || x.atributo === atrFiltro) && (!t || String(x.product_id) === t || x.produto.toLowerCase().includes(t)));
+  }, [itens, busca, atrFiltro]);
+  // seleção só do que está na lista filtrada (nunca amplia para linhas fora dela)
+  React.useEffect(() => { setSel((s) => new Set([...s].filter((id) => filtrados.some((x) => x.id === id)))); }, [filtrados]);
+  const lerAtual = React.useCallback(async (it: ItemConferencia, destino: number) => {
+    const k = `${it.product_id}:${destino}`; if (atuais[k] !== undefined) return;
+    try {
+      const f = await obter<{ itens: { atributo_id: number; valor?: { texto?: string | null; numero?: string | number | null } | null; unidade_efetiva?: { simbolo?: string } | null }[] }>('ficha_produto', { product_id: it.product_id });
+      const item = f.itens.find((x) => x.atributo_id === destino);
+      const v = item?.valor; const txt = v ? `${v.numero ?? v.texto ?? '—'}${item?.unidade_efetiva?.simbolo ? ` ${item.unidade_efetiva.simbolo}` : ''}` : '—';
+      setAtuais((m) => ({ ...m, [k]: String(txt) }));
+    } catch { setAtuais((m) => ({ ...m, [k]: 'não foi possível ler agora' })); }
+  }, [atuais]);
+  const escolher = (it: ItemConferencia, destino: number) => {
+    setDestinos((m) => ({ ...m, [it.id]: destino }));
+    if (temValorNo(it, destino)) { setAberto(it.id); void lerAtual(it, destino); }
+  };
+  const gravar = async (it: ItemConferencia) => {
+    const destino = destinos[it.id]; if (!destino || temValorNo(it, destino)) return;
+    const st = await g.gravar(`${it.id}:decidir`, 'sugestao', { id: it.id, versao: it.versao, decisao: 'aceitar', atributo_id: destino, vincular: true }, 'atributo_id');
+    if (st.fase === 'salvo' || st.fase === 'sem_mudanca') setDecididos((m) => ({ ...m, [it.id]: 'Gravado' }));
+  };
+  const recusar = async (it: ItemConferencia) => {
+    const st = await g.gravar(`${it.id}:decidir`, 'sugestao', { id: it.id, versao: it.versao, decisao: 'recusar' }, 'decisao');
+    if (st.fase === 'salvo' || st.fase === 'sem_mudanca') setDecididos((m) => ({ ...m, [it.id]: 'Recusado' }));
+  };
+  // lote: elegíveis = selecionados com destino escolhido = ORIGEM e sem valor
+  const selecionados = filtrados.filter((x) => sel.has(x.id));
+  const elegiveis = selecionados.filter((x) => destinos[x.id] === x.atributo_id && !x.ja_tem_valor);
+  const naoElegiveis = selecionados.length - elegiveis.length;
+
+  const colunas: ColunaTabela<ItemConferencia>[] = [
+    { chave: 'sel', titulo: '', tipo: 'texto', ordenavel: false, classe: 'at-leg-col-sel', cabecalho: pode ? (
+        <input type="checkbox" aria-label="Selecionar todas as decisões da lista" checked={filtrados.length > 0 && filtrados.every((x) => sel.has(x.id))}
+          onChange={(e) => setSel(e.target.checked ? new Set(filtrados.map((x) => x.id)) : new Set())} />) : <span className="bl-so-leitor">Seleção</span>,
+      render: (it, ctx) => (
+        <span className="at-leg-sel">
+          {pode && <input type="checkbox" aria-label={`Selecionar ${it.produto}`} checked={sel.has(it.id)} onChange={(e) => setSel((s) => { const n = new Set(s); if (e.target.checked) n.add(it.id); else n.delete(it.id); return n; })} />}
+          <button type="button" className="at-leg-expandir" {...ctx.gatilho} aria-label={`${ctx.expandida ? 'Fechar' : 'Ver'} a evidência de ${it.produto}`}>
+            <span aria-hidden>{ctx.expandida ? '▾' : '▸'}</span>
+          </button>
+        </span>) },
+    { chave: 'product_id', titulo: 'ID', tipo: 'numero', classe: 'at-leg-col-id' },
+    { chave: 'produto', titulo: 'Produto', tipo: 'texto', classe: 'at-leg-col-prod',
+      render: (it) => <button type="button" className="at-link-produto" title={it.produto} onClick={() => abrirProduto(it.product_id)}>{it.produto}</button> },
+    { chave: 'atributo', titulo: 'Atributo de origem', tipo: 'texto', render: (it) => <span className="at-dic-1l" title={it.atributo ?? ''}>{it.atributo ?? '—'}</span> },
+    { chave: 'valor_proposto', titulo: 'Valor do legado', tipo: 'numero', valor: (it) => Number(it.valor_proposto),
+      render: (it) => { const v = `${valorTxt(it.valor_proposto)}${it.unidade ? ` ${it.unidade}` : ''}`; return <span className="at-leg-valor" title={v}>{v}</span>; } },
+    { chave: 'destino', titulo: 'Destino', tipo: 'texto', ordenavel: false, classe: 'at-leg-col-dest',
+      render: (it) => pode ? (
+        <select className="at-cel__select at-leg-destino" aria-label={`Destino de ${it.produto}`} value={destinos[it.id] ?? ''}
+          disabled={g.estadoDe(`${it.id}:decidir`).fase === 'salvando'} onClick={(e) => e.stopPropagation()}
+          onChange={(e) => { const v = Number(e.target.value); if (v) escolher(it, v); else setDestinos((m) => { const x = { ...m }; delete x[it.id]; return x; }); }}>
+          <option value="">Escolher destino</option>
+          {destinosDe(it).map((d) => <option key={d.id} value={d.id}>{d.rotulo}{temValorNo(it, d.id) ? ' (já tem valor)' : ''}</option>)}
+        </select>) : <span className="at-fraco">só leitura</span> },
+    { chave: 'situacao', titulo: 'Situação', tipo: 'texto', ordenavel: false, alinhamento: 'centro', classe: 'at-leg-col-sit',
+      render: (it) => { const st = g.estadoDe(`${it.id}:decidir`); const s = decididos[it.id] ? { rotulo: decididos[it.id], tom: 'ativa' } : situacaoLegado(st.fase);
+        return <span className={`at-und-pilula at-leg-pilula--${s.tom} ${s.tom === 'ativa' ? 'at-und-pilula--ativa' : ''}`} title={st.mensagem ?? undefined} data-fase={st.fase}>{s.rotulo}</span>; } },
+    { chave: 'acoes', titulo: 'Ações', tipo: 'texto', ordenavel: false, alinhamento: 'centro', classe: 'at-leg-col-acoes', cabecalho: <span>Ações</span>,
+      render: (it) => { const st = g.estadoDe(`${it.id}:decidir`); const destino = destinos[it.id]; const bloqueado = !destino || temValorNo(it, destino);
+        return pode ? (
+          <span className="at-leg-acoes">
+            {podeConferir(st.fase) && !decididos[it.id] ? (
+              // "A conferir": a ação PRINCIPAL é conferir (GET com a mesma chave; nada é reenviado), do mesmo tamanho de Gravar/Recusar
+              <button type="button" className="bl-botao bl-botao--primario at-leg-btn at-leg-btn--conferir" aria-label="Conferir gravação" title={st.mensagem ?? 'Não conseguimos confirmar a gravação'}
+                onClick={() => void g.conferir(`${it.id}:decidir`)}>Conferir gravação</button>
+            ) : (
+            <button type="button" className="bl-botao bl-botao--primario at-leg-btn" disabled={bloqueado || !livre(st.fase) || !!decididos[it.id]} aria-busy={st.fase === 'salvando'}
+              title={!destino ? 'Escolha o destino primeiro' : temValorNo(it, destino) ? 'O destino já tem valor: a sugestão não sobrescreve (edite na ficha ou recuse)' : 'Gravar no destino escolhido'}
+              onClick={() => void gravar(it)}>Gravar</button>)}
+            <button type="button" className="bl-botao at-leg-btn" disabled={!livre(st.fase) || !!decididos[it.id]} onClick={() => void recusar(it)}>Recusar</button>
+            {!podeConferir(st.fase) && <IconeEstado estado={st} />}
+          </span>) : null; } },
+  ];
+
+  return (
+    <>
+      <CabecalhoTravado>
+        <div className="at-und-barra-ferr at-leg-barra" role="search">
+          <label className="at-und-busca">
+            <span className="bl-so-leitor">Buscar produto ou ID</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
+            <input type="search" placeholder="Buscar produto ou ID" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          </label>
+          <MenuEscolha rotulo="Atributo" valor={atrFiltro} aoEscolher={setAtrFiltro} opcoes={[{ valor: 'todos', rotulo: 'Todos' }, ...atrs.map((a) => ({ valor: a, rotulo: a }))]} />
+          <span className="at-und-contagem" aria-live="polite">{filtrados.length.toLocaleString('pt-BR')} decis{filtrados.length === 1 ? 'ão' : 'ões'}</span>
+          <span className="at-und-barra-dir"><MenuColunas opcionais={OPCIONAIS_LEG} ocultas={ocultas} aoMudar={mudarOcultas} /></span>
+        </div>
+        {pode && selecionados.length > 0 && (
+          <div className="at-leg-lote" role="region" aria-label="Seleção">
+            <span><strong>{selecionados.length}</strong> selecionada{selecionados.length > 1 ? 's' : ''} (só nesta lista filtrada) · <strong>{elegiveis.length}</strong> elegíve{elegiveis.length === 1 ? 'l' : 'is'} para o lote
+              {naoElegiveis > 0 && <span className="at-fraco"> · {naoElegiveis} fora do lote (sem destino, destino alternativo ou destino com valor: grave na linha)</span>}</span>
+            <button type="button" className="bl-botao bl-botao--primario" disabled={elegiveis.length === 0} title="Grava no atributo de origem; destino e restrições no resumo ao lado" onClick={() => aoLote(elegiveis.map((x) => x.id))}>Gravar {elegiveis.length} selecionado{elegiveis.length === 1 ? '' : 's'}</button>
+            <button type="button" className="at-link" onClick={() => setSel(new Set())}>Limpar seleção</button>
+          </div>)}
+      </CabecalhoTravado>
+      {filtrados.length === 0 ? (
+        <Vazio titulo={itens.length ? 'Nenhuma decisão encontrada' : 'Nenhuma decisão pendente'} acao={itens.length ? <Botao aoClicar={() => { setBusca(''); setAtrFiltro('todos'); }}>Limpar busca</Botao> : undefined}>
+          {itens.length ? 'Nenhuma decisão atende à busca.' : 'O legado não tem decisões pendentes.'}
+        </Vazio>
+      ) : (
+        <div className="at-dic-moldura at-leg-moldura">
+          <TabelaDados rolagem="container" className="at-leg-grade" legenda="Decisões do legado" colunas={colunas.filter((c) => !ocultas.includes(c.chave))} linhas={filtrados} chaveLinha={(it) => it.id}
+            ordenacao={ordenacao} aoOrdenar={setOrdenacao} congelarOrdem={Object.keys(destinos).length > 0}
+            expandida={(it) => aberto === it.id} aoAlternarExpansao={(it) => setAberto((x) => (x === it.id ? null : it.id))}
+            renderExpansao={(it) => { const destino = destinos[it.id]; const k = destino ? `${it.product_id}:${destino}` : '';
+              return (
+                <div className="at-leg-evid">
+                  <dl className="at-leg-pares">
+                    <div><dt>Origem</dt><dd>{it.atributo}</dd></div>
+                    <div><dt>Valor do legado</dt><dd><strong>{valorTxt(it.valor_proposto)}{it.unidade ? ` ${it.unidade}` : ''}</strong></dd></div>
+                    <div><dt>Destinos possíveis</dt><dd>{destinosDe(it).map((d) => d.rotulo).join(' ou ')}</dd></div>
+                  </dl>
+                  {destino && temValorNo(it, destino) && (
+                    <div className="at-leg-conflito" role="note">
+                      <span className="at-leg-conflito__par"><span>Atual</span><strong>{atuais[k] ?? 'lendo…'}</strong></span>
+                      <span className="at-leg-conflito__x" aria-hidden>×</span>
+                      <span className="at-leg-conflito__par"><span>Legado</span><strong>{valorTxt(it.valor_proposto)}{it.unidade ? ` ${it.unidade}` : ''}</strong></span>
+                      <span className="at-leg-conflito__fazer">O destino já tem valor e a sugestão não sobrescreve: <strong>edite na ficha</strong> se o legado estiver certo, ou <strong>Recuse</strong>.</span>
+                    </div>)}
+                  {g.estadoDe(`${it.id}:decidir`).mensagem && g.estadoDe(`${it.id}:decidir`).fase !== 'salvo' && <p className="at-leg-aviso">{g.estadoDe(`${it.id}:decidir`).mensagem}</p>}
+                  <p className="at-leg-evid__tec">Evidência: {FONTE_SUGESTAO[it.fonte] ?? it.fonte} · confiança {it.confianca}{it.evidencia ? ` · ${it.evidencia}` : ''}</p>
+                </div>); }}
+            classeLinha={(it) => (decididos[it.id] ? 'at-leg-linha--decidida' : undefined)} />
+        </div>
+      )}
+    </>
+  );
 }

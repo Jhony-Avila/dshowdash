@@ -63,3 +63,31 @@ export function MenuColunas({ opcionais, ocultas, aoMudar }: { opcionais: readon
     </span>
   );
 }
+
+/** "Filtros" recolhidos (ATRIBUTOS V3): botão com contador dos filtros ativos; o painel traz os controles (children) e "Limpar". */
+export function MenuFiltros({ ativos, aoLimpar, children }: { ativos: number; aoLimpar: () => void; children: React.ReactNode }) {
+  const [aberto, setAberto] = React.useState(false);
+  const raiz = React.useRef<HTMLSpanElement>(null);
+  React.useEffect(() => {
+    if (!aberto) return;
+    const fora = (e: MouseEvent) => { if (raiz.current && !raiz.current.contains(e.target as Node)) setAberto(false); };
+    document.addEventListener('mousedown', fora);
+    return () => document.removeEventListener('mousedown', fora);
+  }, [aberto]);
+  return (
+    <span className="at-und-colunas" ref={raiz} onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setAberto(false); } }}>
+      <button type="button" className={`at-und-ctrl at-und-ctrl--botao ${ativos ? 'at-und-ctrl--ativo' : ''}`} aria-expanded={aberto} aria-haspopup="dialog"
+        aria-label={`Filtros${ativos ? ` (${ativos} ativo${ativos > 1 ? 's' : ''})` : ''}`} onClick={() => setAberto((x) => !x)}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden><path d="M3 5h18l-7 8v6l-4 2v-8z" /></svg> Filtros
+        {ativos > 0 && <span className="at-filtros-n" aria-hidden>{ativos}</span>}
+      </button>
+      {aberto && (
+        <div className="at-und-menu at-menu-filtros" role="group" aria-label="Filtros">
+          {children}
+          <div className="at-menu-filtros__rodape">
+            <button type="button" className="at-link" disabled={!ativos} onClick={() => { aoLimpar(); }}>Limpar filtros</button>
+          </div>
+        </div>)}
+    </span>
+  );
+}

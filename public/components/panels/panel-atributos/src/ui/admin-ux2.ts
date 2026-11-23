@@ -261,7 +261,9 @@ const curto = (v: unknown) => (v === null || v === undefined ? '—' : typeof v 
 export function linhasHistorico(eventos: readonly EventoAuditoria[]): { id: number; quando: string; quem: string; acao: string; mudancas: string[]; motivo: string | null }[] {
   return eventos.map((e) => {
     const a = json(e.antes) ?? {}, d = json(e.depois) ?? {};
-    const campos = [...new Set([...Object.keys(a), ...Object.keys(d)])];
+    // a auditoria grava retratos PARCIAIS: só é mudança o que está no "depois" (campo ausente no depois NÃO foi apagado);
+    // sem "depois" (remoção), o que existia antes.
+    const campos = Object.keys(d).length ? Object.keys(d) : Object.keys(a);
     return {
       id: e.id, quando: e.criado_em, quem: e.usuario ?? '—', acao: e.acao,
       mudancas: campos.filter((c) => curto(a[c]) !== curto(d[c])).map((c) => `${c}: ${curto(a[c])} → ${curto(d[c])}`),

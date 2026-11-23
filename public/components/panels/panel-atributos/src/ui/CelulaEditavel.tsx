@@ -48,15 +48,28 @@ export function useGravacoes(aoGravado: () => Promise<unknown>) {
   return { estadoDe, gravar, conferir, limpar };
 }
 
-/** Ícone pequeno do desfecho. Desconhecido/em andamento viram botão "Conferir gravação". */
-export function IconeEstado({ estado, aoConferir }: { estado: EstadoCelula; aoConferir?: () => void }) {
+/**
+ * Ícone pequeno do desfecho. Desconhecido/em andamento viram botão "Conferir gravação".
+ * `compacto` (grades): o botão é só o ícone (nome acessível e dica com o texto completo) — o aviso fica DENTRO da célula, num espaço
+ * reservado, sem mudar a largura nem a posição das colunas (parecer do Jhony, 19/11).
+ */
+export function IconeEstado({ estado, aoConferir, compacto = false }: { estado: EstadoCelula; aoConferir?: () => void; compacto?: boolean }) {
   const ic = iconeDaFase(estado.fase); if (!ic) return null;
   const titulo = estado.mensagem && estado.fase !== 'salvo' ? `${ic.rotulo}. ${estado.mensagem}` : ic.rotulo;
+  if (podeConferir(estado.fase) && aoConferir && compacto) {
+    // na grade: mensagem curta VISÍVEL sobre a própria célula (posição absoluta no espaço da célula: as colunas não se movem)
+    return (
+      <span className={`at-cel__alerta at-cel__alerta--${ic.tom}`} role="status" data-fase={estado.fase} title={titulo}>
+        <span className="at-cel__alerta-txt"><span aria-hidden>{ic.simbolo} </span>Não conseguimos confirmar</span>
+        <button type="button" className={`at-cel__estado at-cel__estado--${ic.tom} at-cel__conferir at-cel__conferir--compacto`} data-fase={estado.fase}
+          title={`${titulo} Clique para conferir a gravação.`} aria-label="Conferir gravação" onClick={(e) => { e.stopPropagation(); aoConferir(); }}>Conferir</button>
+      </span>);
+  }
   if (podeConferir(estado.fase) && aoConferir) {
     return (
-      <button type="button" className={`at-cel__estado at-cel__estado--${ic.tom} at-cel__conferir`} data-fase={estado.fase} title={titulo}
-        onClick={(e) => { e.stopPropagation(); aoConferir(); }}>
-        <span aria-hidden>{ic.simbolo}</span> Conferir gravação
+      <button type="button" className={`at-cel__estado at-cel__estado--${ic.tom} at-cel__conferir ${compacto ? 'at-cel__conferir--compacto' : ''}`} data-fase={estado.fase}
+        title={`${titulo} Clique para conferir a gravação.`} aria-label="Conferir gravação" onClick={(e) => { e.stopPropagation(); aoConferir(); }}>
+        <span aria-hidden>{compacto ? '↻' : ic.simbolo}</span>{!compacto && ' Conferir gravação'}
       </button>);
   }
   return <span className={`at-cel__estado at-cel__estado--${ic.tom}`} data-fase={estado.fase} title={titulo} role="img" aria-label={titulo}>{ic.simbolo}</span>;
@@ -109,7 +122,9 @@ export function CelulaTexto({ valor, rotulo, pode, validar, aoSalvar, estado, ao
     return (
       <div className={`at-cel at-cel--editando ${classe ?? ''}`}>
         {multilinha ? <textarea rows={2} {...props} /> : <input type="text" {...props} />}
-        <IconeEstado estado={estado} aoConferir={aoConferir} />
+        {/* mede a coluna com o MESMO texto e o mesmo estilo do modo de leitura: abrir o campo ou mostrar um aviso não muda a largura */}
+        <span className="at-cel__valor at-cel__medida" aria-hidden><span className="at-cel__texto">{rascunho || vazio}</span></span>
+        <IconeEstado estado={estado} aoConferir={aoConferir} compacto />
         {erroLocal ? <span className="at-cel__aviso at-cel__aviso--erro" role="alert">{erroLocal}</span> : <Aviso estado={estado} />}
       </div>);
   }
@@ -121,26 +136,39 @@ export function CelulaTexto({ valor, rotulo, pode, validar, aoSalvar, estado, ao
           {valor ? <span className="at-cel__texto" title={valor}>{valor}</span> : <span className="at-dic-zero">{vazio}</span>}
         </button>
       ) : (valor ? <span className="at-cel__texto">{valor}</span> : <span className="at-dic-zero">{vazio}</span>)}
-      <IconeEstado estado={estado} aoConferir={aoConferir} />
+      <IconeEstado estado={estado} aoConferir={aoConferir} compacto />
       <Aviso estado={estado} />
     </div>);
 }
 
-/** Célula de escolha (select). `aoEscolher` decide: grava direto (importância) ou abre a confirmação na linha (tipo/unidade). */
-export function CelulaEscolha({ valor, opcoes, rotulo, pode, aoEscolher, estado, aoConferir, vazio = '—' }: {
+/**
+ * Célula de escolha. ATRIBUTOS V3 (19/11): em REPOUSO mostra só o texto (ex.: o símbolo da unidade — `repouso`); o select aparece ao clicar
+ * (Enter/Espaço no foco) e some ao escolher, ao sair ou com Esc. `aoEscolher` decide: grava direto (importância) ou abre a confirmação na
+ * linha (tipo/unidade). Uma grade em repouso não exibe centenas de selects.
+ */
+export function CelulaEscolha({ valor, opcoes, rotulo, pode, aoEscolher, estado, aoConferir, vazio = '—', repouso }: {
   valor: string; opcoes: { valor: string; rotulo: string }[]; rotulo: string; pode: boolean; aoEscolher: (v: string) => void;
-  estado: EstadoCelula; aoConferir: () => void; vazio?: string;
+  estado: EstadoCelula; aoConferir: () => void; vazio?: string; repouso?: string | null;
 }) {
+  const [aberto, setAberto] = React.useState(false);
   const atual = opcoes.find((o) => o.valor === valor)?.rotulo;
+  const texto = repouso !== undefined ? repouso : (valor !== '' ? atual : null);
+  const titulo = atual && valor !== '' ? atual : undefined;
   return (
     <div className="at-cel">
-      {pode ? (
-        <select className="at-cel__select" aria-label={rotulo} value={valor} disabled={!livre(estado.fase)} onClick={(e) => e.stopPropagation()}
-          onChange={(e) => { if (e.target.value !== valor) aoEscolher(e.target.value); }}>
+      {pode && aberto ? (
+        <select className="at-cel__select" aria-label={rotulo} value={valor} autoFocus disabled={!livre(estado.fase)} onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setAberto(false); } }} onBlur={() => setAberto(false)}
+          onChange={(e) => { setAberto(false); if (e.target.value !== valor) aoEscolher(e.target.value); }}>
           {opcoes.map((o) => <option key={o.valor} value={o.valor}>{o.rotulo}</option>)}
         </select>
-      ) : (atual && valor !== '' ? <span className="at-cel__texto">{atual}</span> : <span className="at-dic-zero">{vazio}</span>)}
-      <IconeEstado estado={estado} aoConferir={aoConferir} />
+      ) : pode ? (
+        <button type="button" className="at-cel__valor" aria-label={`${rotulo}: ${titulo ?? 'vazio'}. Alterar`} title={titulo} disabled={!livre(estado.fase)}
+          onClick={(e) => { e.stopPropagation(); setAberto(true); }}>
+          {texto ? <span className="at-cel__texto">{texto}</span> : <span className="at-dic-zero">{vazio}</span>}
+        </button>
+      ) : (texto ? <span className="at-cel__texto" title={titulo}>{texto}</span> : <span className="at-dic-zero">{vazio}</span>)}
+      <IconeEstado estado={estado} aoConferir={aoConferir} compacto />
       <Aviso estado={estado} />
     </div>);
 }
@@ -156,7 +184,7 @@ export function BotaoLigaDesliga({ ativo, rotulo, pode, aoPedir, estado, aoConfe
         onClick={(e) => { e.stopPropagation(); aoPedir(); }}>
         <span className="at-liga__trilho" aria-hidden><span className="at-liga__botao" /></span>
       </button>
-      <IconeEstado estado={estado} aoConferir={aoConferir} />
+      <IconeEstado estado={estado} aoConferir={aoConferir} compacto />
     </div>);
 }
 

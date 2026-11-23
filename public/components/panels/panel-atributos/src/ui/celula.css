@@ -47,6 +47,29 @@
 [data-bl-root] .at-barra-conf__erro { flex-basis: 100%; color: var(--bl-erro); font-weight: 600; }
 [data-bl-root] .at-linha--pedido > td { background: var(--bl-aviso-bg); }
 
+/* Expandir a linha (Opções / Detalhes) */
+[data-bl-root] .at-dic-expandir { all: unset; cursor: pointer; white-space: nowrap; color: var(--bl-info); font-size: 12px; font-weight: 600; padding: 2px 6px; border-radius: var(--bl-raio-sm, 4px); }
+[data-bl-root] .at-dic-expandir:hover { background: var(--bl-info-bg); }
+[data-bl-root] .at-dic-expandir:focus-visible { outline: 2px solid var(--bl-info); }
+[data-bl-root] .at-dic-tabela--edicao .at-dic-desc { min-width: 200px; max-width: 360px; }
+[data-bl-root] .at-dic-tabela--edicao .at-dic-desc .at-cel__texto { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; white-space: normal; }
+[data-bl-root] .at-dic-unid { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+/* Linha nova no topo */
+[data-bl-root] .at-dic-nova { display: grid; grid-template-columns: minmax(180px, 1.4fr) 130px minmax(140px, 1fr) 150px minmax(180px, 2fr) auto; gap: 8px; align-items: center;
+  padding: 10px 12px; margin: 0 0 8px; background: var(--bl-info-bg); border: 1px solid var(--bl-info); border-radius: var(--bl-raio, 6px); }
+[data-bl-root] .at-dic-nova__acoes { display: inline-flex; gap: 6px; align-items: center; }
+[data-bl-root] .at-dic-nova > .at-cel__aviso, [data-bl-root] .at-dic-nova > .at-dic-dica { grid-column: 1 / -1; }
+@media (max-width: 1100px) { [data-bl-root] .at-dic-nova { grid-template-columns: 1fr 1fr; } }
+
+/* Definição na linha expandida */
+[data-bl-root] .at-dic-def { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+[data-bl-root] .at-dic-def__campo { display: flex; flex-direction: column; gap: 3px; min-width: 120px; font-size: 12.5px; }
+[data-bl-root] .at-dic-def__campo > span:first-child { color: var(--bl-texto-2, var(--bl-texto)); font-weight: 600; }
+[data-bl-root] .at-dic-def__unidades { margin-top: 10px; }
+[data-bl-root] .at-dic-def__lista { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 4px 0 8px; }
+[data-bl-root] .at-dic-def__unid { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; }
+
 /* Unidades — data grid limpo: linhas de mesma altura, "onde é usada" numa linha, bolinha de status, ações com ícones */
 [data-bl-root] .at-und-grid .at-td__linha > td { height: 40px; padding-top: 0; padding-bottom: 0; vertical-align: middle; }
 [data-bl-root] .at-und-grid .at-td__linha > td .at-cel { flex-wrap: nowrap; }
@@ -135,3 +158,329 @@
 [data-bl-root] .at-und-ctrl--ativo { border-color: var(--bl-verde-borda) !important; background: var(--bl-verde-suave) !important; color: var(--bl-verde) !important; }
 [data-bl-root] .at-und-ctrl__valor { font-weight: 500; }
 
+/* ── ATRIBUTOS (parecer do Jhony, 19/11): datagrid de altura uniforme, tudo numa linha (reticências; texto completo no hover/foco),
+   larguras reequilibradas, filtros numa faixa compacta (como a Unidades), travamento da barra verde ao cabeçalho das colunas. ── */
+[data-bl-root] .at-dic-barra .at-und-busca { flex: 0 1 300px; min-width: 180px; }
+[data-bl-root] .at-dic-barra .at-und-direita { gap: 6px; }
+[data-bl-root] .at-dic-barra .at-und-ctrl--botao { padding: 0 9px; }
+[data-bl-root] .at-dic-limpar { font-size: 13px; white-space: nowrap; }
+[data-bl-root] .at-dic-v2 { margin-top: -16px; }
+[data-bl-root] .at-dic-v2 .at-dic-moldura { border-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; }
+[data-bl-root] .at-dic-v2 .at-dic-tabela--edicao .at-td__th:first-child, [data-bl-root] .at-dic-v2 .at-dic-tabela--edicao .at-td__th:last-child { border-radius: 0; }
+[data-bl-root] .at-dic-tabela--edicao { font-size: 13px; }
+[data-bl-root] .at-dic-tabela--edicao .at-td__th { height: 36px; font-size: 13px; font-weight: 500; white-space: nowrap; }
+[data-bl-root] .at-dic-tabela--edicao tr.at-td__linha > td { height: 36px; padding-top: 0; padding-bottom: 0; vertical-align: middle; white-space: nowrap; font-weight: 400; }
+[data-bl-root] .at-dic-tabela--edicao tr.at-td__linha > td * { font-weight: 400; }
+[data-bl-root] .at-dic-tabela--edicao .at-cel { flex-wrap: nowrap; }
+[data-bl-root] .at-dic-tabela--edicao .at-cel__aviso { display: none; }   /* a mensagem fica no title do ícone e na barra da linha: a linha não cresce */
+[data-bl-root] .at-dic-tabela--edicao .at-cel__campo { height: 26px; padding: 0 6px; font-size: 13px; }
+[data-bl-root] .at-dic-tabela--edicao textarea.at-cel__campo { min-height: 26px; height: 26px; resize: none; }
+[data-bl-root] .at-dic-tabela--edicao .at-cel__select { height: 26px; padding: 0 4px; font-size: 13px; }
+[data-bl-root] .at-dic-tabela--edicao .at-cel__texto, [data-bl-root] .at-dic-1l { display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+/* larguras */
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-rotulo .at-cel__texto { max-width: 220px; }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-col-codigo { max-width: 150px; }
+[data-bl-root] .at-dic-codigo-1l { display: inline-block; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;
+  font-family: var(--bl-mono, ui-monospace, monospace); font-size: 12px; color: var(--bl-texto-2, var(--bl-texto)); border-radius: 3px; }
+[data-bl-root] .at-dic-codigo-1l:focus, [data-bl-root] .at-dic-codigo-1l:hover { position: relative; z-index: 3; max-width: none; overflow: visible; background: var(--bl-superficie);
+  box-shadow: 0 0 0 3px var(--bl-superficie), 0 1px 4px rgba(0, 0, 0, .18); outline: none; }
+[data-bl-root] .at-dic-codigo-1l:focus-visible { box-shadow: 0 0 0 2px var(--bl-info), 0 1px 4px rgba(0, 0, 0, .18); }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-col-tipo .at-cel__select { width: 96px; }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-col-unid .at-cel__select { width: 118px; }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-col-imp .at-cel__select { width: 112px; }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-col-grupo .at-dic-1l { max-width: 140px; }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-desc { min-width: 0; max-width: 220px; }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-desc .at-cel__texto { max-width: 200px; display: inline-block; -webkit-line-clamp: unset; }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-col-num { width: 1%; }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-col-ativo, [data-bl-root] .at-dic-tabela--edicao td.at-dic-col-det { width: 1%; }
+[data-bl-root] .at-dic-tabela--edicao .at-dic-unid { flex-wrap: nowrap; }
+[data-bl-root] .at-dic-tabela--edicao .at-dic-auxiliar { display: none; }   /* "+N permitidas" fica na linha expandida (Definição) */
+/* ajuste de larguras (medido em 1440×900: a grade tinha 1104 px para 1066 disponíveis; a descrição quebrava porque o botão da célula
+   usa all:unset e perdia o nowrap) */
+[data-bl-root] .at-dic-tabela--edicao .at-cel__valor, [data-bl-root] .at-und-grid2 .at-cel__valor { display: inline-block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
+[data-bl-root] .at-dic-tabela--edicao .at-td__th, [data-bl-root] .at-dic-tabela--edicao tr.at-td__linha > td { padding-left: 8px; padding-right: 8px; }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-rotulo .at-cel__texto { max-width: 180px; }
+[data-bl-root] .at-dic-codigo-1l { max-width: 120px; }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-col-tipo .at-cel__select { width: 90px; }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-col-unid .at-cel__select { width: 100px; }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-col-imp .at-cel__select { width: 100px; }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-desc { min-width: 150px; width: 20%; }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-desc .at-cel__texto { max-width: 100%; }
+/* a regra antiga (UX-2b, 2 linhas na descrição) deixava white-space: normal → a linha crescia. Agora: uma linha, reticências, texto completo no title/edição. */
+[data-bl-root] .at-dic-tabela--edicao.at-dic-tabela--edicao td.at-dic-desc .at-cel__texto { display: inline-block; white-space: nowrap; -webkit-line-clamp: unset; -webkit-box-orient: unset; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+/* ── ATRIBUTOS V3 (MOCKUP-ATRIBUTOS-V3, 19/11) ── */
+[data-bl-root] .at-filtros-n { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
+  background: var(--bl-verde); color: var(--bl-superficie); font-size: 11px; font-weight: 500; }
+[data-bl-root] .at-menu-filtros { min-width: 260px; gap: 10px; }
+[data-bl-root] .at-menu-filtros label { display: flex; flex-direction: column; align-items: stretch; gap: 3px; cursor: default; color: var(--bl-texto-2, var(--bl-texto)); }
+[data-bl-root] .at-menu-filtros select { height: 30px; padding: 0 8px; font-size: 13px; border: 1px solid var(--bl-borda); border-radius: var(--bl-raio-sm, 4px); background: var(--bl-superficie); color: var(--bl-texto); }
+[data-bl-root] .at-menu-filtros__rodape { display: flex; justify-content: flex-end; border-top: 1px solid var(--bl-borda); padding-top: 8px; }
+[data-bl-root] .at-dic-v3 .at-und-pilula { min-width: 52px; justify-content: center; }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-rotulo .at-cel__texto { max-width: 260px; }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-col-grupo .at-dic-1l { max-width: 180px; }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-col-sit { width: 1%; text-align: center; }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-col-acoes { width: 1%; }
+[data-bl-root] .at-dic-tabela--edicao .at-icone-acao[aria-expanded="true"] { color: var(--bl-info); background: var(--bl-info-bg); }
+[data-bl-root] .at-dic-def__campo--largo { flex: 1 1 100%; max-width: 720px; }
+
+/* ── CONFERÊNCIA · LEGADO (MOCKUP-CONFERENCIA-LEGADO, 19/11) ── */
+[data-bl-root] .at-leg-grade { font-size: 13px; }
+[data-bl-root] .at-leg-grade .at-td__th { height: 36px; font-size: 13px; font-weight: 500; white-space: nowrap; padding-left: 8px; padding-right: 8px; }
+[data-bl-root] .at-leg-grade tr.at-td__linha > td { height: 36px; padding: 0 8px; white-space: nowrap; vertical-align: middle; font-weight: 400; }
+[data-bl-root] .at-leg-grade tr.at-td__linha > td * { font-weight: 400; }
+[data-bl-root] .at-leg-grade td.at-leg-col-sel { width: 1%; }
+[data-bl-root] .at-leg-sel { display: inline-flex; align-items: center; gap: 6px; }
+[data-bl-root] .at-leg-expandir { all: unset; cursor: pointer; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; color: var(--bl-texto-2, var(--bl-texto)); }
+[data-bl-root] .at-leg-expandir:hover { background: var(--bl-superficie-2, transparent); }
+[data-bl-root] .at-leg-expandir:focus-visible { outline: 2px solid var(--bl-info); }
+[data-bl-root] .at-leg-grade td.at-leg-col-id { width: 1%; }
+[data-bl-root] .at-leg-grade td.at-leg-col-prod .at-dic-1l { max-width: 360px; }
+[data-bl-root] .at-leg-grade .at-link-produto { all: unset; cursor: pointer; color: var(--bl-texto); }
+[data-bl-root] .at-leg-grade .at-link-produto:hover { color: var(--bl-info); text-decoration: underline; }
+[data-bl-root] .at-leg-grade .at-link-produto:focus-visible { outline: 2px solid var(--bl-info); }
+[data-bl-root] .at-leg-valor { font-variant-numeric: tabular-nums; }
+[data-bl-root] .at-leg-destino { width: 220px; height: 28px; }
+[data-bl-root] .at-leg-grade td.at-leg-col-sit, [data-bl-root] .at-leg-grade td.at-leg-col-acoes { width: 1%; text-align: center; }
+[data-bl-root] .at-leg-acoes { display: inline-flex; align-items: center; gap: 6px; }
+[data-bl-root] .at-leg-btn { height: 28px; padding: 0 12px; font-size: 13px; }
+[data-bl-root] .at-leg-pilula--pendente { background: var(--bl-aviso-bg) !important; color: color-mix(in srgb, var(--bl-aviso) 70%, var(--bl-texto)) !important; }
+[data-bl-root] .at-leg-pilula--aviso { background: var(--bl-aviso-bg) !important; color: var(--bl-aviso) !important; border-color: var(--bl-aviso) !important; }
+[data-bl-root] .at-leg-pilula--erro { background: var(--bl-erro-bg, var(--bl-aviso-bg)) !important; color: var(--bl-erro) !important; }
+[data-bl-root] .at-leg-evid { padding: 8px 4px; font-size: 13px; white-space: normal; }
+[data-bl-root] .at-leg-evid p { margin: 2px 0; }
+[data-bl-root] .at-leg-aviso { color: var(--bl-aviso); }
+[data-bl-root] .at-leg-lote { display: flex; align-items: center; gap: 12px; padding: 6px 10px; margin: 0 0 8px; font-size: 13px; background: var(--bl-info-bg); border: 1px solid var(--bl-info); border-radius: var(--bl-raio-sm, 4px); }
+[data-bl-root] .at-leg-linha--decidida > td { color: var(--bl-texto-2, var(--bl-texto)); }
+[data-bl-root] .at-leg-moldura { border-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; }
+/* código: o texto completo no foco/hover aparece num rótulo FLUTUANTE (não muda a largura da coluna nem a da grade — antes o foco
+   alargava a célula e a grade virava "larga", soltando o cabeçalho das colunas) */
+[data-bl-root] .at-dic-codigo-1l:focus, [data-bl-root] .at-dic-codigo-1l:hover { max-width: 120px; overflow: hidden; box-shadow: none; background: transparent; }
+[data-bl-root] .at-dic-codigo-wrap { position: relative; display: inline-block; }
+[data-bl-root] .at-dic-codigo-1l:focus-visible { outline: 2px solid var(--bl-info); outline-offset: 1px; }
+[data-bl-root] .at-dic-codigo-wrap:has(.at-dic-codigo-1l:focus)::after, [data-bl-root] .at-dic-codigo-wrap:has(.at-dic-codigo-1l:hover)::after {
+  content: attr(data-codigo); position: absolute; left: -6px; top: 50%; transform: translateY(-50%); z-index: 4; padding: 2px 6px; white-space: nowrap; pointer-events: none;
+  font-family: var(--bl-mono, ui-monospace, monospace); font-size: 12px; color: var(--bl-texto); background: var(--bl-superficie); border: 1px solid var(--bl-borda-forte);
+  border-radius: 4px; box-shadow: 0 1px 4px rgba(0, 0, 0, .18); }
+/* larguras proporcionais à tela (medido em 1440×900: Atributos 1133/1066 px e Legado 1192/1064 px → a grade virava "larga" e o
+   cabeçalho das colunas soltava). Em 2200 as colunas ficam perto do mockup; em 1440 a grade cabe e o cabeçalho continua travado. */
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-rotulo .at-cel__texto { max-width: clamp(170px, 14vw, 320px); }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-col-grupo .at-dic-1l { max-width: clamp(120px, 10vw, 210px); }
+[data-bl-root] .at-leg-grade td.at-leg-col-prod .at-dic-1l { max-width: clamp(200px, 16vw, 380px); display: inline-block; }
+[data-bl-root] .at-leg-destino { width: clamp(160px, 12.5vw, 250px); }
+[data-bl-root] .at-leg-grade td.at-leg-col-acoes .at-leg-btn { padding: 0 10px; }
+
+/* ── Parecer do Jhony na Atributos (19/11) ── */
+/* (P1) linha de criação DENTRO da grade, com rótulos compactos e persistentes em cada campo */
+[data-bl-root] .at-nova-campo { display: inline-flex; align-items: center; gap: 0; width: 100%; height: 28px; border: 1px solid var(--bl-info); border-radius: var(--bl-raio-sm, 4px); background: var(--bl-superficie); overflow: hidden; }
+[data-bl-root] .at-nova-campo__rot { flex: none; padding: 0 6px; height: 100%; display: inline-flex; align-items: center; font-size: 11px; color: var(--bl-texto-2, var(--bl-texto)); background: var(--bl-info-bg); border-right: 1px solid var(--bl-borda); white-space: nowrap; }
+[data-bl-root] .at-nova-campo .at-cel__campo, [data-bl-root] .at-nova-campo .at-cel__select { border: 0; height: 26px; min-width: 0; flex: 1; border-radius: 0; outline-offset: -2px; }
+[data-bl-root] .at-dic-tabela--edicao tr[data-chave="-1"] > td { background: var(--bl-info-bg); }
+[data-bl-root] .at-nova-pilula { background: var(--bl-info-bg); color: var(--bl-info); border-color: var(--bl-info); }
+[data-bl-root] .at-nova-exp { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 4px 0; }
+[data-bl-root] .at-nova-campo--largo { max-width: 640px; }
+[data-bl-root] .at-icone-acao--confirmar { color: var(--bl-sucesso); font-weight: 500; }
+/* (2) mais espaço para o Rótulo em telas largas (nada de "Ângulo Máximo de Visualiza…" em 2200) */
+@media (min-width: 1800px) { [data-bl-root] .at-dic-tabela--edicao td.at-dic-rotulo .at-cel__texto { max-width: 400px; } }
+/* (3) aviso de gravação DENTRO da célula, num espaço reservado: não muda largura nem posição das colunas */
+[data-bl-root] .at-dic-tabela--edicao .at-cel { position: relative; padding-right: 22px; }
+[data-bl-root] .at-dic-tabela--edicao .at-cel > .at-cel__estado { position: absolute; right: 0; top: 50%; transform: translateY(-50%); }
+[data-bl-root] .at-cel__conferir--compacto { width: 20px; height: 20px; padding: 0; border-radius: 999px; justify-content: center; }
+/* (4) histórico: um evento por linha; o técnico recolhido e em cinza */
+[data-bl-root] .at-hist { list-style: none; margin: 4px 0 0; padding: 0; }
+[data-bl-root] .at-hist__linha { padding: 4px 0; border-bottom: 1px solid var(--bl-borda); font-size: 13px; line-height: 1.45; }
+[data-bl-root] .at-hist__quando { color: var(--bl-texto-2, var(--bl-texto)); font-variant-numeric: tabular-nums; }
+[data-bl-root] .at-hist__motivo { color: var(--bl-texto-2, var(--bl-texto)); }
+[data-bl-root] .at-hist__tec { display: inline; margin-left: 8px; color: var(--bl-texto-3, var(--bl-texto-2)); font-size: 11.5px; }
+[data-bl-root] .at-hist__tec summary { display: inline; cursor: pointer; list-style: none; text-decoration: underline dotted; }
+[data-bl-root] .at-hist__tec[open] { display: block; margin: 2px 0 0; }
+
+/* 1440: a TabelaDados nova (ícones de ordenação) somou 2 px; o Rótulo cede um pouco abaixo de 1800 px (acima disso vai a 400 px) */
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-rotulo .at-cel__texto { max-width: clamp(160px, 12.5vw, 320px); }
+@media (min-width: 1800px) { [data-bl-root] .at-dic-tabela--edicao td.at-dic-rotulo .at-cel__texto { max-width: 400px; } }
+
+/* Legado (captura 1440): o all:unset do botão do produto anulava as reticências → o nome invadia a coluna ao lado e a grade passava da
+   moldura (cabeçalho soltava). Agora: uma linha com reticências e o nome completo no title. */
+[data-bl-root] .at-leg-grade .at-link-produto { display: inline-block; max-width: clamp(200px, 16vw, 380px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+[data-bl-root] .at-leg-valor { display: inline-block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+/* Legado sem emenda entre o bloco travado e o cabeçalho das colunas (mesma correção das outras grades: 16 px do .at-conteudo + bordas) */
+[data-bl-root] .at-conferencia section.at-painel:has(.at-leg-grade) { margin-top: -16px; border-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; }
+[data-bl-root] .at-leg-barra { margin-bottom: -4px; padding-bottom: 14px; }
+/* Atributos (3): o campo aberto na célula não pode alargar a coluna — largura intrínseca 0, ocupa a célula toda */
+[data-bl-root] .at-dic-tabela--edicao .at-cel--editando { min-width: 0; }
+[data-bl-root] .at-dic-tabela--edicao .at-cel--editando .at-cel__campo { width: 0; min-width: 100%; flex: 1 1 0; }
+/* medida invisível da célula em edição (mesmo texto e estilo do modo de leitura) e Legado sem o último 1 px de emenda */
+[data-bl-root] .at-cel__medida { order: 9; flex-basis: 100%; height: 0 !important; overflow: hidden; visibility: hidden; padding-top: 0 !important; padding-bottom: 0 !important; margin-top: 0 !important; margin-bottom: 0 !important; pointer-events: none; }
+[data-bl-root] .at-dic-tabela--edicao .at-cel--editando { flex-wrap: wrap; }
+[data-bl-root] .at-conferencia section.at-painel:has(.at-leg-grade) { margin-top: -17px; }
+
+/* Parecer (3) "estabilidade": larguras FIXAS por coluna (table-layout: fixed). Conteúdo, campo aberto ou aviso de gravação nunca
+   mudam a largura nem a posição das colunas, e a grade nunca passa da moldura. O Rótulo fica com todo o espaço que sobra
+   (mais largo em 2200; nenhum "Ângulo Máximo de Visualiza…"). Colunas opcionais (Código, Descrição) têm largura própria. */
+[data-bl-root] .at-dic-tabela--edicao { table-layout: fixed; width: 100%; }
+[data-bl-root] .at-dic-tabela--edicao th[data-coluna="tipo"] { width: 100px; }
+[data-bl-root] .at-dic-tabela--edicao th[data-coluna="unidade"] { width: 110px; }
+[data-bl-root] .at-dic-tabela--edicao th[data-coluna="grupo_atributos"] { width: clamp(150px, 11vw, 230px); }
+[data-bl-root] .at-dic-tabela--edicao th[data-coluna="importancia_padrao"] { width: 150px; }
+[data-bl-root] .at-dic-tabela--edicao th[data-coluna="em_kits"] { width: 76px; }
+[data-bl-root] .at-dic-tabela--edicao th[data-coluna="produtos_com_valor"] { width: 140px; }
+[data-bl-root] .at-dic-tabela--edicao th[data-coluna="situacao"] { width: 86px; }
+[data-bl-root] .at-dic-tabela--edicao th[data-coluna="acoes"] { width: 86px; }
+[data-bl-root] .at-dic-tabela--edicao th[data-coluna="codigo"] { width: 190px; }
+[data-bl-root] .at-dic-tabela--edicao th[data-coluna="descricao"] { width: 240px; }
+[data-bl-root] .at-dic-tabela--edicao tr.at-td__linha > td { overflow: hidden; }
+[data-bl-root] .at-dic-tabela--edicao td .at-cel, [data-bl-root] .at-dic-tabela--edicao td .at-cel__valor, [data-bl-root] .at-dic-tabela--edicao td .at-cel__texto,
+[data-bl-root] .at-dic-tabela--edicao td .at-dic-1l, [data-bl-root] .at-dic-tabela--edicao td .at-cel__select { max-width: 100%; }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-rotulo .at-cel__texto { max-width: 100%; }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-col-grupo .at-dic-1l { max-width: 100%; }
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-col-tipo .at-cel__select, [data-bl-root] .at-dic-tabela--edicao td.at-dic-col-unid .at-cel__select,
+[data-bl-root] .at-dic-tabela--edicao td.at-dic-col-imp .at-cel__select { width: 100%; }
+[data-bl-root] .at-dic-tabela--edicao .at-cel__medida { display: none; }
+[data-bl-root] .at-dic-tabela--edicao .at-nova-campo { min-width: 0; }
+/* "Sim/Não" cortava em 100 px (a célula reserva 22 px para o ícone de estado) */
+[data-bl-root] .at-dic-tabela--edicao th[data-coluna="tipo"] { width: 124px; }
+[data-bl-root] .at-dic-tabela--edicao th[data-coluna="unidade"] { width: 120px; }
+
+/* Criação (parecer 19/11): enquanto o rascunho está aberto, Tipo, Unidade padrão e Importância ganham largura para rótulo + valor inteiros
+   (nada de "Númerc"/"Sem i…"); o Rótulo cede o espaço. Ao confirmar/cancelar, as larguras voltam às fixas de repouso. */
+[data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="tipo"] { width: 190px; }
+[data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="unidade"] { width: 230px; }
+[data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="importancia_padrao"] { width: 300px; }
+[data-bl-root] .at-dic-tabela--edicao tr[data-chave="-1"] .at-nova-campo .at-cel__select { text-overflow: clip; padding-right: 22px; }
+
+/* Criação abaixo de 1800 px (1440: a grade tem 1066 px): rótulo do campo EM CIMA do valor (continua persistente), então cada campo
+   precisa só da largura do valor; Importância 190 px ("Sem importância padrão" inteiro); Ações/Situação/Grupo mais justos. */
+@media (max-width: 1799px) {
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="acoes"] { width: 72px; }
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="situacao"] { width: 78px; }
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="grupo_atributos"] { width: 140px; }
+  [data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="tipo"] { width: 124px; }
+  [data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="unidade"] { width: 120px; }
+  [data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="importancia_padrao"] { width: 190px; }
+  [data-bl-root] .at-dic-tabela--edicao tr[data-chave="-1"] .at-nova-campo { flex-direction: column; align-items: stretch; height: auto; }
+  [data-bl-root] .at-dic-tabela--edicao tr[data-chave="-1"] .at-nova-campo__rot { height: 18px; border-right: 0; border-bottom: 1px solid var(--bl-borda); padding: 0 6px; font-size: 10.5px; }
+  [data-bl-root] .at-dic-tabela--edicao tr[data-chave="-1"] .at-nova-campo .at-cel__campo,
+  [data-bl-root] .at-dic-tabela--edicao tr[data-chave="-1"] .at-nova-campo .at-cel__select { height: 26px; flex: none; width: 100%; }
+}
+
+/* ══ PARECER 2 do Jhony (19/11) — consolidado; vem por último e prevalece sobre as regras anteriores de criação/larguras ══ */
+/* (P1) criação: rótulo pequeno ACIMA do valor em TODAS as larguras; o campo ocupa a célula inteira (valor + seta visíveis) */
+[data-bl-root] .at-dic-tabela--edicao tr[data-chave="-1"] > td { vertical-align: top; padding-top: 6px; padding-bottom: 6px; }
+[data-bl-root] .at-nova-campo { flex-direction: column; align-items: stretch; height: auto; border: 0; background: transparent; overflow: visible; gap: 2px; }
+[data-bl-root] .at-nova-campo__rot { height: auto; padding: 0 2px; background: transparent; border: 0 !important; font-size: 11px; line-height: 14px; font-weight: 600; color: var(--bl-texto-2, var(--bl-texto)); }
+[data-bl-root] .at-nova-campo .at-cel__campo, [data-bl-root] .at-nova-campo .at-cel__select { flex: none; width: 100%; height: 28px; border: 1px solid var(--bl-info); border-radius: var(--bl-raio-sm, 4px); background: var(--bl-superficie); }
+[data-bl-root] .at-dic-tabela--edicao tr[data-chave="-1"] .at-nova-campo .at-cel__select { padding-left: 6px; padding-right: 22px; text-overflow: clip; }
+[data-bl-root] .at-dic-tabela--edicao tr[data-chave="-1"] .at-cel { padding-right: 0; }
+[data-bl-root] .at-nova-campo--largo { max-width: 640px; }
+/* larguras de criação (≥ 1800): valor inteiro + seta */
+[data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="tipo"] { width: 150px; }
+[data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="unidade"] { width: 230px; }
+[data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="importancia_padrao"] { width: 220px; }
+/* (P2) 1440: o Rótulo fica com a largura útil — colunas curtas mais justas, cabeçalhos longos em 2 linhas; tipos curtos inteiros */
+@media (max-width: 1799px) {
+  [data-bl-root] .at-dic-tabela--edicao thead th { white-space: normal; line-height: 1.2; }
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="tipo"] { width: 124px; }
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="unidade"] { width: 84px; }
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="grupo_atributos"] { width: 130px; }
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="importancia_padrao"] { width: 132px; }
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="em_kits"] { width: 64px; }
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="produtos_com_valor"] { width: 92px; }
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="situacao"] { width: 76px; }
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="acoes"] { width: 72px; }
+  [data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="tipo"] { width: 124px; }
+  [data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="unidade"] { width: 170px; }
+  [data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="importancia_padrao"] { width: 190px; }
+}
+/* (P2) aviso de gravação: mensagem curta VISÍVEL sobre a própria célula, no espaço dela (absoluta: as colunas não se movem) */
+[data-bl-root] .at-cel { position: relative; }
+[data-bl-root] .at-cel__alerta { position: absolute; inset: 0 0 0 0; display: flex; align-items: center; gap: 6px; padding: 0 4px; z-index: 1;
+  background: var(--bl-aviso-bg, #fff4dc); border: 1px solid var(--bl-aviso, #b26b00); border-radius: var(--bl-raio-sm, 4px); color: var(--bl-aviso-texto, #6b4100); font-size: 12px; min-width: 0; }
+[data-bl-root] .at-cel__alerta-txt { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-bl-root] .at-cel__alerta .at-cel__conferir--compacto { flex: none; width: auto; height: 22px; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 600; position: static; transform: none; }
+/* Legado: Conferir gravação = ação principal do mesmo tamanho; pares compactos na evidência; Atual × Legado destacado */
+[data-bl-root] .at-leg-btn--conferir { white-space: nowrap; }
+[data-bl-root] .at-leg-pares { display: flex; flex-wrap: wrap; gap: 6px 28px; margin: 0 0 6px; }
+[data-bl-root] .at-leg-pares > div { display: flex; flex-direction: column; gap: 1px; }
+[data-bl-root] .at-leg-pares dt { font-size: 11px; font-weight: 600; color: var(--bl-texto-2, var(--bl-texto)); }
+[data-bl-root] .at-leg-pares dd { margin: 0; font-size: 13px; }
+[data-bl-root] .at-leg-conflito { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 4px 0 6px; padding: 8px 10px; border: 1px solid var(--bl-aviso, #b26b00); border-radius: var(--bl-raio-sm, 4px); background: var(--bl-aviso-bg, #fff4dc); }
+[data-bl-root] .at-leg-conflito__par { display: inline-flex; flex-direction: column; gap: 1px; }
+[data-bl-root] .at-leg-conflito__par > span { font-size: 11px; font-weight: 600; color: var(--bl-texto-2, var(--bl-texto)); }
+[data-bl-root] .at-leg-conflito__x { font-size: 16px; color: var(--bl-texto-2, var(--bl-texto)); }
+[data-bl-root] .at-leg-conflito__fazer { flex-basis: 100%; font-size: 12.5px; }
+[data-bl-root] .at-leg-evid__tec { margin: 2px 0 0; font-size: 11.5px; color: var(--bl-texto-3, var(--bl-texto-2)); }
+[data-bl-root] .at-leg-barra .at-und-barra-dir { margin-left: auto; display: inline-flex; gap: 8px; }
+/* 1440 (medido): "Capacidade de Expansão de Memória RAM" ainda cortava e a unidade longa na criação não cabia → Grupo/Produtos/Em kits/Situação
+   mais justos (o Rótulo ganha ~36 px) e Unidade padrão 190 px durante a criação */
+@media (max-width: 1799px) {
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="grupo_atributos"] { width: 110px; }
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="produtos_com_valor"] { width: 84px; }
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="em_kits"] { width: 60px; }
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="situacao"] { width: 72px; }
+  [data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="unidade"] { width: 190px; }
+}
+
+/* ══ PARECER 2 · ajuste final (medido nas capturas de 1440) ══
+   Criação: Unidade padrão e Importância ficam na LINHA AUXILIAR (rótulo acima, largura do valor + seta); na grade, só o valor escolhido.
+   Assim a grade NÃO muda de largura durante a criação (o Rótulo das outras linhas continua inteiro). */
+[data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="unidade"] { width: 120px; }
+[data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="importancia_padrao"] { width: 150px; }
+[data-bl-root] .at-dic-tabela--edicao th[data-coluna="tipo"], [data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="tipo"] { width: 140px; }
+[data-bl-root] .at-nova-exp { align-items: flex-end; gap: 10px 16px; }
+[data-bl-root] .at-nova-campo--exp { width: auto; flex: none; }
+[data-bl-root] .at-nova-campo--exp .at-cel__select { width: auto; min-width: 180px; padding-left: 6px; padding-right: 26px; }
+[data-bl-root] .at-nova-campo--largo { flex: 1 1 320px; }
+[data-bl-root] .at-nova-resumo { display: inline-block; max-width: 100%; margin-top: 16px; font-size: 13px; color: var(--bl-texto); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 1799px) {
+  [data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="unidade"] { width: 84px; }
+  [data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="importancia_padrao"] { width: 132px; }
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="tipo"], [data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="tipo"] { width: 132px; }
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="grupo_atributos"] { width: 102px; }
+  /* cabeçalhos longos em 2 linhas, sem sobrepor a vizinha (o botão de ordenar também quebra) */
+  [data-bl-root] .at-dic-tabela--edicao thead th { white-space: normal; overflow: hidden; vertical-align: middle; }
+  [data-bl-root] .at-dic-tabela--edicao thead .at-td__ordenar { white-space: normal; max-width: 100%; text-align: inherit; line-height: 1.2; }
+}
+/* cabeçalhos inteiros (medido: botão de ordenar + 16 px de padding) — Unidade padrão 136/90 px, Situação 92 px */
+[data-bl-root] .at-dic-tabela--edicao th[data-coluna="unidade"], [data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="unidade"] { width: 136px; }
+[data-bl-root] .at-dic-tabela--edicao th[data-coluna="situacao"] { width: 92px; }
+@media (max-width: 1799px) {
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="unidade"], [data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="unidade"] { width: 90px; }
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="situacao"] { width: 92px; }
+}
+/* 1440: Rótulo +26 px (Grupo 80 px — já mostra reticências e o nome completo no hover —; Ações 68 px) → "Capacidade de Expansão de Memória RAM" inteiro */
+@media (max-width: 1799px) {
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="grupo_atributos"] { width: 80px; }
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="acoes"] { width: 68px; }
+}
+/* aviso na célula: fundo OPACO (a cor de aviso misturada à superfície) e o valor por baixo escondido enquanto o aviso aparece */
+[data-bl-root] .at-cel__alerta { background: color-mix(in srgb, var(--bl-aviso, #b26b00) 14%, var(--bl-superficie, #fff)); }
+[data-bl-root] .at-cel:has(> .at-cel__alerta) > :not(.at-cel__alerta) { visibility: hidden; }
+[data-bl-root] .at-cel__alerta .at-cel__conferir--compacto { background: var(--bl-superficie, #fff); border: 1px solid var(--bl-aviso, #b26b00); color: var(--bl-aviso-texto, var(--bl-texto)); opacity: 1; }
+
+/* TabelaDados nova da ESQUERDA (tabela-dados.css eefb5764: mais espaço entre título e seta) → cabeçalhos pedem mais largura.
+   Situação 104 px e Importância padrão 170 px (≥ 1800); em 1440 a Situação cresce tirando de Tipo (124 px: "Várias opções" inteiro), o Rótulo não perde. */
+[data-bl-root] .at-dic-tabela--edicao th[data-coluna="situacao"] { width: 104px; }
+[data-bl-root] .at-dic-tabela--edicao th[data-coluna="importancia_padrao"], [data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="importancia_padrao"] { width: 170px; }
+@media (max-width: 1799px) {
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="situacao"] { width: 104px; }
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="tipo"], [data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="tipo"] { width: 120px; }
+  [data-bl-root] .at-dic-tabela--edicao th[data-coluna="importancia_padrao"], [data-bl-root] .at-dic-tabela--edicao:has(tr[data-chave="-1"]) th[data-coluna="importancia_padrao"] { width: 132px; }
+}
+
+/* ══ PARECER 3 do Jhony (23/11) ══ */
+/* (P1) Legado: Ações com largura RESERVADA para "Conferir gravação" + "Recusar" em qualquer estado (a coluna não cresce no "A conferir");
+   em 1440 o nome do produto cede (reticências + nome completo no hover). Fonte e altura da linha iguais. */
+[data-bl-root] .at-leg-grade td.at-leg-col-acoes, [data-bl-root] .at-leg-grade th[data-coluna="acoes"] { width: 236px; min-width: 236px; }
+[data-bl-root] .at-leg-grade td.at-leg-col-acoes .at-leg-acoes { display: inline-flex; gap: 6px; justify-content: center; white-space: nowrap; }
+[data-bl-root] .at-leg-grade .at-link-produto { max-width: clamp(140px, 11vw, 380px); }
+/* (P2) aviso de gravação: o NOME continua visível; o aviso vira uma 2ª linha da própria célula só nesse estado (as colunas não mudam) */
+[data-bl-root] .at-cel:has(> .at-cel__alerta) { flex-wrap: wrap; row-gap: 3px; }
+[data-bl-root] .at-cel:has(> .at-cel__alerta) > :not(.at-cel__alerta) { visibility: visible; }
+[data-bl-root] .at-cel__alerta { position: static; inset: auto; flex: 1 0 100%; min-height: 24px; }
+/* (P2) Grupo: em telas estreitas, sem o prefixo "Atributos " */
+[data-bl-root] .at-dic-grupo__curto { display: none; }
+@media (max-width: 1799px) {
+  /* o nome completo some só da VISTA (leitor de tela continua lendo o completo; o curto é aria-hidden) */
+  [data-bl-root] .at-dic-grupo__longo { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  [data-bl-root] .at-dic-grupo__curto { display: inline; }
+}

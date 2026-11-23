@@ -120,6 +120,10 @@ igual('somente leitura: "Fechar"', saidaEditor([{ texto: 'x' }], true).rotulo, '
 const h = linhasHistorico([{ id: 1, usuario: 'jhony', acao: 'editar', antes: '{"rotulo":"Cor","casas":null}', depois: { rotulo: 'Cor do Cabo', casas: null }, motivo: null, criado_em: '2026-11-18 10:00:00' }]);
 igual('histórico: só campos que mudaram, antes → depois', h[0].mudancas, ['rotulo: Cor → Cor do Cabo']);
 igual('histórico: quem e quando', [h[0].quem, h[0].quando], ['jhony', '2026-11-18 10:00:00']);
+const hp = linhasHistorico([{ id: 2, usuario: 'x', acao: 'editar', antes: { tipo: 'numero', ativo: 1, rotulo: 'A' }, depois: { rotulo: 'B' }, motivo: null, criado_em: '2026-11-19 15:00:00' }]);
+igual('histórico: retrato parcial — campo ausente no "depois" não vira "→ —"', hp[0].mudancas, ['rotulo: A → B']);
+const hc = linhasHistorico([{ id: 3, usuario: 'x', acao: 'criar', antes: null, depois: { rotulo: 'B', tipo: 'numero' }, motivo: null, criado_em: '2026-11-19 15:00:00' }]);
+igual('histórico: criação lista o que foi criado', hc[0].mudancas, ['rotulo: — → B', 'tipo: — → numero']);
 
 // ── 8. Kits/desativar: resposta atrasada de outro kit é descartada; POST com ID e versão do MESMO detalhe ─────────────
 // Simula o DialogoAtivo (Kits.tsx) com um GET falso controlado à mão: dois kits descartáveis (nunca "Cabos") com a MESMA versão.
