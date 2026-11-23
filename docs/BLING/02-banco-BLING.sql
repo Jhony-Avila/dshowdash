@@ -450,6 +450,7 @@ CREATE TABLE IF NOT EXISTS bling_sales_orders (
   data_pedido     DATE NOT NULL,
   situacao        VARCHAR(60) NOT NULL   COMMENT 'vocabulário interno (BlingSituacoes)',
   situacao_bling  VARCHAR(60) NULL       COMMENT 'código cru, para rastrear tradução',
+  situacao_bling_id VARCHAR(20) NULL     COMMENT 'id REAL da situação no Bling (situacao.id) — portão BLING SITUAÇÃO 20261123',
   contact_id      BIGINT UNSIGNED NULL,
   sales_channel_id BIGINT UNSIGNED NULL,
   loja_bling_id    VARCHAR(64) NULL COMMENT 'id EXTERNO da loja/canal no Bling (loja.id) — DSHOW-106, migração 20261123',
@@ -1071,3 +1072,17 @@ CREATE TABLE IF NOT EXISTS bling_audit_logs (
 --
 -- Conferir depois: SHOW GRANTS FOR 'bling_app'@'localhost';
 -- Deve listar SOMENTE o GRANT acima. Se aparecer ALL PRIVILEGES ou *.*, parar.
+
+-- portão BLING SITUAÇÃO (23/11/2026): situações do módulo de vendas
+CREATE TABLE IF NOT EXISTS bling_situacoes (
+  account_id   BIGINT UNSIGNED NOT NULL,
+  modulo_id    VARCHAR(20) NOT NULL,
+  modulo_nome  VARCHAR(80) NULL,
+  situacao_id  VARCHAR(20) NOT NULL,
+  nome         VARCHAR(120) NOT NULL,
+  id_herdado   VARCHAR(20) NULL,
+  cor          VARCHAR(16) NULL,
+  lido_em      DATETIME NOT NULL COMMENT 'UTC',
+  PRIMARY KEY (account_id, situacao_id),
+  KEY ix_modulo (account_id, modulo_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
