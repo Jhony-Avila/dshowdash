@@ -9,6 +9,7 @@
 
 require_once __DIR__ . '/../core/helpers/RedisHelper.php';
 require_once __DIR__ . '/calc/TrafficIndex.php';
+require_once __DIR__ . '/calc/TrafficSaude.php';
 
 if (!class_exists('TrafficService')) {
 final class TrafficService {
@@ -72,6 +73,8 @@ final class TrafficService {
         $prevIndex = ($prevIndex === null || $prevIndex === '') ? null : (float)$prevIndex;
         // Summary calculado do conjunto COMPLETO (contagens precisas).
         $summary = TrafficIndex::computeSummary($flow, $incidents, $cfg, $prevIndex);
+        // ocorrências indisponíveis (erro do provedor) → contagens NULAS, nunca "zero ocorrências"
+        if (!$incOk) { $summary = TrafficSaude::anularOcorrencias($summary); }
 
         // Contagens por tipo do conjunto completo (p/ o endpoint incidents).
         $counts = ['accident'=>0,'closure'=>0,'roadworks'=>0,'congestion'=>0,'hazard'=>0,'other'=>0];
@@ -85,12 +88,8 @@ final class TrafficService {
             $incidents = array_slice($incidents, 0, $maxInc);
         }
 
-        $quality = [
-            'status' => ($flowOk && $incOk) ? 'complete' : 'partial',
-            'flowAvailable' => $flowOk && count($flow) > 0,
-            'incidentsAvailable' => $incOk,
-            'congestionDistanceAvailable' => $summary['estimatedCongestionKm'] !== null,
-        ];
+        // qualidade com o diagnóstico do provedor (vias lidas/esperadas, classes de erro) — o health usa isto para dizer "parcial"
+        $quality = TrafficSaude::qualidade($flowOk, $incOk, count($flow), method_exists($provider, 'diagnostico') ? $provider->diagnostico() : null);
 
         $payload = [
             'summary'   => $summary,
