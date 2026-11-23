@@ -468,14 +468,25 @@ final class ProdutosLeitura
     private const FILAS = ['nome' => 'nome_produto', 'legado' => 'legado_2025', 'fora_da_ficha' => null, 'obrigatorios_vazios' => null, 'sem_kit' => null];
     private const ESTADOS_FILA = ['pendente', 'ignorada', 'recusada', 'aceita'];
 
-    private static function cursorLer(mixed $c, int $partes): ?array
+    /**
+     * DSHOW-108 (B): o cursor carrega a IDENTIDADE da consulta (fila, situação, atributo, busca, subcategoria) — `c` = 12 hex do sha256 do
+     * contexto. Cursor de outra consulta (filtro mudou) = 422 CURSOR_CONTEXT_MISMATCH: a tela volta à 1ª página; nunca pagina "misturado".
+     */
+    private static function contextoCursor(array $g, string $fila, ?string $estado): string
+    {
+        $norm = static fn($v) => is_string($v) ? trim($v) : (is_int($v) ? (string) $v : '');
+        return substr(hash('sha256', json_encode([$fila, $estado, $norm($g['atributo_id'] ?? ''), mb_strtolower($norm($g['q'] ?? '')), $norm($g['subcategoria'] ?? '')], JSON_UNESCAPED_UNICODE)), 0, 12);
+    }
+    private static function cursorLer(mixed $c, int $partes, string $ctx): ?array
     {
         if ($c === null || $c === '') return null;
         $d = is_string($c) && strlen($c) <= 200 ? json_decode((string) base64_decode(strtr($c, '-_', '+/'), true), true) : null;
-        if (!is_array($d) || count($d) !== $partes || array_filter($d, static fn($x) => !is_int($x) || $x < 0)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Cursor inválido. Recarregue a fila.', ['cursor']);
-        return array_values($d);
+        $k = is_array($d) ? ($d['k'] ?? null) : null;
+        if (!is_array($k) || !is_string($d['c'] ?? null) || count($k) !== $partes || array_filter($k, static fn($x) => !is_int($x) || $x < 0)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Cursor inválido. Recarregue a fila.', ['cursor']);
+        if (!hash_equals($ctx, $d['c'])) throw new AtributosErro('CURSOR_CONTEXT_MISMATCH', 422, 'Os filtros mudaram: a fila voltou ao início.', ['cursor']);
+        return array_values($k);
     }
-    private static function cursorEscrever(array $k): string { return rtrim(strtr(base64_encode(json_encode(array_values($k))), '+/', '-_'), '='); }
+    private static function cursorEscrever(array $k, string $ctx): string { return rtrim(strtr(base64_encode(json_encode(['k' => array_values($k), 'c' => $ctx])), '+/', '-_'), '='); }
 
     /** "q" (produto ou ID) → ids do catálogo; null = sem filtro. */
     private function pidsDaBusca(mixed $q): ?array
@@ -515,7 +526,8 @@ final class ProdutosLeitura
         if (($fonte = self::FILAS[$fila]) !== null) {
             $estado = (string) ($g['estado'] ?? 'pendente');
             if (!in_array($estado, self::ESTADOS_FILA, true)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Situação inválida.', ['estado']);
-            $depois = self::cursorLer($g['cursor'] ?? null, 3);
+            $ctx = self::contextoCursor($g, $fila, $estado);
+            $depois = self::cursorLer($g['cursor'] ?? null, 3, $ctx);
             $total = $this->l->contarSugestoes($fonte, $estado, $aid, $pids);
             $rs = $this->l->sugestoesPagina($fonte, $estado, $aid, $pids, $depois, $n + 1);
             $mais = count($rs) > $n; $rs = array_slice($rs, 0, $n);
@@ -535,7 +547,7 @@ final class ProdutosLeitura
             }
             $ult = end($rs);
             return $base + ['estado' => $estado, 'itens' => $itens, 'total' => $total,
-                'proximo_cursor' => $mais && $ult ? self::cursorEscrever([(int) $ult['product_id'], (int) $ult['atributo_id'], (int) $ult['id']]) : null];
+                'proximo_cursor' => $mais && $ult ? self::cursorEscrever([(int) $ult['product_id'], (int) $ult['atributo_id'], (int) $ult['id']], $ctx) : null];
         }
         // filas DERIVADAS: calculadas como no GET conferencia, ordenadas pela CHAVE e cortadas pelo cursor (chave > última vista)
         $c = $this->filasDerivadas(array_filter($this->resumos(), static fn($p) => $p['ativo']))[$fila];   // lista INTEIRA (sem o corte de 1000)
@@ -546,7 +558,8 @@ final class ProdutosLeitura
             && ($sub === null || ($x['subcategoria'] ?? null) === $sub)));
         usort($c, static fn($a, $b) => $chave($a) <=> $chave($b));
         $total = count($c);
-        $depois = self::cursorLer($g['cursor'] ?? null, $partes);
+        $ctx = self::contextoCursor($g, $fila, null);
+        $depois = self::cursorLer($g['cursor'] ?? null, $partes, $ctx);
         if ($depois !== null) $c = array_values(array_filter($c, static fn($x) => $chave($x) > $depois));
         $mais = count($c) > $n; $c = array_slice($c, 0, $n);
         if ($fila === 'fora_da_ficha') {   // valor gravado (Parte B: coluna "Valor gravado")
@@ -555,7 +568,7 @@ final class ProdutosLeitura
             unset($x);
         }
         $ult = end($c);
-        return $base + ['itens' => $c, 'total' => $total, 'proximo_cursor' => $mais && $ult ? self::cursorEscrever($chave($ult)) : null];
+        return $base + ['itens' => $c, 'total' => $total, 'proximo_cursor' => $mais && $ult ? self::cursorEscrever($chave($ult), $ctx) : null];
     }
 
     // ---- miniaturas (A6) ---------------------------------------------------------------------------------------------------------------

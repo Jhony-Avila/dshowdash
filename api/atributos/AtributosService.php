@@ -1326,6 +1326,7 @@ final class OperacoesGravacao
     public function executar(string $rota, array $corpo, ?string $chave, callable $servico): ?array
     {
         $this->porta($rota);   // DSHOW-093 D: o gate de nível/admin da rota roda ANTES de qualquer reenvio de recibo
+        if ($rota === 'sugestoes_decidir' && class_exists('SugestoesService')) SugestoesService::validarCorpoLote($corpo);   // DSHOW-108 A: antes de reservar a chave
         $ops = $chave !== null ? $this->guarda() : null;
         $assin = self::assinatura($rota, $corpo);
         $tentativa = null; $lote = null;
