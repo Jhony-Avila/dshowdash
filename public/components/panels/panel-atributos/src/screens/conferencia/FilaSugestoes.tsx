@@ -151,7 +151,7 @@ export function FilaSugestoes({ atributos, podeDecidir, administra, aoMudarTotai
     { chave: 'situacao', titulo: 'Situação', tipo: 'texto', ordenavel: false, classe: 'cf-col-sit',
       render: (it) => { const s = situacao(it, ultimos[it.id]); return <span className={`cf-pilula cf-pilula--${s.tom}`} data-situacao={s.rotulo} title={s.dica} {...(s.dica ? { tabIndex: 0, 'aria-label': `${s.rotulo}. ${s.dica}` } : {})}>{s.rotulo}</span>; } },
     { chave: 'acoes', titulo: 'Ações', tipo: 'texto', ordenavel: false, classe: 'cf-col-acoes',
-      render: (it) => <AcoesLinha it={it} ultimo={ultimos[it.id]} estado={estado} pode={podeDecidir} administra={administra} bloqueado={loteAberto || ocupado}
+      render: (it) => <AcoesLinha it={it} ultimo={ultimos[it.id]} estado={it.estado} pode={podeDecidir} administra={administra} bloqueado={loteAberto || ocupado}
         aoAcao={(a) => pedir(a, [it])} aoConferir={() => void conferir(it.a_conferir?.chave ?? (lote?.intencao.enviados.includes(it.id) ? lote.intencao.chave : undefined))}
         aoDetalhes={() => setAberta((x) => (x === it.id ? null : it.id))} aoFicha={() => m.abrirProduto(it.product_id, { atributo: it.atributo_id })} /> },
   ];
