@@ -535,11 +535,17 @@ final class ProdutosLeitura
             $vals = $this->l->valoresDosPares($pares);
             $conferir = $estado === 'pendente' ? $this->l->sugestoesAConferir($titularId, array_map(static fn($s) => (int) $s['id'], $rs)) : [];
             $podeDecidir = $this->pode(AtributosService::NIVEL_VALORES);
+            // FORA_DA_FICHA (informativo): o atributo não está na ficha do produto — o aceite simples seria recusado (ATTRIBUTE_NOT_APPLICABLE).
+            // Mesma regra da Ficha (Aplicabilidade), só para os produtos DESTA página; produto fora do catálogo = sem informação (null).
+            $modelo = $this->modelo(); $catalogo = $this->cat(); $fichas = [];
+            $fichaDe = function (int $pid) use ($modelo, $catalogo, &$fichas): ?array { if (!isset($catalogo[$pid])) return null; return $fichas[$pid] ??= Aplicabilidade::ficha($modelo, $catalogo[$pid]); };
             $itens = [];
             foreach ($rs as $s) {
                 $pid = (int) $s['product_id']; $dest = $this->destinoAtual($vals["$pid:" . (int) $s['atributo_id']] ?? null);
                 $alt = $s['atributo_alternativo_id'] === null ? null : $this->destinoAtual($vals["$pid:" . (int) $s['atributo_alternativo_id']] ?? null);
-                $bloq = $dest['estado'] !== 'vazio' ? 'COM_VALOR' : (empty($atr[(int) $s['atributo_id']]['ativo']) ? 'ATRIBUTO_INATIVO' : (!$podeDecidir ? 'SEM_PERMISSAO' : null));
+                $naFicha = $fichaDe($pid);
+                $bloq = $dest['estado'] !== 'vazio' ? 'COM_VALOR' : (empty($atr[(int) $s['atributo_id']]['ativo']) ? 'ATRIBUTO_INATIVO'
+                    : ($naFicha !== null && !isset($naFicha[(int) $s['atributo_id']]) ? 'FORA_DA_FICHA' : (!$podeDecidir ? 'SEM_PERMISSAO' : null)));
                 $itens[] = $this->itemSugestao($s) + ['estado' => $s['estado'], 'decidido_por' => $s['decidido_por'] ?? null, 'decidido_em' => $s['decidido_em'] ?? null, 'motivo' => $s['motivo'] ?? null,
                     'substitui_id' => isset($s['substitui_id']) ? ($s['substitui_id'] === null ? null : (int) $s['substitui_id']) : null,
                     'destino_atual' => $dest, 'alternativo_atual' => $alt, 'aceite_bloqueado' => $bloq,
