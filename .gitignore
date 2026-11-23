@@ -2322,3 +2322,7 @@ dist/
 !/db/
 !/db/equipamentos/
 !/db/equipamentos/**
+
+# Asaas SÓ LEITURA (23/11/2026): conector api/asaas/ e scripts/asaas/ (guarda das chaves, sincronização, testes). Chaves em config/asaas/*.key, fora do git.
+!/api/asaas/
+!/scripts/asaas/
