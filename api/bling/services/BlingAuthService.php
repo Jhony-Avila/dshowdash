@@ -66,6 +66,9 @@ final class BlingAuthService
             $tokens['expires_in'], $tokens['token_type'],
         );
 
+        // BLING-ESCOPO-AUSENTE: conta reautorizada → recursos que esperavam escopo tentam de novo na próxima rodada (sem esperar 24 h).
+        $liberados = $this->repo->liberarEscopoAusente($accountId);
+
         $this->repo->auditar([
             'account_id' => $accountId,
             'user_id'    => (int) $registro['user_id'],
@@ -74,6 +77,12 @@ final class BlingAuthService
             'entidade_id'=> (string) $accountId,
             'origem'     => 'callback',
         ]);
+        if ($liberados > 0) {
+            $this->repo->auditar([
+                'account_id' => $accountId, 'user_id' => (int) $registro['user_id'], 'acao' => 'sync.liberar_escopo_ausente',
+                'entidade' => 'bling_sync_state', 'entidade_id' => (string) $liberados, 'origem' => 'callback',
+            ]);
+        }
 
         return ['account_id' => $accountId, 'novo' => $existente === null];
     }

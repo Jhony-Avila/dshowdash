@@ -57,6 +57,30 @@ final class BlingSyncService
         44 => ['receber' => 'recebíveis no Asaas'],
     ];
 
+    /**
+     * BLING-ESCOPO-AUSENTE (23/11/2026): 403 `insufficient_scope` = o token não tem o escopo do recurso. Repetir não adianta: o recurso
+     * fica em 'atencao' com UM erro ESCOPO_AUSENTE, sem reagendamento nem DLQ, e só tenta de novo depois de ESCOPO_NOVA_TENTATIVA_S
+     * (1 vez por dia) ou logo após a conta ser reautorizada (BlingAuthService::concluirConexao → liberarEscopoAusente).
+     */
+    public const ESCOPO_AUSENTE = 'ESCOPO_AUSENTE';
+    public const ESCOPO_NOVA_TENTATIVA_S = 86400;
+
+    /** A falha é "o token não tem o escopo" (403 insufficient_scope)? */
+    public static function ehEscopoAusente(Throwable $e): bool
+    {
+        $m = $e->getMessage();
+        return str_contains($m, 'HTTP 403') && str_contains($m, 'insufficient_scope');
+    }
+
+    /** Recurso marcado como "escopo ausente" e ainda dentro da espera (nem reautorizado, nem chegou a tentativa diária)? */
+    private function escopoAusenteVigente(int $accountId, string $recurso, ?array $estado): bool
+    {
+        if ($estado === null || ($estado['situacao'] ?? null) !== 'atencao') { return false; }
+        $prox = $estado['proxima_execucao_em'] ?? null;
+        if ($prox === null || strtotime((string) $prox . ' UTC') <= time()) { return false; }
+        return $this->repo->ultimoCodigoErroSync($accountId, $recurso) === self::ESCOPO_AUSENTE;
+    }
+
     /** Motivo da desativação, ou null se o recurso está ativo para a conta. */
     public static function desativado(int $accountId, string $recurso): ?string
     {
@@ -85,6 +109,13 @@ final class BlingSyncService
         if ($motivo !== null) {
             // BLING-SEM-RECEBER: nada de chamada ao Bling nem de job/estado; a fila trata como concluído.
             return ['recurso' => $recurso, 'situacao' => 'desativado', 'motivo' => $motivo,
+                    'consultados' => 0, 'criados' => 0, 'atualizados' => 0, 'ignorados' => 0, 'erros' => 0];
+        }
+
+        // BLING-ESCOPO-AUSENTE: marcado e ainda na espera → nada de chamada ao Bling, job ou erro novo (a fila trata como concluído).
+        if ($this->escopoAusenteVigente($accountId, $recurso, $this->repo->estadoSync($accountId, $recurso))) {
+            return ['recurso' => $recurso, 'situacao' => 'escopo_ausente',
+                    'motivo' => 'o token do Bling não tem o escopo deste recurso; aguardando reautorização ou a tentativa diária',
                     'consultados' => 0, 'criados' => 0, 'atualizados' => 0, 'ignorados' => 0, 'erros' => 0];
         }
 
@@ -223,6 +254,24 @@ final class BlingSyncService
             // seguinte — inclusive a do próprio estado de erro — entraria nela.
             if ($this->repo->pdo()->inTransaction()) {
                 $this->repo->pdo()->rollBack();
+            }
+            if (self::ehEscopoAusente($e)) {
+                // BLING-ESCOPO-AUSENTE: registra UMA vez, marca e espera — sem 'erro' (que a fila reagendaria até a DLQ).
+                $this->repo->salvarEstadoSync($accountId, $recurso, [
+                    'estrategia' => $estrategia,
+                    'situacao'   => 'atencao',
+                    'ultima_execucao_em'  => gmdate('Y-m-d H:i:s'),
+                    'proxima_execucao_em' => gmdate('Y-m-d H:i:s', time() + self::ESCOPO_NOVA_TENTATIVA_S),
+                    'duracao_ms' => (int) ((microtime(true) - $inicio) * 1000),
+                    'erros' => 1,
+                    'retry' => 0,
+                ]);
+                $this->repo->fecharJob($jobId, 'cancelado', $contagem,
+                    'escopo ausente (403 insufficient_scope): nova tentativa em 24 h ou após reautorizar a conta');
+                $this->repo->registrarErroSync($accountId, $recurso, null, self::ESCOPO_AUSENTE,
+                    'O token do Bling não tem o escopo deste recurso (403 insufficient_scope). Reautorize a conta incluindo o escopo; '
+                    . 'até lá, uma tentativa por dia.', 403, 1, $correlationId);
+                return ['recurso' => $recurso, 'situacao' => 'escopo_ausente'] + $contagem;
             }
             $this->repo->salvarEstadoSync($accountId, $recurso, [
                 'estrategia' => $estrategia,

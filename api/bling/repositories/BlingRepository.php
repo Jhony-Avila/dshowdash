@@ -481,6 +481,33 @@ final class BlingRepository
         ]);
     }
 
+    /** Código do erro de sync mais recente do recurso (BLING-ESCOPO-AUSENTE), ou null. */
+    public function ultimoCodigoErroSync(int $accountId, string $recurso): ?string
+    {
+        $st = $this->pdo()->prepare(
+            'SELECT codigo FROM bling_sync_errors WHERE account_id = ? AND recurso = ? ORDER BY id DESC LIMIT 1'
+        );
+        $st->execute([$accountId, $recurso]);
+        $c = $st->fetchColumn();
+        return $c === false || $c === null ? null : (string) $c;
+    }
+
+    /**
+     * Reautorização: libera os recursos marcados "escopo ausente" para a próxima rodada do incremental (proxima_execucao_em = agora).
+     * Só toca recurso em 'atencao' cujo erro mais recente é ESCOPO_AUSENTE. Devolve quantos foram liberados.
+     */
+    public function liberarEscopoAusente(int $accountId): int
+    {
+        $st = $this->pdo()->prepare(
+            "UPDATE bling_sync_state s SET s.proxima_execucao_em = UTC_TIMESTAMP()
+              WHERE s.account_id = ? AND s.situacao = 'atencao'
+                AND (SELECT e.codigo FROM bling_sync_errors e WHERE e.account_id = s.account_id AND e.recurso = s.recurso
+                      ORDER BY e.id DESC LIMIT 1) = 'ESCOPO_AUSENTE'"
+        );
+        $st->execute([$accountId]);
+        return $st->rowCount();
+    }
+
     public function registrarErroSync(?int $accountId, string $recurso, ?string $blingId,
                                       ?string $codigo, ?string $mensagem,
                                       ?int $httpStatus = null, int $tentativa = 1,
