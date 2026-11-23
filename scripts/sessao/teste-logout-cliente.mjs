@@ -2,19 +2,21 @@
 // + a ordem do "Sair" do menu (user-data.ts): o servidor confirma ANTES de avisar os outros e de ir para /login.
 // Uso: node scripts/sessao/teste-logout-cliente.mjs [raiz]
 import { readFileSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 const RAIZ = path.resolve(process.argv[2] || new URL('../..', import.meta.url).pathname);
 const { encerrarSessao } = await import(pathToFileURL(path.join(RAIZ, 'public/core/auth/logout-client.js')).href);
 let ok = 0, falhas = 0; const afirma = (n, c, x = '') => { if (c) { ok++; console.log('ok    ' + n); } else { falhas++; console.log('FALHA ' + n + (x ? ' · ' + x : '')); } };
 const resp = (status, corpo) => ({ ok: status >= 200 && status < 300, status, json: async () => corpo });
-const CHECK_AUT = { ok: true, data: { authenticated: true, session: { csrf_token: 'csrf-sintetico-123' } } };
+const CSRF_FALSO = 'teste-' + randomUUID();   // gerado na hora: nenhum valor de token fixo no código
+const CHECK_AUT = { ok: true, data: { authenticated: true, session: { csrf_token: CSRF_FALSO } } };
 function cenario(roteiro) { const pedidos = []; globalThis.fetch = async (url, op = {}) => { pedidos.push({ url, metodo: op.method || 'GET', csrf: (op.headers || {})['X-CSRF-Token'] }); return roteiro(url, op, pedidos); }; return pedidos; }
 
 let p = cenario((u) => u.includes('check') ? resp(200, CHECK_AUT) : resp(200, { ok: true }));
 let r = await encerrarSessao();
 afirma('logout confirmado (2xx) → ok:true', r.ok === true && r.status === 200);
-afirma('POST /api/auth/logout.php com X-CSRF-Token relido do check.php', p.some((x) => x.url.endsWith('/api/auth/logout.php') && x.metodo === 'POST' && x.csrf === 'csrf-sintetico-123'));
+afirma('POST /api/auth/logout.php com X-CSRF-Token relido do check.php', p.some((x) => x.url.endsWith('/api/auth/logout.php') && x.metodo === 'POST' && x.csrf === CSRF_FALSO));
 
 cenario((u) => u.includes('check') ? resp(200, CHECK_AUT) : Promise.reject(new TypeError('Failed to fetch')));
 r = await encerrarSessao();
