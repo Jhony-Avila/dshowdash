@@ -19,7 +19,7 @@ import {
   Share2, ShoppingBag, ShoppingCart, SlidersHorizontal, Star, Store, Table2,
 } from 'lucide-react';
 import {
-  alternarCenario, cenarioAtual, getAlertas,
+  FALTA, SEM_FONTE, alternarCenario, cenarioAtual, getAlertas,
   getIntegracoes, getResumoModulo, getTransito,
   lerOcultos, restaurarPadrao, salvarOcultos,
 } from '../services/GeralService';
@@ -36,12 +36,12 @@ import { CeuFundo, GreetingHero, ceuAtual } from '../components/Hero';
 import { ClimaAtualCard, PrevisaoDezDias } from '../components/Clima';
 import { InsightsPanel, TrafficWidget } from '../components/Extras';
 import {
-  CartaoSaudeView, ErroWidget, Secao, SeloSimulado, Skeleton, WidgetModulo,
+  CartaoAguardando, CartaoSaudeView, Secao, SeloSimulado, Skeleton, WidgetCarregando, WidgetModulo,
   relTempo,
 } from '../components/ui';
 import type {
-  AlertaGeral, CartaoSaude, ModoHome, ModuloId,
-  PeriodoId, ShellConfig, StatusIntegracao,
+  AlertaGeral, CartaoSaude, EstadoCartao, ModoHome, ModuloId,
+  PeriodoId, ResumoModulo, ShellConfig, StatusIntegracao,
 } from '../domain/types';
 import '../styles/tokens.css';
 
@@ -103,24 +103,35 @@ function layoutPadrao(ids: ModuloId[]): ResponsiveLayouts {
 }
 
 // ── widget de módulo com estado independente ────────────────────────
-function WidgetDoModulo({ def, periodo, versao }: { def: DefModulo; periodo: PeriodoId; versao: number }) {
-  const { dados, carregando, erro, recarregar } = useDados(
+// Estados (23/11/2026): CARREGANDO (esqueleto na forma do cartão) · CONECTADO · AGUARDANDO (sai da grade → faixa própria) · COM PROBLEMA
+// (o que falhou + último sucesso + Tentar de novo; com último valor válido, ele fica marcado como desatualizado — falha nunca vira zero).
+function WidgetDoModulo({ def, periodo, versao, ordem, aoEstado }: {
+  def: DefModulo; periodo: PeriodoId; versao: number; ordem: number; aoEstado: (id: ModuloId, e: EstadoCartao) => void;
+}) {
+  const { dados, carregando, atualizando, erro, recarregar } = useDados(
     () => getResumoModulo(def.id, periodo),
     [def.id, periodo, versao]
   );
-  if (carregando && !dados) return <Skeleton altura={196} />;
-  if (erro && !dados) {
-    return (
-      <article className="ger-widget ger-borda-dim">
-        <header className="ger-wg-head">
-          <span className="ger-wg-ic" aria-hidden>{def.icone}</span>
-          <span className="ger-wg-nome">{def.nome}</span>
-        </header>
-        <ErroWidget mensagem="Não foi possível carregar este resumo." onTentar={recarregar} />
-      </article>
-    );
+  const okEm = useRef<string | null>(null);
+  // a falha anterior fica na tela enquanto "Tentar de novo" roda ("Tentando…"), até chegar o resultado
+  const [falhou, setFalhou] = useState(false);
+  useEffect(() => { if (erro) setFalhou(true); else if (!atualizando && !carregando) setFalhou(false); }, [erro, atualizando, carregando]);
+  useEffect(() => { if (dados && dados.estado !== 'problema') okEm.current = new Date().toISOString(); }, [dados]);
+  useEffect(() => { if (dados?.estado === 'aguardando') aoEstado(def.id, 'aguardando'); }, [dados, def.id, aoEstado]);
+
+  if (carregando && !dados) return <WidgetCarregando nome={def.nome} icone={def.icone} ordem={ordem} />;
+  if (dados?.estado === 'aguardando') return null;   // vai para a faixa "Aguardando conexão"
+  let resumo: ResumoModulo | null = dados;
+  if (erro || (falhou && atualizando)) {
+    // falhou: sem dado anterior = só o problema; com dado anterior = ele FICA, marcado como desatualizado
+    resumo = dados
+      ? { ...dados, status: 'critico', statusRotulo: 'Com problema', estado: 'problema', desatualizado: dados.metricas.length > 0,
+          problema: { motivo: `A atualização de ${def.nome} falhou.`, ultimoSucesso: okEm.current } }
+      : { status: 'critico', statusRotulo: 'Com problema', estado: 'problema', metricas: [], alerta: null, atualizadoEm: null, simulado: false,
+          problema: { motivo: `Não foi possível carregar o resumo de ${def.nome}.`, ultimoSucesso: null } };
   }
-  return dados && <WidgetModulo nome={def.nome} icone={def.icone} resumo={dados} rota={def.rota} aoAbrir={navegar} />;
+  return resumo && <WidgetModulo nome={def.nome} icone={def.icone} resumo={resumo} rota={def.rota} aoAbrir={navegar}
+    sincronizando={atualizando} ordem={ordem} onTentar={recarregar} />;
 }
 
 // ── linha de KPIs / saúde (§10 + §22 do briefing anterior) ──────────
@@ -129,22 +140,37 @@ function LinhaSaude({ alertas, integracoes, visiveis }: {
   integracoes: StatusIntegracao[] | null;
   visiveis: number;
 }) {
-  if (!alertas || !integracoes) return <Skeleton altura={108} />;
+  if (!alertas || !integracoes) {
+    // CARREGANDO na forma do conteúdo: os 5 cartões de saúde com rótulo, número e detalhe (não uma caixa lisa)
+    return (
+      <div className="ger-saudes" aria-busy="true" data-ger-estado="carregando">
+        {['Status do sistema', 'Módulos', 'Integrações', 'Alertas em aberto', 'Atualização'].map((r, k) => (
+          <div key={r} className="ger-saude ger-nivel-dim ger-entra" style={{ ['--ger-ordem' as string]: k }}>
+            <span className="ger-saude-rotulo">{r}</span>
+            <span className="ger-osso ger-osso-numero" aria-hidden />
+            <span className="ger-osso ger-osso-rotulo" aria-hidden />
+          </div>
+        ))}
+        <span className="ger-sr">Carregando o resumo de saúde…</span>
+      </div>
+    );
+  }
 
-  const comErro = integracoes.filter((i) => i.estado === 'erro').length;
-  const conectadas = integracoes.filter((i) => i.estado === 'conectada').length;
+  // três estados separados (23/11): "aguardando conexão" NÃO conta como saudável; desatualizada conta como problema
+  const comErro = integracoes.filter((i) => i.estado === 'erro' || i.estado === 'desatualizada').length;
+  const conectadas = integracoes.filter((i) => i.estado === 'conectada' || i.estado === 'sincronizando').length;
   const demo = integracoes.filter((i) => i.estado === 'demonstracao').length;
   const criticos = alertas.filter((a) => a.severidade === 1).length;
   const ultimaSync = integracoes.map((i) => i.ultimaSync).filter(Boolean).sort().pop() as string | undefined;
 
   const cartoes: CartaoSaude[] = [
     { id: 'sistema', rotulo: 'Status do sistema', valor: comErro === 0 ? 'Online' : 'Com atenção',
-      detalhe: `${integracoes.length - comErro} de ${integracoes.length} fontes saudáveis`,
+      detalhe: `${conectadas} de ${integracoes.length} fontes conectadas · ${comErro} com problema`,
       nivel: comErro === 0 ? 'ok' : comErro >= 2 ? 'critico' : 'atencao', rota: 'sec:integracoes' },
     { id: 'modulos', rotulo: 'Módulos', valor: `${visiveis} ativos`,
       detalhe: `${MODULOS.length} disponíveis no dash`, nivel: 'ok', rota: 'sec:widgets' },
     { id: 'integracoes', rotulo: 'Integrações', valor: `${conectadas} conectadas`,
-      detalhe: `${demo} aguardando conexão · ${comErro} com erro`,
+      detalhe: `${demo} aguardando conexão · ${comErro} com problema`,
       nivel: comErro > 0 ? 'atencao' : 'ok', rota: 'sec:integracoes' },
     { id: 'alertas', rotulo: 'Alertas em aberto', valor: String(alertas.length),
       detalhe: criticos > 0 ? `${criticos} crítico(s)` : 'nenhum crítico',
@@ -199,13 +225,20 @@ function Shell({ config }: { config: ShellConfig }) {
   // fontes — cada uma independente (§32)
   const { dados: alertas, carregando: cAlertas } = useDados(() => getAlertas(), [versao]);
   const { dados: integracoes } = useDados(() => getIntegracoes(), [versao]);
-  const { dados: clima } = useDados(() => getClima(), [versao]);
+  const { dados: clima, erro: eClima, recarregar: rClima } = useDados(() => getClima(), [versao]);
   const { dados: saudacao } = useDados(() => getSaudacao(alertas ? alertas.length : null), [alertas === null, versao]);
   const { dados: insights, carregando: cInsights } = useDados(() => getInsights(), [versao]);
   const { dados: transito, carregando: cTransito, erro: eTransito, recarregar: rTransito } =
     useDados(() => getTransito(), [versao]);
 
   const visiveis = useMemo(() => MODULOS.filter((m) => !ocultos.has(m.id)), [ocultos]);
+  // sem fonte (fixo) ou descoberto ao carregar (ex.: Ads em modo de testes) → faixa "Aguardando conexão", fora da primeira tela
+  const [aguardandoDin, setAguardandoDin] = useState<Set<ModuloId>>(() => new Set());
+  const aoEstadoModulo = useMemo(() => (id: ModuloId, e: EstadoCartao) => {
+    if (e === 'aguardando') setAguardandoDin((a) => (a.has(id) ? a : new Set(a).add(id)));
+  }, []);
+  const naGrade = useMemo(() => visiveis.filter((m) => !SEM_FONTE.has(m.id) && !aguardandoDin.has(m.id)), [visiveis, aguardandoDin]);
+  const naFaixaAguardando = useMemo(() => visiveis.filter((m) => SEM_FONTE.has(m.id) || aguardandoDin.has(m.id)), [visiveis, aguardandoDin]);
   const mostrar = (secao: string) => modo === 'operacional' || !OCULTAS_EXECUTIVO.has(secao);
 
   const alternarWidget = (id: ModuloId) => {
@@ -240,7 +273,7 @@ function Shell({ config }: { config: ShellConfig }) {
    * que de outro modo ficam ocupando espaço reservado no grid.
    */
   const layoutsEfetivos = useMemo(() => {
-    const ids = visiveis.map((m) => m.id);
+    const ids = naGrade.map((m) => m.id);
     const padrao = layoutPadrao(ids);
     if (!layouts) return padrao;
 
@@ -256,7 +289,7 @@ function Shell({ config }: { config: ShellConfig }) {
     };
 
     return { lg: completar('lg'), md: completar('md'), sm: completar('sm') };
-  }, [layouts, visiveis]);
+  }, [layouts, naGrade]);
 
   const aoMudarLayout = (_atual: Layout, todos: ResponsiveLayouts) => {
     if (!organizar) return;
@@ -370,7 +403,7 @@ function Shell({ config }: { config: ShellConfig }) {
       {/* Faixa 1 — hero (8) + clima atual (4) (§5.1) */}
       <div className="ger-faixa">
         <div className="ger-col-8"><GreetingHero saudacao={saudacao} clima={clima} carimbo={carimbo} /></div>
-        <div className="ger-col-4"><ClimaAtualCard clima={clima} /></div>
+        <div className="ger-col-4"><ClimaAtualCard clima={clima} erro={eClima} aoTentar={rClima} /></div>
       </div>
 
       {/* Faixa 2 — KPIs executivos (dashboard) */}
@@ -423,15 +456,28 @@ function Shell({ config }: { config: ShellConfig }) {
               resizeConfig={{ enabled: organizar }}
               onLayoutChange={aoMudarLayout}
             >
-              {visiveis.map((m) => (
+              {naGrade.map((m, k) => (
                 <div key={m.id} className="ger-rgl-item">
-                  <WidgetDoModulo def={m} periodo={periodo} versao={versao} />
+                  <WidgetDoModulo def={m} periodo={periodo} versao={versao} ordem={k} aoEstado={aoEstadoModulo} />
                 </div>
               ))}
             </ResponsiveGridLayout>
           )}
         </div>
       </div>
+      )}
+
+      {/* Faixa 5b — AGUARDANDO CONEXÃO (23/11/2026): cartões compactos abaixo dos conectados — o que falta, com quem, e o link */}
+      {!imersivo && naFaixaAguardando.length > 0 && (
+        <div data-ger-sec="aguardando">
+          <Secao titulo="Aguardando conexão" sub="integrações que ainda não enviam dados — nenhum número aparece até a conexão">
+            <div className="ger-aguardando-lista">
+              {naFaixaAguardando.map((m, k) => (
+                <CartaoAguardando key={m.id} nome={m.nome} icone={m.icone} falta={FALTA[m.id]} aoAbrir={navegar} ordem={k} />
+              ))}
+            </div>
+          </Secao>
+        </div>
 
       )}
 
@@ -447,7 +493,7 @@ function Shell({ config }: { config: ShellConfig }) {
       )}
 
       {/* Faixa 7 — previsão 10 dias (§9) */}
-      <PrevisaoDezDias clima={clima} />
+      <PrevisaoDezDias clima={clima} erro={eClima} />
 
       {/* Faixa 8 — trânsito (23/11/2026: widget E-mails de demonstração removido) — dashboard */}
       {!imersivo && (
@@ -476,7 +522,7 @@ function Shell({ config }: { config: ShellConfig }) {
                       {i.estado === 'conectada' ? 'Conectada'
                         : i.estado === 'sincronizando' ? 'Sincronizando'
                         : i.estado === 'desatualizada' ? 'Desatualizada'
-                        : i.estado === 'erro' ? 'Erro' : 'Aguardando conexão'}
+                        : i.estado === 'erro' ? 'Com problema' : 'Aguardando conexão'}
                       {i.ultimaSync && <em>{relTempo(i.ultimaSync)}</em>}
                     </span>
                   </div>

@@ -22,10 +22,20 @@ export interface ResumoTransito {
   indice: number | null;
   km: number | null;
   ocorrencias: number | null;
-  interdicoes: number;
+  interdicoes: number | null;       // null = sem dado (falha nunca vira zero)
   atualizadoEm: string | null;
   desatualizado: boolean;
+  /** saúde do FLUXO (health.php, f9dc7e8d da ACIMA_DIREITA): up | parcial | down + motivo em classe; null = servidor antigo/sem resposta */
+  saude: SaudeTransito | null;
 }
+
+export interface SaudeTransito { status: 'up' | 'parcial' | 'down'; motivo: string | null }
+
+/** Estado do cartão (Geral, estados e movimento, 23/11): sempre escrito, nunca só por cor. "carregando" é da tela (sem dados ainda). */
+export type EstadoCartao = 'conectado' | 'aguardando' | 'problema';
+
+/** "Aguardando conexão": o que falta, com quem está e o link da integração (textos confirmados pelo Jhony em 23/11). */
+export interface FaltaConexao { texto: string; com: string | null; rota: string | null; rotuloLink?: string }
 
 export interface ResumoAds {
   contas: number;
@@ -64,6 +74,12 @@ export interface ResumoModulo {
   alerta?: string | null;           // linha de atenção do módulo
   atualizadoEm: string | null;      // ISO ou null
   simulado: boolean;                // true = dados de demonstração
+  /** conectado (padrão) · aguardando (sem fonte; ver `falta`) · problema (falhou; ver `problema`) */
+  estado?: EstadoCartao;
+  falta?: FaltaConexao;
+  /** o que falhou (uma linha) e o horário do último sucesso; com último valor válido, `metricas` ficam e `desatualizado` = true */
+  problema?: { motivo: string; ultimoSucesso: string | null };
+  desatualizado?: boolean;
 }
 
 // ── Saúde consolidada (§22) ─────────────────────────────────────────

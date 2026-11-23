@@ -10,9 +10,9 @@
 // 2026-07-29 — "simulados marcados") até cada integração real chegar.
 
 import type {
-  AlertaGeral, ModuloId, PeriodoId,
+  AlertaGeral, FaltaConexao, ModuloId, PeriodoId,
   ResumoAds, ResumoAnuncios, ResumoModulo, ResumoTransito,
-  StatusIntegracao,
+  SaudeTransito, StatusIntegracao,
 } from '../domain/types';
 
 // ── util ────────────────────────────────────────────────────────────
@@ -47,7 +47,8 @@ export async function getTransito(): Promise<ResumoTransito> {
     level?: string; trafficIndex?: number | null; estimatedCongestionKm?: number | null;
     activeIncidents?: number | null; closures?: number; updatedAt?: string | null; stale?: boolean;
   }
-  const d = await getJson<Bruto>('/api/traffic/summary.php');
+  // resumo e saúde em paralelo: a saúde (health.php) nunca derruba o resumo
+  const [d, saude] = await Promise.all([getJson<Bruto>('/api/traffic/summary.php'), getSaudeTransito()]);
   const atualizadoEm = d.updatedAt ?? null;
   const velho = atualizadoEm ? Date.now() - new Date(atualizadoEm).getTime() > 15 * 60000 : false;
   return {
@@ -55,11 +56,42 @@ export async function getTransito(): Promise<ResumoTransito> {
     indice: d.trafficIndex ?? null,
     km: d.estimatedCongestionKm ?? null,
     ocorrencias: d.activeIncidents ?? null,
-    interdicoes: d.closures ?? 0,
+    interdicoes: d.closures ?? null,   // sem dado = null (antes virava 0)
     atualizadoEm,
     desatualizado: !!d.stale || velho,
+    saude,
   };
 }
+
+/** Saúde do FLUXO do trânsito (health.php). Contrato novo (f9dc7e8d): status up|parcial|down + motivo. Servidor antigo (sem `status`)
+ *  ou falha da consulta = null — a tela decide só pelo resumo. */
+export async function getSaudeTransito(): Promise<SaudeTransito | null> {
+  try {
+    const d = await getJson<{ status?: string; motivo?: string | null }>('/api/traffic/health.php', 6000);
+    return d.status === 'up' || d.status === 'parcial' || d.status === 'down' ? { status: d.status, motivo: d.motivo ?? null } : null;
+  } catch { return null; }
+}
+
+/** Motivo da saúde do trânsito em uma linha, sem jargão do provedor. */
+export function motivoTransito(t: ResumoTransito): string {
+  const m = t.saude?.motivo ?? '';
+  if (t.saude?.status === 'down') {
+    if (/cota/.test(m)) return 'O fornecedor do trânsito recusou a consulta por limite de uso.';
+    if (/chave/.test(m)) return 'O fornecedor do trânsito recusou a chave de acesso.';
+    if (/servidor/.test(m)) return 'O fornecedor do trânsito está com erro no servidor dele.';
+    return 'O fornecedor do trânsito não respondeu.';
+  }
+  const parcial = /fluxo_parcial_(\d+)_de_(\d+)/.exec(m);
+  if (parcial) return `Só ${parcial[1]} de ${parcial[2]} vias foram lidas.`;
+  if (/fluxo_vazio/.test(m) || (t.indice === null && t.nivel === 'unavailable')) return 'O fornecedor não devolveu o fluxo das vias; sem índice de trânsito.';
+  if (/ocorrencias_indisponiveis/.test(m)) return 'As ocorrências estão indisponíveis no fornecedor.';
+  if (/retrato_velho/.test(m) || t.desatualizado) return 'A última leitura válida é antiga.';
+  return 'A leitura do trânsito veio incompleta.';
+}
+
+/** Trânsito com problema? (sem índice, saúde parcial/down, ou retrato desatualizado) */
+export const transitoComProblema = (t: ResumoTransito) =>
+  t.nivel === 'unavailable' || t.indice === null || t.saude?.status === 'parcial' || t.saude?.status === 'down' || t.desatualizado;
 
 export async function getAds(): Promise<ResumoAds> {
   interface Conta { active_campaigns?: number; cost?: number; }
@@ -155,9 +187,22 @@ export async function getPipedrive(): Promise<ResumoPipedrive> {
   };
 }
 
-/** (B) Cartão de módulo SEM fonte real: nenhum número inventado — só o estado "Aguardando conexão". */
-function aguardandoConexao(): ResumoModulo {
-  return { status: 'indisponivel', statusRotulo: 'Aguardando conexão', metricas: [], alerta: null, atualizadoEm: null, simulado: false };
+/** O QUE FALTA para cada módulo sem fonte real — só textos confirmados pelo Jhony (23/11/2026). Nada de número. */
+export const FALTA: Partial<Record<ModuloId, FaltaConexao>> = {
+  mercadolivre: { texto: 'Aplicativo em criação.', com: 'Walter', rota: '#/panel-mercadolivre', rotuloLink: 'Abrir Mercado Livre' },
+  metaads: { texto: 'Falta o usuário de leitura.', com: 'Diogo', rota: '#/panel-metaads', rotuloLink: 'Abrir Meta Ads' },
+  ads: { texto: 'Falta o acesso no Google Cloud (Walter) e a leitura nas contas (Diogo).', com: null, rota: '#/panel-ads', rotuloLink: 'Abrir Ads Intelligence' },
+  financeiro: { texto: 'Asaas em auditoria; faltam as chaves.', com: null, rota: null },
+  ecommerce: { texto: 'Loja Integrada: falta definir o dono da conta.', com: null, rota: null },
+  compras: { texto: 'O módulo de compras ainda não existe; depende da integração Bling (central de compras).', com: null, rota: null },
+  datatables: { texto: 'O painel DataTables já existe; falta o resumo dele nesta página.', com: null, rota: '#/panel-datatables', rotuloLink: 'Abrir DataTables' },
+};
+/** Módulos que HOJE não têm fonte (sem pedido nenhum): vão direto para a faixa "Aguardando conexão", sem caixa vazia na grade. */
+export const SEM_FONTE: ReadonlySet<ModuloId> = new Set<ModuloId>(['metaads', 'mercadolivre', 'ecommerce', 'financeiro', 'compras', 'datatables']);
+
+/** (B) Cartão de módulo SEM fonte real: nenhum número inventado — só o estado "Aguardando conexão" com o que falta. */
+function aguardandoConexao(id: ModuloId): ResumoModulo {
+  return { status: 'indisponivel', statusRotulo: 'Aguardando conexão', metricas: [], alerta: null, atualizadoEm: null, simulado: false, estado: 'aguardando', falta: FALTA[id] };
 }
 
 // ── Resumos por módulo (§24) — reais adaptados + simulados marcados ─
@@ -167,6 +212,20 @@ export async function getResumoModulo(id: ModuloId, periodo: PeriodoId): Promise
     case 'transito': {
       const t = await getTransito();
       const rot = { normal: 'Normal', moderate: 'Moderado', intense: 'Intenso', unavailable: 'Indisponível' }[t.nivel];
+      if (transitoComProblema(t)) {
+        // COM PROBLEMA: o que falhou + último sucesso; com índice válido (retrato antigo), os números ficam marcados como desatualizados
+        const temValor = t.indice !== null;
+        return {
+          status: 'critico', statusRotulo: 'Com problema', estado: 'problema', desatualizado: temValor,
+          problema: { motivo: motivoTransito(t), ultimoSucesso: temValor ? t.atualizadoEm : null },
+          metricas: temValor ? [
+            { rotulo: 'Índice', valor: `${t.indice}/100` },
+            { rotulo: 'Lentidão', valor: t.km === null ? '—' : `${t.km} km` },
+            { rotulo: 'Ocorrências', valor: t.ocorrencias === null ? '—' : fmtN(t.ocorrencias) },
+          ] : [],
+          alerta: null, atualizadoEm: temValor ? t.atualizadoEm : null, simulado: false,
+        };
+      }
       return {
         status: t.nivel === 'normal' ? 'ok' : t.nivel === 'moderate' ? 'atencao' : t.nivel === 'intense' ? 'critico' : 'indisponivel',
         statusRotulo: rot,
@@ -174,7 +233,7 @@ export async function getResumoModulo(id: ModuloId, periodo: PeriodoId): Promise
           { rotulo: 'Índice', valor: t.indice === null ? '—' : `${t.indice}/100` },
           { rotulo: 'Lentidão', valor: t.km === null ? '—' : `${t.km} km` },
           { rotulo: 'Ocorrências', valor: t.ocorrencias === null ? '—' : fmtN(t.ocorrencias) },
-          { rotulo: 'Interdições', valor: fmtN(t.interdicoes) },
+          { rotulo: 'Interdições', valor: t.interdicoes === null ? '—' : fmtN(t.interdicoes) },
         ],
         alerta: t.nivel === 'intense' ? 'Trânsito intenso na cidade — considere os prazos de entrega.' : null,
         atualizadoEm: t.atualizadoEm,
@@ -183,7 +242,7 @@ export async function getResumoModulo(id: ModuloId, periodo: PeriodoId): Promise
     }
     case 'ads': {
       const a = await getAds();
-      if (!a.provedorReal) return aguardandoConexao();   // 23/11/2026: provedor mock = sem dado real → nenhum número
+      if (!a.provedorReal) return aguardandoConexao('ads');   // 23/11/2026: provedor mock = sem dado real → nenhum número
       return {
         status: a.campanhasAtivas > 0 ? 'ok' : 'atencao',
         statusRotulo: a.provedorReal ? 'Conectado' : 'Modo de testes',
@@ -261,7 +320,8 @@ export async function getResumoModulo(id: ModuloId, periodo: PeriodoId): Promise
       } catch (e) {
         // sem permissão (nível < 50) ou fonte fora: NUNCA número inventado
         const semAcesso = e instanceof Error && /HTTP 40[13]/.test(e.message);
-        return { status: 'indisponivel', statusRotulo: semAcesso ? 'Sem acesso' : 'Indisponível', metricas: [], alerta: null, atualizadoEm: null, simulado: false };
+        if (semAcesso) return { status: 'indisponivel', statusRotulo: 'Sem acesso', metricas: [], alerta: 'Seu nível de acesso não inclui o resumo do Pipedrive.', atualizadoEm: null, simulado: false };
+        throw e;   // fonte fora = COM PROBLEMA na tela (o último valor válido, se houver, fica marcado como desatualizado)
       }
     }
     default:
@@ -270,8 +330,8 @@ export async function getResumoModulo(id: ModuloId, periodo: PeriodoId): Promise
 }
 
 /** (B) Módulos sem fonte real (23/11/2026): "Aguardando conexão", sem números de demonstração. */
-function resumoSimulado(_id: ModuloId, _periodo: PeriodoId): Promise<ResumoModulo> {
-  return Promise.resolve(aguardandoConexao());
+function resumoSimulado(id: ModuloId, _periodo: PeriodoId): Promise<ResumoModulo> {
+  return Promise.resolve(aguardandoConexao(id));
 }
 
 // ── Alertas consolidados (§28) ──────────────────────────────────────
@@ -279,9 +339,12 @@ function resumoSimulado(_id: ModuloId, _periodo: PeriodoId): Promise<ResumoModul
 export async function getAlertas(): Promise<AlertaGeral[]> {
   if (cenarioAtual() === 'vazio') return []; // §45: testa o estado vazio
   const alertas: AlertaGeral[] = [];
+  // as duas fontes em paralelo (antes em fila)
+  const [rt, rp] = await Promise.allSettled([getTransito(), getPipedrive()]);
   // Trânsito real vira alerta quando intenso/desatualizado.
   try {
-    const t = await getTransito();
+    if (rt.status === 'rejected') throw rt.reason;
+    const t = rt.value;
     if (t.nivel === 'intense') {
       alertas.push({
         id: 'transito-intenso', severidade: 2, modulo: 'Trânsito',
@@ -300,7 +363,8 @@ export async function getAlertas(): Promise<AlertaGeral[]> {
   } catch { /* fonte fora não bloqueia os demais */ }
 
   try {   // Pipedrive REAL: NEGÓCIOS abertos com atividade vencida (sem permissão, fonte fora ou sem dado → sem alerta, nunca número inventado)
-    const p = await getPipedrive();
+    if (rp.status === 'rejected') throw rp.reason;
+    const p = rp.value;
     if (p.negociosVencidos !== null && p.negociosVencidos > 0) {
       alertas.push({
         id: 'pd-atividades', severidade: 3, modulo: 'Pipedrive',
@@ -316,46 +380,50 @@ export async function getAlertas(): Promise<AlertaGeral[]> {
 // ── Integrações (§26.3) ─────────────────────────────────────────────
 
 export async function getIntegracoes(): Promise<StatusIntegracao[]> {
-  const out: StatusIntegracao[] = [];
   const agora = new Date().toISOString();
+  // as fontes em PARALELO (antes, em fila: a lista esperava a soma de todas — o trânsito sozinho leva 5–6 s)
+  const [rt, ra, rn, rp] = await Promise.allSettled([getTransito(), getAds(), getAnuncios(), getPipedrive()]);
+  const out: StatusIntegracao[] = [];
 
-  try {
-    const t = await getTransito();
+  if (rt.status === 'fulfilled') {
+    const t = rt.value; const prob = transitoComProblema(t);
     out.push({
-      nome: 'Trânsito SP', detalhe: 'Fonte pública de mobilidade',
-      estado: t.desatualizado ? 'desatualizada' : 'conectada',
-      ultimaSync: t.atualizadoEm,
+      nome: 'Trânsito SP', detalhe: prob ? motivoTransito(t) : 'Fonte pública de mobilidade',
+      estado: prob ? 'erro' : 'conectada',   // coerente com o cartão: sem fluxo = COM PROBLEMA, nunca "saudável"
+      ultimaSync: t.indice !== null ? t.atualizadoEm : null,
     });
-  } catch {
-    out.push({ nome: 'Trânsito SP', detalhe: 'Fonte pública de mobilidade', estado: 'erro', ultimaSync: null });
-  }
+  } else out.push({ nome: 'Trânsito SP', detalhe: 'Não foi possível consultar o trânsito.', estado: 'erro', ultimaSync: null });
 
-  try {
-    const a = await getAds();
+  if (ra.status === 'fulfilled') {
+    const a = ra.value;
     out.push({
-      nome: 'Google Ads', detalhe: a.provedorReal ? `${a.contas} conta(s) · ${a.campanhasAtivas} campanhas` : 'Aguardando conexão',
-      estado: a.provedorReal ? 'conectada' : 'demonstracao', ultimaSync: agora,
+      nome: 'Google Ads', detalhe: a.provedorReal ? `${a.contas} conta(s) · ${a.campanhasAtivas} campanhas` : FALTA.ads!.texto,
+      estado: a.provedorReal ? 'conectada' : 'demonstracao', ultimaSync: a.provedorReal ? agora : null,
     });
-  } catch {
-    out.push({ nome: 'Google Ads', detalhe: 'Ads Intelligence', estado: 'erro', ultimaSync: null });
-  }
+  } else out.push({ nome: 'Google Ads', detalhe: 'Não foi possível consultar o Ads Intelligence.', estado: 'erro', ultimaSync: null });
 
-  try {
-    await getAnuncios();
-    out.push({ nome: 'Decision Engine', detalhe: 'Consultor de Google Ads (metodologia Dshow)', estado: 'conectada', ultimaSync: agora });
-  } catch {
-    out.push({ nome: 'Decision Engine', detalhe: 'Consultor de Google Ads', estado: 'erro', ultimaSync: null });
-  }
+  out.push(rn.status === 'fulfilled'
+    ? { nome: 'Decision Engine', detalhe: 'Consultor de Google Ads (metodologia Dshow)', estado: 'conectada', ultimaSync: agora }
+    : { nome: 'Decision Engine', detalhe: 'Não foi possível consultar o Consultor de Google Ads.', estado: 'erro', ultimaSync: null });
 
   out.push(
-    { nome: 'Meta Ads', detalhe: 'Aguardando conexão OAuth', estado: 'demonstracao', ultimaSync: null },
-    { nome: 'Mercado Livre', detalhe: 'Aguardando conexão OAuth', estado: 'demonstracao', ultimaSync: null },
+    { nome: 'Meta Ads', detalhe: `${FALTA.metaads!.texto} Com ${FALTA.metaads!.com}.`, estado: 'demonstracao', ultimaSync: null },
+    { nome: 'Mercado Livre', detalhe: `${FALTA.mercadolivre!.texto} Com ${FALTA.mercadolivre!.com}.`, estado: 'demonstracao', ultimaSync: null },
+    // a mesma lista da grade: todo cartão "Aguardando conexão" aparece aqui (o topo conta igual)
+    { nome: 'E-commerce', detalhe: FALTA.ecommerce!.texto, estado: 'demonstracao', ultimaSync: null },
+    { nome: 'Financeiro', detalhe: FALTA.financeiro!.texto, estado: 'demonstracao', ultimaSync: null },
+    { nome: 'Compras', detalhe: FALTA.compras!.texto, estado: 'demonstracao', ultimaSync: null },
+    { nome: 'DataTables', detalhe: FALTA.datatables!.texto, estado: 'demonstracao', ultimaSync: null },
   );
-  try {
-    const p = await getPipedrive();
+
+  if (rp.status === 'fulfilled') {
+    const p = rp.value;
     out.push({ nome: 'Pipedrive', detalhe: p.abertos === null ? 'CRM comercial' : `CRM comercial · ${fmtN(p.abertos)} negócios abertos`, estado: 'conectada', ultimaSync: p.atualizadoEm });
-  } catch {
-    out.push({ nome: 'Pipedrive', detalhe: 'CRM comercial', estado: 'erro', ultimaSync: null });
+  } else {
+    const semAcesso = rp.reason instanceof Error && /HTTP 40[13]/.test(rp.reason.message);
+    // sem acesso não é falha da fonte: fica fora da contagem de problemas
+    out.push(semAcesso ? { nome: 'Pipedrive', detalhe: 'Seu nível de acesso não inclui o Pipedrive.', estado: 'demonstracao', ultimaSync: null }
+      : { nome: 'Pipedrive', detalhe: 'Não foi possível consultar o Pipedrive.', estado: 'erro', ultimaSync: null });
   }
   return out;
 }
