@@ -11,7 +11,8 @@ import { Barra, Botao, CapsulaId, ChipKit, Carregando, Dialogo, Erro, Etiqueta, 
 import { Icone, type NomeIcone } from '../ui/Icones';
 import { TabelaDados, type ColunaTabela } from '../ui/TabelaDados';
 import type { Ordenacao } from '../lib/ordenar';
-import { EditorValor } from '../ui/EditorValor';
+import { EditorValor, type ControleEditor } from '../ui/EditorValor';
+import { ROTULO_SITUACAO, situacaoDe } from '../lib/situacao';
 
 type AbaFicha = 'atributos' | 'vinculos' | 'fotos' | 'precifica' | 'historico';
 
@@ -28,6 +29,8 @@ export function Ficha({ id }: { id: number }) {
   // UX-1 (b) + UX-1b: o filtro da aba Atributos vive aqui para "Ver N pendentes" (bloco do produto) aplicá-lo
   const [filtro, setFiltro] = React.useState<FiltroAtr>('todos');
   const [slotFiltros, setSlotFiltros] = React.useState<HTMLDivElement | null>(null);   // UX-1b: filtros da aba na linha das sub-abas
+  const [slotTitulo, setSlotTitulo] = React.useState<HTMLDivElement | null>(null);     // FICHA V3: título da tabela + ações, dentro do bloco travado
+  const [fotoSel, setFotoSel] = React.useState(0);                                        // FICHA V3: foto mostrada no resumo compacto
   const trilho = React.useRef<HTMLDivElement>(null);
   const seq = React.useRef(0);   // recargas fora de ordem: só a mais recente vale (senão um campo volta ao valor antigo)
   // "foi salvo ou não" (item 3): a releitura SILENCIOSA (depois de gravar) não troca a ficha por uma tela de erro — devolve false e quem
@@ -39,18 +42,17 @@ export function Ficha({ id }: { id: number }) {
       .then((d) => { if (n === seq.current) { setF(d); setErro(null); } return true; })
       .catch((e) => { if (n === seq.current && !silencioso) setErro(e.message); return false; });
   }, [id]);
-  React.useEffect(() => { carregar(); setAba('atributos'); setAmpliar(null); setFiltro('todos'); }, [carregar]);
+  React.useEffect(() => { carregar(); setAba('atributos'); setAmpliar(null); setFiltro('todos'); setFotoSel(0); }, [carregar]);
   if (erro) return <div><button type="button" className="bl-botao" onClick={m.fecharProduto}>← Voltar</button><Erro mensagem={erro} aoTentar={() => carregar()} /></div>;
   if (!f) return <Carregando rotulo="Carregando a ficha" />;
   const p = f.produto; const capa = f.fotos.find((x) => x.capa) ?? f.fotos[0] ?? null;
-  const ess = f.completude.essencial; const nPend = f.completude.obrigatorios_vazios.length;
-  const verPendentes = () => { setAba('atributos'); setFiltro('obrigatorios'); };
-  const pend = f.itens.filter((i) => i.sugestoes.length).length;
 
+  const nFotos = f.fotos.length; const fotoAtual = nFotos ? f.fotos[Math.min(fotoSel, nFotos - 1)] : capa;
+  const irFoto = (k: number) => { if (!nFotos) return; const alvo = (k + nFotos) % nFotos; setFotoSel(alvo); trilho.current?.querySelectorAll<HTMLElement>('.at-resumo-v3__mini')[alvo]?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); };
   return (
-    <div className="at-ficha">
-      {/* UX-1b (refeito): a FAIXA do produto + sub-abas + filtros ficam no bloco fixo (sticky) do topo; o bloco grande do produto rola
-          com a página (sem cálculo de altura: o "encolher" é o bloco grande sair de vista enquanto a faixa fina fica). */}
+    <div className="at-ficha at-ficha--v3">
+      {/* FICHA V3 (proposta do Jhony, 19/11): bloco travado ÚNICO — faixa de identificação + sub-abas/filtros + RESUMO COMPACTO + título da
+          tabela com as ações; o cabeçalho das colunas gruda logo abaixo (TabelaDados rolagem="container"). Só as linhas rolam. */}
       <CabecalhoTravado>
         <div className="at-heroi-compacto at-ficha__faixa">
           <button type="button" className="bl-botao" onClick={m.fecharProduto}>← Produtos</button>
@@ -59,10 +61,6 @@ export function Ficha({ id }: { id: number }) {
           <CapsulaId id={p.id} flutuante={false} />
           <span className="at-fraco at-ficha__classe">{rotuloCategoria(p.categoria)} / {rotuloSubcategoria(p.subcategoria)}</span>
           {!f.pode_editar && <Etiqueta>somente leitura</Etiqueta>}
-          <div className="at-heroi-compacto__barras">
-            <Barra rotulo="Essencial" feitos={ess.feitos} total={ess.total} compacta />
-            <Barra rotulo="Completo" feitos={f.completude.completo.feitos} total={f.completude.completo.total} compacta />
-          </div>
           <Botao aoClicar={() => setDetalhes(true)}>Detalhes</Botao>
         </div>
         <div className="at-ficha__abas-linha">
@@ -72,51 +70,31 @@ export function Ficha({ id }: { id: number }) {
         </div>
         <div className="at-ficha__filtros-slot" ref={setSlotFiltros} />
         </div>
-      </CabecalhoTravado>
-      <div className="at-heroi-fixo">
-          <div className="at-heroi">
-            <div className="at-galeria">
-              <Foto mediaId={capa?.id ?? null} cor={capa?.cor ?? null} proporcao="4 / 3" lado={480} idCapsula={p.id} />
-            </div>
-            <div className="at-ident bl-cartao">
-              <div className="at-ident__classe">{rotuloCategoria(p.categoria)} · {rotuloSubcategoria(p.subcategoria)}</div>
-              <h1 className="at-ident__nome">{p.nome}</h1>
-              <div className="at-ident__chips">
-                <CapsulaId id={p.id} flutuante={false} />
-                {p.ativo ? <Etiqueta tom="sucesso">Ativo</Etiqueta> : <Etiqueta tom="aviso">Inativo no catálogo</Etiqueta>}
-                {f.kits.map((k) => <ChipKit key={k.id} nome={k.nome} titulo={`Kit ${k.nome} — ${k.motivos.map((x) => MOTIVO_KIT[x.tipo]).join(', ')}`} />)}
-                {f.precifica.familias.map((k) => <Etiqueta key={k} tom="info">Precifica: {tituloFamilia(k)}</Etiqueta>)}
+        {/* RESUMO COMPACTO: foto (ampliável), categoria, nome e carrossel de miniaturas com contador */}
+        <div className="at-resumo-v3">
+          <button type="button" className="at-resumo-v3__foto" onClick={() => nFotos && setAmpliar(Math.min(fotoSel, nFotos - 1))} disabled={!nFotos} aria-label={nFotos ? `Ampliar foto ${Math.min(fotoSel, nFotos - 1) + 1} de ${nFotos}` : 'Produto sem foto'}>
+            <Foto mediaId={fotoAtual?.id ?? null} cor={fotoAtual?.cor ?? null} proporcao="4 / 3" compacta ajuste="contain" />
+            {nFotos > 0 && <span className="at-resumo-v3__ampliar" aria-hidden><Icone nome="maximize-2" /></span>}
+          </button>
+          <div className="at-resumo-v3__texto">
+            <div className="at-resumo-v3__classe">{rotuloCategoria(p.categoria)} · {rotuloSubcategoria(p.subcategoria)}</div>
+            <div className="at-resumo-v3__nome">{p.nome}{!p.ativo && <> <Etiqueta tom="aviso">Inativo no catálogo</Etiqueta></>}</div>
+            <div className="at-resumo-v3__carrossel" role="group" aria-label="Fotos do produto">
+              <button type="button" className="at-resumo-v3__seta" aria-label="Foto anterior" disabled={nFotos <= 1} onClick={() => irFoto(fotoSel - 1)}><Icone nome="chevron-left" /></button>
+              <div className="at-resumo-v3__trilho" ref={trilho}>
+                {f.fotos.map((x, k) => (
+                  <button key={x.id} type="button" className={`at-resumo-v3__mini ${k === Math.min(fotoSel, nFotos - 1) ? 'ativo' : ''}`} aria-pressed={k === Math.min(fotoSel, nFotos - 1)} aria-label={`Mostrar foto ${k + 1} de ${nFotos}`} onClick={() => irFoto(k)}>
+                    <Foto mediaId={x.id} cor={x.cor} proporcao="1 / 1" compacta ajuste="cover" />
+                  </button>))}
               </div>
-              <div className="at-ident__barras">
-                <Barra rotulo="Essencial" feitos={f.completude.essencial.feitos} total={f.completude.essencial.total} />
-                <Barra rotulo="Completo" feitos={f.completude.completo.feitos} total={f.completude.completo.total} />
-              </div>
-              <dl className="at-fontes">
-                <div><dt><span className="at-ponto at-ponto--dshow" />Especificação técnica</dt><dd>Banco de atributos DSHOW (esta tela). {f.legado ? `Legado do Jhony: item ${f.legado.item}, kit ${f.legado.kit_nome ?? '—'}.` : 'Sem atribuição no legado.'}</dd></div>
-                <div><dt><span className="at-ponto at-ponto--precifica" />Ficha do Precifica</dt><dd>{f.precifica.familias.length ? 'Somente leitura, ao lado de cada atributo com par e na aba Precifica.' : 'Este produto não tem ficha técnica no Precifica.'}</dd></div>
-              </dl>
-              {/* UX-1b (ajuste 1): completude acionável — o clique aplica o filtro "Obrigatórios pendentes" (a mesma regra do contador) */}
-              <div className="at-completude">
-                {ess.total === 0 ? <span className="at-fraco">Sem essenciais definidos</span> : <span>{ess.feitos} de {ess.total} essenciais preenchidos</span>}
-                {nPend > 0 && <> · <button type="button" className="at-link" onClick={verPendentes}>Ver {nPend} pendente{nPend === 1 ? '' : 's'}</button></>}
-                {pend > 0 && <Etiqueta tom="info">{pend} sugest{pend === 1 ? 'ão' : 'ões'} para conferir</Etiqueta>}
-              </div>
-              {/* UX-1b: carrossel de fotos (a capa continua à esquerda); sem fotos, não aparece */}
-              {f.fotos.length > 0 && (
-                <div className="at-carrossel" role="group" aria-label="Fotos do produto">
-                  <button type="button" className="at-carrossel__seta" aria-label="Fotos anteriores" onClick={() => trilho.current?.scrollBy({ left: -240, behavior: 'smooth' })}><Icone nome="chevron-left" /></button>
-                  <div className="at-carrossel__trilho" ref={trilho}>
-                    {f.fotos.map((x, k) => (
-                      <button key={x.id} type="button" className="at-carrossel__item" onClick={() => setAmpliar(k)} aria-label={`Ampliar foto ${k + 1} de ${f.fotos.length}`} title={x.capa ? 'Capa' : `Foto ${k + 1}`}>
-                        <Foto mediaId={x.id} cor={x.cor} proporcao="4 / 3" compacta ajuste="cover" />
-                      </button>))}
-                  </div>
-                  <button type="button" className="at-carrossel__seta" aria-label="Próximas fotos" onClick={() => trilho.current?.scrollBy({ left: 240, behavior: 'smooth' })}><Icone nome="chevron-right" /></button>
-                </div>)}
+              <span className="at-resumo-v3__contador" aria-live="polite">{nFotos ? `${Math.min(fotoSel, nFotos - 1) + 1} de ${nFotos}` : 'Sem fotos'}</span>
+              <button type="button" className="at-resumo-v3__seta" aria-label="Próxima foto" disabled={nFotos <= 1} onClick={() => irFoto(fotoSel + 1)}><Icone nome="chevron-right" /></button>
             </div>
           </div>
-      </div>
-      {aba === 'atributos' && <AbaAtributos f={f} recarregar={() => carregar(true)} focoInicial={m.atributoFoco} aoConsumirFoco={m.limparAtributoFoco} filtro={filtro} setFiltro={setFiltro} slotFiltros={slotFiltros} />}
+        </div>
+        <div className="at-ficha__titulo-slot" ref={setSlotTitulo} />
+      </CabecalhoTravado>
+      {aba === 'atributos' && <AbaAtributos f={f} recarregar={() => carregar(true)} focoInicial={m.atributoFoco} aoConsumirFoco={m.limparAtributoFoco} filtro={filtro} setFiltro={setFiltro} slotFiltros={slotFiltros} slotTitulo={slotTitulo} />}
       {aba === 'vinculos' && <AbaVinculos f={f} recarregar={() => carregar(true)} />}
       {aba === 'fotos' && (f.fotos.length ? <div className="at-fotos-grade">{f.fotos.map((x, i) => <button key={x.id} type="button" className="at-fotos-grade__item" onClick={() => setAmpliar(i)}><Foto mediaId={x.id} cor={x.cor} proporcao="4 / 3" />{x.capa && <Etiqueta tom="info">capa</Etiqueta>}</button>)}</div> : <Vazio titulo="Sem fotos">As fotos são gerenciadas no app. Esta tela é só leitura.</Vazio>)}
       {aba === 'precifica' && <AbaPrecifica f={f} />}
@@ -141,13 +119,22 @@ export function Ficha({ id }: { id: number }) {
 }
 
 // ---- Aba Atributos -------------------------------------------------------------------------------------------------------------------
-function AbaAtributos({ f, recarregar, focoInicial = null, aoConsumirFoco, filtro, setFiltro, slotFiltros = null }: { f: TFicha; recarregar: () => Promise<boolean> | void; focoInicial?: number | null; aoConsumirFoco?: () => void; filtro: FiltroAtr; setFiltro: (v: FiltroAtr) => void; slotFiltros?: HTMLElement | null }) {
+function AbaAtributos({ f, recarregar, focoInicial = null, aoConsumirFoco, filtro, setFiltro, slotFiltros = null, slotTitulo = null }: { f: TFicha; recarregar: () => Promise<boolean> | void; focoInicial?: number | null; aoConsumirFoco?: () => void; filtro: FiltroAtr; setFiltro: (v: FiltroAtr) => void; slotFiltros?: HTMLElement | null; slotTitulo?: HTMLElement | null }) {
   const m = useModulo();
   const [agrup, setAgrup] = React.useState<'kit' | 'grupo' | 'nenhum'>('kit');
   const [ordenacao, setOrdenacao] = React.useState<Ordenacao | null>(null);   // null = ordem da ficha (posição no kit)
   const pendentes = React.useMemo(() => new Set(f.completude.obrigatorios_vazios), [f]);   // UX-1: a MESMA lista do contador (servidor)
   const [hist, setHist] = React.useState<ItemFicha | null>(null);
   const [adicionar, setAdicionar] = React.useState(false);
+  const [comparar, setComparar] = React.useState(false);                 // FICHA V3: referência do Precifica só sob demanda (somente leitura)
+  const [detalheDe, setDetalheDe] = React.useState<ItemFicha | null>(null);
+  // FICHA V3: a unidade de cada linha é desenhada na coluna própria (o editor da coluna Valor manda o seletor para cá por portal)
+  const [slotsUnid, setSlotsUnid] = React.useState<Record<number, HTMLElement | null>>({});
+  const refsUnid = React.useRef(new Map<number, (el: HTMLElement | null) => void>());
+  const refUnid = (id: number) => { let r = refsUnid.current.get(id); if (!r) { r = (el) => setSlotsUnid((x) => (x[id] === el ? x : { ...x, [id]: el })); refsUnid.current.set(id, r); } return r; };
+  // FICHA V3: o menu ⋯ muda o estado pelo editor da linha (mesmo caminho de gravação: chave, recibo, mensagens)
+  const controles = React.useRef(new Map<number, React.MutableRefObject<ControleEditor | null>>());
+  const controleDe = (id: number) => { let c = controles.current.get(id); if (!c) { c = { current: null }; controles.current.set(id, c); } return c; };
   // UX-1: depois de adicionar, o campo novo recebe o foco (avulso: o atributo escolhido; kit: o 1º campo vazio que o kit trouxe)
   const [focar, setFocar] = React.useState<{ atributo?: number; kit?: number } | null>(null);
   // UX-1: abrir a ficha já num atributo (pelo ID). Fora da ficha → aviso; a ficha abre normalmente.
@@ -174,13 +161,24 @@ function AbaAtributos({ f, recarregar, focoInicial = null, aoConsumirFoco, filtr
   const nomesGrupos = agrup === 'nenhum' ? [] : [...new Set(itens.map((i) => chaveGrupo(i) as string))];
   if (agrup === 'grupo') nomesGrupos.sort((a, b) => a.localeCompare(b, 'pt-BR'));
   const grupos = nomesGrupos.map((k) => ({ chave: k, titulo: k }));   // a TabelaDados já mostra a contagem
+  const temUnidade = (i: ItemFicha) => (i.tipo === 'numero' || i.tipo === 'inteiro') && (i.unidades.length > 0 || !!i.unidade_efetiva);
   const colunas: ColunaTabela<ItemFicha>[] = [
-    { chave: 'atributo', titulo: 'Atributo e origem do vínculo', tipo: 'texto', valor: (i) => i.rotulo, render: (i) => <CelAtributo i={i} aoHistorico={() => setHist(i)} /> },
-    { chave: 'valor', titulo: 'Valor DSHOW', tipo: 'texto', valor: (i) => textoDoValor(i), render: (i) => <CelValor i={i} f={f} recarregar={recarregar} /> },
-    { chave: 'estado', titulo: 'Estado e sugestão', tipo: 'texto', valor: (i) => estadoDe(i, pendentes.has(i.atributo_id)),
-      render: (i) => <CelEstado i={i} f={f} pendente={pendentes.has(i.atributo_id)} recarregar={recarregar} /> },
-    { chave: 'precifica', titulo: 'Referência do Precifica · somente leitura', tipo: 'texto', valor: (i) => (i.precifica ? fmtPrecifica(i.precifica.chave, i.precifica.valor) : null),
-      render: (i) => <div data-atributo={i.atributo_id} className="at-attr__precifica">{i.precifica ? <><span className="at-fonte-mini">Precifica</span> {fmtPrecifica(i.precifica.chave, i.precifica.valor)}</> : <span className="at-fraco">—</span>}</div> },
+    { chave: 'atributo', titulo: 'Atributo', tipo: 'texto', valor: (i) => i.rotulo, classe: 'at-v3-c-atr',
+      render: (i) => <div data-atributo={i.atributo_id} className="at-v3-atr" title={i.rotulo}><span className="at-v3-atr__txt">{i.rotulo}</span>{i.obrigatorio && <span className="at-obrig" aria-label="obrigatório">*</span>}</div> },
+    { chave: 'valor', titulo: 'Valor', tipo: 'texto', valor: (i) => textoDoValor(i), classe: 'at-v3-c-val',
+      render: (i) => (
+        <div data-atributo={i.atributo_id} className="at-attr__valor at-v3-val">
+          {i.autoridade === 'precifica' && <span className="at-v3-cadeado" title="Referência do Precifica · somente leitura"><Icone nome="lock" /><span className="bl-so-leitor">Referência do Precifica · somente leitura</span></span>}
+          <EditorValor item={i} productId={f.produto.id} podeEditar={f.pode_editar} aoGravar={recarregar} aoRecarregar={recarregar} linhaV3={{ slotUnidade: slotsUnid[i.atributo_id] ?? null, controle: controleDe(i.atributo_id) }} />
+        </div>) },
+    { chave: 'unidade', titulo: 'Unidade de medida', tipo: 'texto', ordenavel: false, classe: 'at-v3-c-uni',
+      render: (i) => <div data-atributo={i.atributo_id} className="at-v3-uni" ref={refUnid(i.atributo_id)}>{!temUnidade(i) && <span className="at-v3-traco" aria-label="sem unidade">—</span>}</div> },
+    { chave: 'situacao', titulo: 'Situação', tipo: 'texto', valor: (i) => ROTULO_SITUACAO[situacaoDe(i)], classe: 'at-v3-c-sit',
+      render: (i) => <CelSituacao i={i} f={f} recarregar={recarregar} /> },
+    { chave: 'menu', titulo: '', tipo: 'texto', ordenavel: false, classe: 'at-v3-c-menu',
+      render: (i) => <MenuLinha i={i} f={f} controle={controleDe(i.atributo_id)} aoHistorico={() => setHist(i)} aoDetalhes={() => setDetalheDe(i)} /> },
+    ...(comparar ? [{ chave: 'precifica', titulo: 'Precifica · somente leitura', tipo: 'texto' as const, classe: 'at-v3-c-pre', valor: (i: ItemFicha) => (i.precifica ? fmtPrecifica(i.precifica.chave, i.precifica.valor) : null),
+      render: (i: ItemFicha) => <div data-atributo={i.atributo_id} className="at-attr__precifica">{i.precifica ? fmtPrecifica(i.precifica.chave, i.precifica.valor) : <span className="at-fraco">—</span>}</div> }] : []),
   ];
   return (
     <section className="at-painel at-painel--ficha" aria-label="Atributos do produto">
@@ -196,18 +194,25 @@ function AbaAtributos({ f, recarregar, focoInicial = null, aoConsumirFoco, filtr
             {([['todos', `Todos (${f.itens.length})`], ['obrigatorios', `Obrigatórios pendentes (${pendentes.size})`], ['sugestoes', `Com sugestão (${f.itens.filter((i) => i.sugestoes.length).length})`]] as [FiltroAtr, string][]).map(([v, r]) => (
               <button key={v} type="button" className={filtro === v ? 'ativo' : ''} aria-pressed={filtro === v} onClick={() => setFiltro(v)}>{r}</button>))}
           </div>
-          {f.pode_vincular && <Botao primario aoClicar={() => setAdicionar(true)}>Adicionar atributo a este produto</Botao>}
       </div>
       ); return slotFiltros ? createPortal(filtros, slotFiltros) : <CabecalhoTravado>{filtros}</CabecalhoTravado>; })()}
-      <h3 className="at-ficha__titulo-tabela">Atributos deste produto</h3>
+      {(() => { const titulo = (
+        <div className="at-v3-titulo">
+          <h3 className="at-ficha__titulo-tabela">Atributos deste produto</h3>
+          {f.pode_vincular && <button type="button" className="bl-botao at-v3-btn-add" onClick={() => setAdicionar(true)}><Icone nome="plus" />Adicionar atributo a este produto</button>}
+          <button type="button" className={`bl-botao at-v3-btn-comparar ${comparar ? 'ativo' : ''}`} aria-pressed={comparar} onClick={() => setComparar((c) => !c)}
+            title={f.precifica.disponivel ? 'Mostra a referência do Precifica ao lado (somente leitura)' : 'Precifica indisponível nesta sessão'} disabled={!f.precifica.disponivel}><Icone nome="columns" />{comparar ? 'Ocultar Precifica' : 'Comparar com Precifica'}</button>
+        </div>); return slotTitulo ? createPortal(titulo, slotTitulo) : titulo; })()}
       <Dialogo titulo="Adicionar atributo a este produto" aberto={adicionar} aoFechar={() => setAdicionar(false)} largura={640}>
         <SeletorAdicionar f={f} aoFeito={(alvo) => { setAdicionar(false); setFocar(alvo); recarregar(); }} />
       </Dialogo>
       {itens.length === 0 ? <div className="at-bloco__vazio">Nada neste filtro.</div> : (
-        <TabelaDados<ItemFicha> colunas={colunas} linhas={itens} chaveLinha={(i) => i.atributo_id} rolagem="container" className="at-tabela-ficha"
+        <TabelaDados<ItemFicha> colunas={colunas} linhas={itens} chaveLinha={(i) => i.atributo_id} rolagem="container" className="at-tabela-ficha at-tabela-ficha--v3"
           ordenacao={ordenacao} aoOrdenar={setOrdenacao} legenda="Atributos deste produto"
           {...(agrup === 'nenhum' ? {} : { grupos, grupoDaLinha: (i: ItemFicha) => chaveGrupo(i) })}
-          classeLinha={(i) => (pendentes.has(i.atributo_id) ? 'at-linha--pendente' : i.valor ? 'at-linha--preenchida' : undefined)} />)}
+          classeLinha={(i) => `at-v3-linha at-v3-linha--${situacaoDe(i)}`} />)}
+      {itens.some((i) => i.obrigatorio) && <p className="at-v3-legenda"><span className="at-obrig" aria-hidden>*</span> Campo obrigatório</p>}
+      <DetalhesAtributo item={detalheDe} aoFechar={() => setDetalheDe(null)} aoHistorico={(i) => { setDetalheDe(null); setHist(i); }} />
       {f.fora_da_ficha.length > 0 && <SecaoFora f={f} recarregar={recarregar} />}
       {f.legado_nao_vinculado.length > 0 && (
         <div className="at-bloco at-bloco--legado">
@@ -231,9 +236,6 @@ function AbaAtributos({ f, recarregar, focoInicial = null, aoConsumirFoco, filtr
 }
 
 /** UX-1b: estado em palavras (coluna "Estado e sugestão"; também a chave de ordenação). */
-function estadoDe(i: ItemFicha, pendente: boolean): string {
-  return pendente ? 'Pendente' : !i.valor ? 'Sem valor' : i.valor.estado === 'nao_se_aplica' ? 'Não se aplica' : i.valor.estado === 'desconhecido' ? 'Desconhecido' : 'Preenchido';
-}
 /** UX-1b: texto do valor DSHOW para ordenar (vazio = sem valor → vai para o fim). */
 function textoDoValor(i: ItemFicha): string | null {
   if (!i.valor) return null;
@@ -242,49 +244,68 @@ function textoDoValor(i: ItemFicha): string | null {
   return fmtValor(i.valor, un);
 }
 
-function CelAtributo({ i, aoHistorico }: { i: ItemFicha; aoHistorico: () => void }) {
-  const imp = i.importancia ? IMPORTANCIA[i.importancia] : null;
+/** FICHA V3 · coluna Situação: Pendente (vazio de verdade, pela regra de lib/situacao), Preenchido, Não se aplica, Desconhecido.
+ *  As sugestões continuam aqui (texto curto + Usar/Recusar). */
+function CelSituacao({ i, f, recarregar }: { i: ItemFicha; f: TFicha; recarregar: () => Promise<boolean> | void }) {
+  const sit = situacaoDe(i);
   return (
-    <div data-atributo={i.atributo_id} className={`at-attr__nome ${i.valor ? 'at-attr--preenchido' : i.obrigatorio ? 'at-attr--obrigatorio' : 'at-attr--modelo'}`}>
-      <span className="at-attr__marca" aria-hidden />
-      <div>
-        <div className="at-attr__rotulo">{i.rotulo}{i.obrigatorio && <span className="at-obrig" title="Obrigatório">*</span>}{i.destaque && <span className="at-destaque" title="Destaque no app">★</span>}</div>
-        <div className="at-attr__meta">
-          {imp && <span className={`at-imp at-imp--${['Obrigatório', 'Importante'].includes(imp) ? 'forte' : 'fraca'}`}>{imp}</span>}
-          {!i.visivel_app && <Etiqueta titulo="Não aparece no app (A5)">só na web</Etiqueta>}
-          {i.codigo && <code className="at-codigo" title="Código estável (contrato com o app)">{i.codigo}</code>}
-        </div>
-        <div className="at-attr__origem">
-          {i.valor && <Etiqueta tom={i.valor.origem === 'manual' ? 'verde' : 'neutro'} titulo={i.valor.legado_bruto ?? undefined}>{i.valor.origem === 'manual' ? 'manual' : 'importado'} · {dataHora(i.valor.atualizado_em)}{i.valor.atualizado_por ? ` · ${i.valor.atualizado_por.replace(/@.*/, '')}` : ''}</Etiqueta>}
-          {/* UX-1b (ajuste 2): cadeado com explicação — o vínculo vem do kit (não se remove aqui), mas o valor DSHOW é editável */}
-          {i.origens.map((o, k) => o.tipo === 'avulso'
-            ? <span key={k} className="at-origem">avulso</span>
-            : <span key={k} className="at-origem at-origem--kit" title={`Vínculo pelo kit ${o.grupo_nome}. Você pode preencher o valor DSHOW.`}>
-                <Icone nome="lock" /><span className="bl-so-leitor">Vínculo pelo kit {o.grupo_nome}. Você pode preencher o valor DSHOW. </span>{o.grupo_nome} · {(o.motivos ?? []).map((x) => MOTIVO_KIT[x.tipo]).join(', ')}
-              </span>)}
-          {i.legado?.tp_unit && <span className="at-fraco" title="Unidade escrita no legado">legado: {i.legado.tp_unit}</span>}
-          <button type="button" className="at-link" onClick={aoHistorico}>histórico</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CelValor({ i, f, recarregar }: { i: ItemFicha; f: TFicha; recarregar: () => Promise<boolean> | void }) {
-  return (
-    <div data-atributo={i.atributo_id} className="at-attr__valor">
-      {i.autoridade === 'precifica' && <span className="at-cadeado" title="Referência do Precifica · somente leitura"><Icone nome="lock" /> Referência do Precifica · somente leitura</span>}
-      <EditorValor item={i} productId={f.produto.id} podeEditar={f.pode_editar} aoGravar={recarregar} aoRecarregar={recarregar} />
-    </div>
-  );
-}
-
-function CelEstado({ i, f, pendente, recarregar }: { i: ItemFicha; f: TFicha; pendente: boolean; recarregar: () => Promise<boolean> | void }) {
-  return (
-    <div data-atributo={i.atributo_id} className="at-attr__estado">
-      <span className={`at-estado-txt ${pendente ? 'at-estado-txt--pendente' : ''}`}>{estadoDe(i, pendente)}</span>
+    <div data-atributo={i.atributo_id} className="at-attr__estado at-v3-sit">
+      <span className={`at-v3-situacao at-v3-situacao--${sit}`}>{sit === 'pendente' && <Icone nome="alert-triangle" />}{ROTULO_SITUACAO[sit]}</span>
       {i.sugestoes.map((s) => <SugestaoLinha key={s.id} s={s} i={i} f={f} recarregar={recarregar} />)}
     </div>
+  );
+}
+
+/** FICHA V3 · menu ⋯ da linha: detalhes (origem, código, histórico) e os ESTADOS que saíram da linha (nenhum é apagado ou reinterpretado). */
+function MenuLinha({ i, f, controle, aoHistorico, aoDetalhes }: { i: ItemFicha; f: TFicha; controle: React.MutableRefObject<ControleEditor | null>; aoHistorico: () => void; aoDetalhes: () => void }) {
+  const [aberto, setAberto] = React.useState(false);
+  const raiz = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    if (!aberto) return;
+    const fora = (e: MouseEvent) => { if (!raiz.current?.contains(e.target as Node)) setAberto(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') { setAberto(false); raiz.current?.querySelector<HTMLElement>('button')?.focus(); } };
+    document.addEventListener('mousedown', fora); document.addEventListener('keydown', esc);
+    raiz.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+    return () => { document.removeEventListener('mousedown', fora); document.removeEventListener('keydown', esc); };
+  }, [aberto]);
+  const estado = i.valor?.estado ?? null;
+  const edita = f.pode_editar && i.autoridade !== 'precifica';
+  const item = (rotulo: string, acao: () => void, perigo = false) => <button type="button" role="menuitem" className={`at-v3-menu__item ${perigo ? 'at-v3-menu__item--perigo' : ''}`} onClick={() => { setAberto(false); acao(); }}>{rotulo}</button>;
+  return (
+    <div className="at-v3-menu" ref={raiz} data-atributo={i.atributo_id}>
+      <button type="button" className="at-v3-menu__botao" aria-haspopup="menu" aria-expanded={aberto} aria-label={`Mais ações de ${i.rotulo}`} onClick={() => setAberto((a) => !a)}><Icone nome="more-horizontal" /></button>
+      {aberto && (
+        <div className="at-v3-menu__lista" role="menu" aria-label={`Ações de ${i.rotulo}`}>
+          {item('Detalhes do atributo (origem, código)', aoDetalhes)}
+          {item('Histórico do campo', aoHistorico)}
+          {edita && <div className="at-v3-menu__sep" role="separator" />}
+          {edita && i.aceita_nao_se_aplica && estado !== 'nao_se_aplica' && item('Marcar como “Não se aplica”', () => controle.current?.marcarEstado('nao_se_aplica'))}
+          {edita && estado !== 'desconhecido' && item('Marcar como “Desconhecido”', () => controle.current?.marcarEstado('desconhecido'))}
+          {edita && estado !== null && estado !== 'informado' && item('Voltar para sem valor', () => controle.current?.voltarParaSemValor())}
+          {edita && estado === 'informado' && item('Limpar valor…', () => controle.current?.limparValor(), true)}
+        </div>)}
+    </div>
+  );
+}
+
+/** FICHA V3 · o que saiu da linha (importância, "só na web", código, origem do vínculo com o cadeado, quem gravou, legado) fica aqui. */
+function DetalhesAtributo({ item: i, aoFechar, aoHistorico }: { item: ItemFicha | null; aoFechar: () => void; aoHistorico: (i: ItemFicha) => void }) {
+  return (
+    <Dialogo titulo={i ? `Detalhes · ${i.rotulo}` : 'Detalhes'} aberto={i !== null} aoFechar={aoFechar} largura={560}
+      rodape={i ? <><Botao aoClicar={() => aoHistorico(i)}>Histórico do campo</Botao><Botao primario aoClicar={aoFechar}>Fechar</Botao></> : undefined}>
+      {i && (
+        <dl className="at-v3-detalhes">
+          <div><dt>Código</dt><dd>{i.codigo ? <code className="at-codigo">{i.codigo}</code> : '—'}</dd></div>
+          <div><dt>Importância</dt><dd>{i.importancia ? IMPORTANCIA[i.importancia] : '—'}{i.obrigatorio ? ' · obrigatório neste produto' : ''}{i.destaque ? ' · destaque no app' : ''}</dd></div>
+          <div><dt>No app</dt><dd>{i.visivel_app ? 'Aparece no app' : 'Só na web (não aparece no app)'}</dd></div>
+          <div><dt>Origem do vínculo</dt><dd>{i.origens.length ? i.origens.map((o, k) => (
+            <div key={k}>{o.tipo === 'avulso' ? 'Avulso (só neste produto)' : <><Icone nome="lock" /> Kit {o.grupo_nome} · {(o.motivos ?? []).map((x) => MOTIVO_KIT[x.tipo]).join(', ')} <span className="at-fraco">(o vínculo vem do kit; o valor DSHOW é editável)</span></>}</div>)) : '—'}</dd></div>
+          <div><dt>Valor</dt><dd>{i.valor ? <>{i.valor.estado === 'informado' ? 'Informado' : ESTADO[i.valor.estado]} · {i.valor.origem === 'manual' ? 'manual' : 'importado'} · {dataHora(i.valor.atualizado_em)}{i.valor.atualizado_por ? ` · ${i.valor.atualizado_por.replace(/@.*/, '')}` : ''}{i.valor.legado_bruto ? <> · <span className="at-fraco" title="Texto do legado">legado: {i.valor.legado_bruto}</span></> : null}</> : 'Sem valor'}</dd></div>
+          {i.legado?.tp_unit && <div><dt>Unidade no legado</dt><dd>{i.legado.tp_unit}</dd></div>}
+          {i.descricao && <div><dt>Descrição</dt><dd>{i.descricao}</dd></div>}
+          {i.precifica && <div><dt>Precifica (somente leitura)</dt><dd>{fmtPrecifica(i.precifica.chave, i.precifica.valor)}</dd></div>}
+        </dl>)}
+    </Dialogo>
   );
 }
 
@@ -301,7 +322,7 @@ function SugestaoLinha({ s, i, f, recarregar }: { s: Sugestao; i: ItemFicha; f: 
   return (
     <div className="at-sugestao" title={s.evidencia ?? ''}>
       <span className="at-sugestao__rot" title={`Fonte: ${FONTE_SUGESTAO[s.fonte]}`}>Sugestão:</span> <span className="at-sugestao__val">{sugestaoTexto(s, i)}</span>
-      {f.pode_editar && <>{i.valor ? <span className="at-fraco" title="Sugestão não sobrescreve (D10)"> campo já preenchido</span> : <button type="button" className="at-link" disabled={trab} onClick={() => decidir('aceitar')}>· Usar</button>} <button type="button" className="at-link at-link--fraco" disabled={trab} onClick={() => decidir('recusar')}>Recusar</button></>}
+      {f.pode_editar && <>{i.valor ? <span className="at-fraco" title="Sugestão não sobrescreve (D10)"> · campo já preenchido</span> : <> · <button type="button" className="at-link" disabled={trab} onClick={() => decidir('aceitar')}>Usar</button></>} · <button type="button" className="at-link at-link--fraco" disabled={trab} onClick={() => decidir('recusar')}>Recusar</button></>}
     </div>);
 }
 

@@ -1,0 +1,20 @@
+// FICHA V3 · "Pendente" = vazio de verdade conforme o tipo (zero e falso NÃO são vazio); estados gravados não são reinterpretados.
+import { situacaoDe, vazioDeVerdade } from '../../../public/components/panels/panel-atributos/src/lib/situacao';
+let n = 0, f = 0;
+const ok = (nome: string, c: boolean) => { n++; if (!c) { f++; console.log('FALHA ' + nome); } };
+const val = (x: Record<string, unknown>) => ({ estado: 'informado', texto: null, numero: null, booleano: null, data: null, opcao_ids: [], opcoes: [], unidade_id: null, origem: 'manual', lote_id: null, atualizado_em: '', atualizado_por: null, versao: 1, legado_bruto: null, ...x }) as never;
+ok('sem linha de valor → pendente', situacaoDe({ tipo: 'texto', valor: null }) === 'pendente');
+ok('número 0 → preenchido (zero é valor)', situacaoDe({ tipo: 'numero', valor: val({ numero: '0' }) }) === 'preenchido');
+ok('inteiro "0.000" → preenchido', situacaoDe({ tipo: 'inteiro', valor: val({ numero: '0.000' }) }) === 'preenchido');
+ok('número nulo informado → pendente', situacaoDe({ tipo: 'numero', valor: val({ numero: null }) }) === 'pendente');
+ok('booleano false → preenchido (falso é valor)', situacaoDe({ tipo: 'booleano', valor: val({ booleano: false }) }) === 'preenchido');
+ok('booleano nulo → pendente', situacaoDe({ tipo: 'booleano', valor: val({ booleano: null }) }) === 'pendente');
+ok('texto só com espaços → pendente', situacaoDe({ tipo: 'texto', valor: val({ texto: '   ' }) }) === 'pendente');
+ok('texto "0" → preenchido', situacaoDe({ tipo: 'texto', valor: val({ texto: '0' }) }) === 'preenchido');
+ok('data vazia → pendente; data → preenchido', situacaoDe({ tipo: 'data', valor: val({ data: null }) }) === 'pendente' && situacaoDe({ tipo: 'data', valor: val({ data: '2026-01-01' }) }) === 'preenchido');
+ok('opção sem id → pendente; com id → preenchido', situacaoDe({ tipo: 'opcao', valor: val({ opcao_ids: [] }) }) === 'pendente' && situacaoDe({ tipo: 'opcao', valor: val({ opcao_ids: [3] }) }) === 'preenchido');
+ok('multiopção com 2 → preenchido', situacaoDe({ tipo: 'multiopcao', valor: val({ opcao_ids: [1, 2] }) }) === 'preenchido');
+ok('"não se aplica" gravado continua "não se aplica" (não vira pendente)', situacaoDe({ tipo: 'texto', valor: val({ estado: 'nao_se_aplica' }) }) === 'nao_se_aplica' && !vazioDeVerdade({ tipo: 'texto', valor: val({ estado: 'nao_se_aplica' }) }));
+ok('"desconhecido" gravado continua "desconhecido"', situacaoDe({ tipo: 'numero', valor: val({ estado: 'desconhecido' }) }) === 'desconhecido');
+console.log(`${f ? '[ERRO]' : '[OK]  '} ficha-v3-puras (Pendente = vazio de verdade por tipo; estados preservados): ${n} casos, ${f} falha(s)`);
+process.exit(f ? 1 : 0);

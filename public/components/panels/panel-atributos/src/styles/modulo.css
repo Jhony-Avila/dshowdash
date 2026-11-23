@@ -261,7 +261,7 @@
 [data-bl-root] .at-abas { display: flex; flex-wrap: wrap; gap: 2px; border-bottom: 1px solid var(--bl-borda); margin: 6px 0 14px; }
 [data-bl-root] .at-abas button { position: relative; border: 0; background: transparent; color: var(--bl-texto-2); font: inherit; font-size: 13px; font-weight: 550; height: 36px; padding: 0 12px; cursor: pointer; }
 [data-bl-root] .at-abas button.ativo { color: var(--bl-texto); }
-[data-bl-root] .at-abas button.ativo::after { content: ''; position: absolute; left: 8px; right: 8px; bottom: -1px; height: 2px; background: var(--bl-info); border-radius: 2px; }
+[data-bl-root] .at-abas button.ativo::after { content: ''; position: absolute; left: 8px; right: 8px; bottom: -1px; height: 2px; background: var(--bl-verde); border-radius: 2px; }   /* subaba ativa: sublinhado VERDE do padrão aprovado (igual às abas do módulo) */
 [data-bl-root] .at-ident__barras { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
 [data-bl-root] .at-miniatura { width: 64px; height: 48px; padding: 0; overflow: hidden; background: transparent; }
 [data-bl-root] .at-miniatura .at-foto { border-radius: 5px; }
@@ -554,3 +554,135 @@ html[data-theme="dark"] body [data-bl-root] {   /* (0,2,2) vence body.theme-ligh
 /* DSHOW-096: resumo por item do lote */
 [data-bl-root] .at-lote-resumo { margin-top: 8px; font-size: 12.5px; }
 [data-bl-root] .at-lote-resumo ul { margin: 2px 0 6px 18px; padding: 0; }
+
+/* ══ FICHA V3 (proposta do Jhony, 19/11 · /srv/dshow-docs/briefings/BRIEFING-FICHA-V3.md) ═══════════════════════════════════════════
+   Só a tela de atributos do produto (.at-ficha--v3 / .at-tabela-ficha--v3); nada compartilhado com outras telas muda.
+   Tipografia: 400 em nomes de atributo, valores, unidades, situações e textos; 500 em títulos, cabeçalhos, grupos e nome do produto. */
+[data-bl-root] .at-ficha--v3 .at-ficha__faixa .at-heroi-compacto__nome { font-weight: 500; }
+/* resumo compacto (dentro do bloco travado) */
+[data-bl-root] .at-resumo-v3 { display: flex; align-items: center; gap: 16px; margin-top: 8px; padding: 10px 12px; border: 1px solid var(--bl-borda); border-radius: 10px; background: var(--bl-superficie); }
+[data-bl-root] .at-resumo-v3__foto { all: unset; position: relative; flex: 0 0 132px; width: 132px; border-radius: 8px; overflow: hidden; cursor: zoom-in; background: var(--bl-superficie-2); }
+[data-bl-root] .at-resumo-v3__foto:disabled { cursor: default; }
+[data-bl-root] .at-resumo-v3__foto:focus-visible { outline: 2px solid var(--bl-verde); outline-offset: 2px; }
+[data-bl-root] .at-resumo-v3__ampliar { position: absolute; top: 6px; right: 6px; display: flex; padding: 3px; border-radius: 6px; background: rgba(255,255,255,.9); color: #1b2030; font-size: 13px; }
+[data-bl-root] .at-resumo-v3__texto { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+[data-bl-root] .at-resumo-v3__classe { font-size: 10.5px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--bl-texto-3); }
+[data-bl-root] .at-resumo-v3__nome { font-size: 15px; font-weight: 500; color: var(--bl-texto); overflow-wrap: anywhere; }
+[data-bl-root] .at-resumo-v3__carrossel { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+[data-bl-root] .at-resumo-v3__trilho { display: flex; gap: 6px; max-width: min(46vw, 420px); overflow-x: auto; scrollbar-width: thin; }
+[data-bl-root] .at-resumo-v3__mini { all: unset; flex: 0 0 34px; width: 34px; border: 1.5px solid var(--bl-borda); border-radius: 6px; overflow: hidden; cursor: pointer; }
+[data-bl-root] .at-resumo-v3__mini.ativo { border-color: var(--bl-info); box-shadow: 0 0 0 1px var(--bl-info); }
+[data-bl-root] .at-resumo-v3__mini:focus-visible { outline: 2px solid var(--bl-verde); outline-offset: 1px; }
+[data-bl-root] .at-resumo-v3__seta { all: unset; display: flex; padding: 4px; border-radius: 6px; color: var(--bl-texto-2); cursor: pointer; }
+[data-bl-root] .at-resumo-v3__seta:disabled { opacity: .35; cursor: default; }
+[data-bl-root] .at-resumo-v3__seta:not(:disabled):hover { background: var(--bl-superficie-2); }
+[data-bl-root] .at-resumo-v3__contador { font-size: 12px; color: var(--bl-texto-2); min-width: 48px; text-align: center; font-variant-numeric: tabular-nums; }
+/* título da tabela + ações (dentro do bloco travado) */
+[data-bl-root] .at-v3-titulo { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 12px 0 8px; }
+[data-bl-root] .at-v3-titulo .at-ficha__titulo-tabela { margin: 0 6px 0 0; font-size: 15px; font-weight: 500; }
+[data-bl-root] .at-v3-titulo .bl-botao { display: inline-flex; align-items: center; gap: 6px; font-weight: 400; font-size: 12.5px; }
+[data-bl-root] .at-v3-btn-add { background: var(--bl-verde-suave); border-color: var(--bl-verde-borda); color: var(--bl-verde-forte); }
+[data-bl-root] .at-v3-btn-comparar.ativo { border-color: var(--bl-info); color: var(--bl-info); }
+/* tabela: começa na margem esquerda, colunas próximas, largura limitada (o resto à direita fica livre) */
+[data-bl-root] .at-td:has(> .at-tabela-ficha--v3), [data-bl-root] .at-td:has(.at-tabela-ficha--v3) { max-width: 100%; }
+[data-bl-root] .at-tabela-ficha--v3.at-td__tabela, [data-bl-root] table.at-tabela-ficha--v3 { width: auto; }
+[data-bl-root] .at-tabela-ficha--v3 td { vertical-align: middle; padding-top: 4px; padding-bottom: 4px; font-weight: 400; }
+[data-bl-root] .at-tabela-ficha--v3 td:nth-child(n) { width: auto; }
+[data-bl-root] .at-tabela-ficha--v3 td.at-v3-c-atr { width: 230px; min-width: 180px; }
+[data-bl-root] .at-tabela-ficha--v3 td.at-v3-c-val { width: 280px; min-width: 220px; }
+[data-bl-root] .at-tabela-ficha--v3 td.at-v3-c-uni { width: 130px; }
+[data-bl-root] .at-tabela-ficha--v3 td.at-v3-c-sit { width: 150px; }
+[data-bl-root] .at-tabela-ficha--v3 td.at-v3-c-menu { width: 40px; padding-left: 0; padding-right: 0; text-align: center; }
+[data-bl-root] .at-tabela-ficha--v3 td.at-v3-c-pre { width: 220px; color: var(--bl-texto-2); }
+[data-bl-root] .at-tabela-ficha--v3 thead th, [data-bl-root] .at-tabela-ficha--v3 .at-td__th { font-weight: 500; }
+[data-bl-root] .at-tabela-ficha--v3 .at-td__linha--par { background: color-mix(in srgb, #e9eef6 55%, transparent); }
+html[data-theme="dark"] body [data-bl-root] .at-tabela-ficha--v3 .at-td__linha--par { background: color-mix(in srgb, var(--bl-superficie-2) 40%, transparent); }
+[data-bl-root] .at-tabela-ficha--v3 td { border-bottom: 1px solid color-mix(in srgb, var(--bl-borda) 60%, transparent); }
+[data-bl-root] .at-v3-atr { font-weight: 400; overflow-wrap: anywhere; line-height: 1.35; }
+[data-bl-root] .at-v3-atr .at-obrig { color: var(--bl-erro); margin-left: 2px; }
+[data-bl-root] .at-v3-val { display: flex; align-items: flex-start; gap: 6px; }
+[data-bl-root] .at-v3-val .at-editor { flex: 1 1 auto; min-width: 0; }
+[data-bl-root] .at-v3-val .at-editor__linha { align-items: center; }
+[data-bl-root] .at-v3-val .at-campo { width: 100%; font-weight: 400; height: 28px; }
+[data-bl-root] .at-v3-val textarea.at-campo { height: auto; }
+[data-bl-root] .at-v3-cadeado { display: flex; padding-top: 6px; color: var(--bl-texto-3); }
+[data-bl-root] .at-v3-uni .at-campo--unid { width: 100%; height: 28px; font-weight: 400; }
+[data-bl-root] .at-v3-uni .at-unid-fixa { font-weight: 400; color: var(--bl-texto-2); }
+[data-bl-root] .at-v3-traco { color: var(--bl-texto-3); }
+[data-bl-root] .at-v3-situacao { display: inline-flex; align-items: center; gap: 5px; font-weight: 400; font-size: 12.5px; color: var(--bl-texto-2); white-space: nowrap; }
+[data-bl-root] .at-v3-situacao--pendente { color: #c2620a; }
+html[data-theme="dark"] body [data-bl-root] .at-v3-situacao--pendente { color: var(--bl-aviso); }
+[data-bl-root] .at-v3-situacao--preenchido { color: var(--bl-sucesso); }
+[data-bl-root] .at-v3-sit .at-sugestao { font-size: 11.5px; margin-top: 2px; }
+[data-bl-root] .at-v3-legenda { margin: 8px 0 0; font-size: 12px; color: var(--bl-texto-2); }
+[data-bl-root] .at-v3-legenda .at-obrig { color: var(--bl-erro); }
+/* ícone de gravação ao lado do valor (andando / salvo); erro, conflito e incerto continuam como mensagem com ação logo abaixo */
+[data-bl-root] .at-st-ico { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; font-size: 11px; font-weight: 500; line-height: 1; }
+[data-bl-root] .at-st-ico--andando { border: 2px solid var(--bl-borda-forte); border-top-color: var(--bl-info); animation: at-giro .8s linear infinite; }
+[data-bl-root] .at-st-ico--ok { color: #fff; background: var(--bl-sucesso); }
+[data-bl-root] .at-st-ico--erro { color: #fff; background: var(--bl-erro); }
+[data-bl-root] .at-st-ico--aviso { color: #1b2030; background: var(--bl-aviso); }
+@media (prefers-reduced-motion: reduce) { [data-bl-root] .at-st-ico--andando { animation: none; } }
+[data-bl-root] .at-v3-val .at-salvo { display: block; margin-top: 3px; }
+/* menu ⋯ */
+[data-bl-root] .at-v3-menu { position: relative; display: inline-flex; }
+[data-bl-root] .at-v3-menu__botao { all: unset; display: inline-flex; padding: 4px 6px; border-radius: 6px; color: var(--bl-texto-2); cursor: pointer; font-size: 16px; }
+[data-bl-root] .at-v3-menu__botao:hover, [data-bl-root] .at-v3-menu__botao[aria-expanded="true"] { background: var(--bl-superficie-2); color: var(--bl-texto); }
+[data-bl-root] .at-v3-menu__botao:focus-visible { outline: 2px solid var(--bl-verde); }
+[data-bl-root] .at-v3-menu__lista { position: absolute; top: calc(100% + 4px); right: 0; z-index: 30; min-width: 250px; padding: 4px; background: var(--bl-superficie); border: 1px solid var(--bl-borda-forte); border-radius: 8px; box-shadow: var(--bl-sombra, 0 6px 24px rgba(0,0,0,.18)); text-align: left; }
+[data-bl-root] .at-v3-menu__item { all: unset; display: block; box-sizing: border-box; width: 100%; padding: 7px 10px; border-radius: 6px; font-size: 12.5px; font-weight: 400; color: var(--bl-texto); cursor: pointer; }
+[data-bl-root] .at-v3-menu__item:hover, [data-bl-root] .at-v3-menu__item:focus-visible { background: var(--bl-superficie-2); }
+[data-bl-root] .at-v3-menu__item--perigo { color: var(--bl-erro); }
+[data-bl-root] .at-v3-menu__sep { height: 1px; margin: 4px 2px; background: var(--bl-borda); }
+[data-bl-root] .at-v3-detalhes { display: grid; gap: 8px; margin: 0; font-size: 13px; }
+[data-bl-root] .at-v3-detalhes > div { display: grid; grid-template-columns: 150px 1fr; gap: 10px; }
+[data-bl-root] .at-v3-detalhes dt { color: var(--bl-texto-2); font-weight: 500; }
+[data-bl-root] .at-v3-detalhes dd { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 1100px) {
+  [data-bl-root] .at-resumo-v3__foto { flex-basis: 96px; width: 96px; }
+  [data-bl-root] .at-tabela-ficha--v3 td.at-v3-c-atr { width: 180px; }
+  [data-bl-root] .at-tabela-ficha--v3 td.at-v3-c-val { width: 220px; }
+}
+[data-bl-root] .at-ficha--v3 .at-tabela-ficha--v3 .at-td__grupo th { font-weight: 500; }
+[data-bl-root] .at-resumo-v3__foto { background: var(--bl-superficie); }
+[data-bl-root] .at-ficha--v3 .at-painel--ficha { padding-top: 0; }
+[data-bl-root] .at-ficha--v3 .at-painel--ficha > .at-td:first-of-type, [data-bl-root] .at-ficha--v3 .at-painel--ficha .at-td { margin-top: 0; }
+
+/* ── AJUSTES DO JHONY NA FICHA V3 (19/11 ~13h) ─────────────────────────────────────────────────────────────────────────────────────── */
+/* (2) NAVEGAÇÃO DO MÓDULO numa linha só, em TODAS as telas (cabeçalho compartilhado do <CabecalhoTravado>): faltou espaço → rolagem horizontal
+   das abas (sem quebrar, sem mudar a fonte). Topo mais baixo: respiros menores. */
+[data-bl-root] .at-cabecalho--uma-linha { flex-wrap: nowrap; }
+[data-bl-root] .at-cabecalho--uma-linha .at-nav { flex-wrap: nowrap; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; justify-content: flex-start; }
+[data-bl-root] .at-cabecalho--uma-linha .at-nav__item { flex: 0 0 auto; white-space: nowrap; }
+@media (min-width: 1101px) { [data-bl-root] .at-cabecalho--uma-linha .at-nav { justify-content: flex-end; } }
+@media (max-width: 1100px) { [data-bl-root] .at-cabecalho--uma-linha { flex-wrap: nowrap; } [data-bl-root] .at-cabecalho--uma-linha .at-nav { width: auto; } }
+[data-bl-root] .at-fixo { padding-top: 8px; }
+[data-bl-root] .at-cabecalho--uma-linha .at-cabecalho__titulo { padding-bottom: 6px; }
+[data-bl-root] .at-ficha--v3 .at-ficha__faixa, [data-bl-root] .at-fixo .at-ficha__faixa { height: 48px; margin-top: 6px; padding: 4px 10px; }
+[data-bl-root] .at-fixo .at-ficha__abas-linha { margin-top: 2px; row-gap: 4px; }
+[data-bl-root] .at-fixo .at-resumo-v3 { margin-top: 6px; padding: 6px 10px; }   /* sub-abas e filtros podem ir para 2 linhas em telas menores (pendência aceita pelo Cima) */
+[data-bl-root] .at-fixo .at-v3-titulo { padding: 6px 0 4px; }
+/* (6) "Detalhes" ancorado à direita da faixa de identificação */
+[data-bl-root] .at-ficha__faixa > .bl-botao:last-child { margin-left: auto; }
+/* (1) rótulo do atributo numa linha, com reticências; nome completo no title (hover) e no nome acessível do campo (foco) */
+[data-bl-root] .at-tabela-ficha--v3 td.at-v3-c-atr { width: 270px; max-width: 270px; }
+[data-bl-root] .at-v3-atr { display: flex; align-items: center; min-width: 0; max-width: 254px; }
+[data-bl-root] .at-v3-atr__txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* (3) Sim/Não: "Sem resposta" selecionado = destaque NEUTRO, peso regular ("Não" continua sendo um valor) */
+[data-bl-root] .at-segmentado button.ativo--vazio { background: var(--bl-superficie-2); color: var(--bl-texto); font-weight: 400; }
+/* (4) sugestão numa linha só, distinta do valor gravado: "Sugestão: 2,5 mm · Usar · Recusar" */
+[data-bl-root] .at-v3-sit .at-sugestao { display: inline-flex; align-items: center; gap: 4px; margin-top: 3px; padding: 1px 8px; white-space: nowrap; font-style: normal; color: var(--bl-info);
+  border: 1px dashed color-mix(in srgb, var(--bl-info) 55%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--bl-info) 7%, transparent); }
+[data-bl-root] .at-v3-sit .at-sugestao .at-sugestao__val { color: var(--bl-info); font-weight: 500; }
+[data-bl-root] .at-v3-sit .at-sugestao .at-link { font-size: 11.5px; }
+[data-bl-root] .at-tabela-ficha--v3 td.at-v3-c-sit { width: auto; min-width: 150px; }
+/* (7) foco dos campos NEUTRO (azul), nunca verde: o contorno não pode parecer sucesso ao lado de um aviso */
+[data-bl-root] .at-campo:focus { border-color: var(--bl-info); box-shadow: 0 0 0 3px color-mix(in srgb, var(--bl-info) 20%, transparent); }
+/* ACABAMENTO (Jhony, 19/11 ~14h30) · sugestão: mais contraste e comandos separados; "Recusar" tão legível quanto "Usar" (só neste conjunto) */
+[data-bl-root] .at-v3-sit .at-sugestao { gap: 6px; padding: 1px 3px 1px 10px; line-height: 18px; color: var(--bl-texto); border-color: var(--bl-info); background: color-mix(in srgb, var(--bl-info) 10%, var(--bl-superficie)); }
+[data-bl-root] .at-v3-sit .at-sugestao .at-sugestao__rot { color: var(--bl-texto-2); font-size: 11.5px; }
+[data-bl-root] .at-v3-sit .at-sugestao .at-sugestao__val { color: var(--bl-texto); font-weight: 500; }
+[data-bl-root] .at-v3-sit .at-sugestao .at-link, [data-bl-root] .at-v3-sit .at-sugestao .at-link--fraco { display: inline-flex; align-items: center; height: 18px; padding: 0 8px; border: 1px solid var(--bl-borda-forte); border-radius: 999px; line-height: 1;
+  background: var(--bl-superficie); color: var(--bl-texto); font-size: 11.5px; font-weight: 500; text-decoration: none; opacity: 1; }
+[data-bl-root] .at-v3-sit .at-sugestao .at-link:first-of-type { border-color: var(--bl-info); color: var(--bl-info); }
+[data-bl-root] .at-v3-sit .at-sugestao .at-link:hover, [data-bl-root] .at-v3-sit .at-sugestao .at-link:focus-visible { background: color-mix(in srgb, var(--bl-info) 12%, var(--bl-superficie)); outline: none; }

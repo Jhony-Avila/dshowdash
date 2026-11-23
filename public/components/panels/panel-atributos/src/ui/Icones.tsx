@@ -4,7 +4,7 @@ import React from 'react';
 import type { Aba } from '../app/contexto';
 
 type Nome = 'package' | 'eye' | 'layers' | 'clipboard' | 'box' | 'list' | 'sliders' | 'check-square' | 'link' | 'image' | 'tag' | 'clock'
-  | 'chevron-left' | 'chevron-right' | 'lock';
+  | 'chevron-left' | 'chevron-right' | 'lock' | 'more-horizontal' | 'alert-triangle' | 'maximize-2' | 'plus' | 'columns';
 
 const DESENHO: Record<Nome, React.ReactNode> = {
   // menu lateral (sidebar.produtos.atributos.*)
@@ -24,6 +24,12 @@ const DESENHO: Record<Nome, React.ReactNode> = {
   'chevron-left': <polyline points="15 18 9 12 15 6" />,
   'chevron-right': <polyline points="9 18 15 12 9 6" />,
   lock: <><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>,
+  // FICHA V3 (mesmo traço Feather do menu lateral)
+  'more-horizontal': <><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></>,
+  'alert-triangle': <><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></>,
+  'maximize-2': <><polyline points="15 3 21 3 21 9" /><polyline points="9 21 3 21 3 15" /><line x1="21" y1="3" x2="14" y2="10" /><line x1="3" y1="21" x2="10" y2="14" /></>,
+  plus: <><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></>,
+  columns: <path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18" />,
 };
 
 export type NomeIcone = Nome;

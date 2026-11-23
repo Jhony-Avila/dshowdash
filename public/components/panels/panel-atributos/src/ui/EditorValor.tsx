@@ -1,6 +1,7 @@
 // panel-atributos/src/ui/EditorValor.tsx — campo de valor por tipo, com unidade, estado e gravação por campo (A10: sem interface otimista —
 // "Salvo" só depois da resposta). Usado na ficha e na grade. Conflito de versão (409) → "Alguém alterou este campo. Recarregar".
 import React from 'react';
+import { createPortal } from 'react-dom';
 import type { ItemFicha } from '../lib/tipos';
 import { conferirGravacao, enviar, ErroApi, MSG_DESCONHECIDO, novaChaveOperacao, type ValorAtualConflito } from '../lib/api';
 import { marcarPendencia } from '../lib/pendencias';
@@ -27,10 +28,15 @@ function rascunhoDe(it: ItemFicha): string {
   return v.texto ?? '';
 }
 
-export function EditorValor({ item, productId, podeEditar, compacto = false, aoGravar, aoRecarregar, autoFoco = false, rotuloVazio, aoConfirmarEnter }: {
+/** FICHA V3: o menu ⋯ da linha muda o ESTADO pelo MESMO caminho de gravação deste editor (chave, recibo, mensagens). Nada é apagado:
+ *  "não se aplica"/"desconhecido" são gravados como sempre; "voltar para sem valor" e "limpar valor" usam a rota valor_limpar (com confirmação). */
+export interface ControleEditor { marcarEstado: (e: 'nao_se_aplica' | 'desconhecido') => void; voltarParaSemValor: () => void; limparValor: () => void }
+export function EditorValor({ item, productId, podeEditar, compacto = false, aoGravar, aoRecarregar, autoFoco = false, rotuloVazio, aoConfirmarEnter, linhaV3 }: {
   item: ItemFicha; productId: number; podeEditar: boolean; compacto?: boolean; /** "foi salvo ou não": podem devolver Promise<boolean> — false = a releitura falhou (a tela mostra "Atualizar valor") */ aoGravar: () => void | boolean | Promise<boolean | void>; aoRecarregar: () => void | boolean | Promise<boolean | void>; autoFoco?: boolean;
   /** UX-1: texto do campo vazio editável (a grade do Preencher usa "Preencher"); sem ele, o de sempre */ rotuloVazio?: string;
   /** UX-1: Enter num campo de texto — chamado SÓ quando a gravação confirmou (ou quando não havia nada para gravar). Erro/conflito: o foco fica. */ aoConfirmarEnter?: () => void;
+  /** FICHA V3 (linha compacta): unidade desenhada na coluna própria (slot), sem o seletor de estado na linha (vai para o menu ⋯ via `controle`), estado de gravação como ícone pequeno ao lado do valor. */
+  linhaV3?: { slotUnidade: HTMLElement | null; controle?: React.MutableRefObject<ControleEditor | null> };
 }) {
   const [txt, setTxt] = React.useState(() => rascunhoDe(item));
   const [sit, setSit] = React.useState<Situacao>({ tipo: 'parado' });
@@ -123,6 +129,11 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
     gravar(numerico ? numeroParaApi(txt) : txt, {}, txt);
   };
 
+  if (linhaV3?.controle) linhaV3.controle.current = {
+    marcarEstado: (e) => { if (!ro && estado !== e && (e !== 'nao_se_aplica' || item.aceita_nao_se_aplica)) chamar('valor', { estado: e, versao }); },
+    voltarParaSemValor: () => { if (!ro && estado && estado !== 'informado') chamar('valor_limpar', { versao }); },
+    limparValor: () => { if (!ro && estado === 'informado') setConfirmarLimpar(true); },
+  };
   // item 4: o sucesso é anunciado na região role="status" do módulo; aqui, role="alert" SÓ para o que exige atenção
   const link = (r: string, f: () => void) => <button type="button" className="at-link" onClick={f}>{r}</button>;
   const status = sit.tipo === 'salvando' ? <span className="at-salvo at-salvo--andando">{sit.reenvio ? 'Reenviando a mesma alteração…' : 'Salvando…'}</span>
@@ -141,6 +152,12 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
       </span>)
     : null;
 
+  // FICHA V3: ícone pequeno ao lado do valor (andando / salvo); o que exige atenção (erro, conflito, incerto) continua como mensagem com ação
+  const icone = sit.tipo === 'salvando' || sit.tipo === 'conferindo'
+    ? <span className="at-st-ico at-st-ico--andando" role="img" aria-label={sit.tipo === 'conferindo' ? 'Conferindo a gravação' : (sit.tipo === 'salvando' && sit.reenvio ? 'Reenviando a mesma alteração' : 'Salvando')} title={sit.tipo === 'conferindo' ? 'Conferindo a gravação…' : 'Salvando…'} />
+    : sit.tipo === 'salvo' ? <span className="at-st-ico at-st-ico--ok" role="img" aria-label={sit.semMudanca ? 'Nada mudou' : 'Salvo'} title={sit.semMudanca ? 'Nada mudou' : 'Salvo (confirmado pelo servidor)'}>✓</span>
+    : ['recusada', 'desconhecido', 'emAndamento', 'conflito', 'salvoSemTela'].includes(sit.tipo) ? <span className={`at-st-ico ${sit.tipo === 'salvoSemTela' || sit.tipo === 'emAndamento' ? 'at-st-ico--aviso' : 'at-st-ico--erro'}`} aria-hidden>!</span>
+    : null;
   let campo: React.ReactNode;
   if (estado && estado !== 'informado') {
     campo = <span className={`at-estado-fixo at-estado-fixo--${estado}`}>{ESTADO[estado]}</span>;
@@ -148,7 +165,7 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
     campo = (
       <div className="at-segmentado" role="radiogroup" aria-label={item.rotulo}>
         {[['1', 'Sim'], ['0', 'Não'], ['', 'Sem resposta']].map(([v, r]) => (
-          <button key={r} type="button" role="radio" aria-checked={txt === v} disabled={ro || travado} className={txt === v ? 'ativo' : ''}
+          <button key={r} type="button" role="radio" aria-checked={txt === v} disabled={ro || travado} className={txt === v ? (v === '' ? 'ativo ativo--vazio' : 'ativo') : ''}
             onClick={() => { if (v === txt) return; setTxt(v); if (v === '') { if (item.valor) chamar('valor_limpar', { versao }); } else gravar(v === '1'); }}>{r}</button>))}
       </div>);
   } else if (item.tipo === 'opcao') {
@@ -167,7 +184,7 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
   } else {
     campo = (
       <input id={id} className={`at-campo ${numerico ? 'at-campo--num' : ''}`} type={item.tipo === 'data' ? 'date' : 'text'} inputMode={numerico ? 'decimal' : undefined}
-        value={txt} readOnly={ro} aria-label={item.rotulo} autoFocus={autoFoco} placeholder={ro ? '' : rotuloVazio ?? (numerico ? '—' : item.tipo === 'data' ? '' : 'Digite…')}
+        value={txt} readOnly={ro} aria-label={item.rotulo} autoFocus={autoFoco} placeholder={ro ? '' : rotuloVazio ?? (numerico && !linhaV3 ? '—' : item.tipo === 'data' ? '' : 'Digite…')}
         onChange={(e) => setTxt(e.target.value)} onBlur={confirmarTexto}
         onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); if (txt === original.current) { aoConfirmarEnter?.(); return; } pelaTecla.current = true; confirmarTexto(); if (!ocupado.current) pelaTecla.current = false; } if (e.key === 'Escape') { setTxt(original.current); setUnidRascunho(null); } }} />);   // Esc cancela o rascunho inteiro (texto e unidade)
   }
@@ -176,7 +193,7 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
     <div className={`at-editor ${compacto ? 'at-editor--compacto' : ''}`}>
       <div className="at-editor__linha">
         {campo}
-        {numerico && item.unidades.length > 0 && (
+        {(() => { const unid = <>{numerico && item.unidades.length > 0 && (
           <select className="at-campo at-campo--unid" aria-label={`Unidade de ${item.rotulo}`} disabled={ro || travado || (estado !== null && estado !== 'informado')} value={unidadeAtual ?? ''}
             onChange={(e) => {
               const u = Number(e.target.value);
@@ -186,8 +203,10 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
             }}>
             {item.unidades.map((u) => <option key={u.id} value={u.id}>{u.simbolo}</option>)}
           </select>)}
-        {numerico && item.unidades.length === 0 && item.unidade_efetiva && <span className="at-unid-fixa">{item.unidade_efetiva.simbolo}</span>}
-        {!ro && !compacto && (
+        {numerico && item.unidades.length === 0 && item.unidade_efetiva && <span className="at-unid-fixa">{item.unidade_efetiva.simbolo}</span>}</>;
+          return linhaV3 ? (linhaV3.slotUnidade ? createPortal(unid, linhaV3.slotUnidade) : null) : unid; })()}
+        {linhaV3 && icone}
+        {!ro && !compacto && !linhaV3 && (
           <select className="at-campo at-campo--estado" aria-label={`Estado de ${item.rotulo}`} value={estado ?? ''} disabled={travado}
             onChange={(e) => { const v = e.target.value; if (v === 'informado' || v === '') { if (estado && estado !== 'informado') chamar('valor_limpar', { versao }); return; } chamar('valor', { estado: v, versao }); }}>
             <option value="">{estado === 'informado' ? 'Informado' : 'Sem valor'}</option>
@@ -195,7 +214,7 @@ export function EditorValor({ item, productId, podeEditar, compacto = false, aoG
             <option value="desconhecido">Desconhecido</option>
           </select>)}
       </div>
-      {status}
+      {linhaV3 && ['salvando', 'conferindo', 'salvo'].includes(sit.tipo) ? <span className="bl-so-leitor">{status}</span> : status}
       <Dialogo titulo="Limpar o valor?" aberto={confirmarLimpar} aoFechar={() => { setConfirmarLimpar(false); setTxt(original.current); }}
         rodape={<>
           <Botao aoClicar={() => { setConfirmarLimpar(false); setTxt(original.current); }}>Cancelar</Botao>
