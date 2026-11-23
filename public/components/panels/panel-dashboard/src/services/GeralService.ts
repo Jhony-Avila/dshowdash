@@ -31,7 +31,6 @@ const fmtMoeda = (v: number) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 const fmtN = (v: number) => v.toLocaleString('pt-BR');
 
-const FATOR_PERIODO: Record<PeriodoId, number> = { hoje: 1 / 22, ontem: 1 / 22, '7d': 7 / 30, '30d': 1, mes_atual: Math.max(1, new Date().getDate()) / 30 };
 const DIAS_PERIODO: Record<PeriodoId, number> = { hoje: 1, ontem: 1, '7d': 7, '30d': 30, mes_atual: Math.max(1, new Date().getDate()) };
 
 async function getJson<T>(url: string, timeoutMs = 8000): Promise<T> {
@@ -142,6 +141,33 @@ export async function getAnuncios(): Promise<ResumoAnuncios> {
   };
 }
 
+// ── Pipedrive (REAL, 23/11/2026): /api/pipedrive/overview — base local sincronizada (PIPE_DSHOW), nível ≥ 50 no servidor ──
+export interface ResumoPipedrive {
+  abertos: number; valorAberto: number; atrasadas: number; conversao: number | null; atualizadoEm: string | null;
+}
+export async function getPipedrive(): Promise<ResumoPipedrive> {
+  interface Bruto {
+    overview?: { deals?: { abertos?: number; valor_aberto?: number; taxa_conversao?: number | null }; atividades?: { atrasadas?: number } };
+    runs?: { status?: string; finished_at?: string | null }[];
+  }
+  const d = await getJson<Bruto>('/api/pipedrive/overview');
+  const ok = (d.runs ?? []).find((r) => r.status === 'completed' && r.finished_at);
+  // pipe_sync_runs grava a hora LOCAL do servidor (America/Sao_Paulo, −03:00, sem horário de verão)
+  const quando = ok?.finished_at ? new Date(ok.finished_at.replace(' ', 'T') + '-03:00').toISOString() : null;
+  return {
+    abertos: Number(d.overview?.deals?.abertos ?? 0),
+    valorAberto: Number(d.overview?.deals?.valor_aberto ?? 0),
+    atrasadas: Number(d.overview?.atividades?.atrasadas ?? 0),
+    conversao: d.overview?.deals?.taxa_conversao ?? null,
+    atualizadoEm: quando,
+  };
+}
+
+/** (B) Cartão de módulo SEM fonte real: nenhum número inventado — só o estado "Aguardando conexão". */
+function aguardandoConexao(): ResumoModulo {
+  return { status: 'indisponivel', statusRotulo: 'Aguardando conexão', metricas: [], alerta: null, atualizadoEm: null, simulado: false };
+}
+
 // ── Resumos por módulo (§24) — reais adaptados + simulados marcados ─
 
 export async function getResumoModulo(id: ModuloId, periodo: PeriodoId): Promise<ResumoModulo> {
@@ -218,100 +244,36 @@ export async function getResumoModulo(id: ModuloId, periodo: PeriodoId): Promise
         simulado: false,
       };
     }
+    case 'pipedrive': {
+      try {
+        const p = await getPipedrive();
+        return {
+          status: p.atrasadas > 0 ? 'atencao' : 'ok',
+          statusRotulo: p.atrasadas > 0 ? `${fmtN(p.atrasadas)} atrasada(s)` : 'Em dia',
+          metricas: [
+            { rotulo: 'Negócios abertos', valor: fmtN(p.abertos) },
+            { rotulo: 'Valor do funil', valor: fmtMoeda(p.valorAberto) },
+            { rotulo: 'Ativ. atrasadas', valor: fmtN(p.atrasadas), ruim: p.atrasadas > 0 },
+            { rotulo: 'Conversão', valor: p.conversao === null ? '—' : `${p.conversao.toLocaleString('pt-BR')}%` },
+          ],
+          alerta: null,
+          atualizadoEm: p.atualizadoEm,
+          simulado: false,
+        };
+      } catch (e) {
+        // sem permissão (nível < 50) ou fonte fora: NUNCA número inventado
+        const semAcesso = e instanceof Error && /HTTP 40[13]/.test(e.message);
+        return { status: 'indisponivel', statusRotulo: semAcesso ? 'Sem acesso' : 'Indisponível', metricas: [], alerta: null, atualizadoEm: null, simulado: false };
+      }
+    }
     default:
       return resumoSimulado(id, periodo);
   }
 }
 
-/** Gerador determinístico dos módulos ainda sem integração real. */
-function resumoSimulado(id: ModuloId, periodo: PeriodoId): Promise<ResumoModulo> {
-  const rnd = mulberry32(20260729 + id.length * 7919);
-  const f = FATOR_PERIODO[periodo];
-  const spark = Array.from({ length: 14 }, () => Math.round(20 + rnd() * 80));
-  const esc = (base: number) => Math.max(1, Math.round(base * f * (0.85 + rnd() * 0.3)));
-
-  const mapa: Record<string, ResumoModulo> = {
-    metaads: {
-      status: 'ok', statusRotulo: 'Saudável',
-      metricas: [
-        { rotulo: 'Investimento', valor: fmtMoeda(esc(14800)) },
-        { rotulo: 'Leads', valor: fmtN(esc(310)) },
-        { rotulo: 'CPL', valor: fmtMoeda(16 + Math.round(rnd() * 8)) },
-        { rotulo: 'Campanhas ativas', valor: fmtN(6) },
-      ],
-      sparkline: spark, alerta: null, atualizadoEm: new Date().toISOString(), simulado: true,
-    },
-    mercadolivre: {
-      status: 'atencao', statusRotulo: 'Atenção',
-      metricas: [
-        { rotulo: 'Pedidos', valor: fmtN(esc(184)) },
-        { rotulo: 'Faturamento', valor: fmtMoeda(esc(96200)) },
-        { rotulo: 'Perguntas', valor: fmtN(Math.max(1, Math.round(9 * (periodo === 'hoje' ? 1 : 1)))) , ruim: true },
-        { rotulo: 'Reclamações', valor: fmtN(3), ruim: true },
-      ],
-      sparkline: spark, alerta: '9 perguntas aguardando resposta há mais de 2h.',
-      atualizadoEm: new Date().toISOString(), simulado: true,
-    },
-    pipedrive: {
-      status: 'ok', statusRotulo: 'Operacional',
-      metricas: [
-        { rotulo: 'Negócios abertos', valor: fmtN(47) },
-        { rotulo: 'Valor do funil', valor: fmtMoeda(842000) },
-        { rotulo: 'Ativ. atrasadas', valor: fmtN(6), ruim: true },
-        { rotulo: 'Conversão', valor: '18%' },
-      ],
-      sparkline: spark, alerta: null, atualizadoEm: new Date().toISOString(), simulado: true,
-    },
-    outlook: {
-      status: 'ok', statusRotulo: 'Sincronizado',
-      metricas: [
-        { rotulo: 'Não lidos', valor: fmtN(23) },
-        { rotulo: 'Recebidos', valor: fmtN(esc(240)) },
-        { rotulo: 'Aguardando resposta', valor: fmtN(7) },
-      ],
-      sparkline: spark, alerta: null, atualizadoEm: new Date().toISOString(), simulado: true,
-    },
-    ecommerce: {
-      status: 'ok', statusRotulo: 'Saudável',
-      metricas: [
-        { rotulo: 'Pedidos', valor: fmtN(esc(92)) },
-        { rotulo: 'Faturamento', valor: fmtMoeda(esc(58400)) },
-        { rotulo: 'Ticket médio', valor: fmtMoeda(635) },
-        { rotulo: 'Estoque crítico', valor: fmtN(4), ruim: true },
-      ],
-      sparkline: spark, alerta: null, atualizadoEm: new Date().toISOString(), simulado: true,
-    },
-    compras: {
-      status: 'atencao', statusRotulo: '3 pendências',
-      metricas: [
-        { rotulo: 'Solicitações', valor: fmtN(esc(31)) },
-        { rotulo: 'Pedidos pendentes', valor: fmtN(8) },
-        { rotulo: 'Valor em aberto', valor: fmtMoeda(127000) },
-        { rotulo: 'Itens atrasados', valor: fmtN(3), ruim: true },
-      ],
-      sparkline: spark, alerta: '3 itens com prazo de entrega estourado.',
-      atualizadoEm: new Date().toISOString(), simulado: true,
-    },
-    financeiro: {
-      status: 'atencao', statusRotulo: 'Atenção',
-      metricas: [
-        { rotulo: 'Recebíveis', valor: fmtMoeda(318000) },
-        { rotulo: 'Vencidos', valor: fmtMoeda(24600), ruim: true },
-        { rotulo: 'Saldo previsto 30d', valor: fmtMoeda(196000), bom: true },
-      ],
-      sparkline: spark, alerta: null, atualizadoEm: new Date().toISOString(), simulado: true,
-    },
-    datatables: {
-      status: 'ok', statusRotulo: 'Operacional',
-      metricas: [
-        { rotulo: 'Tabelas ativas', valor: fmtN(38) },
-        { rotulo: 'Registros', valor: `${(2.4).toLocaleString('pt-BR')} mi` },
-        { rotulo: 'Jobs com erro', valor: fmtN(0), bom: true },
-      ],
-      sparkline: spark, alerta: null, atualizadoEm: new Date().toISOString(), simulado: true,
-    },
-  };
-  return Promise.resolve(mapa[id]);
+/** (B) Módulos sem fonte real (23/11/2026): "Aguardando conexão", sem números de demonstração. */
+function resumoSimulado(_id: ModuloId, _periodo: PeriodoId): Promise<ResumoModulo> {
+  return Promise.resolve(aguardandoConexao());
 }
 
 // ── Alertas consolidados (§28) ──────────────────────────────────────
@@ -359,13 +321,18 @@ export async function getAlertas(): Promise<AlertaGeral[]> {
       impacto: 'Fluxo de caixa do mês comprometido se não cobrado.',
       rota: '#/panel-05', simulado: true,
     },
-    {
-      id: 'pd-atividades', severidade: 3, modulo: 'Pipedrive',
-      descricao: '6 atividades comerciais atrasadas',
-      impacto: 'Negócios podem esfriar sem follow-up.',
-      rota: '#/panel-pipedrive', simulado: true,
-    },
   );
+  try {   // Pipedrive REAL: atividades atrasadas (sem permissão ou fonte fora → sem alerta, nunca número inventado)
+    const p = await getPipedrive();
+    if (p.atrasadas > 0) {
+      alertas.push({
+        id: 'pd-atividades', severidade: 3, modulo: 'Pipedrive',
+        descricao: `${fmtN(p.atrasadas)} atividade(s) comercial(is) atrasada(s)`,
+        impacto: 'Negócios podem esfriar sem follow-up.',
+        rota: '#/panel-pipedrive', simulado: false,
+      });
+    }
+  } catch { /* fonte fora não bloqueia os demais */ }
   if (cenarioAtual() === 'critico') { // §45: testa a hierarquia sob estresse
     alertas.push(
       {
@@ -441,9 +408,13 @@ export async function getIntegracoes(): Promise<StatusIntegracao[]> {
   out.push(
     { nome: 'Meta Ads', detalhe: 'Aguardando conexão OAuth', estado: 'demonstracao', ultimaSync: null },
     { nome: 'Mercado Livre', detalhe: 'Aguardando conexão OAuth', estado: 'demonstracao', ultimaSync: null },
-    { nome: 'Pipedrive', detalhe: 'CRM comercial', estado: 'demonstracao', ultimaSync: null },
-    { nome: 'Outlook / 365', detalhe: 'E-mails e agenda', estado: 'demonstracao', ultimaSync: null },
   );
+  try {
+    const p = await getPipedrive();
+    out.push({ nome: 'Pipedrive', detalhe: `CRM comercial · ${fmtN(p.abertos)} negócios abertos`, estado: 'conectada', ultimaSync: p.atualizadoEm });
+  } catch {
+    out.push({ nome: 'Pipedrive', detalhe: 'CRM comercial', estado: 'erro', ultimaSync: null });
+  }
   if (cenarioAtual() === 'critico') { // §45: 2 fontes caem no cenário de QA
     for (const nome of ['Meta Ads', 'Mercado Livre']) {
       const i = out.findIndex((o) => o.nome === nome);

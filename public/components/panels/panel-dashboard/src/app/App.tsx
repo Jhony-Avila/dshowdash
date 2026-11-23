@@ -15,7 +15,7 @@ import {
 import 'react-grid-layout/css/styles.css';
 import {
   AlertTriangle, ArrowRight, Bot, CalendarDays, Car, CircleDollarSign, History,
-  Handshake, LayoutDashboard, Mail, Megaphone, RefreshCw, RotateCcw,
+  Handshake, LayoutDashboard, Megaphone, RefreshCw, RotateCcw,
   Share2, ShoppingBag, ShoppingCart, SlidersHorizontal, Star, Store, Table2,
 } from 'lucide-react';
 import {
@@ -57,7 +57,6 @@ const MODULOS: DefModulo[] = [
   { id: 'ecommerce', nome: 'E-commerce', icone: <ShoppingCart size={15} />, rota: null },
   { id: 'financeiro', nome: 'Financeiro', icone: <CircleDollarSign size={15} />, rota: null },
   { id: 'compras', nome: 'Compras', icone: <ShoppingBag size={15} />, rota: null },
-  { id: 'outlook', nome: 'Outlook', icone: <Mail size={15} />, rota: '#/panel-outlook' },
   { id: 'google-calendar', nome: 'Google Calendar', icone: <CalendarDays size={15} />, rota: '#/panel-google-calendar' },
   { id: 'transito', nome: 'Trânsito', icone: <Car size={15} />, rota: '#/panel-transito-sp' },
   { id: 'datatables', nome: 'DataTables', icone: <Table2 size={15} />, rota: '#/panel-datatables' },

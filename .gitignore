@@ -1774,6 +1774,8 @@ tools-golden/
 !/scripts/router/
 !/scripts/router/**
 !/scripts/shell/
+!/scripts/geral/
+!/scripts/geral/**
 !/scripts/shell/**
 !/scripts/theme-sweep.js
 !/scripts/validate-ts.sh
