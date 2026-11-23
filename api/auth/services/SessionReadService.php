@@ -127,7 +127,9 @@ class SessionReadService
         if (session_status() === PHP_SESSION_NONE) {
             ini_set('session.use_cookies', '0');
             ini_set('session.use_only_cookies', '0');
-            session_id('temp_read_' . bin2hex(random_bytes(8)));
+            // DSHOW-110 (23/11): o id temporário tinha '_', que o PHP recusa ("illegal characters") → session_start falhava, a leitura
+            // vinha VAZIA e o logout.php/refresh.php respondiam 403 "Sessão não encontrada" SEMPRE. Só [a-z0-9] aqui.
+            session_id('tempread' . bin2hex(random_bytes(12)));
             @session_start();
         }
         

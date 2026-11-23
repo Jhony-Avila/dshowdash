@@ -42,6 +42,8 @@ async function executar(timeoutMs: number): Promise<ResultadoLogout> {
     const headers: Record<string, string> = { 'Content-Type': 'application/json', Accept: 'application/json' };
     if (csrf) headers['X-CSRF-Token'] = csrf;
     const r = await fetch(ENDPOINT_LOGOUT, { method: 'POST', credentials: 'include', cache: 'no-store', headers, body: '{}', signal: controle.signal });
+    // lê a resposta INTEIRA antes de devolver: a navegação que vem depois não interrompe nada em curso
+    await r.text().catch(() => '');
     if (r.ok) return { ok: true, status: r.status };
     return { ok: false, status: r.status, motivo: r.status === 403 ? 'csrf' : 'servidor' };
   } catch (e) {
