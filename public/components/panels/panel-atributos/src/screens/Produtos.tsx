@@ -38,7 +38,7 @@ export function largurasColunas(area: number, comSituacao: boolean): Record<stri
   const t = Math.max(0, Math.min(1, (area - 1096) / (1856 - 1096)));
   const w = L1440.map((a, i) => Math.round(a + t * (L2200[i] - a)));
   const soma = w.reduce((s, x) => s + x, 0);
-  if (area > soma) w[1] += area - soma;   // a sobra (acima de 1856, ou arredondamento) vai para o nome
+  w[1] = Math.max(200, w[1] + area - soma);   // a sobra (acima de 1856) vai para o nome; a FALTA (área < 1096, ex.: 1440 real) sai dele — senão a tabela vira "larga" e o cabeçalho não gruda
   const out: Record<string, number> = {}; COLS.forEach((c, i) => { out[c] = w[i]; });
   if (comSituacao) { out.produto = Math.max(200, out.produto - LARGURA_SITUACAO); out.situacao = LARGURA_SITUACAO; }
   return out;
@@ -155,7 +155,8 @@ export function Produtos() {
   const especificos = (p: ProdutoResumo) => p.kits.filter((k) => !k.motivos.includes('todos'));
   const comSituacao = f.situacao !== 'ativos';   // A.2/A.3: situação só quando o resultado pode ter inativos
   const podeSel = !!dados?.pode_vincular;
-  const larguras = largurasColunas(area, comSituacao);
+  // 2 px de folga: a soma exata das colunas, arredondada para cima, marcaria a tabela como "larga" (rolagem horizontal) e o cabeçalho deixaria de grudar
+  const larguras = largurasColunas(area - 2, comSituacao);
 
   const selCategoria = (
     <select className="at-select at-pl-select" aria-label="Categoria" value={f.categoria} onChange={(e) => trocarCategoria(e.target.value)}>

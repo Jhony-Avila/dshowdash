@@ -10,7 +10,7 @@ const B = `http://127.0.0.1:${process.env.PORTA || 8112}`; const CAP = 'capturas
 let ok = 0, falhas = 0; const afirma = (n, c, x = '') => { if (c) { ok++; console.log('ok    ' + n); } else { falhas++; console.log('FALHA ' + n + (x ? ' · ' + x : '')); } };
 const RODAPE_SHELL = 36;   // o rodapé do shell mostra o IP do servidor de validação: fica fora das capturas
 const L1440 = [36, 340, 140, 132, 160, 104, 64, 120], L2200 = [36, 680, 230, 200, 220, 130, 90, 270], COLS = ['sel', 'produto', 'subcategoria', 'kit', 'essenciais', 'obrigatorios', 'fotos', 'precifica'];
-const esperado = (area) => { const t = Math.max(0, Math.min(1, (area - 1096) / 760)); const w = L1440.map((a, i) => Math.round(a + t * (L2200[i] - a))); const s = w.reduce((x, y) => x + y, 0); if (area > s) w[1] += area - s; return Object.fromEntries(COLS.map((c, i) => [c, w[i]])); };
+const esperado = (area) => { const t = Math.max(0, Math.min(1, (area - 1096) / 760)); const w = L1440.map((a, i) => Math.round(a + t * (L2200[i] - a))); const s = w.reduce((x, y) => x + y, 0); w[1] = Math.max(200, w[1] + area - s); return Object.fromEntries(COLS.map((c, i) => [c, w[i]])); };
 (async () => {
   const b = await chromium.launch({ executablePath: '/root/.cache/ms-playwright/chromium_headless_shell-1208/chrome-headless-shell-linux64/chrome-headless-shell' });
   const nova = async () => { const ctx = await b.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1 }); const pg = await ctx.newPage();
@@ -30,7 +30,7 @@ const esperado = (area) => { const t = Math.max(0, Math.min(1, (area - 1096) / 7
   afirma(W >= 2000 ? '2200: Categoria e Kit na faixa' : '1440: Categoria e Kit NÃO ficam na faixa (vão para Filtros)', W >= 2000 ? faixa.cat && faixa.kit : !faixa.cat && !faixa.kit, JSON.stringify(faixa));
   afirma('sem filtro ativo: a linha de etiquetas não existe', !(await pg.$('.at-pl-etiquetas')));
   const larg = await pg.evaluate(() => ({ area: Math.round(document.querySelector('.at-pl').getBoundingClientRect().width), th: Object.fromEntries([...document.querySelectorAll('.at-pl-tabela thead th')].map((t) => [t.dataset.coluna, Math.round(t.getBoundingClientRect().width)])) }));
-  const esp = esperado(larg.area); const difs = COLS.map((c) => Math.abs((larg.th[c] ?? 0) - esp[c]));
+  const esp = esperado(larg.area - 2); const difs = COLS.map((c) => Math.abs((larg.th[c] ?? 0) - esp[c]));
   afirma(`colunas pela área real (${larg.area}px): diferença máx ${Math.max(...difs)}px`, Math.max(...difs) <= 3, JSON.stringify({ th: larg.th, esp }));
   const linhas = await pg.$$eval('.at-pl-tabela tbody tr.at-td__linha', (xs) => xs.map((x) => Math.round(x.getBoundingClientRect().height)));
   afirma(`linhas uniformes de 36 px (${linhas.length} linhas)`, linhas.length > 0 && linhas.every((h) => Math.abs(h - 36) <= 1), JSON.stringify([...new Set(linhas)]));
@@ -39,9 +39,9 @@ const esperado = (area) => { const t = Math.max(0, Math.min(1, (area - 1096) / 7
   const kits = await pg.$$eval('.at-pl-tabela tbody td[data-coluna="kit"], .at-pl-tabela tbody tr.at-td__linha', (xs) => xs.map((x) => x.querySelector('.at-pl-semkit')?.textContent ?? '').filter(Boolean));
   afirma('kit ausente = pílula neutra "Sem kit específico" (nunca "Sem kit")', kits.every((t) => t === 'Sem kit específico'), JSON.stringify([...new Set(kits)]));
   await foto(pg, `tabela-${RES}-topo`);
-  const antes = await pg.evaluate(() => ({ fixo: document.querySelector('.at-fixo').getBoundingClientRect().bottom, thead: document.querySelector('.at-pl-tabela thead').getBoundingClientRect().top }));
+  const antes = await pg.evaluate(() => ({ fixo: document.querySelector('.at-fixo').getBoundingClientRect().bottom, thead: document.querySelector('.at-pl-tabela thead th').getBoundingClientRect().top }));
   await rolar(pg, 700); await pg.waitForTimeout(500);
-  const depois = await pg.evaluate(() => ({ fixo: document.querySelector('.at-fixo').getBoundingClientRect().bottom, thead: document.querySelector('.at-pl-tabela thead').getBoundingClientRect().top, rodape: document.querySelector('.at-pl-rodape').getBoundingClientRect().bottom }));
+  const depois = await pg.evaluate(() => ({ fixo: document.querySelector('.at-fixo').getBoundingClientRect().bottom, thead: document.querySelector('.at-pl-tabela thead th').getBoundingClientRect().top, rodape: document.querySelector('.at-pl-rodape').getBoundingClientRect().bottom, larga: document.querySelector('.at-pl .at-td')?.dataset.larga }));
   afirma(`rolando, o topo fica parado e o cabeçalho das colunas gruda no bloco travado (thead ${Math.round(depois.thead)} ≈ bloco ${Math.round(depois.fixo)})`, Math.abs(depois.fixo - antes.fixo) <= 1 && Math.abs(depois.thead - depois.fixo) <= 2, JSON.stringify({ antes, depois }));
   afirma('rolando, o rodapé de páginas fica à vista', depois.rodape <= H + 1, JSON.stringify(depois));
   if (W >= 2000) await foto(pg, `tabela-${RES}-rolada`);
@@ -49,7 +49,7 @@ const esperado = (area) => { const t = Math.max(0, Math.min(1, (area - 1096) / 7
 
   // ── Filtros (ancorado, não modal)
   await pg.click('.at-pl-btn-filtros'); await pg.waitForSelector('#at-pl-painel-filtros');
-  const pn = await pg.evaluate(() => { const p = document.querySelector('#at-pl-painel-filtros'); return { dialog: !!document.querySelector('[role="dialog"]') || p.getAttribute('role') === 'dialog', rapidos: p.querySelectorAll('input[role="switch"]').length,
+  const pn = await pg.evaluate(() => { const p = document.querySelector('#at-pl-painel-filtros'); return { dialog: p.getAttribute('role') === 'dialog' || p.getAttribute('aria-modal') === 'true' || !!p.closest('[role="dialog"]'), rapidos: p.querySelectorAll('input[role="switch"]').length,
     cat: !!p.querySelector('select[aria-label="Categoria"]'), sub: !!p.querySelector('select[aria-label="Subcategoria"]'), kit: !!p.querySelector('select[aria-label="Kit"]'), expandido: document.querySelector('.at-pl-btn-filtros').getAttribute('aria-expanded') }; });
   afirma('Filtros abre na página (não é modal), com os 6 filtros rápidos e a Subcategoria', !pn.dialog && pn.rapidos === 6 && pn.sub && pn.expandido === 'true', JSON.stringify(pn));
   afirma(W >= 2000 ? '2200: Categoria e Kit fora do painel (estão na faixa)' : '1440: Categoria, Subcategoria e Kit dentro de Filtros (nenhum filtro some)', W >= 2000 ? !pn.cat && !pn.kit : pn.cat && pn.kit, JSON.stringify(pn));
