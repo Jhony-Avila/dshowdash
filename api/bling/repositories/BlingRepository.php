@@ -481,6 +481,94 @@ final class BlingRepository
         ]);
     }
 
+    /**
+     * DSHOW-106 (1): ÚNICA fonte da suspensão por escopo. Recurso da conta SUSPENSO = estado 'atencao', espera ainda não vencida
+     * (proxima_execucao_em > agora) e o erro mais recente é ESCOPO_AUSENTE. Suspenso → não entra na fila, a fila não entrega os
+     * itens que já existem, a DLQ não os devolve e o worker não agenda. Acaba sozinho na tentativa diária ou na reautorização.
+     */
+    public function escopoSuspenso(int $accountId, string $recurso): bool
+    {
+        $st = $this->pdo()->prepare(
+            "SELECT COUNT(*) FROM bling_sync_state s WHERE s.account_id = ? AND s.recurso = ? AND " . self::SUSPENSO_SQL
+        );
+        $st->execute([$accountId, $recurso]);
+        return (int) $st->fetchColumn() > 0;
+    }
+
+    /** Condição "s (bling_sync_state) está suspenso por escopo ausente" — a mesma em todos os filtros. */
+    private const SUSPENSO_SQL = "s.situacao = 'atencao' AND s.proxima_execucao_em > UTC_TIMESTAMP()
+        AND (SELECT e.codigo FROM bling_sync_errors e WHERE e.account_id = s.account_id AND e.recurso = s.recurso
+              ORDER BY e.id DESC LIMIT 1) = 'ESCOPO_AUSENTE'";
+
+    /** Filtro SQL "item da fila NÃO suspenso" (alias da tabela bling_queue na consulta). */
+    public static function filtroFilaNaoSuspensa(string $alias): string
+    {
+        return "NOT EXISTS (SELECT 1 FROM bling_sync_state s WHERE s.account_id = $alias.account_id AND s.recurso = $alias.recurso AND "
+            . self::SUSPENSO_SQL . ')';
+    }
+
+    /** @var array<string,bool> */
+    private array $colunas = [];
+
+    /** A coluna existe nesta base? (DSHOW-106: o código funciona antes e depois da migração que cria loja_bling_id) */
+    public function temColuna(string $tabela, string $coluna): bool
+    {
+        $k = "$tabela.$coluna";
+        if (!isset($this->colunas[$k])) {
+            $st = $this->pdo()->prepare('SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?');
+            $st->execute([$tabela, $coluna]);
+            $this->colunas[$k] = (int) $st->fetchColumn() > 0;
+        }
+        return $this->colunas[$k];
+    }
+
+    /**
+     * DSHOW-106 (3): trava por conta E por base (GET_LOCK vale para o servidor inteiro) em volta da renovação do token, para uma
+     * renovação antiga nunca sobrescrever o par novo. Ocupada além de $espera s → exceção (a sincronização tenta no próximo ciclo).
+     */
+    public function comTravaDeToken(int $accountId, callable $fn, int $espera = 20): mixed
+    {
+        $pdo = $this->pdo();
+        $nome = 'bling.token.' . (string) $pdo->query('SELECT DATABASE()')->fetchColumn() . '.' . $accountId;
+        $st = $pdo->prepare('SELECT GET_LOCK(?, ?)');
+        $st->execute([$nome, $espera]);
+        if ((int) $st->fetchColumn() !== 1) {
+            throw new RuntimeException('Renovação do acesso ao Bling já em andamento — tenta no próximo ciclo.');
+        }
+        try {
+            return $fn();
+        } finally {
+            $pdo->prepare('SELECT RELEASE_LOCK(?)')->execute([$nome]);
+        }
+    }
+
+    /** Código do erro de sync mais recente do recurso (BLING-ESCOPO-AUSENTE), ou null. */
+    public function ultimoCodigoErroSync(int $accountId, string $recurso): ?string
+    {
+        $st = $this->pdo()->prepare(
+            'SELECT codigo FROM bling_sync_errors WHERE account_id = ? AND recurso = ? ORDER BY id DESC LIMIT 1'
+        );
+        $st->execute([$accountId, $recurso]);
+        $c = $st->fetchColumn();
+        return $c === false || $c === null ? null : (string) $c;
+    }
+
+    /**
+     * Reautorização: libera os recursos marcados "escopo ausente" para a próxima rodada do incremental (proxima_execucao_em = agora).
+     * Só toca recurso em 'atencao' cujo erro mais recente é ESCOPO_AUSENTE. Devolve quantos foram liberados.
+     */
+    public function liberarEscopoAusente(int $accountId): int
+    {
+        $st = $this->pdo()->prepare(
+            "UPDATE bling_sync_state s SET s.proxima_execucao_em = UTC_TIMESTAMP()
+              WHERE s.account_id = ? AND s.situacao = 'atencao'
+                AND (SELECT e.codigo FROM bling_sync_errors e WHERE e.account_id = s.account_id AND e.recurso = s.recurso
+                      ORDER BY e.id DESC LIMIT 1) = 'ESCOPO_AUSENTE'"
+        );
+        $st->execute([$accountId]);
+        return $st->rowCount();
+    }
+
     public function registrarErroSync(?int $accountId, string $recurso, ?string $blingId,
                                       ?string $codigo, ?string $mensagem,
                                       ?int $httpStatus = null, int $tentativa = 1,
@@ -508,6 +596,10 @@ final class BlingRepository
                                ?string $referencia, array $payload = [],
                                int $prioridade = 50, ?string $correlationId = null): int
     {
+        // DSHOW-106 (1): recurso suspenso por escopo NÃO ganha item novo na fila (webhook, incremental, reconciliação, releitura)
+        if ($accountId !== null && $this->escopoSuspenso($accountId, $recurso)) {
+            return 0;
+        }
         $st = $this->pdo()->prepare(
             'INSERT INTO bling_queue (account_id, tipo, recurso, referencia, payload, prioridade, correlation_id)
              VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -533,6 +625,7 @@ final class BlingRepository
             $r = $pdo->query(
                 "SELECT * FROM bling_queue
                   WHERE situacao = 'pendente' AND disponivel_em <= UTC_TIMESTAMP()
+                    AND " . self::filtroFilaNaoSuspensa('bling_queue') . "
                   ORDER BY prioridade, id
                   LIMIT 1 FOR UPDATE SKIP LOCKED"
             )->fetch();

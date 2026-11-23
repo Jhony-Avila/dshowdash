@@ -42,7 +42,8 @@ final class BlingClient
     /** Backoff exponencial com teto. Jitter é somado na hora. */
     private const ESPERA_BASE_MS = 500;
     private const ESPERA_TETO_MS = 30000;
-    private const MAX_TENTATIVAS = 5;
+    private const MAX_TENTATIVAS = 5;          // teto geral (429/408 respeitam o Retry-After do servidor)
+    private const MAX_TENTATIVAS_5XX = 3;      // BLING-ESCOPO-AUSENTE (23/11): 5xx = poucas tentativas, espera crescente
 
     /** Balde de tokens: quando cada slot do segundo corrente foi usado. */
     private array $janela = [];
@@ -55,9 +56,11 @@ final class BlingClient
 
     public function __construct(
         private readonly BlingTransporte $transporte,
-        private readonly string $accessToken,
+        private string $accessToken,
         private readonly ?BlingRepository $repo = null,
         private readonly ?int $accountId = null,
+        /** 401: renova o token UMA vez (fn(string $recusado): string devolve o novo access_token) e repete o pedido UMA vez. Null = sem renovação. */
+        private readonly ?Closure $renovarToken = null,
     ) {}
 
     // ─────────────────────────────────────────────────────────────
@@ -180,6 +183,7 @@ final class BlingClient
 
         $tentativa = 0;
         $ultima = null;
+        $renovou = false;
 
         while ($tentativa < self::MAX_TENTATIVAS) {
             $tentativa++;
@@ -198,14 +202,23 @@ final class BlingClient
                 return $r;
             }
 
+            // 401: o token pode ter sido invalidado antes do prazo → renova UMA vez e repete UMA vez (não conta como tentativa).
+            if ($r->status === 401 && !$renovou && $this->renovarToken !== null) {
+                $renovou = true;
+                $this->registrarErro($caminho, $r, $tentativa);
+                try { $this->accessToken = ($this->renovarToken)($this->accessToken); } catch (Throwable $e) { return $r; }
+                $tentativa--;
+                continue;
+            }
+
             // 4xx que não é 429 nem 408: o pedido está errado. Repetir só gasta
-            // limite e atrasa o diagnóstico.
+            // limite e atrasa o diagnóstico. (403 insufficient_scope: o serviço de sync suspende SÓ esta rota.)
             if ($r->status >= 400 && $r->status < 500 && $r->status !== 429 && $r->status !== 408) {
                 $this->registrarErro($caminho, $r, $tentativa);
                 return $r;
             }
 
-            if ($tentativa >= self::MAX_TENTATIVAS) {
+            if ($tentativa >= self::MAX_TENTATIVAS || ($r->status >= 500 && $tentativa >= self::MAX_TENTATIVAS_5XX)) {
                 break;
             }
 
@@ -284,7 +297,8 @@ final class BlingClient
 
     private function registrarErro(string $caminho, ?BlingResposta $r, int $tentativa, bool $final = false): void
     {
-        $msg = sprintf('[bling] %s tentativa %d%s status=%d %s',
+        $escopo = $r !== null && $r->status === 403 && str_contains((string) json_encode($r->corpo), 'insufficient_scope');
+        $msg = sprintf('[bling]%s %s tentativa %d%s status=%d %s', $escopo ? ' AVISO escopo ausente —' : '',
             $caminho, $tentativa, $final ? ' (esgotou)' : '',
             $r?->status ?? 0,
             substr(json_encode($r?->corpo ?? [], JSON_UNESCAPED_UNICODE) ?: '', 0, 240));

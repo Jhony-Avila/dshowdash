@@ -45,9 +45,11 @@ final class BlingReal extends BlingProviderBase
 
     public function ultimaSync(): ?string
     {
+        // 23/11: última sincronização CONCLUÍDA (job 'concluido'). O estado guarda só a última TENTATIVA, que uma falha sobrescreve.
         $v = $this->repo->valor(
-            'SELECT MAX(ultima_execucao_em) FROM bling_sync_state WHERE account_id = ?',
-            [$this->conta()]
+            "SELECT COALESCE((SELECT MAX(terminado_em) FROM bling_sync_jobs WHERE account_id = ? AND situacao = 'concluido'),
+                             (SELECT MAX(ultima_execucao_em) FROM bling_sync_state WHERE account_id = ? AND situacao IN ('ok','atencao')))",
+            [$this->conta(), $this->conta()]
         );
         return $v === false || $v === null ? null : gmdate('c', strtotime($v . ' UTC'));
     }
@@ -64,8 +66,10 @@ final class BlingReal extends BlingProviderBase
         $st = $this->repo->consultar('SELECT situacao, ultima_execucao_em FROM bling_sync_state WHERE account_id = ? AND recurso = ? ORDER BY ultima_execucao_em DESC LIMIT 1', [$conta, $recurso]);
         $sit = $st[0]['situacao'] ?? null; $ult = $st[0]['ultima_execucao_em'] ?? null;
         $iso = static fn($v) => $v === null ? null : gmdate('c', strtotime($v . ' UTC'));
+        // 23/11: o último sucesso vem do último job CONCLUÍDO do recurso — uma falha depois dele não o apaga do painel
+        $okJob = $this->repo->valor("SELECT MAX(terminado_em) FROM bling_sync_jobs WHERE account_id = ? AND recurso = ? AND situacao = 'concluido'", [$conta, $recurso]);
         $base = ['fonte_desativada' => $motivo !== null, 'ultima_tentativa' => $iso($ult),
-                 'ultimo_sucesso' => in_array($sit, ['ok', 'atencao'], true) ? $iso($ult) : null,
+                 'ultimo_sucesso' => $okJob ? $iso($okJob) : (in_array($sit, ['ok', 'atencao'], true) ? $iso($ult) : null),
                  'cobertura' => in_array($sit, ['ok', 'atencao'], true) ? 'completa' : ($sit === null || $sit === 'nunca_executado' ? 'nenhuma' : 'parcial')];
         if ($motivo !== null) {
             return ['estado' => 'indisponivel', 'motivo' => 'sincronização de ' . $recurso . ' desativada para esta conta', 'fonte' => stripos($motivo, 'asaas') !== false ? 'Asaas' : $motivo] + $base;

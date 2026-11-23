@@ -452,6 +452,7 @@ CREATE TABLE IF NOT EXISTS bling_sales_orders (
   situacao_bling  VARCHAR(60) NULL       COMMENT 'código cru, para rastrear tradução',
   contact_id      BIGINT UNSIGNED NULL,
   sales_channel_id BIGINT UNSIGNED NULL,
+  loja_bling_id    VARCHAR(64) NULL COMMENT 'id EXTERNO da loja/canal no Bling (loja.id) — DSHOW-106, migração 20261123',
   vendedor        VARCHAR(190) NULL,
   forma_pagamento VARCHAR(120) NULL,
   subtotal        DECIMAL(14,2) NOT NULL DEFAULT 0,

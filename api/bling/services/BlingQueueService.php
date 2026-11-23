@@ -138,7 +138,9 @@ final class BlingQueueService
     public function reprocessarDlq(?int $limite = 100, ?int $userId = null): int
     {
         $itens = $this->repo->consultar(
-            "SELECT id FROM bling_queue WHERE situacao = 'dlq' ORDER BY id LIMIT " . max(1, (int) $limite)
+            // DSHOW-106 (1): item de recurso suspenso por escopo FICA na DLQ (nenhuma nova tentativa enquanto faltar a permissão)
+            "SELECT id FROM bling_queue WHERE situacao = 'dlq' AND " . BlingRepository::filtroFilaNaoSuspensa('bling_queue')
+            . " ORDER BY id LIMIT " . max(1, (int) $limite)
         );
         if ($itens === []) {
             return 0;

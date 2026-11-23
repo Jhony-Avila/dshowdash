@@ -57,6 +57,27 @@ final class BlingSyncService
         44 => ['receber' => 'recebíveis no Asaas'],
     ];
 
+    /**
+     * BLING-ESCOPO-AUSENTE (23/11/2026): 403 `insufficient_scope` = o token não tem o escopo do recurso. Repetir não adianta: o recurso
+     * fica em 'atencao' com UM erro ESCOPO_AUSENTE, sem reagendamento nem DLQ, e só tenta de novo depois de ESCOPO_NOVA_TENTATIVA_S
+     * (1 vez por dia) ou logo após a conta ser reautorizada (BlingAuthService::concluirConexao → liberarEscopoAusente).
+     */
+    public const ESCOPO_AUSENTE = 'ESCOPO_AUSENTE';
+    public const ESCOPO_NOVA_TENTATIVA_S = 86400;
+
+    /** A falha é "o token não tem o escopo" (403 insufficient_scope)? */
+    public static function ehEscopoAusente(Throwable $e): bool
+    {
+        $m = $e->getMessage();
+        return str_contains($m, 'HTTP 403') && str_contains($m, 'insufficient_scope');
+    }
+
+    /** Recurso marcado como "escopo ausente" e ainda dentro da espera (nem reautorizado, nem chegou a tentativa diária)? */
+    private function escopoAusenteVigente(int $accountId, string $recurso, ?array $estado): bool
+    {
+        return $estado !== null && $this->repo->escopoSuspenso($accountId, $recurso);   // DSHOW-106: fonte única (repositório)
+    }
+
     /** Motivo da desativação, ou null se o recurso está ativo para a conta. */
     public static function desativado(int $accountId, string $recurso): ?string
     {
@@ -85,6 +106,13 @@ final class BlingSyncService
         if ($motivo !== null) {
             // BLING-SEM-RECEBER: nada de chamada ao Bling nem de job/estado; a fila trata como concluído.
             return ['recurso' => $recurso, 'situacao' => 'desativado', 'motivo' => $motivo,
+                    'consultados' => 0, 'criados' => 0, 'atualizados' => 0, 'ignorados' => 0, 'erros' => 0];
+        }
+
+        // BLING-ESCOPO-AUSENTE: marcado e ainda na espera → nada de chamada ao Bling, job ou erro novo (a fila trata como concluído).
+        if ($this->escopoAusenteVigente($accountId, $recurso, $this->repo->estadoSync($accountId, $recurso))) {
+            return ['recurso' => $recurso, 'situacao' => 'escopo_ausente',
+                    'motivo' => 'o token do Bling não tem o escopo deste recurso; aguardando reautorização ou a tentativa diária',
                     'consultados' => 0, 'criados' => 0, 'atualizados' => 0, 'ignorados' => 0, 'erros' => 0];
         }
 
@@ -125,6 +153,9 @@ final class BlingSyncService
 
                     foreach ($itens as $bruto) {
                         $contagem['consultados']++;
+                        // DSHOW-106 (2): SAVEPOINT por item — se gravar() falhar no meio (ex.: cabeçalho gravado e itens não),
+                        // volta SÓ este item ao estado anterior; os outros itens da página seguem.
+                        $this->repo->pdo()->exec('SAVEPOINT bling_item');
                         try {
                             // gravar() devolve 'criado'|'atualizado'|'ignorado' (singular);
                             // a contagem usa plural. Sem o mapa, o incremento criava
@@ -136,7 +167,9 @@ final class BlingSyncService
                                 'atualizado' => 'atualizados',
                                 default      => 'ignorados',
                             }]++;
+                            $this->repo->pdo()->exec('RELEASE SAVEPOINT bling_item');
                         } catch (Throwable $e) {
+                            $this->repo->pdo()->exec('ROLLBACK TO SAVEPOINT bling_item');
                             $contagem['erros']++;
                             // Um item ruim não pode derrubar o lote: guarda e
                             // segue. Interromper aqui faria um payload esquisito
@@ -195,7 +228,8 @@ final class BlingSyncService
                 'situacao'   => $situacao,
                 'pagina_atual' => $concluida ? 1 : max(1, (int) ($resultado['ultima_pagina'] ?? 0) + ($estadoColeta === 'invalida' ? 0 : 1)),
                 'cursor_atual' => null,
-                'watermark'  => $concluida ? $watermarkNovo : ($estadoAnterior['watermark'] ?? null),
+                // DSHOW-106 (2): o cursor só avança com coleta concluída E nenhum item com falha (senão o incremental relê o mesmo trecho)
+                'watermark'  => ($concluida && $contagem['erros'] === 0) ? $watermarkNovo : ($estadoAnterior['watermark'] ?? null),
                 'ultima_execucao_em'  => gmdate('Y-m-d H:i:s'),
                 'proxima_execucao_em' => gmdate('Y-m-d H:i:s', time() + 900),
                 'duracao_ms' => (int) ((microtime(true) - $inicio) * 1000),
@@ -207,6 +241,13 @@ final class BlingSyncService
                 'retry' => 0,
                 'limite_consumido_pct' => $cliente->consumo()['consumido_pct'],
             ]);
+
+            // RELEITURA DOS PEDIDOS (23/11): canais sincronizaram com sucesso pela 1ª vez depois de falha/escopo ausente/nunca →
+            // agenda UMA reconciliação completa de pedidos (prioridade 60, a mais baixa) para os pedidos já gravados ganharem o canal.
+            if ($recurso === 'canais' && $concluida && ($estadoAnterior['situacao'] ?? null) !== 'ok') {
+                $this->repo->enfileirar($accountId, 'sync', 'pedidos', null,
+                    ['estrategia' => 'reconciliacao', 'correlation_id' => $correlationId, 'motivo' => 'canais-disponiveis'], 60);
+            }
 
             $this->repo->fecharJob($jobId, $estadoColeta === 'invalida' ? 'falhou' : 'concluido', $contagem,   // enum do job não tem 'parcial': o estado vai na mensagem
                 sprintf('%d páginas, %d itens, coleta %s', $resultado['paginas'], $resultado['itens'], $estadoColeta));
@@ -223,6 +264,24 @@ final class BlingSyncService
             // seguinte — inclusive a do próprio estado de erro — entraria nela.
             if ($this->repo->pdo()->inTransaction()) {
                 $this->repo->pdo()->rollBack();
+            }
+            if (self::ehEscopoAusente($e)) {
+                // BLING-ESCOPO-AUSENTE: registra UMA vez, marca e espera — sem 'erro' (que a fila reagendaria até a DLQ).
+                $this->repo->salvarEstadoSync($accountId, $recurso, [
+                    'estrategia' => $estrategia,
+                    'situacao'   => 'atencao',
+                    'ultima_execucao_em'  => gmdate('Y-m-d H:i:s'),
+                    'proxima_execucao_em' => gmdate('Y-m-d H:i:s', time() + self::ESCOPO_NOVA_TENTATIVA_S),
+                    'duracao_ms' => (int) ((microtime(true) - $inicio) * 1000),
+                    'erros' => 1,
+                    'retry' => 0,
+                ]);
+                $this->repo->fecharJob($jobId, 'cancelado', $contagem,
+                    'escopo ausente (403 insufficient_scope): nova tentativa em 24 h ou após reautorizar a conta');
+                $this->repo->registrarErroSync($accountId, $recurso, null, self::ESCOPO_AUSENTE,
+                    'O token do Bling não tem o escopo deste recurso (403 insufficient_scope). Reautorize a conta incluindo o escopo; '
+                    . 'até lá, uma tentativa por dia.', 403, 1, $correlationId);
+                return ['recurso' => $recurso, 'situacao' => 'escopo_ausente'] + $contagem;
             }
             $this->repo->salvarEstadoSync($accountId, $recurso, [
                 'estrategia' => $estrategia,
@@ -514,6 +573,17 @@ final class BlingSyncService
 
         $d['contact_id'] = $this->repo->idPorBlingId('bling_contacts', $accountId, $contatoBling);
         $d['sales_channel_id'] = $this->repo->idPorBlingId('bling_sales_channels', $accountId, $canalBling);
+        // DSHOW-106 (2): guarda o identificador EXTERNO da loja (coluna criada pela migração 20261123; sem ela, segue sem gravar)
+        if ($this->repo->temColuna('bling_sales_orders', 'loja_bling_id')) {
+            $d['loja_bling_id'] = $canalBling;
+        }
+        // DSHOW-106 (2): resolução que FALHOU nunca troca uma associação válida por NULL
+        $assoc = $this->repo->consultar('SELECT contact_id, sales_channel_id FROM bling_sales_orders WHERE account_id = ? AND bling_id = ?',
+            [$accountId, $d['bling_id']]);
+        if ($assoc !== []) {
+            if ($d['sales_channel_id'] === null && $assoc[0]['sales_channel_id'] !== null) { $d['sales_channel_id'] = (int) $assoc[0]['sales_channel_id']; }
+            if ($d['contact_id'] === null && $assoc[0]['contact_id'] !== null) { $d['contact_id'] = (int) $assoc[0]['contact_id']; }
+        }
         $d['situacao'] = BlingVersionAdapter::situacaoPedido($situacaoBling);
 
         // Subtotal e custo saem dos ITENS, não do cabeçalho: o Bling nem sempre
@@ -537,6 +607,12 @@ final class BlingSyncService
             [$accountId, $d['bling_id']]
         );
 
+        // CORREÇÃO DO HASH (23/11): o hash era só do JSON cru → um pedido igual era 'ignorado' e NUNCA ganhava o canal (ou o contato)
+        // resolvido depois. Agora o hash inclui as referências RESOLVIDAS: quando o canal/contato passa a existir, o pedido é regravado
+        // normalmente. Efeito único após a entrega: a 1ª releitura regrava cada pedido uma vez (hash novo).
+        // DSHOW-106: com a coluna loja_bling_id criada, o hash muda uma vez → a releitura grava a loja também nos pedidos antigos
+        $d['payload_hash'] = md5($d['payload_hash'] . '|canal=' . ($d['sales_channel_id'] ?? '') . '|contato=' . ($d['contact_id'] ?? '')
+            . (array_key_exists('loja_bling_id', $d) ? '|loja=' . ($d['loja_bling_id'] ?? '') : ''));
         $r = $this->repo->upsert('bling_sales_orders', $accountId, $d);
         $pedidoId = $this->repo->idPorBlingId('bling_sales_orders', $accountId, $d['bling_id']);
 
