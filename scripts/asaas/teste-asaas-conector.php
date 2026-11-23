@@ -1,0 +1,287 @@
+<?php
+declare(strict_types=1);
+
+// scripts/asaas/teste-asaas-conector.php — teste do conector Asaas SÓ LEITURA com Asaas FALSO (nenhuma rede, nenhuma chave real).
+// Banco: só o de VALIDAÇÃO (ATRWEB_VAL_T_13), credencial lida em memória do .ini (nunca impressa), tabelas com prefixo PRÓPRIO desta
+// execução (asaas_t<aleatório>_) removidas no fim — só elas, conferidas pelo prefixo. Chaves: arquivos inventados num mktemp próprio.
+// Uso: php scripts/asaas/teste-asaas-conector.php [--sem-banco]
+
+require_once __DIR__ . '/../../api/asaas/AsaasPortao.php';
+
+$ok = 0; $falhas = [];
+function check(string $nome, bool $cond): void { global $ok, $falhas; if ($cond) $ok++; else { $falhas[] = $nome; echo "FALHOU: $nome\n"; } }
+function erroDe(callable $f): ?string { try { $f(); return null; } catch (AsaasErro $e) { return $e->codigo; } }
+
+// ---------- Asaas falso ----------
+final class AsaasFalso implements AsaasTransporte
+{
+    /** @var list<array{url:string,path:string,q:array}> */
+    public array $chamadas = [];
+    /** @var array<string, Closure(string,array,string):array> por caminho */
+    public array $rotas = [];
+    public array $fila = [];   // respostas forçadas em ordem (status/cabecalhos/corpo), antes das rotas
+    public function get(string $url, string $chave): array
+    {
+        $u = parse_url($url); parse_str($u['query'] ?? '', $q);
+        $path = substr($u['path'], 3);   // tira /v3
+        $this->chamadas[] = ['url' => $url, 'path' => $path, 'q' => $q, 'host' => $u['host']];
+        if ($this->fila !== []) return array_shift($this->fila);
+        $f = $this->rotas[$path] ?? null;
+        return $f ? $f($path, $q, $chave) : ['status' => 404, 'cabecalhos' => [], 'corpo' => '{}'];
+    }
+}
+function json200(array $d): array { return ['status' => 200, 'cabecalhos' => [], 'corpo' => json_encode($d)]; }
+function pagina(array $todos, array $q): array
+{
+    $o = (int) ($q['offset'] ?? 0); $l = (int) ($q['limit'] ?? 10);
+    return json200(['object' => 'list', 'hasMore' => $o + $l < count($todos), 'totalCount' => count($todos), 'limit' => $l, 'offset' => $o, 'data' => array_slice($todos, $o, $l)]);
+}
+
+$CH_A = '$aact_prod_000ChaveInventadaContaA::$aach_testeA';
+$CH_B = '$aact_prod_000ChaveInventadaContaB::$aach_testeB';
+$CH_S = '$aact_hmlg_000ChaveInventadaSandbox::$aach_testeS';
+$BASE = AsaasRotas::BASES['producao'];
+$semSono = static function (int $s) use (&$sonos): void { $sonos[] = $s; };
+$sonos = [];
+
+// ================= A. lista fixa de rotas e parâmetros =================
+check('4 rotas permitidas', array_keys(AsaasRotas::ROTAS) === ['cobrancas', 'estatisticas_cobrancas', 'extrato', 'saldo']);
+check('url cobranças', AsaasRotas::url($BASE, 'cobrancas', ['limit' => 100, 'offset' => 0]) === "$BASE/payments?limit=100&offset=0");
+check('url estatísticas', AsaasRotas::url($BASE, 'estatisticas_cobrancas', ['status' => 'PENDING']) === "$BASE/finance/payment/statistics?status=PENDING");
+check('url extrato', str_starts_with(AsaasRotas::url($BASE, 'extrato', ['startDate' => '2026-10-01', 'finishDate' => '2026-11-01']), "$BASE/financialTransactions?"));
+check('url saldo', AsaasRotas::url($BASE, 'saldo', []) === "$BASE/finance/balance");
+foreach (['clientes', 'payments', '/payments', 'transfers', 'cobrancas/../transfers', 'saldo ', 'SALDO', 'pix', 'webhooks', 'myAccount'] as $r) {
+    check("rota recusada: $r", erroDe(fn() => AsaasRotas::url($BASE, $r, [])) === 'rota_recusada');
+}
+check('base fora da lista recusada', erroDe(fn() => AsaasRotas::url('https://api.asaas.com.evil.example/v3', 'saldo', [])) === 'rota_recusada');
+foreach ([['customer' => 'cus_1'], ['limit' => 101], ['limit' => 0], ['offset' => -1], ['dueDate[ge]' => '2026-1-1'], ['status' => 'PENDING&x=1'],
+          ['status' => 'DELETED'], ['limit' => ['100']], ['access_token' => 'x']] as $q) {
+    check('parâmetro recusado: ' . json_encode($q), erroDe(fn() => AsaasRotas::url($BASE, 'cobrancas', $q)) === 'parametro_recusado');
+}
+check('saldo não aceita parâmetro nenhum', erroDe(fn() => AsaasRotas::url($BASE, 'saldo', ['limit' => 1])) === 'parametro_recusado');
+
+// ================= B. só GET: superfície e código =================
+$metCli = array_map(fn($m) => $m->getName(), (new ReflectionClass(AsaasCliente::class))->getMethods(ReflectionMethod::IS_PUBLIC));
+sort($metCli);
+check('cliente só expõe get (sem método HTTP como parâmetro)', $metCli === ['__construct', '__debugInfo', 'espera', 'get']);
+$metTr = array_map(fn($m) => $m->getName(), (new ReflectionClass(AsaasTransporte::class))->getMethods());
+check('transporte só tem get', $metTr === ['get']);
+$fonte = '';
+foreach (glob(__DIR__ . '/../../api/asaas/*.php') as $f) $fonte .= file_get_contents($f);
+$fonte .= file_get_contents(__DIR__ . '/asaas-sincronizar.php');
+check('nenhum CUSTOMREQUEST/POST/PUT/PATCH/DELETE HTTP no conector', preg_match('/CURLOPT_(CUSTOMREQUEST|POST|PUT|UPLOAD|POSTFIELDS)|[\'"](POST|PUT|PATCH|DELETE)[\'"]\s*[,)]/', $fonte) !== 1);
+check('nenhum DELETE/TRUNCATE/DROP SQL no conector', preg_match('/\b(DELETE\s+FROM|TRUNCATE|DROP\s+TABLE)\b/i', $fonte) !== 1);
+check('transporte real recusa URL fora da base antes da rede', erroDe(fn() => (new AsaasTransporteCurl())->get('https://exemplo.invalid/v3/payments', $CH_A)) === 'rota_recusada');
+check('transporte real recusa base parecida', erroDe(fn() => (new AsaasTransporteCurl())->get('https://api.asaas.com.evil.invalid/v3/payments', $CH_A)) === 'rota_recusada');
+
+// ================= C. 429, 5xx, 401, 403, JSON inválido; chave nunca exposta =================
+$fx = new AsaasFalso(); $cli = new AsaasCliente($fx, $CH_A, $BASE, $semSono);
+$fx->fila = [['status' => 429, 'cabecalhos' => ['ratelimit-reset' => '7'], 'corpo' => ''], json200(['balance' => 10])];
+$sonos = []; $d = $cli->get('saldo');
+check('429 respeita RateLimit-Reset (7 s) e repete', $sonos === [7] && $d['balance'] === 10 && count($fx->chamadas) === 2);
+$fx->fila = array_fill(0, 4, ['status' => 429, 'cabecalhos' => ['retry-after' => '999'], 'corpo' => '']); $sonos = [];
+check('429 x4 → limite (3 esperas, teto 60 s)', erroDe(fn() => $cli->get('saldo')) === 'limite' && $sonos === [60, 60, 60]);
+check('espera sem cabeçalho: recuo 5·n', AsaasCliente::espera([], 2) === 10 && AsaasCliente::espera(['retry-after' => 'abc'], 1) === 5);
+$fx->fila = [['status' => 500, 'cabecalhos' => [], 'corpo' => ''], ['status' => 0, 'cabecalhos' => [], 'corpo' => ''], json200(['balance' => 1])];
+check('5xx/rede: 2 novas tentativas', ($cli->get('saldo'))['balance'] === 1);
+$fx->fila = array_fill(0, 3, ['status' => 502, 'cabecalhos' => [], 'corpo' => '']);
+check('5xx x3 → indisponivel', erroDe(fn() => $cli->get('saldo')) === 'indisponivel');
+$n0 = count($fx->chamadas); $fx->fila = [['status' => 401, 'cabecalhos' => [], 'corpo' => '']];
+check('401 → chave_recusada sem repetir', erroDe(fn() => $cli->get('saldo')) === 'chave_recusada' && count($fx->chamadas) === $n0 + 1);
+$fx->fila = [['status' => 403, 'cabecalhos' => [], 'corpo' => '']];
+check('403 → acesso_negado', erroDe(fn() => $cli->get('saldo')) === 'acesso_negado');
+$fx->fila = [['status' => 200, 'cabecalhos' => [], 'corpo' => '<html>']];
+check('200 sem JSON → resposta_invalida', erroDe(fn() => $cli->get('saldo')) === 'resposta_invalida');
+$fx->fila = [['status' => 400, 'cabecalhos' => [], 'corpo' => '{}']];
+check('400 → resposta_invalida sem insistir', erroDe(fn() => $cli->get('saldo')) === 'resposta_invalida');
+$dump = print_r($cli, true) . var_export($cli->__debugInfo(), true);
+try { $cli2 = new AsaasCliente($fx, $CH_A, $BASE, $semSono); $fx->fila = [['status' => 401, 'cabecalhos' => [], 'corpo' => '']]; $cli2->get('saldo'); }
+catch (AsaasErro $e) { $dump .= $e->getMessage() . $e->getTraceAsString(); }
+check('chave não aparece em print_r/debug/mensagem/rastro', !str_contains($dump, 'ChaveInventadaContaA'));
+
+// ================= D. chaves por arquivo =================
+$TMP = sys_get_temp_dir() . '/asaas-conector.' . bin2hex(random_bytes(4));
+if (!preg_match('#/asaas-conector\.[0-9a-f]{8}$#', $TMP) || !mkdir($TMP, 0700)) { echo "temporário falhou\n"; exit(2); }
+file_put_contents("$TMP/conta-a.key", $CH_A . "\n"); file_put_contents("$TMP/conta-b.key", $CH_B . "\n");
+file_put_contents("$TMP/sandbox.key", $CH_S . "\n"); file_put_contents("$TMP/quebrada.key", "nao-e-chave\n");
+file_put_contents("$TMP/Maiuscula.key", $CH_A); symlink("$TMP/conta-a.key", "$TMP/link.key");
+$ks = new AsaasChaves($TMP);
+check('rótulos: só nomes válidos e sem link', $ks->rotulos() === ['conta-a', 'conta-b', 'quebrada', 'sandbox']);
+check('chave lida e ambiente produção', $ks->ler('conta-a')['ambiente'] === 'producao' && $ks->ler('conta-a')['base'] === $BASE);
+check('chave hmlg → sandbox', $ks->ler('sandbox')['base'] === AsaasRotas::BASES['sandbox']);
+check('conteúdo inválido → chave_invalida', erroDe(fn() => $ks->ler('quebrada')) === 'chave_invalida');
+check('rótulo com barra → chave_ausente', erroDe(fn() => $ks->ler('../conta-a')) === 'chave_ausente');
+check('link → chave_ausente', erroDe(fn() => $ks->ler('link')) === 'chave_ausente');
+foreach (['quebrada.key', 'sandbox.key', 'Maiuscula.key', 'link.key'] as $f) @unlink("$TMP/$f");
+
+// ================= E. portão HTTP: ordem =================
+function deps(ArrayObject $log, array $flagG, ?array $sess, array $situ, array $flagP, ?Closure $res = null): AsaasPortaoDeps
+{
+    return new AsaasPortaoDeps(
+        flag: function (string $k, ?int $u) use ($log, $flagG, $flagP): array { $log[] = "flag:" . ($u ?? 'g'); return $u === null ? $flagG : $flagP; },
+        sessao: function () use ($log, $sess): ?array { $log[] = 'sessao'; return $sess; },
+        token: fn(): string => 'tok',
+        repo: new class($situ, $log) implements AsaasSessaoRepositorio {
+            public function __construct(private array $s, private ArrayObject $l) {}
+            public function situacao(string $t, int $u): array { $this->l[] = 'repo'; if (isset($this->s['lanca'])) throw new RuntimeException('x'); return $this->s; }
+        },
+        resumo: $res ?? function () use ($log): array { $log[] = 'resumo'; return ['contas' => []]; },
+    );
+}
+$on = ['enabled' => true, 'source' => 'user_override']; $g = ['enabled' => false, 'source' => 'rollout_excluded']; $sOk = ['sessao_ativa' => true, 'usuario_ativo' => true];
+foreach (['POST', 'PUT', 'DELETE', 'PATCH', 'HEAD'] as $m) { $l = new ArrayObject(); $r = AsaasPortao::atender($m, ['r' => 'resumo'], deps($l, $g, ['user_id' => 75], $sOk, $on));
+    check("portão: $m → 404 sem tocar em nada", $r[0] === 404 && $l->getArrayCopy() === []); }
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'resumo'], deps($l, ['source' => 'not_found'], ['user_id' => 75], $sOk, $on));
+check('portão: flag ausente → 404 antes da sessão', $r[0] === 404 && $l->getArrayCopy() === ['flag:g']);
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'resumo'], deps($l, ['source' => 'disabled'], ['user_id' => 75], $sOk, $on));
+check('portão: flag desligada (kill switch) → 404', $r[0] === 404);
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'resumo'], deps($l, ['source' => 'error'], ['user_id' => 75], $sOk, $on));
+check('portão: flag ilegível → 404', $r[0] === 404);
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'resumo'], deps($l, $g, null, $sOk, $on));
+check('portão: sem sessão → 401', $r[0] === 401 && !in_array('resumo', $l->getArrayCopy(), true));
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'resumo'], deps($l, $g, ['user_id' => 75], ['sessao_ativa' => false, 'usuario_ativo' => true], $on));
+check('portão: sessão revogada → 401', $r[0] === 401 && $r[1]['error']['code'] === 'SESSION_REVOKED');
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'resumo'], deps($l, $g, ['user_id' => 75], ['sessao_ativa' => true, 'usuario_ativo' => false], $on));
+check('portão: usuário desativado → 401', $r[0] === 401);
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'resumo'], deps($l, $g, ['user_id' => 75], ['lanca' => 1], $on));
+check('portão: conferência de sessão fora → 503', $r[0] === 503);
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'cobrancas'], deps($l, $g, ['user_id' => 75], $sOk, $on));
+check('portão: rota desconhecida → 404', $r[0] === 404 && !in_array('resumo', $l->getArrayCopy(), true));
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'resumo'], deps($l, $g, ['user_id' => 12], $sOk, ['enabled' => false, 'source' => 'rollout_excluded']));
+check('portão: outra pessoa (sem override) → 404, resumo não lido', $r[0] === 404 && !in_array('resumo', $l->getArrayCopy(), true));
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'resumo'], deps($l, $g, ['user_id' => 75], $sOk, ['enabled' => true, 'source' => 'error']));
+check('portão: flag da pessoa ilegível → 404', $r[0] === 404);
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'resumo'], deps($l, $g, ['user_id' => '75'], $sOk, $on));
+check('portão: 75 com override → 200 na ordem certa', $r[0] === 200 && $l->getArrayCopy() === ['flag:g', 'sessao', 'repo', 'flag:75', 'resumo']);
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'resumo'], deps($l, $g, ['user_id' => 75], $sOk, $on, function (): array { throw new PDOException('fora'); }));
+check('portão: banco local fora → 503 dados_indisponiveis (nunca zero)', $r[0] === 503 && $r[1]['data'] === null && $r[1]['error']['code'] === 'dados_indisponiveis');
+
+// ================= F. sincronização + resumo no BANCO DE VALIDAÇÃO =================
+$semBanco = in_array('--sem-banco', $argv, true);
+$pdo = null; $P = '';
+if (!$semBanco) {
+    $ini = parse_ini_file('/srv/dshow-modularizacao/atributos-web/validacao/credenciais/atrweb_val.ini', true, INI_SCANNER_RAW)['client'] ?? null;
+    if (!is_array($ini)) { echo "credencial do banco de validação ilegível\n"; exit(2); }
+    $dsn = isset($ini['socket']) ? "mysql:unix_socket={$ini['socket']};dbname=ATRWEB_VAL_T_13;charset=utf8mb4"
+                                 : 'mysql:host=' . ($ini['host'] ?? '127.0.0.1') . ';port=' . ($ini['port'] ?? 3306) . ';dbname=ATRWEB_VAL_T_13;charset=utf8mb4';
+    $pdo = new PDO($dsn, $ini['user'], $ini['password'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    unset($ini);
+    check('banco é o de validação', $pdo->query('SELECT DATABASE()')->fetchColumn() === 'ATRWEB_VAL_T_13');
+    $P = 'asaas_t' . bin2hex(random_bytes(4)) . '_';
+    foreach (AsaasEsquema::ddl($P) as $sql) $pdo->exec($sql);
+}
+$limparBanco = function () use (&$pdo, $P): void {
+    if ($pdo === null || preg_match('/^asaas_t[0-9a-f]{8}_$/', $P) !== 1) return;
+    foreach (['asaas_contas', 'asaas_cobrancas', 'asaas_extrato', 'asaas_estatisticas', 'asaas_execucoes'] as $t) $pdo->exec("DROP TABLE IF EXISTS `{$P}{$t}`");
+};
+register_shutdown_function(function () use ($limparBanco, $TMP): void {
+    $limparBanco();
+    if (preg_match('#/asaas-conector\.[0-9a-f]{8}$#', $TMP) && is_dir($TMP)) { foreach (glob("$TMP/*.key") as $f) unlink($f); rmdir($TMP); }
+});
+
+if ($pdo !== null) {
+    $agora = new DateTimeImmutable('2026-11-23 10:00:00', new DateTimeZone('America/Sao_Paulo'));
+    $cob = fn(string $id, string $st, string $v, string $criada, ?string $pago = null, ?string $liq = null) =>
+        ['object' => 'payment', 'id' => $id, 'dateCreated' => $criada, 'customer' => 'cus_000001', 'value' => (float) $v, 'netValue' => $liq !== null ? (float) $liq : null,
+         'billingType' => 'PIX', 'status' => $st, 'dueDate' => $criada, 'paymentDate' => $pago, 'deleted' => false, 'description' => 'NÃO GRAVAR'];
+    // conta A: 250 cobranças em nov (3 páginas) + outras; mesmo payment_id que a conta C
+    $novA = [];
+    for ($i = 1; $i <= 250; $i++) $novA[] = $cob(sprintf('pay_a%04d', $i), 'PENDING', '10.00', '2026-11-05');
+    $novA[] = $cob('pay_comum', 'RECEIVED', '1000.50', '2026-11-02', '2026-11-10', '990.25');
+    $novA[] = $cob('pay_venc1', 'OVERDUE', '300.00', '2026-11-01');
+    $outA = [$cob('pay_out1', 'CONFIRMED', '200.00', '2026-10-15', '2026-11-03', '195.00'), $cob('pay_out2', 'RECEIVED', '50.00', '2026-10-20', '2026-10-25')];
+    $estado = ['A' => ['nov' => $novA, 'out' => $outA, 'stats' => ['PENDING' => ['quantity' => 250, 'value' => 2500.0, 'netValue' => 2450.0], 'OVERDUE' => ['quantity' => 1, 'value' => 300.0]]]];
+    $apiA = new AsaasFalso();
+    $apiA->rotas = [
+        '/finance/balance' => fn() => json200(['balance' => 12345.67]),
+        '/payments' => function ($p, $q) use (&$estado) {
+            if (isset($q['paymentDate']['ge'])) return pagina([], $q);   // as pagas recentes já vêm na janela
+            $mes = substr($q['dateCreated']['ge'] ?? '', 0, 7);
+            $l = $mes === '2026-11' ? $estado['A']['nov'] : ($mes === '2026-10' ? $estado['A']['out'] : []);
+            return pagina($l, $q);
+        },
+        '/finance/payment/statistics' => fn($p, $q) => json200($estado['A']['stats'][$q['status']]),
+        '/financialTransactions' => fn($p, $q) => pagina([['object' => 'financialTransaction', 'id' => 'ftr_1', 'value' => 990.25, 'balance' => 12345.67,
+                                                            'type' => 'PAYMENT_RECEIVED', 'date' => '2026-11-10', 'paymentId' => 'pay_comum', 'description' => 'NÃO GRAVAR']], $q),
+    ];
+    $apiB = new AsaasFalso();                      // conta B: limite sempre
+    $apiB->rotas = ['/finance/balance' => fn() => ['status' => 429, 'cabecalhos' => ['ratelimit-reset' => '3'], 'corpo' => '']];
+    $apiC = new AsaasFalso();                      // conta C: tudo zero DE VERDADE, mesmo payment_id da A
+    $apiC->rotas = ['/finance/balance' => fn() => json200(['balance' => 0]),
+        '/payments' => fn($p, $q) => pagina(($q['dateCreated']['ge'] ?? '') === '2026-09-01' ? [$cob('pay_comum', 'REFUNDED', '5.00', '2026-09-03')] : [], $q),
+        '/finance/payment/statistics' => fn() => json200(['quantity' => 0, 'value' => 0]),
+        '/financialTransactions' => fn($p, $q) => pagina([], $q)];
+    file_put_contents("$TMP/conta-c.key", '$aact_prod_000ChaveInventadaContaC::$aach_testeC' . "\n");
+    $apis = ['conta-a' => $apiA, 'conta-b' => $apiB, 'conta-c' => $apiC];
+    $pausas = [];
+    $repo = new AsaasRepositorio($pdo, $P);
+    $sync = new AsaasSincronizador($repo, $ks,
+        function (string $r) use ($apis, $ks, $semSono): AsaasCliente { $k = $ks->ler($r); return new AsaasCliente($apis[$r], $k['chave'], $k['base'], $semSono); },
+        function (int $ms) use (&$pausas): void { $pausas[] = $ms; });
+    $sonos = [];
+    $res = $sync->sincronizarTodas($agora);
+    check('sync: A ok, B erro limite, C ok', $res['conta-a']['resultado'] === 'ok' && $res['conta-b']['erro'] === 'limite' && $res['conta-c']['resultado'] === 'ok');
+    check('sync: B respeitou o 429 (3 esperas de 3 s)', $sonos === [3, 3, 3]);
+    $pg = array_values(array_filter($apiA->chamadas, fn($c) => $c['path'] === '/payments' && ($c['q']['dateCreated']['ge'] ?? '') === '2026-11-01'));
+    check('páginas de 100 com offset 0/100/200', array_map(fn($c) => [$c['q']['limit'], $c['q']['offset']], $pg) === [['100', '0'], ['100', '100'], ['100', '200']]);
+    check('pausa entre páginas (uma requisição por vez)', in_array(250, $pausas, true));
+    check('só rotas da lista foram chamadas', array_diff(array_unique(array_merge(...array_values(array_map(fn($a) => array_column($a->chamadas, 'path'), $apis)))),
+        ['/finance/balance', '/payments', '/finance/payment/statistics', '/financialTransactions']) === []);
+    check('janela de 13 meses por mês de criação', count(array_filter($apiA->chamadas, fn($c) => $c['path'] === '/payments' && isset($c['q']['dateCreated']))) === 12 + 3);
+    $n = fn(string $sql, array $a = []) => (function () use ($pdo, $sql, $a) { $s = $pdo->prepare($sql); $s->execute($a); return $s->fetchColumn(); })();
+    check('uma linha por (conta, payment_id): pay_comum em A e C', (int) $n("SELECT COUNT(*) FROM `{$P}asaas_cobrancas` WHERE payment_id='pay_comum'") === 2);
+    check('A: 254 cobranças gravadas', (int) $n("SELECT COUNT(*) FROM `{$P}asaas_cobrancas` WHERE conta='conta-a'") === 254);
+    check('descrição NÃO é gravada (não há coluna)', !str_contains(implode(' ', $pdo->query("SHOW COLUMNS FROM `{$P}asaas_cobrancas`")->fetchAll(PDO::FETCH_COLUMN)), 'descricao'));
+    check('B: estado erro, sem saldo inventado', $n("SELECT CONCAT(estado,'|',erro_codigo,'|',IFNULL(saldo,'NULL')) FROM `{$P}asaas_contas` WHERE conta='conta-b'") === 'erro|limite|NULL');
+
+    $resumo = new AsaasResumo($pdo, $P);
+    $rs = $resumo->montar(['conta-a', 'conta-b', 'conta-c'], $agora->modify('+5 minutes'));
+    $porConta = array_column($rs['contas'], null, 'conta');
+    $vA = $porConta['conta-a']['valores'];
+    check('resumo A: saldo 12345.67', $vA['saldo'] === '12345.67');
+    check('resumo A: a receber 2500.00', $vA['a_receber'] === '2500.00');
+    check('resumo A: vencido 300.00 (1)', $vA['vencido'] === '300.00' && $vA['vencido_qtd'] === 1);
+    check('resumo A: recebido no mês 1200.50 (out paga em nov conta; out paga em out não)', $vA['recebido_mes'] === '1200.50' && $vA['recebido_mes_liquido'] === '1185.25');
+    check('resumo A: sem aviso (estatísticas batem)', $porConta['conta-a']['aviso'] === null);
+    check('resumo B: indisponível, valores null, motivo erro:limite', $porConta['conta-b']['disponivel'] === false && $porConta['conta-b']['valores'] === null && $porConta['conta-b']['motivo'] === 'erro:limite');
+    check('resumo C: zero DE VERDADE aparece como 0.00', $porConta['conta-c']['disponivel'] === true && $porConta['conta-c']['valores']['saldo'] === '0.00' && $porConta['conta-c']['valores']['a_receber'] === '0.00');
+    check('total null quando alguma conta falhou', $rs['total'] === null && $rs['total_parcial'] === true);
+    $rs2 = $resumo->montar(['conta-a', 'conta-c'], $agora->modify('+5 minutes'));
+    check('total soma em centavos quando todas disponíveis', $rs2['total'] === ['saldo' => '12345.67', 'a_receber' => '2500.00', 'vencido' => '300.00', 'recebido_mes' => '1200.50']);
+    check('conta sem nenhuma sincronização: nunca_sincronizada', $resumo->montar(['conta-z'], $agora)['contas'][0]['motivo'] === 'nunca_sincronizada');
+
+    // 2ª rodada: pay_a0250 sumiu da janela de nov → ausente (lógico), não apagada; estatística diverge → aviso
+    array_splice($estado['A']['nov'], 249, 1);
+    $estado['A']['stats']['PENDING'] = ['quantity' => 250, 'value' => 2500.0];
+    $res2 = $sync->sincronizar('conta-a', $agora->modify('+1 hour'));
+    check('2ª rodada ok', $res2['resultado'] === 'ok');
+    check('sumida vira ausente=1 e continua no banco', $n("SELECT ausente FROM `{$P}asaas_cobrancas` WHERE conta='conta-a' AND payment_id='pay_a0250'") == 1);
+    $r2 = array_column($resumo->montar(['conta-a'], $agora->modify('+65 minutes'))['contas'], null, 'conta')['conta-a'];
+    check('ausente sai do a receber (2490.00)', $r2['valores']['a_receber'] === '2490.00');
+    check('divergência com a estatística do Asaas vira aviso, não troca o número', str_contains((string) $r2['aviso'], 'divergencia_pending'));
+
+    // 3ª rodada FALHA (5xx): dados preservados; dentro de 3 h continua com aviso; depois de 3 h → null (nunca zero)
+    $apiA->fila = array_fill(0, 3, ['status' => 503, 'cabecalhos' => [], 'corpo' => '']);
+    $res3 = $sync->sincronizar('conta-a', $agora->modify('+90 minutes'));
+    check('3ª rodada: erro indisponivel', $res3['erro'] === 'indisponivel');
+    check('falha preserva saldo e cobranças', $n("SELECT saldo FROM `{$P}asaas_contas` WHERE conta='conta-a'") === '12345.67'
+        && (int) $n("SELECT COUNT(*) FROM `{$P}asaas_cobrancas` WHERE conta='conta-a'") === 254);
+    $r3 = array_column($resumo->montar(['conta-a'], $agora->modify('+95 minutes'))['contas'], null, 'conta')['conta-a'];
+    check('após falha, dentro de 3 h: valores reais + aviso de falha', $r3['disponivel'] === true && str_contains((string) $r3['aviso'], 'ultima_tentativa_falhou:indisponivel'));
+    $r4 = array_column($resumo->montar(['conta-a'], $agora->modify('+5 hours'))['contas'], null, 'conta')['conta-a'];
+    check('sem sincronização boa há > 3 h: null + desatualizada (nunca zero)', $r4['disponivel'] === false && $r4['valores'] === null && $r4['motivo'] === 'desatualizada');
+    check('execuções registradas (ok/erro)', $n("SELECT GROUP_CONCAT(resultado ORDER BY id) FROM `{$P}asaas_execucoes` WHERE conta='conta-a'") === 'ok,ok,erro');
+
+    // resposta malformada no meio da paginação: erro, nada vira zero
+    $apiM = new AsaasFalso(); $apiM->rotas = ['/finance/balance' => fn() => json200(['balance' => 'abc'])];
+    $apis['conta-m'] = $apiM; file_put_contents("$TMP/conta-m.key", '$aact_prod_000ChaveInventadaContaM::$aach_testeM' . "\n");
+    $syncM = new AsaasSincronizador($repo, $ks, function (string $r) use ($apis, $ks, $semSono): AsaasCliente { $k = $ks->ler($r); return new AsaasCliente($apis[$r], $k['chave'], $k['base'], $semSono); }, fn(int $ms) => null);
+    check('saldo não numérico → erro resposta_invalida', $syncM->sincronizar('conta-m', $agora)['erro'] === 'resposta_invalida');
+    $apiM->rotas = ['/finance/balance' => fn() => json200(['balance' => 1]), '/payments' => fn($p, $q) => json200(['hasMore' => true, 'data' => []])];
+    check('hasMore sem itens → erro (sem laço infinito)', $syncM->sincronizar('conta-m', $agora)['erro'] === 'resposta_invalida');
+    $apiM->rotas = ['/finance/balance' => fn() => json200(['balance' => 1]), '/payments' => fn($p, $q) => json200(['hasMore' => true, 'data' => [$cob('pay_x' . $q['offset'], 'PENDING', '1', '2026-11-01')]])];
+    check('volume inesperado (200 páginas) → erro', $syncM->sincronizar('conta-m', $agora)['erro'] === 'volume_inesperado');
+}
+
+echo 'teste-asaas-conector: ', $ok, ' ok, ', count($falhas), " falha(s)", $semBanco ? ' (sem banco)' : '', "\n";
+exit($falhas === [] ? 0 : 1);
