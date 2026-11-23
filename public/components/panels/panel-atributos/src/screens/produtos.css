@@ -1,0 +1,134 @@
+/* PRODUTOS · Tabela e Cartões (PACOTE A, briefing 23/11; pranchas 01/02/03/11). Dono: CIMA. Escopo [data-bl-root] .at-pl…; só tokens var(--bl-…).
+   Padrão da casa: cabeçalho travado da barra verde até o cabeçalho das colunas; linha de 36 px numa linha (reticências; completo no hover/foco);
+   zebra suave; pesos 400/500; pílulas com texto (sem bolinha); nada de modal. */
+
+/* ── faixa de ferramentas: UMA linha ─────────────────────────────────────────────────────────────────────────────────────────── */
+[data-bl-root] .at-pl-faixa { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; padding-bottom: 10px; min-width: 0; }
+[data-bl-root] .at-pl-busca { flex: 0 1 290px; min-width: 180px; }
+[data-bl-root] .at-pl-total { font-size: 12.5px; font-weight: 400; color: var(--bl-texto-3); white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 84px; }
+[data-bl-root] .at-pl-total--carregando { display: inline-block; height: 10px; border-radius: 5px; background: var(--bl-superficie-2); }
+[data-bl-root] .at-pl-select { flex: 0 1 auto; min-width: 0; max-width: 220px; font-weight: 400; }
+[data-bl-root] .at-pl-faixa__mola { flex: 1 1 0; }
+[data-bl-root] .at-pl-btn-filtros { display: inline-flex; align-items: center; gap: 6px; height: 34px; font-weight: 400; white-space: nowrap; }
+[data-bl-root] .at-pl-btn-filtros--ativo { border-color: var(--bl-info); color: var(--bl-info); background: var(--bl-info-bg); }
+[data-bl-root] .at-pl-alternador { flex: 0 0 auto; }
+[data-bl-root] .at-pl-alternador button { font-weight: 400; }
+[data-bl-root] .at-pl-alternador button.ativo { color: var(--bl-info); font-weight: 500; }
+[data-bl-root] .at-pl-selpagina, [data-bl-root] .at-pl-sel { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 400; color: var(--bl-texto-2); white-space: nowrap; }
+
+/* painel Filtros: ancorado ao botão, na própria página (não é modal) */
+[data-bl-root] .at-pl-filtros-ancora { position: relative; flex: 0 0 auto; }
+[data-bl-root] .at-pl-painel { position: absolute; top: calc(100% + 6px); left: 0; z-index: 40; width: 320px; padding: 12px; display: flex; flex-direction: column; gap: 10px;
+  background: var(--bl-superficie); border: 1px solid var(--bl-borda-forte); border-radius: var(--bl-raio); box-shadow: var(--bl-sombra); }
+[data-bl-root] .at-pl-painel__campos { display: flex; flex-direction: column; gap: 8px; }
+[data-bl-root] .at-pl-painel__campos .at-pl-select { max-width: none; width: 100%; }
+[data-bl-root] .at-pl-painel__rapidos { display: flex; flex-direction: column; gap: 2px; border-top: 1px solid var(--bl-borda); padding-top: 8px; }
+[data-bl-root] .at-pl-alternancia { display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 4px; border-radius: var(--bl-raio-sm); font-size: 13px; font-weight: 400; cursor: pointer; }
+[data-bl-root] .at-pl-alternancia:hover { background: var(--bl-superficie-2); }
+[data-bl-root] .at-pl-painel__limpar { align-self: flex-start; }
+
+/* linha fina de etiquetas (só existe com filtro ativo) */
+[data-bl-root] .at-pl-etiquetas { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 0 0 8px; font-size: 12px; }
+[data-bl-root] .at-pl-etiqueta { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 4px 0 9px; border-radius: 12px; font-weight: 400;
+  background: var(--bl-info-bg); color: var(--bl-texto); border: 1px solid color-mix(in srgb, var(--bl-info) 35%, transparent); }
+[data-bl-root] .at-pl-etiqueta__x { all: unset; cursor: pointer; width: 18px; height: 18px; line-height: 18px; text-align: center; border-radius: 9px; color: var(--bl-texto-2); }
+[data-bl-root] .at-pl-etiqueta__x:hover, [data-bl-root] .at-pl-etiqueta__x:focus-visible { background: color-mix(in srgb, var(--bl-info) 20%, transparent); color: var(--bl-texto); outline: none; }
+[data-bl-root] .at-pl-aviso { margin: 0 0 8px; padding: 6px 10px; border-left: 3px solid var(--bl-aviso); background: var(--bl-aviso-bg); font-size: 12.5px; font-weight: 400; border-radius: var(--bl-raio-sm); }
+
+/* ── textos cortados: completo no hover (title) e no foco de teclado (rótulo flutuante) ───────────────────────────────────────── */
+[data-bl-root] .at-pl-corta { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-bl-root] .at-pl [data-completo] { position: relative; }
+[data-bl-root] .at-pl [data-completo]:focus-visible::after { content: attr(data-completo); position: absolute; left: 0; top: calc(100% + 4px); z-index: 30; max-width: 520px; width: max-content;
+  white-space: normal; padding: 6px 9px; border-radius: var(--bl-raio-sm); background: var(--bl-superficie); color: var(--bl-texto); border: 1px solid var(--bl-borda-forte);
+  box-shadow: var(--bl-sombra); font-size: 12.5px; font-weight: 400; line-height: 1.35; pointer-events: none; }
+
+/* ── Tabela ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+[data-bl-root] .at-pl-tabela-moldura { min-width: 0; }
+[data-bl-root] .at-pl-tabela { table-layout: fixed; }
+[data-bl-root] .at-pl-tabela th[data-coluna="sel"] { width: var(--pl-w-sel); }
+[data-bl-root] .at-pl-tabela th[data-coluna="produto"] { width: var(--pl-w-produto); }
+[data-bl-root] .at-pl-tabela th[data-coluna="subcategoria"] { width: var(--pl-w-subcategoria); }
+[data-bl-root] .at-pl-tabela th[data-coluna="kit"] { width: var(--pl-w-kit); }
+[data-bl-root] .at-pl-tabela th[data-coluna="essenciais"] { width: var(--pl-w-essenciais); }
+[data-bl-root] .at-pl-tabela th[data-coluna="obrigatorios"] { width: var(--pl-w-obrigatorios); }
+[data-bl-root] .at-pl-tabela th[data-coluna="fotos"] { width: var(--pl-w-fotos); }
+[data-bl-root] .at-pl-tabela th[data-coluna="precifica"] { width: var(--pl-w-precifica); }
+[data-bl-root] .at-pl-tabela th[data-coluna="situacao"] { width: var(--pl-w-situacao); }
+[data-bl-root] .at-pl-tabela .at-td__th { font-weight: 500; }
+/* 36 px numa linha; overflow VISÍVEL na célula para o rótulo do foco poder sair dela — quem corta (reticências) é o conteúdo (at-pl-corta / at-pl-nome) */
+[data-bl-root] .at-pl-tabela td { height: 36px; box-sizing: border-box; padding-top: 0; padding-bottom: 0; white-space: nowrap; overflow: visible; font-weight: 400; }
+[data-bl-root] .at-pl-tabela th[data-coluna="sel"], [data-bl-root] .at-pl-tabela td:first-child:has(> input[type="checkbox"]) { padding-left: 0; padding-right: 0; text-align: center; }
+[data-bl-root] .at-pl-produto { display: flex; align-items: center; gap: 10px; min-width: 0; }
+[data-bl-root] .at-pl-id { flex: 0 0 auto; min-width: 30px; color: var(--bl-texto-3); font-size: 12px; font-variant-numeric: tabular-nums; }
+[data-bl-root] .at-pl .at-link-produto.at-pl-nome { display: block; min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400; color: var(--bl-info); }
+[data-bl-root] .at-pl .at-link-produto.at-pl-nome:hover { text-decoration: underline; }
+[data-bl-root] .at-pl-linha--sel { background: color-mix(in srgb, var(--bl-info) 8%, var(--bl-superficie)) !important; }
+[data-bl-root] .at-pl-linha--inativa td { color: var(--bl-texto-3); }
+
+/* pílulas e indicadores */
+[data-bl-root] .at-pl-kits { display: inline-flex; align-items: center; gap: 4px; min-width: 0; max-width: 100%; overflow: hidden; }
+[data-bl-root] .at-pl-kits .at-chip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400; }
+[data-bl-root] .at-pl-semkit { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; height: 20px; line-height: 18px; padding: 0 8px;
+  border-radius: 10px; font-size: 11.5px; font-weight: 400; color: var(--bl-texto-2); background: var(--bl-neutro-bg); border: 1px solid var(--bl-borda); }
+[data-bl-root] .at-pl-situacao { display: inline-block; height: 20px; line-height: 18px; padding: 0 8px; border-radius: 10px; font-size: 11.5px; font-weight: 400; border: 1px solid transparent; }
+[data-bl-root] .at-pl-situacao--ativo { color: var(--bl-sucesso); background: var(--bl-sucesso-bg); border-color: color-mix(in srgb, var(--bl-sucesso) 30%, transparent); }
+[data-bl-root] .at-pl-situacao--inativo { color: var(--bl-texto-2); background: var(--bl-neutro-bg); border-color: var(--bl-borda); }
+[data-bl-root] .at-pl-ess { display: flex; align-items: center; gap: 10px; min-width: 0; }
+[data-bl-root] .at-pl-ess__trilho { flex: 1 1 auto; min-width: 40px; height: 4px; border-radius: 2px; background: var(--bl-superficie-2); overflow: hidden; }
+[data-bl-root] .at-pl-ess__barra { display: block; height: 100%; border-radius: 2px; background: color-mix(in srgb, var(--bl-info) 70%, var(--bl-superficie)); }
+[data-bl-root] .at-pl-ess__barra--completa { background: var(--bl-sucesso); }
+[data-bl-root] .at-pl-ess__txt { flex: 0 0 auto; min-width: 52px; text-align: right; font-size: 12px; color: var(--bl-texto-2); font-variant-numeric: tabular-nums; }
+[data-bl-root] .at-pl-pendente { color: var(--bl-aviso-texto, var(--bl-aviso)); }
+[data-bl-root] .at-pl-zero { color: var(--bl-texto-2); }
+
+/* ── Cartões: auto-fill 340 px, intervalo 12, altura FIXA 250 (5 colunas em 2200 e 3 em 1440, menu aberto) ─────────────────── */
+[data-bl-root] .at-pl-cartoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; align-content: start; }
+[data-bl-root] .at-pl-cartoes__grupo { grid-column: 1 / -1; padding: 6px 2px 0; font-size: 12px; font-weight: 500; color: var(--bl-texto-2); border-top: 1px solid var(--bl-borda); }
+[data-bl-root] .at-pl-cartao { height: 250px; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; min-width: 0;
+  background: var(--bl-superficie); border: 1px solid var(--bl-borda); border-radius: var(--bl-raio); font-size: 12.5px; font-weight: 400; }
+[data-bl-root] .at-pl-cartao--sel { border-color: var(--bl-info); box-shadow: 0 0 0 1px var(--bl-info); }
+[data-bl-root] .at-pl-cartao--inativo { background: color-mix(in srgb, var(--bl-superficie-2) 60%, var(--bl-superficie)); }
+[data-bl-root] .at-pl-cartao__topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 20px; color: var(--bl-texto-3); font-size: 12px; }
+[data-bl-root] .at-pl-cartao__sel { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-variant-numeric: tabular-nums; }
+[data-bl-root] .at-pl-cartao__meio { display: flex; gap: 12px; min-height: 0; height: 80px; }
+[data-bl-root] .at-pl-mini { flex: 0 0 110px; width: 110px; height: 80px; border-radius: var(--bl-raio-sm); background: var(--bl-superficie-2); overflow: hidden; display: grid; place-items: center; }
+[data-bl-root] .at-pl-mini img { width: 100%; height: 100%; object-fit: contain; display: block; }
+[data-bl-root] .at-pl-mini--sem { border: 1px dashed var(--bl-borda-forte); color: var(--bl-texto-3); font-size: 11.5px; }
+[data-bl-root] .at-pl-mini--falhou { border: 1px solid color-mix(in srgb, var(--bl-aviso) 45%, transparent); background: var(--bl-aviso-bg); color: var(--bl-texto-2); font-size: 11.5px; text-align: center; padding: 0 6px; }
+[data-bl-root] .at-pl-cartao__texto { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 auto; padding-top: 2px; }
+[data-bl-root] .at-pl-cartao__sub { font-size: 11.5px; color: var(--bl-texto-3); }
+[data-bl-root] .at-pl .at-link-produto.at-pl-cartao__nome { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: normal;
+  font-size: 13px; font-weight: 400; line-height: 1.35; color: var(--bl-info); }
+[data-bl-root] .at-pl .at-link-produto.at-pl-cartao__nome:hover { text-decoration: underline; }
+[data-bl-root] .at-pl .at-link-produto.at-pl-cartao__nome:focus-visible { overflow: visible; }
+[data-bl-root] .at-pl-cartao__kit { height: 22px; display: flex; align-items: center; min-width: 0; }
+[data-bl-root] .at-pl-cartao__ess { display: flex; align-items: center; gap: 10px; }
+[data-bl-root] .at-pl-rot { flex: 0 0 auto; color: var(--bl-texto-2); }
+[data-bl-root] .at-pl-cartao__ess .at-pl-ess { flex: 1 1 auto; }
+[data-bl-root] .at-pl-cartao__linha { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+[data-bl-root] .at-pl-fotos { display: inline-flex; align-items: center; gap: 5px; color: var(--bl-texto-2); font-variant-numeric: tabular-nums; }
+[data-bl-root] .at-pl-fotos.at-pl-pendente { color: var(--bl-aviso-texto, var(--bl-aviso)); }
+[data-bl-root] .at-pl-cartao__rodape { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 7px; border-top: 1px solid var(--bl-borda); }
+[data-bl-root] .at-pl-cartao__precifica { font-size: 12px; color: var(--bl-texto-2); }
+[data-bl-root] .at-pl-cartao__abrir { flex: 0 0 auto; font-weight: 400; }
+
+/* ── estados ────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+@keyframes at-pl-pulso { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+[data-bl-root] .at-pl-esq { background: var(--bl-superficie-2); border-color: var(--bl-borda); animation: at-pl-pulso 1.4s ease-in-out infinite; }
+[data-bl-root] .at-pl-esq-tabela { border: 1px solid var(--bl-borda); border-radius: var(--bl-raio); overflow: hidden; background: var(--bl-superficie); }
+[data-bl-root] .at-pl-esq-tabela__cab, [data-bl-root] .at-pl-esq-tabela__linha { display: flex; height: 36px; align-items: center; border-bottom: 1px solid var(--bl-borda); }
+[data-bl-root] .at-pl-esq-tabela__cab { background: var(--bl-superficie-2); }
+[data-bl-root] .at-pl-esq-tabela__linha > span { flex: 0 0 auto; padding: 0 10px; box-sizing: border-box; }
+[data-bl-root] .at-pl-esq-tabela__linha i { display: block; height: 9px; border-radius: 5px; background: var(--bl-superficie-2); animation: at-pl-pulso 1.4s ease-in-out infinite; }
+[data-bl-root] .at-pl-vazio { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 44px 16px; text-align: center;
+  background: var(--bl-superficie); border: 1px solid var(--bl-borda); border-radius: var(--bl-raio); }
+[data-bl-root] .at-pl-vazio strong { font-size: 15px; font-weight: 500; }
+[data-bl-root] .at-pl-vazio p { margin: 0 0 6px; color: var(--bl-texto-2); font-weight: 400; }
+[data-bl-root] .at-pl-vazio__icone { color: var(--bl-texto-3); }
+[data-bl-root] .at-pl-vazio__acoes { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+
+/* ── rodapé de páginas (fica embaixo da área visível ao rolar) ─────────────────────────────────────────────────────────────────── */
+[data-bl-root] .at-pl-rodape { position: sticky; bottom: 0; z-index: 4; justify-content: flex-start; gap: 10px; margin: 12px 0 0; padding: 8px 0;
+  background: var(--bl-bg, var(--bl-superficie)); border-top: 1px solid var(--bl-borda); font-size: 12.5px; font-weight: 400; }
+[data-bl-root] .at-pl-rodape__mola { flex: 1 1 0; }
+[data-bl-root] .at-pl ~ .at-barra-selecao, [data-bl-root] .at-pl .at-barra-selecao { bottom: 52px; }
