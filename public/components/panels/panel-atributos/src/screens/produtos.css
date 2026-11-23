@@ -110,7 +110,8 @@
 [data-bl-root] .at-pl-fotos.at-pl-pendente { color: var(--bl-aviso-texto, var(--bl-aviso)); }
 [data-bl-root] .at-pl-cartao__rodape { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 7px; border-top: 1px solid var(--bl-borda); }
 [data-bl-root] .at-pl-cartao__precifica { font-size: 12px; color: var(--bl-texto-2); }
-[data-bl-root] .at-pl-cartao__abrir { flex: 0 0 auto; font-weight: 400; }
+[data-bl-root] .at-pl .at-link.at-pl-cartao__abrir { flex: 0 0 auto; font-weight: 400; text-decoration: none; }   /* parecer do Jhony 23/11: sem sublinhado (só no hover/foco) */
+[data-bl-root] .at-pl .at-link.at-pl-cartao__abrir:hover, [data-bl-root] .at-pl .at-link.at-pl-cartao__abrir:focus-visible { text-decoration: underline; }
 
 /* ── estados ────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
 @keyframes at-pl-pulso { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
