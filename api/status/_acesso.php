@@ -6,9 +6,8 @@ declare(strict_types=1);
 // Chamado pelo _init.php, que TODO handler inclui ANTES do cache (RedisHelper::serveIfCached) e de qualquer consulta — então nem o
 // cache quente entrega detalhe a quem não pode ver.
 //   · sem sessão válida            → só disponibilidade mínima: {status:'unknown', estado:'desconhecido', disponivel, requer:'login'}
-//   · endpoint do grupo SISTEMA     → exige nível ≥ 80, papel admin/super_admin ou a permissão system.access (a mesma regra do
-//                                     SessionGate::hasPermission do Dash); sem isso → mínimo com requer:'permissao'
-//   · demais endpoints              → qualquer sessão válida
+//   · com sessão válida             → EXATAMENTE o que vê hoje (decisão de 23/11: só o acesso SEM sessão muda)
+//   · restrição por permissão       → PREPARADA e DESLIGADA (GRUPO_SISTEMA vazio): ligar é decisão do Jhony (Q-STATUS.1)
 // A sessão é lida com SessionGate::readOnly() (não emite cookie nem inicia sessão). Nenhum detalhe, erro interno ou texto de API sai
 // no mínimo. A política está numa constante só; a escolha dos grupos é DECISÃO registrada (Q-STATUS.1).
 // ═══════════════════════════════════════════════════════════════
@@ -17,9 +16,12 @@ require_once __DIR__ . '/../core/SessionGate.php';
 
 final class StatusAcesso
 {
-    /** Métricas de infraestrutura e números do negócio: só com permissão de sistema. */
-    public const GRUPO_SISTEMA = ['activity', 'cloud', 'cpu', 'database', 'disk', 'files', 'financial', 'logs', 'memory', 'metrics',
-        'monitor', 'network', 'performance', 'security', 'server', 'storage', 'web'];
+    /**
+     * Endpoints que exigiriam permissão de sistema além da sessão. VAZIO por decisão (23/11): quem tem sessão vê o que vê hoje.
+     * Proposta para quando o Jhony decidir (Q-STATUS.1): activity, cloud, cpu, database, disk, files, financial, logs, memory, metrics,
+     * monitor, network, performance, security, server, storage, web.
+     */
+    public const GRUPO_SISTEMA = [];
     public const NIVEL_SISTEMA = 80;
 
     /** Sessão válida (usuário + não expirada) ou null. */

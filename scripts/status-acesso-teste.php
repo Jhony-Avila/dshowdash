@@ -7,8 +7,8 @@ declare(strict_types=1);
 // Roda CADA handler REAL de api/status como processo PHP próprio, numa cópia em /srv/dshow-work (nunca /tmp), trocando SÓ as
 // dependências externas por dublês: CorsPolicy (sem efeito), RedisHelper (arquivo — para o cache QUENTE), SessionGate::readOnly (a
 // sessão do cenário) e getConnection (a base de validação). O cache é SEMEADO, para cada handler, na(s) chave(s) que ele usa, com um
-// marcador "DETALHE-SECRETO". Prova: anônimo (frio e quente), sessão vencida e usuário SEM permissão nos endpoints de sistema NÃO
-// recebem detalhe; o autorizado passa pelo portão e recebe o estado real (Pipedrive lido da base).
+// marcador "DETALHE-SECRETO". Prova: anônimo e sessão vencida (frio e quente) NÃO recebem detalhe; QUALQUER sessão válida — inclusive
+// nível baixo, sem permissão especial — passa pelo portão e vê o que vê hoje (decisão de 23/11); o estado real chega (Pipedrive da base).
 // SEGURANÇA: só em ^ATRWEB_VAL_T_[0-9]+$; tabelas mínimas criadas e removidas pelo teste; a cópia é removida no fim.
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 $raiz = dirname(__DIR__);
@@ -93,11 +93,10 @@ PHPR);
     $CENARIOS = [
         'anônimo'               => null,
         'sessão vencida'        => ['user_id' => 7, 'level' => 100, 'roles' => ['admin'], 'expires_at' => $agora - 10],
-        'sem permissão (nível 10)' => ['user_id' => 8, 'level' => 10, 'roles' => ['vendedor'], 'expires_at' => $agora + 3600],
+        'sessão comum (nível 10)' => ['user_id' => 8, 'level' => 10, 'roles' => ['vendedor'], 'expires_at' => $agora + 3600],
         'autorizado (nível 100)'   => ['user_id' => 9, 'level' => 100, 'roles' => ['admin'], 'expires_at' => $agora + 3600],
     ];
-    $sistema = ['activity', 'cloud', 'cpu', 'database', 'disk', 'files', 'financial', 'logs', 'memory', 'metrics', 'monitor', 'network',
-                'performance', 'security', 'server', 'storage', 'web'];
+    $sistema = [];   // restrição por permissão DESLIGADA (decisão de 23/11)
     foreach (['FRIO' => false, 'QUENTE' => true] as $rot => $quente) {
         echo "== cache $rot\n";
         foreach ($CENARIOS as $nome => $s) {
@@ -106,18 +105,13 @@ PHPR);
                 if ($quente) { $semear(); } else { @unlink($redis); }
                 [$o, $j] = $roda($h, $s);
                 if (str_contains($o, 'DETALHE-SECRETO')) { $vaz[] = $h; }
-                $esperaBloqueio = $s === null || $nome === 'sessão vencida' ? 'login' : (($nome === 'sem permissão (nível 10)' && in_array($h, $sistema, true)) ? 'permissao' : null);
+                $esperaBloqueio = $s === null || $nome === 'sessão vencida' ? 'login' : null;
                 if ($esperaBloqueio !== null) { if (!$minimo($j, $esperaBloqueio)) { $bloqueio[] = $h; } }
                 elseif (isset($j['data']['requer'])) { $passou[] = $h; }
             }
-            if ($nome === 'autorizado (nível 100)') {
-                ok("$rot · $nome: TODOS os 42 passam pelo portão", $passou === [] && $bloqueio === [], implode(',', $passou));
-                if ($quente) { ok("$rot · $nome: recebe o detalhe (cache quente servido a quem pode)", count($vaz) > 0, count($vaz) . ' handlers'); }
-            } elseif ($nome === 'sem permissão (nível 10)') {
-                ok("$rot · $nome: os 17 de SISTEMA respondem só o mínimo", $bloqueio === [], implode(',', $bloqueio));
-                $vazSistema = array_values(array_intersect($vaz, $sistema));
-                ok("$rot · $nome: NENHUM detalhe de sistema vaza", $vazSistema === [], implode(',', $vazSistema));
-                ok("$rot · $nome: os outros 25 seguem funcionando (sessão basta)", $passou === [], implode(',', $passou));
+            if ($nome === 'autorizado (nível 100)' || $nome === 'sessão comum (nível 10)') {
+                ok("$rot · $nome: TODOS os 42 passam pelo portão (vê o que vê hoje)", $passou === [] && $bloqueio === [], implode(',', $passou));
+                if ($quente) { ok("$rot · $nome: o cache quente segue servido a quem tem sessão", count($vaz) > 0, count($vaz) . ' handlers'); }
             } else {
                 ok("$rot · $nome: os 42 respondem só o mínimo", $bloqueio === [], implode(',', $bloqueio));
                 ok("$rot · $nome: NENHUM detalhe vaza", $vaz === [], implode(',', $vaz));
