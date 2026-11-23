@@ -2331,3 +2331,5 @@ dist/
 !/db/equipamentos/**
 !/scripts/sessao/
 !/scripts/sessao/**
+# DSHOW-110 (23/11): config dos bundles Lote 3B+C (inclui header-components) recuperada de /backup/telemetry-sem-token-20260916/ — ROOT padrão = produção: SEMPRE via scripts/build/build-bundle-seguro.sh
+!/public/vite.lote3bc.config.js
