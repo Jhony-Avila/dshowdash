@@ -15,6 +15,7 @@ require_once __DIR__ . '/CookieParamsFactory.php';
 require_once __DIR__ . '/SessionRecovery.php';
 require_once __DIR__ . '/storage/FileSessionStorage.php';
 require_once __DIR__ . '/traits/LoggerTrait.php';
+require_once __DIR__ . '/SessaoRegistro.php';   // DSHOW-110: registro obrigatório em app_user_sessions
 
 class SessionGate {
     
@@ -120,6 +121,11 @@ class SessionGate {
                 return [];
             }
             
+            // DSHOW-110: leitura (inclusive a RECUPERADA do backup) só vale com registro ativo, do mesmo titular, mesmo id e vigente.
+            if (!empty($result['user_id']) && SessaoRegistro::situacao($sessionId, (int) $result['user_id']) !== SessaoRegistro::OK) {
+                return [];
+            }
+            
             self::$_readOnlyCache[$sessionId] = $result;
             return $result;
             
@@ -212,10 +218,27 @@ class SessionGate {
             }
         }
         
+        // DSHOW-110: sessão do PHP válida + registro existente, ativo, do mesmo titular, com o mesmo id e dentro da validade.
+        // Falha de consulta NÃO autoriza (nega sem destruir); sem registro, revogada, expirada ou de outro titular → encerra (novo login).
+        $situacao = SessaoRegistro::situacao(session_id(), (int) $_SESSION['user_id']);
+        if ($situacao !== SessaoRegistro::OK) {
+            self::logSecurity('SessionGate', 'session_registro_' . $situacao, [
+                'user_id' => $_SESSION['user_id'] ?? null,
+                'request_id' => self::getRequestId()
+            ]);
+            if ($situacao !== SessaoRegistro::FALHA) {
+                self::destroy();
+            }
+            return null;
+        }
+        
         if (isset($_SESSION['last_activity'])) {
             $idleTime = time() - $_SESSION['last_activity'];
             if ($idleTime > self::SESSION_REFRESH_THRESHOLD) {
                 self::refresh();
+                if (empty($_SESSION['user_id'])) {
+                    return null;   // a troca de id não foi registrada → a sessão foi encerrada
+                }
             }
         }
         
@@ -335,6 +358,11 @@ class SessionGate {
         $userId = $_SESSION['user_id'] ?? null;
         $sessionId = session_id();
         
+        // DSHOW-110: sessão encerrada no servidor = registro inativo também (a recuperação do backup não a revive: readOnly confere o registro)
+        if ($userId && !empty($sessionId)) {
+            SessaoRegistro::encerrar($sessionId, (int) $userId, 'sessao_encerrada');
+        }
+        
         // Criar backup antes de destruir (para recovery se necessário)
         if (self::ENABLE_AUTO_RECOVERY && !empty($sessionId)) {
             SessionRecovery::createBackup($sessionId);
@@ -386,62 +414,25 @@ class SessionGate {
     
     public static function refresh(): void {
         self::start();
-
+        
         $sessionData = $_SESSION;
         $tokenAntigo = session_id();
-
+        
         session_regenerate_id(true);
-
+        
         $_SESSION = $sessionData;
         $_SESSION['last_activity'] = time();
         $_SESSION['expires_at'] = time() + self::SESSION_LIFETIME;
-
-        // A linha de app_user_sessions acompanha o id novo (senão o proxy das fotos recusa com SESSION_REVOKED
-        // e a revogação pela tela de Sessões deixa de alcançar esta sessão). Só linha ATIVA: sessão revogada continua revogada.
-        self::acompanharTokenNoBanco($tokenAntigo, session_id(), (int) ($sessionData['user_id'] ?? 0));
-
+        
         self::$_sessionCache = null;
         self::$_readOnlyCache = [];
-    }
-
-    /** @var null|callable(): PDO  fornecedor da conexão DSHOWDASH (testes injetam; null = getConnection('DSHOWDASH')) */
-    private static $_pdoSessoes = null;
-
-    public static function definirConexaoSessoes(?callable $fornecedor): void {
-        self::$_pdoSessoes = $fornecedor;
-    }
-
-    /** Troca session_token antigo → novo na linha ATIVA do mesmo usuário. Nunca lança: falha vira log de segurança. */
-    private static function acompanharTokenNoBanco(string $antigo, string $novo, int $userId): void {
-        if ($antigo === '' || $novo === '' || $antigo === $novo || $userId <= 0) {
-            return;
-        }
-        try {
-            if (self::$_pdoSessoes !== null) {
-                $pdo = (self::$_pdoSessoes)();
-            } else {
-                if (!function_exists('getConnection')) {
-                    $arquivo = __DIR__ . '/../../config/db_connection.php';
-                    if (!is_file($arquivo)) {
-                        throw new \RuntimeException('config/db_connection.php ausente');
-                    }
-                    require_once $arquivo;
-                }
-                $pdo = getConnection('DSHOWDASH');
-            }
-            $st = $pdo->prepare('UPDATE app_user_sessions SET session_token = ?, last_activity_at = NOW(3) WHERE session_token = ? AND user_id = ? AND is_active = 1');
-            $st->execute([$novo, $antigo, $userId]);
-            self::logInfo('SessionGate', 'session_token_rotated', [
-                'user_id' => $userId,
-                'linhas' => $st->rowCount(),
-                'request_id' => self::getRequestId()
-            ]);
-        } catch (\Throwable $e) {
-            self::logSecurity('SessionGate', 'session_token_rotation_failed', [
-                'user_id' => $userId,
-                'erro' => substr($e->getMessage(), 0, 200),
-                'request_id' => self::getRequestId()
-            ]);
+        
+        // DSHOW-110: o MESMO registro troca de id (titular + id anterior, ativo e vigente; exatamente 1 linha). Revogada, expirada, já trocada
+        // por outra renovação ou falha de gravação → a sessão renovada NÃO fica válida sem registro: encerra.
+        $userId = (int) ($sessionData['user_id'] ?? 0);
+        if ($userId > 0 && !SessaoRegistro::trocar($tokenAntigo, session_id(), $userId)) {
+            self::logSecurity('SessionGate', 'session_refresh_sem_registro', ['user_id' => $userId, 'request_id' => self::getRequestId()]);
+            self::destroy();
         }
     }
     

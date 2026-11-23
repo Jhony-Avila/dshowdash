@@ -167,17 +167,6 @@ class AuthRepository
         return $stmt->execute([$userId, $token]);
     }
 
-    /** Renovação: a linha ATIVA troca o token antigo pelo novo (session_regenerate_id) e recebe o csrf/validade novos. */
-    public function rotateSessionToken(string $oldToken, string $newToken, int $userId, string $newCsrf, int $expiresAt): bool
-    {
-        $stmt = $this->pdo->prepare("
-            UPDATE app_user_sessions
-            SET session_token = ?, csrf_token = ?, last_activity_at = NOW(3), expires_at = FROM_UNIXTIME(?)
-            WHERE session_token = ? AND user_id = ? AND is_active = 1
-        ");
-        return $stmt->execute([$newToken, $newCsrf, $expiresAt, $oldToken, $userId]);
-    }
-
     public function refreshSessionActivity(string $token, int $userId, string $newCsrf, int $expiresAt): bool
     {
         $stmt = $this->pdo->prepare("

@@ -81,7 +81,8 @@ function logout(options) {
   _metrics.logouts++;
   const wasAuthenticated = sessionStore.isAuthenticated();
   const sessionId = sessionStore.getSessionId();
-  return SessionAPIClient.logout(options).then(() => {
+  return SessionAPIClient.logout(options).then((r) => {
+    if (!r || !r.ok) return { ok: false, error: r && r.error || "logout n\xE3o confirmado" };
     sessionStore.clear();
     TokenManager.clearAll();
     clearInvalidSessionCookie();

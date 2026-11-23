@@ -14,6 +14,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../repositories/AuthRepository.php';
 require_once __DIR__ . '/../../core/AccessLevels.php';
 require_once __DIR__ . '/../../core/SessionGate.php';
+require_once __DIR__ . '/../../core/SessaoRegistro.php';
 
 class AuthService
 {
@@ -77,6 +78,11 @@ class AuthService
 
         $rolesData = $this->loadRolesAndPermissions($userId, $user['username'], $ip);
         $sessionData = $this->createUserSession($user, $rolesData, $ip, $deviceInfo);
+        if ($sessionData === null) {
+            // DSHOW-110: o login NÃO concede sessão se não conseguiu gravar o registro em app_user_sessions
+            $this->logEvent($userId, 'login_sem_registro', $ip, ['request_id' => $requestId]);
+            return ['success' => false, 'error' => 'SESSION_NOT_PERSISTED', 'code' => 503, 'message' => 'Não foi possível iniciar a sessão agora. Tente de novo em instantes.'];
+        }
 
         return [
             'success' => true,
@@ -98,9 +104,12 @@ class AuthService
             $user = $this->repository->findUserById($userId);
             $username = $user['username'] ?? 'unknown';
 
-            $this->repository->deleteSession($sessionToken, $userId);
-
             SessionGate::start();
+            // DSHOW-110: o registro fica INATIVO (antes: DELETE). O token é o id da sessão em curso (o cookie pode estar velho).
+            $tokenAtual = session_id() !== '' ? session_id() : $sessionToken;
+            if (!SessaoRegistro::encerrar($tokenAtual, $userId, 'logout')) {
+                $this->logEvent($userId, 'logout_registro_nao_gravado', $ip, ['request_id' => $requestId]);
+            }
             $_SESSION = [];
 
             if (ini_get("session.use_cookies")) {
@@ -191,6 +200,18 @@ class AuthService
 
             SessionGate::start();
 
+            // DSHOW-110: só renova sessão com registro ativo, do mesmo titular e vigente (refresh atrasado não reativa nada)
+            $tokenAntigo = session_id() !== '' ? session_id() : $sessionToken;
+            $situacao = SessaoRegistro::situacao($tokenAntigo, $userId);
+            if ($situacao !== SessaoRegistro::OK) {
+                if ($situacao !== SessaoRegistro::FALHA) {
+                    SessionGate::destroy();
+                }
+                $this->logEvent($userId, 'session_refresh_sem_registro', $ip, ['situacao' => $situacao, 'request_id' => $requestId]);
+                return ['success' => false, 'error' => $situacao === SessaoRegistro::FALHA ? 'SESSION_CHECK_UNAVAILABLE' : 'SESSION_REVOKED',
+                        'code' => $situacao === SessaoRegistro::FALHA ? 503 : 401, 'message' => 'Sua sessão foi encerrada. Entre de novo.'];
+            }
+
             // #7: Usar método de rotação do SessionGate
             $newCsrf = SessionGate::rotateCsrfToken();
             $_SESSION['last_activity'] = time();
@@ -198,14 +219,14 @@ class AuthService
             $expiresAt = time() + 604800;
             $_SESSION['expire_time'] = $expiresAt;
 
-            // Regenera ANTES de gravar e troca o token da linha (antigo → novo); antes gravava o antigo e regenerava depois,
-            // deixando app_user_sessions com um id que não existe mais (proxy das fotos 401; revogação sem efeito).
-            $tokenAntigo = session_id() !== '' ? session_id() : $sessionToken;
+            // DSHOW-110: regenera e troca o id no MESMO registro (exatamente 1 linha); sem isso a sessão renovada não fica válida
             session_regenerate_id(true);
             $newSessionToken = session_id();
-
-            // #21: Persistir com retry
-            $this->persistSessionWithRetry($tokenAntigo, $newSessionToken, $userId, $newCsrf, $expiresAt);
+            if (!SessaoRegistro::trocar($tokenAntigo, $newSessionToken, $userId, $newCsrf, $expiresAt)) {
+                SessionGate::destroy();
+                $this->logEvent($userId, 'session_refresh_troca_falhou', $ip, ['request_id' => $requestId]);
+                return ['success' => false, 'error' => 'SESSION_REVOKED', 'code' => 401, 'message' => 'Sua sessão foi encerrada. Entre de novo.'];
+            }
 
             $this->logEvent($userId, 'session_refresh', $ip, [
                 'username' => $username,
@@ -247,13 +268,13 @@ class AuthService
     // #21: RETRY COM BACKOFF
     // ════════════════════════════════════════════════════════════
 
-    private function persistSessionWithRetry(string $token, string $newToken, int $userId, string $csrf, int $expiresAt): bool
+    private function persistSessionWithRetry(string $token, int $userId, string $csrf, int $expiresAt): bool
     {
         $lastException = null;
-
+        
         for ($attempt = 1; $attempt <= self::MAX_RETRY_ATTEMPTS; $attempt++) {
             try {
-                $result = $this->repository->rotateSessionToken($token, $newToken, $userId, $csrf, $expiresAt);
+                $result = $this->repository->refreshSessionActivity($token, $userId, $csrf, $expiresAt);
                 
                 if ($result) {
                     if ($attempt > 1) {
@@ -384,7 +405,7 @@ class AuthService
         return $scopes;
     }
 
-    private function createUserSession(array $user, array $rolesData, string $ip, array $deviceInfo): array
+    private function createUserSession(array $user, array $rolesData, string $ip, array $deviceInfo): ?array
     {
         $userId = (int)$user['id'];
         $capabilities = array_map(fn($p) => str_replace('.', ':', $p), $rolesData['permissions']);
@@ -429,8 +450,11 @@ class AuthService
         $_SESSION['last_regen'] = $now;
         $_SESSION['last_activity'] = $now;
 
-        // #21: Persistir com retry
-        $this->persistSessionSafe($sessionToken, $userId, $csrfToken, $deviceInfo, $ip, $expiresAt);
+        // #21: Persistir com retry — DSHOW-110: sem registro gravado, a sessão do PHP é encerrada e o login falha
+        if (!$this->persistSessionSafe($sessionToken, $userId, $csrfToken, $deviceInfo, $ip, $expiresAt)) {
+            SessionGate::destroy();
+            return null;
+        }
 
         $finalUserData = SessionGate::getUser();
         session_write_close();
@@ -450,7 +474,7 @@ class AuthService
     }
 
     // #21: Wrapper com retry para persistSession
-    private function persistSessionSafe(string $token, int $userId, string $csrf, array $device, string $ip, int $expiresAt): void
+    private function persistSessionSafe(string $token, int $userId, string $csrf, array $device, string $ip, int $expiresAt): bool
     {
         $lastException = null;
         
@@ -464,7 +488,7 @@ class AuthService
                     $this->repository->createSession($token, $userId, $csrf, $device, $ip, $expiresAt);
                 }
                 
-                return; // Sucesso
+                return true; // Sucesso
                 
             } catch (\Exception $e) {
                 $lastException = $e;
@@ -477,8 +501,9 @@ class AuthService
             }
         }
         
-        // Log mas não quebra o login
-        error_log("Session persist failed after " . self::MAX_RETRY_ATTEMPTS . " attempts - continuing without DB session");
+        // DSHOW-110: sem registro, NÃO há sessão (antes: "continuing without DB session")
+        error_log("Session persist failed after " . self::MAX_RETRY_ATTEMPTS . " attempts - login refused (no DB session)");
+        return false;
     }
 
     // ════════════════════════════════════════════════════════════
