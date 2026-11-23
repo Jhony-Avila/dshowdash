@@ -23,6 +23,10 @@ export interface Navegar {
   faixaFixa: HTMLElement | null; /** o elemento que rola a página (detectado no 1º scroll) */ rolador: Element | null;
   /** "foi salvo ou não" (item 4): anuncia na região role="status" (aria-live polite), sem mover o foco. Ex.: "Produto 550, Comprimento salvo". */
   anunciar: (texto: string) => void;
+  /** UX-1c (c): memória da lista de Produtos (busca, filtros, modo Tabela, página e posição) para voltar da Ficha como estava.
+   *  `filtroDe` = o filtroInicial em que a memória nasceu: um filtro NOVO (ex.: clique na Visão geral) vence a memória. */
+  memoriaProdutos: { current: MemoriaProdutos | null };
 }
+export interface MemoriaProdutos { f: Record<string, unknown>; pagina: number; rolagem: number; filtroDe: FiltroProdutos }
 export const Contexto = React.createContext<Navegar | null>(null);
 export function useModulo(): Navegar { const c = React.useContext(Contexto); if (!c) throw new Error('fora do módulo'); return c; }

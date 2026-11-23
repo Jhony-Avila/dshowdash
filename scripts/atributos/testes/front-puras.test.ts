@@ -66,7 +66,13 @@ igual('rota base → produtos', lerRota('#/panel-atributos'), { aba: 'produtos',
 igual('rota visão geral', lerRota('#/panel-atributos/visao-geral'), { aba: 'visao', produto: null, kit: null });
 igual('rota kits', lerRota('#/panel-atributos/kits'), { aba: 'kits', produto: null, kit: null });
 igual('rota kit aberto', lerRota('#/panel-atributos/kits/42'), { aba: 'kits', produto: null, kit: 42 });
-igual('rota ficha 154', lerRota('#/panel-atributos/produto/154'), { aba: 'produtos', produto: 154, kit: null });
+igual('rota ficha 154', lerRota('#/panel-atributos/produto/154'), { aba: 'produtos', produto: 154, kit: null, atributo: null });
+// UX-1c: ?atributo fica no endereço da ficha (Voltar/Avançar reabrem no atributo)
+igual('rota ficha com ?atributo', lerRota('#/panel-atributos/produto/154?atributo=27'), { aba: 'produtos', produto: 154, kit: null, atributo: 27 });
+igual('rotaDe ficha com atributo', rotaDe({ aba: 'produtos', produto: 154, kit: null, atributo: 27 }), '#/panel-atributos/produto/154?atributo=27');
+igual('ida e volta ficha+atributo', rotaDe(lerRota('#/panel-atributos/produto/154?atributo=27')!), '#/panel-atributos/produto/154?atributo=27');
+igual('?atributo inválido é ignorado', lerRota('#/panel-atributos/produto/154?atributo=x1'), { aba: 'produtos', produto: 154, kit: null, atributo: null });
+igual('atributo sem ficha não entra no endereço', rotaDe({ aba: 'produtos', produto: null, kit: null, atributo: 27 }), '#/panel-atributos');
 igual('rota com barra no fim', lerRota('#/panel-atributos/conferencia/'), { aba: 'conferencia', produto: null, kit: null });
 igual('rota de outro painel → null', lerRota('#/panel-bling/kits'), null);
 igual('rota prefixo parecido → null', lerRota('#/panel-atributosX'), null);

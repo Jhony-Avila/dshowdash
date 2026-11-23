@@ -17,10 +17,15 @@ export function Produtos() {
   const [dados, setDados] = React.useState<Vitrine | null>(null);
   const [erro, setErro] = React.useState<string | null>(null);
   // UX-1: filtros da Visão geral (categoria, "Sem subcategoria" = '__sem__' ≠ Todas, essencial incompleto, ordem) → o número do cartão = o total da lista
-  const [f, setF] = React.useState({ busca: m.filtroInicial.busca ?? '', categoria: m.filtroInicial.categoria ?? '', subcategoria: m.filtroInicial.semSubcategoria ? SEM_SUB : (m.filtroInicial.subcategoria ?? ''), kit: m.filtroInicial.kit ?? '', situacao: 'ativos',
+  const inicialF = { busca: m.filtroInicial.busca ?? '', categoria: m.filtroInicial.categoria ?? '', subcategoria: m.filtroInicial.semSubcategoria ? SEM_SUB : (m.filtroInicial.subcategoria ?? ''), kit: m.filtroInicial.kit ?? '', situacao: 'ativos',
     semFoto: !!m.filtroInicial.semFoto, semKit: !!m.filtroInicial.semKit, obrigatorios: !!m.filtroInicial.obrigatoriosVazios, fora: !!m.filtroInicial.foraDaFicha,
-    precifica: !!m.filtroInicial.comPrecifica, essencial: !!m.filtroInicial.essencialIncompleto, ordem: (m.filtroInicial.ordem ?? 'nome') as Ordem, modo: 'grade' as 'grade' | 'tabela' });
-  const [pagina, setPagina] = React.useState(0);
+    precifica: !!m.filtroInicial.comPrecifica, essencial: !!m.filtroInicial.essencialIncompleto, ordem: (m.filtroInicial.ordem ?? 'nome') as Ordem, modo: 'grade' as 'grade' | 'tabela' };
+  // UX-1c (c): ao voltar da Ficha, a lista volta como estava (busca, filtros, modo Tabela, página e posição). Um filtro NOVO vence a memória.
+  const mem = m.memoriaProdutos.current && JSON.stringify(m.memoriaProdutos.current.filtroDe) === JSON.stringify(m.filtroInicial) ? m.memoriaProdutos.current : null;   // pelo CONTEÚDO (o painel remontado cria outro objeto)
+  const [f, setF] = React.useState<typeof inicialF>(() => (mem ? { ...inicialF, ...(mem.f as Partial<typeof inicialF>) } : inicialF));
+  const [pagina, setPagina] = React.useState(mem?.pagina ?? 0);
+  const primeiraVez = React.useRef(true);
+  const rolagemPendente = React.useRef(mem?.rolagem ?? 0);
   const sel = React.useMemo(() => new Set(m.selecao), [m.selecao]);
 
   const carregar = React.useCallback(() => {
@@ -28,7 +33,13 @@ export function Produtos() {
     obter<Vitrine>('vitrine').then(setDados).catch((e) => setErro(e.message));
   }, []);
   React.useEffect(carregar, [carregar, m.versao]);
-  React.useEffect(() => setPagina(0), [f]);
+  React.useEffect(() => { if (primeiraVez.current) { primeiraVez.current = false; return; } setPagina(0); }, [f]);   // mudar filtro volta à 1ª página (não na restauração)
+  React.useEffect(() => { m.memoriaProdutos.current = { f, pagina, rolagem: m.memoriaProdutos.current?.rolagem ?? 0, filtroDe: m.filtroInicial }; }, [f, pagina]);   // eslint-disable-line react-hooks/exhaustive-deps
+  React.useEffect(() => {   // posição da página: depois que a lista existe
+    if (!dados || !rolagemPendente.current) return; const y = rolagemPendente.current; rolagemPendente.current = 0;
+    const ir = () => { document.querySelector('main#main')?.scrollTo({ top: y }); document.scrollingElement?.scrollTo({ top: y }); };
+    requestAnimationFrame(() => { ir(); window.setTimeout(ir, 120); });   // 2ª vez: depois que imagens/cabeçalho travado assentam
+  }, [dados]);
 
   const lista = React.useMemo(() => {
     if (!dados) return [];
@@ -60,7 +71,8 @@ export function Produtos() {
   const chip = (k: Chave, rot: string, dica?: string) => (
     <button type="button" className={`at-filtro ${f[k] ? 'at-filtro--ativo' : ''}`} aria-pressed={f[k]} title={dica} onClick={() => setF({ ...f, [k]: !f[k] })}>{rot}</button>);
   // UX-1: filtros além da busca (a busca sozinha sem resultado não oferece "todo o catálogo": já é a busca em tudo o que está visível)
-  const filtrosAlemDaBusca = !!(f.categoria || f.subcategoria || f.kit || f.semFoto || f.semKit || f.obrigatorios || f.fora || f.precifica || f.essencial || f.situacao !== 'ativos');
+  // UX-1c (b): "Buscar em todo o catálogo" só quando há o que tirar (algum filtro, ou a Situação não é "todos")
+  const restricao = !!(f.categoria || f.subcategoria || f.kit || f.semFoto || f.semKit || f.obrigatorios || f.fora || f.precifica || f.essencial || f.situacao !== 'todos');
   const buscarEmTudo = () => setF({ ...f, categoria: '', subcategoria: '', kit: '', situacao: 'todos', semFoto: false, semKit: false, obrigatorios: false, fora: false, precifica: false, essencial: false });
   const algumFiltro = f.busca || f.categoria || f.subcategoria || f.kit || f.semFoto || f.semKit || f.obrigatorios || f.fora || f.precifica || f.essencial || f.situacao !== 'ativos';
   const especificos = (p: ProdutoResumo) => p.kits.filter((k) => !k.motivos.includes('todos'));
@@ -107,13 +119,13 @@ export function Produtos() {
       </div>
       </CabecalhoTravado>
 
-      {lista.length === 0 ? (filtrosAlemDaBusca
+      {lista.length === 0 ? (restricao
           ? <Vazio titulo="Nenhum produto encontrado com estes filtros.">
               {f.busca.trim()
                 ? <><Botao primario aoClicar={buscarEmTudo}>{`Buscar ‘${f.busca.trim()}’ em todo o catálogo`}</Botao><span className="at-fraco"> inclui produtos inativos; tira os outros filtros e mantém o termo</span></>
                 : 'Ajuste ou limpe os filtros.'}
             </Vazio>
-          : <Vazio titulo="Nenhum produto encontrado">{f.situacao === 'todos' ? 'Nenhum produto, ativo ou inativo, tem este nome ou código.' : 'Ajuste a busca.'}</Vazio>)
+          : <Vazio titulo="Nenhum produto ativo ou inativo encontrado" acao={f.busca ? <Botao aoClicar={() => setF({ ...f, busca: '' })}>Limpar busca</Botao> : undefined}>Nenhum produto, ativo ou inativo, tem este nome ou código.</Vazio>)
         : f.modo === 'grade' ? (
           <div className="at-grade">
             {vis.map((p, k) => (<React.Fragment key={p.id}>

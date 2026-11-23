@@ -766,3 +766,6 @@ html[data-theme="dark"] body [data-bl-root] .pv2-corpo__fixo > .pv2-linha--fixa:
 [data-bl-root] .pv2-mais { position: absolute; right: 0; top: 0; z-index: 2; height: 56px; width: 48px; border: 0; border-radius: 0 10px 0 0; cursor: pointer;
   background: linear-gradient(to right, transparent, var(--bl-superficie-2) 55%); color: var(--bl-info); font-size: 24px; font-weight: 500; }
 [data-bl-root] .pv2-mais:focus-visible { outline: 2px solid var(--bl-info); outline-offset: -2px; }
+/* UX-1c (d): ajuda de teclado do Preencher */
+[data-bl-root] .at-preencher__teclado { margin: 0 0 8px; font-size: 12px; }
+[data-bl-root] .at-preencher__teclado strong { font-weight: 500; }

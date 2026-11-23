@@ -1,7 +1,7 @@
 // panel-atributos/src/app/App.tsx — casca do módulo: navegação (Visão geral · Produtos · Vincular · Preencher · Kits · Atributos · Unidades ·
 // Conferência), ficha do produto por cima da aba atual, avisos. Cada tela carrega os próprios dados (estados carregando/vazio/erro).
 import React from 'react';
-import { ABAS, Aba, Contexto, FiltroProdutos, Navegar } from './contexto';
+import { ABAS, Aba, Contexto, FiltroProdutos, Navegar, type MemoriaProdutos } from './contexto';
 import { lerRota, rotaDe } from '../lib/rota';
 import { VisaoGeral } from '../screens/VisaoGeral';
 import { Produtos } from '../screens/Produtos';
@@ -23,6 +23,9 @@ export const TELAS: Record<Aba, { titulo: string }> = {
 };
 
 
+/** UX-1c (c): memória da lista de Produtos no nível do módulo (o shell remonta o painel em eventos de endereço; um useRef se perderia). */
+const MEMORIA_PRODUTOS: { current: MemoriaProdutos | null } = { current: null };
+
 export function App({ rotaInicial }: { rotaInicial?: string } = {}) {
   // Endereço próprio por tela (18/11): o estado inicial vem do hash (#/panel-atributos/<tela> · /produto/<id> · /kits/<id>)
   // tela inicial: a rota que o menu lateral mandou (config.route) > o endereço atual > Produtos
@@ -34,6 +37,11 @@ export function App({ rotaInicial }: { rotaInicial?: string } = {}) {
   const [intencaoVincular, setIntencaoVincular] = React.useState<'kit' | 'atributo' | null>(null);
   // UX-1: atributo a focar na ficha — de m.abrirProduto(id, { atributo }) ou do endereço #/panel-atributos/produto/<id>?atributo=<id>
   const [atributoFoco, setAtributoFoco] = React.useState<number | null>(() => { const m = /[?&]atributo=([1-9][0-9]{0,9})\b/.exec(window.location.hash); return m ? Number(m[1]) : null; });
+  // UX-1c (a): o atributo FICA no endereço da ficha (#/panel-atributos/produto/<id>?atributo=<id>); Voltar/Avançar reabrem nele
+  const [atributoRota, setAtributoRota] = React.useState<number | null>(() => inicial.atributo ?? null);
+  // UX-1c (c): memória da lista de Produtos + posição da página ao abrir a ficha
+  const memoriaProdutos = MEMORIA_PRODUTOS;   // nível do MÓDULO: sobrevive à remontagem do painel pelo shell no Voltar/Avançar (medido)
+  const posicaoPagina = () => Math.round((document.scrollingElement?.scrollTop ?? 0) + (document.querySelector('main#main')?.scrollTop ?? 0));
   const [selecao, setSelecao] = React.useState<number[]>([]);
   const [preencher, setPreencher] = React.useState<{ kit?: number; subcategoria?: string }>({});
   const [avisos, setAvisos] = React.useState<{ id: number; texto: string; tom: string }[]>([]);
@@ -77,21 +85,21 @@ export function App({ rotaInicial }: { rotaInicial?: string } = {}) {
   // (#/panel-atributos → #/panel-atributos/produtos) usa replaceState. pushState não dispara evento: nem o shell nem este painel
   // reagem ao próprio registro. O shell trata Voltar/Avançar dentro do MESMO painel sem remontar (guarda do mesmo painel).
   React.useEffect(() => {
-    const alvo = rotaDe({ aba, produto, kit });
+    const alvo = rotaDe({ aba, produto, kit, atributo: atributoRota });
     if (window.location.hash === alvo) return;
     const atual = lerRota(window.location.hash);
     const url = window.location.pathname + window.location.search + alvo;
-    if (atual && atual.aba === aba && atual.produto === produto && atual.kit === kit) window.history.replaceState(window.history.state, '', url);
+    if (atual && atual.aba === aba && atual.produto === produto && atual.kit === kit && (atual.atributo ?? null) === atributoRota) window.history.replaceState(window.history.state, '', url);
     // SEMPRE pushState (sem evento). Medido: qualquer evento de endereço (location.hash → hashchange/popstate) faz o shell REMONTAR o
     // painel e o estado se perde (filtro vindo da Visão geral, seleção de produtos). Efeito aceito: trocar de aba DENTRO do módulo não
     // muda o destaque do menu lateral (o clique no menu continua destacando o item).
     else window.history.pushState(window.history.state, '', url);
-  }, [aba, produto, kit]);
+  }, [aba, produto, kit, atributoRota]);
   // endereço → estado: Voltar/Avançar (popstate), link colado ou hash editado (hashchange)
   React.useEffect(() => {
     const aoMudar = () => {
       const r = lerRota(window.location.hash); if (!r) return;
-      setAba(r.aba); setProduto(r.produto); setKit(r.kit);
+      setAba(r.aba); setProduto(r.produto); setKit(r.kit); setAtributoRota(r.atributo ?? null); if (r.atributo) setAtributoFoco(r.atributo);
     };
     window.addEventListener('hashchange', aoMudar);
     window.addEventListener('popstate', aoMudar);
@@ -102,17 +110,19 @@ export function App({ rotaInicial }: { rotaInicial?: string } = {}) {
     aba, produto, kit, filtroInicial: filtro, selecao, setSelecao, preencher, versao,
     recarregar: () => setVersao((v) => v + 1),
     ir: (a, o = {}) => {
-      setAba(a); setProduto(o.produto ?? null); setKit(o.kit ?? null);   // clicar na aba volta à lista (sem kit aberto)
+      memoriaProdutos.current = null;   // UX-1c (c): a memória vale só para a VOLTA da ficha; clicar numa aba começa a lista de novo
+      setAba(a); setProduto(o.produto ?? null); setKit(o.kit ?? null); setAtributoRota(null);   // clicar na aba volta à lista (sem kit aberto)
       if (o.filtro) setFiltro(o.filtro); if (o.selecao) setSelecao(o.selecao); if (o.preencher) setPreencher(o.preencher);
       setIntencaoVincular(a === 'vincular' ? o.intencao ?? null : null);
       topo();
     },
-    abrirProduto: (id, opc) => { setAtributoFoco(opc?.atributo ?? null); setProduto(id); topo(); },
+    abrirProduto: (id, opc) => { if (produto === null && aba === 'produtos' && memoriaProdutos.current) memoriaProdutos.current.rolagem = posicaoPagina(); setAtributoFoco(opc?.atributo ?? null); setAtributoRota(opc?.atributo ?? null); setProduto(id); topo(); },
     atributoFoco, limparAtributoFoco: () => setAtributoFoco(null), intencaoVincular,
-    fecharProduto: () => setProduto(null),
+    fecharProduto: () => { setProduto(null); setAtributoRota(null); },
     aviso: (texto, tom = 'sucesso') => { const id = Date.now() + Math.random(); setAvisos((a) => [...a, { id, texto, tom }]); window.setTimeout(() => setAvisos((a) => a.filter((x) => x.id !== id)), 4500); },
     faixaFixa: slot, rolador: roladorEl,
     anunciar: (t) => { setAnuncio(''); window.setTimeout(() => setAnuncio(t), 30); },   // limpar antes faz o leitor repetir o mesmo texto
+    memoriaProdutos,
   }), [aba, produto, kit, filtro, selecao, preencher, versao, atributoFoco, intencaoVincular, slot, roladorEl]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   const tela = produto !== null ? <Ficha id={produto} />
