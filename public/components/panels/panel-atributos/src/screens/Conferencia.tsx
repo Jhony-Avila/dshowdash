@@ -13,7 +13,8 @@ import type { Ordenacao } from '../lib/ordenar';
 import { MenuColunas, MenuEscolha } from '../ui/MenuBarra';
 import { IconeEstado, useGravacoes } from '../ui/CelulaEditavel';
 import { podeConferir } from '../ui/celula';
-import { congelarConfirmacao, elegiveisDaPagina, PAGINA_SUGESTOES, paginaExibida, type ConfirmacaoLote } from '../ui/conferencia-lote';
+import { PAGINA_SUGESTOES, type ConfirmacaoLote } from '../ui/conferencia-lote';
+import { FilaSugestoes } from './conferencia/FilaSugestoes';
 import { livre } from '../ui/celula';
 import '../ui/celula.css';
 
@@ -33,7 +34,6 @@ export function Conferencia() {
   const [kits, setKits] = React.useState<KitResumo[]>([]);
   const [erro, setErro] = React.useState<string | null>(null);
   const [fila, setFila] = React.useState<Fila>('legado');
-  const [filtroAtr, setFiltroAtr] = React.useState('');
   const [lote, setLote] = React.useState<number[] | null>(null);
   const [confirmacao, setConfirmacao] = React.useState<ConfirmacaoLote | null>(null);   // DSHOW-105: ids + versões congelados ao confirmar
   // DSHOW-096: aceitar em LOTE com chave por intenção (criada ao CONFIRMAR; corpo e IDs congelados; a MESMA chave em todo reenvio).
@@ -43,17 +43,14 @@ export function Conferencia() {
   const [estLote, setEstLote] = React.useState<EstadoLote>(LOTE0);
   const [trabLote, setTrabLote] = React.useState(false);
   const geracaoLote = React.useRef(0);   // cada abertura/fechamento do diálogo = nova geração: resposta antiga não mexe no diálogo novo
-  const [trab, setTrab] = React.useState<number | null>(null);
   const carregar = React.useCallback(() => { setErro(null); obter<TConf>('conferencia').then(setD).catch((e) => setErro(e.message)); obter<{ kits: KitResumo[] }>('kits').then((k) => setKits(k.kits.filter((x) => x.ativo && x.itens > 0 && !x.aplica_a_todos))).catch(() => undefined); }, []);
   React.useEffect(carregar, [carregar, m.versao]);
   if (erro) return <Erro mensagem={erro} aoTentar={carregar} />;
   if (!d) return <Carregando rotulo="Montando as filas de conferência" />;
-  const total = (f: Fila) => (f === 'obrigatorios_vazios' ? d.totais.obrigatorios_vazios : d.filas[f].length);
-  const decidir = async (it: ItemConferencia, decisao: 'aceitar' | 'recusar', destino?: number) => {
-    setTrab(it.id);
-    try { await enviar('sugestao', { id: it.id, versao: it.versao, decisao, ...(destino ? { atributo_id: destino, vincular: true } : {}) }); m.aviso(decisao === 'aceitar' ? 'Decidido: valor gravado.' : 'Sugestão recusada.'); carregar(); }
-    catch (e) { m.aviso(e instanceof ErroApi ? e.message : 'Falha.', 'erro'); } finally { setTrab(null); }
-  };
+  // Parte C: contadores das abas = totais REAIS do servidor (COUNT), nunca o tamanho de uma lista cortada (D-1)
+  const totais = d.totais as unknown as Partial<Record<Fila, number>>;
+  const total = (f: Fila) => totais[f] ?? (f === 'obrigatorios_vazios' ? d.totais.obrigatorios_vazios : d.filas[f].length);
+  const atributosNome = [...new Map(d.filas.nome.map((x) => [x.atributo_id, x.atributo ?? `#${x.atributo_id}`])).entries()].map(([id, rotulo]) => ({ id, rotulo })).sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
   const abrirLote = (ids: number[], conf: ConfirmacaoLote | null = null) => {
     // DSHOW-105: nada de cortar em silêncio (o .slice(0, 200) mandava um subconjunto que a tela não mostrava). Acima do limite = não abre.
     if (ids.length === 0 || ids.length > PAGINA_SUGESTOES) { m.aviso(`Escolha de 1 a ${PAGINA_SUGESTOES} sugestões.`, 'erro'); return; }
@@ -104,47 +101,18 @@ export function Conferencia() {
     finally { if (g === geracaoLote.current) setTrabLote(false); }
   };
   const atual = FILAS.find((x) => x.id === fila)!;
-  const sugs = (fila === 'legado' || fila === 'nome') ? d.filas[fila].filter((x) => !filtroAtr || x.atributo === filtroAtr) : [];
-  // DSHOW-105: a PÁGINA exibida é a única coleção da fila "Sugestões do nome": tabela, contador, confirmação e payload saem dela.
-  const pagina = fila === 'nome' ? paginaExibida(d.filas.nome, filtroAtr) : [];
-  const elegiveis = elegiveisDaPagina(pagina);
-  const atrs = (fila === 'legado' || fila === 'nome') ? [...new Set(d.filas[fila].map((x) => x.atributo ?? ''))].sort() : [];
 
   return (
     <div className="at-conferencia">
       <div className="at-titulo-tela"><div><h2>Conferência</h2><p>Filas com ação direta. Nada vira valor sem decisão; cada decisão fica no histórico do produto.</p></div></div>
       <CabecalhoTravado>{/* CABEÇALHO TRAVADO (exceção do Jhony, 19/11): só envolve; nada de lógica */}
       <div className="at-abas" role="tablist" aria-label="Filas">
-        {FILAS.map((x) => <button key={x.id} type="button" role="tab" aria-selected={fila === x.id} className={fila === x.id ? 'ativo' : ''} onClick={() => { setFila(x.id); setFiltroAtr(''); }}>{x.rotulo} <span className="at-filtro__n">{total(x.id)}</span></button>)}
+        {FILAS.map((x) => <button key={x.id} type="button" role="tab" aria-selected={fila === x.id} className={fila === x.id ? 'ativo' : ''} onClick={() => setFila(x.id)}>{x.rotulo} <span className="at-filtro__n" data-total-fila={x.id}>{total(x.id).toLocaleString('pt-BR')}</span></button>)}
       </div>
-        {fila !== 'legado' && <div className="at-painel__cabeca"><span className="at-fraco">{atual.desc}</span>
-          {fila === 'nome' && <div className="at-acoes">
-            <select className="at-campo" aria-label="Filtrar por atributo" value={filtroAtr} onChange={(e) => setFiltroAtr(e.target.value)}><option value="">Todos os atributos</option>{atrs.map((a) => <option key={a} value={a}>{a}</option>)}</select>
-            {fila === 'nome' && d.pode_decidir && elegiveis.length > 0 && <Botao aoClicar={() => { const c = congelarConfirmacao(pagina, elegiveis); abrirLote([...c.ids], c); }}>Aceitar as {elegiveis.length} desta página sem valor…</Botao>}
-            {fila === 'nome' && sugs.length > pagina.length && <span className="at-fraco" data-pagina-sugestoes>Mostrando {pagina.length} de {sugs.length}. O lote usa só as linhas desta página.</span>}
-          </div>}
-        </div>}</CabecalhoTravado>
+        {fila !== 'legado' && <div className="at-painel__cabeca"><span className="at-fraco">{fila === 'nome' ? 'Valores extraídos do nome do produto. Só são gravados após aceite.' : atual.desc}</span></div>}</CabecalhoTravado>
       <section className="at-painel">
         {fila === 'legado' && <LegadoGrade itens={d.filas.legado} pode={!!d.pode_decidir} aoRecarregar={async () => { carregar(); }} aoLote={abrirLote} abrirProduto={m.abrirProduto} />}
-        {fila === 'nome' && (sugs.length === 0 ? <div className="at-painel__corpo"><Vazio titulo="Fila vazia">Nada pendente aqui.</Vazio></div> : (
-          <div className="bl-rola-x"><table className="at-tabela">
-            <thead><tr><th>Produto</th><th>Atributo</th><th>Proposto</th><th>Evidência</th><th>Decisão</th></tr></thead>
-            <tbody>{pagina.map((it) => (
-              <tr key={it.id}>
-                <td><button type="button" className="at-link-produto" onClick={() => m.abrirProduto(it.product_id)}><CapsulaId id={it.product_id} flutuante={false} /> {it.produto}</button></td>
-                <td>{it.atributo}{it.atributo_alternativo && <div className="at-fraco">ou {it.atributo_alternativo}?</div>}</td>
-                <td><strong>{valorTxt(it.valor_proposto)}</strong> {it.unidade ?? ''} <Etiqueta>{FONTE_SUGESTAO[it.fonte]}</Etiqueta></td>
-                <td className="at-conf__evid" title={it.evidencia ?? ''}>{it.evidencia}</td>
-                <td>{d.pode_decidir ? (
-                  <div className="at-acoes">
-                    {it.atributo_alternativo_id ? <>
-                      {it.ja_tem_valor ? <Etiqueta titulo="Sugestão não sobrescreve (D10)">{it.atributo} já tem valor</Etiqueta> : <Botao trabalhando={trab === it.id} aoClicar={() => decidir(it, 'aceitar', it.atributo_id)}>Gravar em {it.atributo}</Botao>}
-                      {it.alternativo_ja_tem_valor ? <Etiqueta titulo="Sugestão não sobrescreve (D10)">{it.atributo_alternativo} já tem valor</Etiqueta> : <Botao primario trabalhando={trab === it.id} aoClicar={() => decidir(it, 'aceitar', it.atributo_alternativo_id!)}>Gravar em {it.atributo_alternativo}</Botao>}
-                    </> : it.ja_tem_valor ? <Etiqueta titulo="Sugestão não sobrescreve (D10)">já tem valor</Etiqueta> : <Botao primario trabalhando={trab === it.id} aoClicar={() => decidir(it, 'aceitar')}>Aceitar</Botao>}
-                    <Botao trabalhando={trab === it.id} aoClicar={() => decidir(it, 'recusar')}>Recusar</Botao>
-                  </div>) : <span className="at-fraco">só leitura</span>}</td>
-              </tr>))}</tbody>
-          </table></div>))}
+        {fila === 'nome' && <FilaSugestoes atributos={atributosNome} podeDecidir={!!d.pode_decidir} administra={!!d.pode_vincular} aoMudarTotais={carregar} />}
         {fila === 'fora_da_ficha' && (d.filas.fora_da_ficha.length === 0 ? <div className="at-painel__corpo"><Vazio titulo="Nada fora da ficha" /></div> : (
           <div className="bl-rola-x"><table className="at-tabela">
             <thead><tr><th>Produto</th><th>Atributo com valor</th><th>Ação</th></tr></thead>

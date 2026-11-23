@@ -213,7 +213,10 @@ try {
     // massa_aplicar tem a PRÓPRIA chave (eq_pedido_massa, no corpo `chave`); as demais escritas usam a chave de operação genérica.
     // massa_previa é POST mas NÃO grava: fica fora da camada (sem recibo — prévia nunca é "Salvo").
     // Parte C (Q-SUG.3): chave obrigatória antes de qualquer efeito (sugestoes_decidir sempre; X-Origem: conferencia nas rotas da Conferência)
-    if ($metodo === 'POST') OperacoesGravacao::exigirChave($r, $chaveOp, isset($_SERVER['HTTP_X_ORIGEM']) ? strtolower(trim((string) $_SERVER['HTTP_X_ORIGEM'])) : null);
+    // a origem vem do cabeçalho X-Origem OU do corpo (`origem`, para telas que só mandam corpo); sai do corpo ANTES da assinatura e dos serviços
+    $origemReq = isset($_SERVER['HTTP_X_ORIGEM']) ? strtolower(trim((string) $_SERVER['HTTP_X_ORIGEM'])) : (is_string($corpo['origem'] ?? null) ? strtolower(trim($corpo['origem'])) : null);
+    unset($corpo['origem']);
+    if ($metodo === 'POST') OperacoesGravacao::exigirChave($r, $chaveOp, $origemReq);
     $out = $metodo === 'POST' && $r !== 'massa_previa' ? $operacoes->executar($r, $corpo, $r === 'massa_aplicar' ? null : $chaveOp, $rotear) : $rotear($corpo);
     if ($out === null) ApiResponse::error(ApiResponse::ERR_INVALID_ACTION, 400);
     ApiResponse::success($out);
