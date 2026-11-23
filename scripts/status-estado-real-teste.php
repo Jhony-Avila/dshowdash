@@ -12,6 +12,12 @@ if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 $raiz = dirname(__DIR__);
 require_once $raiz . '/api/status/_estado-real.php';
 date_default_timezone_set('America/Sao_Paulo');
+// falsos do ambiente HTTP (no Dash vêm de _init.php); só existem neste processo de teste
+final class RedisHelper { public static array $m = [];
+    public static function tryGetCache(string $k): ?string { return self::$m[$k] ?? null; }
+    public static function setCache(string $k, string $v, int $t = 60): bool { self::$m[$k] = $v; return true; }
+    public static function close(): void {} }
+final class ApiResponse { public static function buildSuccess($d = null, ?array $m = null): string { return (string) json_encode(['ok' => true, 'data' => $d]); } }
 
 $cnf = (string) getenv('STATUS_TESTE_CNF'); $db = (string) getenv('STATUS_TESTE_DB');
 if ($cnf === '' || !is_file($cnf) || !preg_match('/^ATRWEB_VAL_T_[0-9]+$/', $db)) { fwrite(STDERR, "[ERRO] defina STATUS_TESTE_CNF e STATUS_TESTE_DB=ATRWEB_VAL_T_<n> — ABORTADO\n"); exit(2); }
@@ -38,6 +44,7 @@ $DDL = [
   'bling_accounts'    => 'id INT AUTO_INCREMENT PRIMARY KEY, estado_conexao VARCHAR(30), is_ativo TINYINT, is_padrao TINYINT',
   'bling_sync_state'  => 'id INT AUTO_INCREMENT PRIMARY KEY, account_id INT, recurso VARCHAR(40), situacao VARCHAR(20), ultima_execucao_em DATETIME NULL',
   'bling_sync_errors' => 'id INT AUTO_INCREMENT PRIMARY KEY, account_id INT, recurso VARCHAR(40), codigo VARCHAR(64), mensagem TEXT',
+  'bling_sync_jobs'   => 'id INT AUTO_INCREMENT PRIMARY KEY, account_id INT, recurso VARCHAR(40), situacao VARCHAR(20), terminado_em DATETIME NULL',
 ];
 $ja = (int) $pdo->query("SELECT COUNT(*) FROM information_schema.TABLES WHERE table_schema = DATABASE() AND table_name IN ('"
     . implode("','", array_keys($DDL)) . "')")->fetchColumn();
@@ -61,7 +68,7 @@ try {
     $pub = StatusEstadoReal::montar('pipedrive', $e, false); $log = StatusEstadoReal::montar('pipedrive', $e, true);
     ok('status online', $pub['status'] === 'online' && $pub['configured'] === true);
     ok('SEM sessão: sem data, sem erro, sem resumo', !isset($pub['ultima_sincronizacao_ok']) && !isset($pub['erro_atual']) && !isset($pub['resumo']));
-    ok('COM sessão: data ISO + resumo', is_string($log['ultima_sincronizacao_ok']) && str_contains($log['resumo'], 'Última sincronização com sucesso'),
+    ok('COM sessão: data ISO + resumo', is_string($log['ultima_sincronizacao_ok']) && str_contains($log['resumo'], 'Última sincronização concluída em'),
         (string) $log['ultima_sincronizacao_ok']);
     $pdo->exec('UPDATE pipe_sync_runs SET finished_at = NOW() - INTERVAL 2 HOUR');
     $e = $est('pipedrive');
@@ -101,6 +108,13 @@ try {
     $pdo->exec("UPDATE bling_sync_state SET situacao = 'erro' WHERE recurso = 'pedidos'");
     $pdo->exec("INSERT INTO bling_sync_errors (account_id, recurso, codigo, mensagem) VALUES (44, 'pedidos', 'SYNC_FALHOU', 'x')");
     ok('dois recursos com problema', count($est('bling')['problemas']) === 2);
+    $pdo->prepare("INSERT INTO bling_sync_jobs (account_id, recurso, situacao, terminado_em) VALUES (44, 'produtos', 'concluido', ?)")->execute([$utc(90)]);
+    $pdo->exec("UPDATE bling_sync_state SET situacao = 'erro', ultima_execucao_em = UTC_TIMESTAMP() WHERE recurso <> 'canais'");
+    $e = $est('bling');
+    ok('falha em tudo: a última CONCLUÍDA (há 90 min, dos jobs) continua no cartão', $e['ultima_ok'] !== null
+        && abs(time() - strtotime($e['ultima_ok']) - 5400) < 120, (string) $e['ultima_ok']);
+    $m = StatusEstadoReal::montar('bling', $e, true, null, true);
+    ok('último estado válido marcado como desatualizado', ($m['desatualizado'] ?? false) === true && str_contains($m['message'], 'último estado válido'));
     $pdo->exec("UPDATE bling_accounts SET estado_conexao = 'reauth_necessaria'");
     $e = $est('bling');
     ok('conta precisa reconectar → erro / error', $e['estado'] === 'erro' && $e['erro']['codigo'] === 'CONTA_REAUTH_NECESSARIA'
@@ -118,6 +132,19 @@ try {
     ok('22 cartões, sem repetição', count($todos) === 22 && count(array_unique($todos)) === 22, (string) count($todos));
     $bons = 0; foreach ($todos as $c) { $x = StatusEstadoReal::montar($c, $est($c), false); if (isset($x['status'], $x['estado'], $x['message'])) { $bons++; } }
     ok('os 22 respondem com status/estado/message', $bons === 22, (string) $bons);
+    echo "== Falha de leitura: o cartão mostra o ÚLTIMO estado válido (Redis e ApiResponse falsos, em memória)\n";
+    $pdo->exec("UPDATE pipe_sync_runs SET status = 'completed', finished_at = NOW() - INTERVAL 2 MINUTE");
+    $pdo->exec('DELETE FROM pipe_api_requests');
+    $chama = static function (callable $con): array { ob_start(); StatusEstadoReal::responder('pipedrive', $con); return json_decode((string) ob_get_clean(), true)['data'] ?? []; };
+    $falha = static function (string $esq): PDO { throw new RuntimeException('banco fora'); };
+    $a = $chama($con);
+    ok('leitura OK: online', ($a['status'] ?? null) === 'online', (string) ($a['status'] ?? '-'));
+    unset(RedisHelper::$m['status:real:v1:pipedrive']);   // venceu o cache curto
+    $b = $chama($falha);
+    ok('leitura FALHA depois: mantém o último válido (online + desatualizado), não zera', ($b['status'] ?? null) === 'online' && ($b['desatualizado'] ?? false) === true);
+    RedisHelper::$m = [];
+    $c = $chama($falha);
+    ok('sem nenhum estado válido guardado: "unknown", nunca um erro inventado', ($c['status'] ?? null) === 'unknown');
     foreach (glob($raiz . '/api/status/*.php') as $f) {
         if (str_contains((string) file_get_contents($f), "\$isConfigured = false;\n")) { ok('nenhum $isConfigured fixo restante: ' . basename($f), false); }
     }

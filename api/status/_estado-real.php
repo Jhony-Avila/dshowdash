@@ -21,6 +21,7 @@ final class StatusEstadoReal
 {
     public const VERSAO = '1.0.0';
     private const CACHE_TTL = 60;
+    private const ULTIMO_VALIDO_TTL = 7 * 86400;   // último estado válido, mostrado quando a leitura falha
 
     /** minutos sem sincronização com sucesso a partir dos quais o cartão fica 'atrasado' */
     private const ATRASO_MIN = ['pipedrive' => 30, 'calendar' => 30, 'bling' => 45];
@@ -119,9 +120,11 @@ final class StatusEstadoReal
                     'erro' => ['codigo' => 'SEM_CONTA', 'mensagem' => 'Nenhuma conta do Bling conectada.']];
         }
         $id = (int) $conta['id'];
-        $st = $pdo->prepare("SELECT MAX(ultima_execucao_em) FROM bling_sync_state WHERE account_id = ? AND situacao = 'ok'");
-        $st->execute([$id]);
-        $ok = $st->fetchColumn() ?: null;   // UTC (gmdate)
+        // última sincronização CONCLUÍDA = último job 'concluido' (o estado guarda a última TENTATIVA, que uma falha sobrescreve)
+        $st = $pdo->prepare("SELECT COALESCE((SELECT MAX(terminado_em) FROM bling_sync_jobs WHERE account_id = ? AND situacao = 'concluido'),
+                                             (SELECT MAX(ultima_execucao_em) FROM bling_sync_state WHERE account_id = ? AND situacao = 'ok'))");
+        $st->execute([$id, $id]);
+        $ok = $st->fetchColumn() ?: null;   // UTC
         $st = $pdo->prepare("SELECT s.recurso, s.situacao,
                                     (SELECT e.codigo FROM bling_sync_errors e WHERE e.account_id = s.account_id AND e.recurso = s.recurso
                                       ORDER BY e.id DESC LIMIT 1) AS codigo
@@ -172,7 +175,7 @@ final class StatusEstadoReal
         'simulado' => 'Em modo simulado (dados de exemplo).', 'nao_verificado' => 'Estado não verificado.'];
 
     /** @param array $e saída de estado() */
-    public static function montar(string $cartao, array $e, bool $comSessao, ?int $agora = null): array
+    public static function montar(string $cartao, array $e, bool $comSessao, ?int $agora = null, bool $desatualizado = false): array
     {
         $agora ??= time();
         $estado = $e['estado'];
@@ -184,6 +187,10 @@ final class StatusEstadoReal
         $d = ['status' => self::STATUS_UI[$estado] ?? 'unknown', 'configured' => $e['integrado'] && $estado !== 'nao_conectado',
               'estado' => $estado, 'integrado' => $e['integrado'], 'message' => $msg, 'integration' => $cartao,
               'timestamp' => date(DATE_ATOM, $agora), 'fonte_verdade' => 'estado-real/' . self::VERSAO];
+        if ($desatualizado) {
+            $d['desatualizado'] = true;
+            $d['message'] .= ' (último estado válido — não foi possível atualizar agora)';
+        }
         if (!$comSessao) { return $d; }
         $d['ultima_sincronizacao_ok'] = $e['ultima_ok'];
         $d['last_sync'] = $e['ultima_ok'];   // compatibilidade com os cartões que já liam last_sync
@@ -191,7 +198,7 @@ final class StatusEstadoReal
         if ($e['problemas'] !== []) { $d['recursos_com_problema'] = $e['problemas']; }
         $partes = [];
         if ($e['integrado']) {
-            $partes[] = 'Última sincronização com sucesso: ' . ($e['ultima_ok']
+            $partes[] = 'Última sincronização concluída em ' . ($e['ultima_ok']
                 ? (new DateTimeImmutable($e['ultima_ok']))->setTimezone(new DateTimeZone('America/Sao_Paulo'))->format('d/m/Y H:i') . ' (Brasília)'
                 : 'nenhuma');
         }
@@ -204,23 +211,38 @@ final class StatusEstadoReal
 
     // ── entrada HTTP (os 22 endpoints) ───────────────────────────────────────────────────────────────────────
 
-    public static function responder(string $cartao): void
+    /** @param ?callable(string):PDO $conexao só para teste; null = as conexões reais */
+    public static function responder(string $cartao, ?callable $conexao = null): void
     {
         if (!in_array($cartao, self::cartoes(), true)) { throw new InvalidArgumentException('cartão desconhecido'); }
         try {
             $chave = 'status:real:v1:' . $cartao;
             $bruto = class_exists('RedisHelper') ? RedisHelper::tryGetCache($chave) : null;
             $e = $bruto !== null ? json_decode($bruto, true) : null;
+            $desatualizado = false;
             if (!is_array($e) || !isset($e['estado'])) {
-                $e = self::estado($cartao, [self::class, 'conexao']);
-                if (class_exists('RedisHelper')) { RedisHelper::setCache($chave, (string) json_encode($e), self::CACHE_TTL); }
+                try {
+                    $e = self::estado($cartao, $conexao ?? [self::class, 'conexao']);
+                    if (class_exists('RedisHelper')) {
+                        RedisHelper::setCache($chave, (string) json_encode($e), self::CACHE_TTL);
+                        RedisHelper::setCache('status:real:v1:ultimo-valido:' . $cartao, (string) json_encode($e), self::ULTIMO_VALIDO_TTL);
+                    }
+                } catch (Throwable $t) {
+                    // NUNCA zerar o cartão: sem conseguir ler agora, mostra o ÚLTIMO estado válido (com a data da última sincronização
+                    // concluída que ele tinha) e avisa que está desatualizado.
+                    error_log('[status/' . $cartao . '] estado real indisponível: ' . get_class($t));
+                    $v = class_exists('RedisHelper') ? RedisHelper::tryGetCache('status:real:v1:ultimo-valido:' . $cartao) : null;
+                    $e = $v !== null ? json_decode($v, true) : null;
+                    if (!is_array($e) || !isset($e['estado'])) { throw $t; }
+                    $desatualizado = true;
+                }
             }
             $sessao = class_exists('SessionGate') ? SessionGate::readOnly() : [];
-            $saida = ApiResponse::buildSuccess(self::montar($cartao, $e, !empty($sessao['user_id'])));
+            $saida = ApiResponse::buildSuccess(self::montar($cartao, $e, !empty($sessao['user_id']), null, $desatualizado));
         } catch (Throwable $t) {
-            error_log('[status/' . $cartao . '] estado real indisponível: ' . get_class($t));
-            $saida = ApiResponse::buildSuccess(['status' => 'error', 'configured' => null, 'estado' => 'indisponivel', 'integration' => $cartao,
-                'error' => 'SERVICE_UNAVAILABLE', 'message' => 'Não foi possível ler o estado agora.', 'timestamp' => date(DATE_ATOM)]);
+            error_log('[status/' . $cartao . '] sem estado válido para mostrar: ' . get_class($t));
+            $saida = ApiResponse::buildSuccess(['status' => 'unknown', 'configured' => null, 'estado' => 'indisponivel', 'integration' => $cartao,
+                'message' => 'Não foi possível ler o estado agora.', 'timestamp' => date(DATE_ATOM)]);
         }
         header('Cache-Control: private, no-store');
         echo $saida;
