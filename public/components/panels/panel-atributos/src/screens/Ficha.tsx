@@ -13,6 +13,8 @@ import { TabelaDados, type ColunaTabela } from '../ui/TabelaDados';
 import type { Ordenacao } from '../lib/ordenar';
 import { EditorValor, type ControleEditor } from '../ui/EditorValor';
 import { EstadoVinculo, useGravacaoVinculo } from '../ui/GravacaoVinculo';
+import { AdicionarFotos, EntrarNovamente, GerenciarFotos } from '../ui/fotos/GaleriaFotos';
+import { carregarGaleria, urlImagem, type EstadoGaleria } from '../lib/fotos';
 import { ROTULO_SITUACAO, situacaoDe } from '../lib/situacao';
 
 type AbaFicha = 'atributos' | 'vinculos' | 'fotos' | 'precifica' | 'historico';
@@ -32,6 +34,13 @@ export function Ficha({ id }: { id: number }) {
   const [slotFiltros, setSlotFiltros] = React.useState<HTMLDivElement | null>(null);   // UX-1b: filtros da aba na linha das sub-abas
   const [slotTitulo, setSlotTitulo] = React.useState<HTMLDivElement | null>(null);     // FICHA V3: título da tabela + ações, dentro do bloco travado
   const [fotoSel, setFotoSel] = React.useState(0);                                        // FICHA V3: foto mostrada no resumo compacto
+  // FOTOS NA FICHA: galeria pelo proxy do Dash. Só com ela (flag do app ligada + usuário que publica) aparecem os botões de escrita.
+  const [galeria, setGaleria] = React.useState<EstadoGaleria>({ tipo: 'carregando' });
+  const [addFotos, setAddFotos] = React.useState(false);
+  const recarregarGaleria = React.useCallback(() => { carregarGaleria(id).then(setGaleria); }, [id]);
+  React.useEffect(() => { setGaleria({ tipo: 'carregando' }); recarregarGaleria(); }, [recarregarGaleria]);
+  const podeAdicionar = galeria.tipo === 'ok' && galeria.g.produto.pode_receber_foto;
+  // colar (Ctrl+V/⌘V) SÓ dentro do diálogo "Adicionar fotos" (roteiro aprovado): a Ficha não intercepta colar (preserva o teclado na tabela)
   const trilho = React.useRef<HTMLDivElement>(null);
   const seq = React.useRef(0);   // recargas fora de ordem: só a mais recente vale (senão um campo volta ao valor antigo)
   // "foi salvo ou não" (item 3): a releitura SILENCIOSA (depois de gravar) não troca a ficha por uma tela de erro — devolve false e quem
@@ -48,7 +57,10 @@ export function Ficha({ id }: { id: number }) {
   if (!f) return <Carregando rotulo="Carregando a ficha" />;
   const p = f.produto; const capa = f.fotos.find((x) => x.capa) ?? f.fotos[0] ?? null;
 
-  const nFotos = f.fotos.length; const fotoAtual = nFotos ? f.fotos[Math.min(fotoSel, nFotos - 1)] : capa;
+  const fotosGal = galeria.tipo === 'ok' ? [...galeria.g.fotos].sort((a, b) => a.posicao - b.posicao) : null;
+  const listaFotos: { id: number; cor: string | null; url?: string }[] = fotosGal ? fotosGal.map((x) => ({ id: x.id, cor: x.cor, url: urlImagem(x.id, 768) })) : f.fotos.map((x) => ({ id: x.id, cor: x.cor }));
+  const nFotos = listaFotos.length; const fotoAtual = nFotos ? listaFotos[Math.min(fotoSel, nFotos - 1)] : (capa ? { id: capa.id, cor: capa.cor } : null);
+  const aoMudarFotos = () => { recarregarGaleria(); carregar(true); };
   const irFoto = (k: number) => { if (!nFotos) return; const alvo = (k + nFotos) % nFotos; setFotoSel(alvo); trilho.current?.querySelectorAll<HTMLElement>('.at-resumo-v3__mini')[alvo]?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); };
   return (
     <div className="at-ficha at-ficha--v3">
@@ -57,7 +69,8 @@ export function Ficha({ id }: { id: number }) {
       <CabecalhoTravado>
         <div className="at-heroi-compacto at-ficha__faixa">
           <button type="button" className="bl-botao" onClick={m.fecharProduto}>← Produtos</button>
-          <div className="at-heroi-compacto__foto"><Foto mediaId={capa?.id ?? null} cor={capa?.cor ?? null} proporcao="1 / 1" compacta ajuste="cover" /></div>
+          {/* roteiro das fotos: a miniatura da faixa fixa abre a galeria (aba Fotos: principal em destaque, demais miniaturas, Adicionar) */}
+          <button type="button" className="at-heroi-compacto__foto at-heroi-compacto__foto--botao" onClick={() => setAba('fotos')} aria-label="Abrir a galeria de fotos" title="Abrir a galeria de fotos"><Foto mediaId={capa?.id ?? null} cor={capa?.cor ?? null} proporcao="1 / 1" compacta ajuste="cover" /></button>
           <strong className="at-heroi-compacto__nome" title={p.nome}>{p.nome}</strong>
           <CapsulaId id={p.id} flutuante={false} />
           <span className="at-fraco at-ficha__classe">{rotuloCategoria(p.categoria)} / {rotuloSubcategoria(p.subcategoria)}</span>
@@ -66,7 +79,7 @@ export function Ficha({ id }: { id: number }) {
         </div>
         <div className="at-ficha__abas-linha">
         <div className="at-abas at-abas--icones" role="tablist" aria-label="Seções da ficha">
-          {([['atributos', `Atributos (${f.itens.length})`, 'list'], ['vinculos', 'Vínculos', 'link'], ['fotos', `Fotos (${f.fotos.length})`, 'image'], ['precifica', 'Precifica', 'tag'], ['historico', 'Histórico', 'clock']] as [AbaFicha, string, NomeIcone][]).map(([a, r, ic]) => (
+          {([['atributos', `Atributos (${f.itens.length})`, 'list'], ['vinculos', 'Vínculos', 'link'], ['fotos', `Fotos (${fotosGal ? fotosGal.length : f.fotos.length})`, 'image'], ['precifica', 'Precifica', 'tag'], ['historico', 'Histórico', 'clock']] as [AbaFicha, string, NomeIcone][]).map(([a, r, ic]) => (
             <button key={a} type="button" role="tab" aria-selected={aba === a} className={aba === a ? 'ativo' : ''} onClick={() => setAba(a)}><Icone nome={ic} />{r}</button>))}
         </div>
         <div className="at-ficha__filtros-slot" ref={setSlotFiltros} />
@@ -74,7 +87,7 @@ export function Ficha({ id }: { id: number }) {
         {/* RESUMO COMPACTO: foto (ampliável), categoria, nome e carrossel de miniaturas com contador */}
         <div className="at-resumo-v3">
           <button type="button" className="at-resumo-v3__foto" onClick={() => nFotos && setAmpliar(Math.min(fotoSel, nFotos - 1))} disabled={!nFotos} aria-label={nFotos ? `Ampliar foto ${Math.min(fotoSel, nFotos - 1) + 1} de ${nFotos}` : 'Produto sem foto'}>
-            <Foto mediaId={fotoAtual?.id ?? null} cor={fotoAtual?.cor ?? null} proporcao="4 / 3" compacta ajuste="contain" />
+            <Foto mediaId={fotoAtual?.id ?? null} cor={fotoAtual?.cor ?? null} proporcao="4 / 3" compacta ajuste="contain" url={(fotoAtual as { url?: string } | null)?.url} />
             {nFotos > 0 && <span className="at-resumo-v3__ampliar" aria-hidden><Icone nome="maximize-2" /></span>}
           </button>
           <div className="at-resumo-v3__texto">
@@ -83,13 +96,14 @@ export function Ficha({ id }: { id: number }) {
             <div className="at-resumo-v3__carrossel" role="group" aria-label="Fotos do produto">
               <button type="button" className="at-resumo-v3__seta" aria-label="Foto anterior" disabled={nFotos <= 1} onClick={() => irFoto(fotoSel - 1)}><Icone nome="chevron-left" /></button>
               <div className="at-resumo-v3__trilho" ref={trilho}>
-                {f.fotos.map((x, k) => (
+                {listaFotos.map((x, k) => (
                   <button key={x.id} type="button" className={`at-resumo-v3__mini ${k === Math.min(fotoSel, nFotos - 1) ? 'ativo' : ''}`} aria-pressed={k === Math.min(fotoSel, nFotos - 1)} aria-label={`Mostrar foto ${k + 1} de ${nFotos}`} onClick={() => irFoto(k)}>
-                    <Foto mediaId={x.id} cor={x.cor} proporcao="1 / 1" compacta ajuste="cover" />
+                    <Foto mediaId={x.id} cor={x.cor} proporcao="1 / 1" compacta ajuste="cover" url={x.url ? x.url.replace(/t=768/, 't=256') : undefined} />
                   </button>))}
               </div>
               <span className="at-resumo-v3__contador" aria-live="polite">{nFotos ? `${Math.min(fotoSel, nFotos - 1) + 1} de ${nFotos}` : 'Sem fotos'}</span>
               <button type="button" className="at-resumo-v3__seta" aria-label="Próxima foto" disabled={nFotos <= 1} onClick={() => irFoto(fotoSel + 1)}><Icone nome="chevron-right" /></button>
+              {podeAdicionar && <button type="button" className="bl-botao at-v3-btn-add at-resumo-v3__add" onClick={() => setAddFotos(true)}><Icone nome="plus" />{nFotos ? 'Adicionar fotos' : 'Adicionar primeira foto'}</button>}
             </div>
           </div>
         </div>
@@ -97,13 +111,23 @@ export function Ficha({ id }: { id: number }) {
       </CabecalhoTravado>
       {aba === 'atributos' && <AbaAtributos f={f} recarregar={() => carregar(true)} focoInicial={m.atributoFoco} aoConsumirFoco={m.limparAtributoFoco} filtro={filtro} setFiltro={setFiltro} slotFiltros={slotFiltros} slotTitulo={slotTitulo} />}
       {aba === 'vinculos' && <AbaVinculos f={f} recarregar={() => carregar(true)} />}
-      {aba === 'fotos' && (f.fotos.length ? <div className="at-fotos-grade">{f.fotos.map((x, i) => <button key={x.id} type="button" className="at-fotos-grade__item" onClick={() => setAmpliar(i)}><Foto mediaId={x.id} cor={x.cor} proporcao="4 / 3" />{x.capa && <Etiqueta tom="info">capa</Etiqueta>}</button>)}</div> : <Vazio titulo="Sem fotos">As fotos são gerenciadas no app. Esta tela é só leitura.</Vazio>)}
+      {aba === 'fotos' && galeria.tipo === 'ok' && <GerenciarFotos estado={galeria} productId={p.id} aoMudou={aoMudarFotos} aoAdicionar={() => setAddFotos(true)} />}
+      {aba === 'fotos' && (galeria.tipo === 'sessao' || galeria.tipo === 'indisponivel') && <div className={`at-aviso ${galeria.tipo === 'sessao' ? 'at-aviso--erro' : 'at-aviso--info'}`} role="status" data-fotos-aviso={galeria.tipo}>{galeria.tipo === 'sessao' ? <>{galeria.msg}{galeria.reentrar && <> <EntrarNovamente aoContinuar={recarregarGaleria} /></>}</> : 'As fotos estão indisponíveis agora. Tente de novo mais tarde.'}</div>}
+      {aba === 'fotos' && galeria.tipo !== 'ok' && (f.fotos.length ? <div className="at-fotos-grade">{f.fotos.map((x, i) => <button key={x.id} type="button" className="at-fotos-grade__item" onClick={() => setAmpliar(i)}><Foto mediaId={x.id} cor={x.cor} proporcao="4 / 3" />{x.capa && <Etiqueta tom="info">capa</Etiqueta>}</button>)}</div> : <Vazio titulo="Sem fotos">As fotos são gerenciadas no app. Esta tela é só leitura.</Vazio>)}
       {aba === 'precifica' && <AbaPrecifica f={f} />}
       {aba === 'historico' && <AbaHistorico id={p.id} />}
-      <Dialogo titulo={ampliar !== null ? `Foto ${ampliar + 1} de ${f.fotos.length}` : 'Foto'} aberto={ampliar !== null && !!f.fotos[ampliar]} aoFechar={() => setAmpliar(null)} largura={900}
-        rodape={f.fotos.length > 1 ? <><Botao aoClicar={() => setAmpliar((a) => (a === null ? a : (a + f.fotos.length - 1) % f.fotos.length))}>‹ Anterior</Botao><Botao aoClicar={() => setAmpliar((a) => (a === null ? a : (a + 1) % f.fotos.length))}>Próxima ›</Botao></> : undefined}>
-        {ampliar !== null && f.fotos[ampliar] && <Foto mediaId={f.fotos[ampliar].id} cor={f.fotos[ampliar].cor} proporcao={`${f.fotos[ampliar].largura} / ${f.fotos[ampliar].altura}`} lado={1280} />}
-      </Dialogo>
+      {/* foto ampliada: a mesma lista do resumo (galeria do proxy quando existe; senão, as fotos da ficha) */}
+      {(() => { const tam = (k: number) => (fotosGal ? fotosGal[k] : f.fotos[k]);
+        return (
+      <Dialogo titulo={ampliar !== null ? `Foto ${ampliar + 1} de ${nFotos}` : 'Foto'} aberto={ampliar !== null && !!listaFotos[ampliar]} aoFechar={() => setAmpliar(null)} largura={900}
+        rodape={nFotos > 1 ? <><Botao aoClicar={() => setAmpliar((a) => (a === null ? a : (a + nFotos - 1) % nFotos))}>‹ Anterior</Botao><Botao aoClicar={() => setAmpliar((a) => (a === null ? a : (a + 1) % nFotos))}>Próxima ›</Botao></> : undefined}>
+        {ampliar !== null && listaFotos[ampliar] && <Foto mediaId={listaFotos[ampliar].id} cor={listaFotos[ampliar].cor} proporcao={`${tam(ampliar)?.largura || 4} / ${tam(ampliar)?.altura || 3}`} lado={1280}
+          url={listaFotos[ampliar].url ? urlImagem(listaFotos[ampliar].id, 1536) : undefined} tentarDeNovo />}
+      </Dialogo>); })()}
+      {galeria.tipo === 'ok' && <AdicionarFotos produto={{ id: p.id, nome: p.nome }} aberto={addFotos} versaoGaleria={galeria.g.versao_galeria}
+        vagas={galeria.g.limite_fotos ? Math.max(0, galeria.g.limite_fotos - galeria.g.fotos.length) : null}
+        aoFechar={() => setAddFotos(false)} aoMudou={aoMudarFotos}
+        aoVerFoto={(fotoId) => { const k = (fotosGal ?? []).findIndex((x) => x.id === fotoId); setAddFotos(false); if (k >= 0) { setFotoSel(k); setAmpliar(k); } }} />}
       <Dialogo titulo="Detalhes do produto · dados cadastrais" aberto={detalhes} aoFechar={() => setDetalhes(false)} largura={620}>
         <dl className="at-detalhes">
           <dt>ID</dt><dd>{p.id}</dd><dt>Nome (catálogo)</dt><dd>{p.nome}</dd><dt>Categoria</dt><dd>{rotuloCategoria(p.categoria)} ({p.categoria})</dd>

@@ -104,6 +104,26 @@ export async function enviar<T>(rota: string, corpo: unknown, opc: { chave?: str
   return tratarEscrita<T>(rota, res, chave);
 }
 
+/** FOTOS (proxy do Dash para o app, /api/midia): mesma regra do "foi salvo" — só é sucesso o 2xx legível COM recibo; resposta perdida,
+ *  5xx ou 2xx sem recibo = desconhecido (a MESMA chave volta no reenvio). `corpo` pode ser bytes (a foto) ou JSON. */
+export async function enviarPara<T>(url: string, corpo: BodyInit | Record<string, unknown>, opc: { chave: string; contentType?: string }): Promise<T> {
+  const token = await csrf();
+  const json = !(corpo instanceof Blob) && !(corpo instanceof ArrayBuffer) && typeof corpo === 'object';
+  const headers: Record<string, string> = { Accept: 'application/json', 'X-CSRF-Token': token, 'X-Chave-Operacao': opc.chave, 'Content-Type': opc.contentType ?? (json ? 'application/json' : 'application/octet-stream') };
+  let res: Response;
+  try { res = await fetch(url, { method: 'POST', credentials: 'same-origin', headers, body: json ? JSON.stringify(corpo) : (corpo as BodyInit) }); }
+  catch { throw new ErroApi(0, 'RESULTADO_DESCONHECIDO', MSG_DESCONHECIDO, [], { desfecho: 'desconhecido', chave: opc.chave }); }
+  return tratarEscrita<T>('foto', res, opc.chave);
+}
+/** FOTOS: mesmo tratamento de resposta das escritas ("Salvo" só com recibo), para quem já tem a Response (ex.: upload por XHR com progresso). */
+/** CSRF para quem monta a própria requisição (upload por XHR). */
+export const tokenCsrf = () => csrf();
+export const tratarRespostaEscrita = <T,>(res: Response, chave: string) => tratarEscrita<T>('foto', res, chave);
+/** GET genérico com o envelope do Dash (para rotas fora de /api/atributos). Erros mantêm o status (404 = desligado, 403 = sem permissão). */
+export async function obterDe<T>(url: string, sinal?: AbortSignal): Promise<T> {
+  return tratar<T>(await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' }, signal: sinal }));
+}
+
 /** Conferir gravação (contrato §5): GET, não grava nada; só o titular da chave. */
 export interface Conferencia { chave: string; resultado: 'aplicada' | 'sem_mudanca' | 'em_andamento' | 'interrompida' | 'nao_aplicada' | 'nao_encontrada'; operacao: string | null; recibo: Recibo | null; erro: { codigo: string; http: number; mensagem: string; campos?: string[] } | null; tentativas?: number;
   sinal?: string; reenvio_seguro?: boolean; itens?: ItemLote[]; itens_resumo?: Partial<Record<DesfechoItemLote, number>> }

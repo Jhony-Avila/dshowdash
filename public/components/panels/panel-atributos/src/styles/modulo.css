@@ -773,3 +773,56 @@ html[data-theme="dark"] body [data-bl-root] .pv2-corpo__fixo > .pv2-linha--fixa:
 /* Vínculos da Ficha com chave de operação (23/11): linha de estado (mesmas cores do editor de valor: at-salvo--…) */
 [data-bl-root] .at-vinculo-estado { margin: 4px 0 8px; font-size: 12.5px; font-weight: 400; }
 [data-bl-root] .at-vinculo-estado__o-que { font-weight: 500; }
+/* ── FOTOS NA FICHA (CIMA, 19/11) ── resumo: botão, dica e área de soltar; diálogo Adicionar fotos (fila com prévia, ordem, principal, estado
+   por foto); webcam; aba Fotos (capa, ordem, remover/restaurar). Pesos 400/500 da V3. */
+[data-bl-root] .at-resumo-v3--soltando { outline: 2px dashed var(--bl-verde); outline-offset: 2px; background: var(--bl-verde-suave); }
+[data-bl-root] .at-resumo-v3__add { margin-left: 10px; display: inline-flex; align-items: center; gap: 6px; font-weight: 400; font-size: 12.5px; }
+[data-bl-root] .at-resumo-v3__dica { font-size: 11.5px; color: var(--bl-texto-3); }
+.at-fotos-add__destino { margin: 0 0 8px; font-size: 13px; }
+.at-fotos-add__zona { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 18px; border: 1.5px dashed var(--bl-borda-forte); border-radius: 10px; text-align: center; }
+.at-fotos-add__zona--ativa { border-color: var(--bl-verde); background: var(--bl-verde-suave); }
+.at-fotos-add__acoes { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.at-fotos-fila { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; max-height: 46vh; overflow: auto; }
+.at-fotos-fila__item { display: grid; grid-template-columns: 72px 1fr auto; gap: 10px; align-items: center; padding: 6px; border: 1px solid var(--bl-borda); border-radius: 8px; }
+.at-fotos-fila__item--recusada { border-color: var(--bl-erro); }
+.at-fotos-fila__item--desconhecido, .at-fotos-fila__item--andando, .at-fotos-fila__item--conferindo { border-color: var(--bl-aviso); background: var(--bl-aviso-bg); }   /* a conferir = atenção, nunca erro */
+.at-fotos-fila__item--salvo, .at-fotos-fila__item--ja_existia { border-color: var(--bl-sucesso); }
+.at-fotos-fila__previa { width: 72px; height: 54px; object-fit: cover; border-radius: 6px; background: var(--bl-superficie-2); }
+.at-fotos-fila__info { min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; font-weight: 400; }
+.at-fotos-fila__nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.at-fotos-fila__estado { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; color: var(--bl-texto-2); }
+.at-fotos-fila__item--recusada .at-fotos-fila__estado { color: var(--bl-erro); }
+.at-fotos-fila__item--desconhecido .at-fotos-fila__estado, .at-fotos-fila__item--andando .at-fotos-fila__estado { color: var(--bl-texto); }
+/* Sessão encerrada (parecer 23/11): "Entrar novamente" → orientação de retomada (texto neutro, mesmo dentro da linha em vermelho ou do aviso) */
+[data-bl-root] .at-entrar-novamente { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+[data-bl-root] .at-entrar-novamente__dica { color: var(--bl-texto-2); font-weight: 400; }
+.at-fotos-fila__principal { font-size: 12px; color: var(--bl-texto-2); display: inline-flex; gap: 6px; align-items: center; }
+.at-fotos-fila__ordem { display: flex; gap: 2px; }
+.at-webcam { display: flex; flex-direction: column; gap: 8px; }
+.at-webcam__video, .at-webcam__previa { width: 100%; max-height: 60vh; background: #000; border-radius: 8px; object-fit: contain; }
+[data-bl-root] .at-fotos-ger { padding: 12px; margin-top: 8px; }
+[data-bl-root] .at-fotos-ger__topo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; font-weight: 500; }
+[data-bl-root] .at-fotos-ger__topo .bl-botao { display: inline-flex; align-items: center; gap: 6px; font-weight: 400; }
+[data-bl-root] .at-fotos-ger__op { font-weight: 400; font-size: 12.5px; color: var(--bl-texto-2); }
+[data-bl-root] .at-fotos-ger__op--erro, [data-bl-root] .at-fotos-ger__op--incerto { color: var(--bl-erro); }
+[data-bl-root] .at-fotos-ger__op--ok { color: var(--bl-sucesso); }
+[data-bl-root] .at-fotos-ger__grade { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+[data-bl-root] .at-fotos-ger__item { border: 1px solid var(--bl-borda); border-radius: 10px; padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+[data-bl-root] .at-fotos-ger__item--capa { border-color: var(--bl-info); box-shadow: 0 0 0 1px var(--bl-info); }
+[data-bl-root] .at-fotos-ger__item--removida { opacity: .7; }
+[data-bl-root] .at-fotos-ger__barra { display: flex; gap: 2px; justify-content: center; }
+[data-bl-root] .at-fotos-ger__selo { font-size: 11.5px; color: var(--bl-texto-2); font-weight: 400; text-align: center; }
+[data-bl-root] .at-fotos-ger__removidas { margin-top: 12px; }
+/* FOTOS (roteiro aprovado): resumo do lote, prévia HEIC, progresso, reordenar */
+.at-fotos-add__resumo { margin: 10px 0 0; font-size: 13px; font-weight: 500; }
+.at-fotos-add__det { font-size: 11.5px; }
+.at-fotos-fila__previa--heic { display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: var(--bl-texto-2); text-align: center; line-height: 1.1; }
+.at-fotos-fila__previa--heic small { font-size: 9.5px; font-weight: 400; }
+.at-fotos-fila__estado progress { width: 120px; height: 6px; }
+.at-fotos-fila__item--duplicada { border-color: var(--bl-info); }
+[data-bl-root] .at-fotos-ger__grade--ordenando .at-fotos-ger__item { cursor: grab; }
+[data-bl-root] .at-fotos-ger__principal { font-size: 12px; font-weight: 500; color: var(--bl-info); padding: 4px 6px; }
+/* roteiro das fotos: miniatura da faixa abre a galeria; "Tentar carregar foto" */
+[data-bl-root] .at-heroi-compacto__foto--botao { all: unset; cursor: pointer; display: block; width: 42px; height: 42px; flex: 0 0 42px; border-radius: 6px; overflow: hidden; }
+[data-bl-root] .at-heroi-compacto__foto--botao:focus-visible { outline: 2px solid var(--bl-info); outline-offset: 2px; }
+.at-foto__tentar { margin-top: 6px; padding: 3px 8px; font: inherit; font-size: 12px; border: 1px solid var(--bl-borda-forte); border-radius: 6px; background: var(--bl-superficie); color: var(--bl-texto); cursor: pointer; }
