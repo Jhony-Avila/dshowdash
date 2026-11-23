@@ -7,8 +7,8 @@
  *   (UMA chamada por bbox). A chave é injetada server-side; nunca vai ao frontend.
  *
  *   ⚠️ ORÇAMENTO DE CHAMADAS: cada refresh de fluxo faz N chamadas (N = nº de vias). Com o
- *   cache de 60s isso pode estourar o free tier — antes do go-live, ajustar TTL/nº de vias
- *   em config.php (ver README, seção "limites da API").
+ *   TTL de 300s estourou a cota diária (nov/2026) → TTL 900s em config.php; antes de baixar
+ *   TTL ou somar vias, refazer a conta do README, seção "limites da API".
  */
 
 require_once __DIR__ . '/TrafficProvider.php';

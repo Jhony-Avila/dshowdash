@@ -74,5 +74,14 @@ $p = $prov($flowOuInc(fn() => ['status' => 403, 'json' => $COTA], fn() => ['stat
 $txt = (string) erroDe(fn() => $p->getTrafficFlow($cfg['bounds'])) . json_encode($p->diagnostico()) . json_encode($p->health());
 check('chave fora de erro e diagnóstico', !str_contains($txt, 'chave-INVENTADA'));
 
+// Orçamento de chamadas (TTL 15 min aprovado em 23/11): renovações/dia × (vias + 1) + health ≤ 1.500.
+$c = $cfg['cache'];
+check('TTLs de 15 min (payload, fluxo, ocorrências, resumo, health)',
+    $c['ttl_dashboard'] === 900 && $c['ttl_flow'] === 900 && $c['ttl_incidents'] === 900 && $c['ttl_summary'] === 900 && $c['ttl_health'] === 900);
+check('retrato velho dura ≥ 2 ciclos', $c['ttl_stale'] >= 2 * $c['ttl_dashboard']);
+$vias = count(require __DIR__ . '/../providers/fixtures/sp-roads.php');
+$dia = intdiv(86400, $c['ttl_dashboard']) * ($vias + 1) + intdiv(86400, $c['ttl_health']);
+check("orçamento diário 24 h ≤ 1.500 (calculado: $dia)", $dia <= 1500);
+
 echo "teste-saude: $ok ok, $falha falha(s)\n";
 exit($falha === 0 ? 0 : 1);
