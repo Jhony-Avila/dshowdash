@@ -86,6 +86,7 @@
 [data-bl-root] .cf-grade--obrigatorios_vazios td.cf-col-prod { min-width: 576px; }
 
 /* reticências também em botão/link (nome do produto): o bloco ocupa a célula e encolhe */
-[data-bl-root] .cf-grade .cf-1l { width: 100%; min-width: 0; text-align: left; }
+[data-bl-root] .cf-grade .cf-1l { width: 100%; min-width: 0; }
+[data-bl-root] .cf-grade td.cf-col-prod .cf-1l { text-align: left; }
 [data-bl-root] .cf-grade td.cf-col-prod > .cf-1l, [data-bl-root] .cf-grade td.cf-col-prod button.cf-1l { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 [data-bl-root] .cf-pilula[tabindex]:focus-visible { outline: 2px solid var(--bl-destaque, #1a7f64); outline-offset: 1px; }
