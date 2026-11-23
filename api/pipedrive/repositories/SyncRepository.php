@@ -948,6 +948,10 @@ final class PipeSyncRepository
             'atividades' => [
                 'pendentes' => (int)$this->pdo->query("SELECT COUNT(*) FROM pipe_activities WHERE is_deleted=0 AND done=0")->fetchColumn(),
                 'atrasadas' => (int)$this->pdo->query("SELECT COUNT(*) FROM pipe_activities WHERE is_deleted=0 AND done=0 AND due_date IS NOT NULL AND due_date < CURDATE()")->fetchColumn(),
+                // Geral 1.1 (23/11/2026): NEGÓCIOS ABERTOS distintos com ao menos uma atividade vencida e não concluída (um negócio conta UMA vez,
+                // por mais atividades vencidas que tenha). Aditivo: `atrasadas` (atividades) continua igual para o painel do Pipedrive.
+                // CURDATE() = dia de Brasília (MySQL em SYSTEM −03:00). As colunas derivadas do espelho (activities_overdue_count) não são preenchidas.
+                'negocios_abertos_com_vencida' => (int)$this->pdo->query("SELECT COUNT(DISTINCT d.id) FROM pipe_deals d JOIN pipe_activities a ON a.deal_pd_id = d.pipedrive_id WHERE d.is_deleted=0 AND d.status='open' AND a.is_deleted=0 AND a.done=0 AND a.due_date IS NOT NULL AND a.due_date < CURDATE()")->fetchColumn(),
             ],
         ];
     }
