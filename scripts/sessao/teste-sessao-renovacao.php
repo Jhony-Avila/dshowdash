@@ -147,9 +147,9 @@ case 'falha-persistencia': {
     $afirma('falha de CONSULTA não autoriza (gate nega)', $valida() === null);
     SessaoRegistro::definirConexao(fn () => $pdo);
     $afirma('…e não destrói: com o banco de volta a sessão vale', ($valida()['user_id'] ?? 0) == $U);
-    // login sem conseguir gravar o registro: outra conexão, onde a tabela temporária NÃO existe → INSERT falha
+    // login sem conseguir gravar o registro: conexão numa base de validação SEM app_user_sessions (ATRWEB_VAL_EQ) → a gravação falha
     $c = parse_ini_file($CRED, true, INI_SCANNER_RAW)['client'] ?? [];
-    $pdo2 = new PDO('mysql:unix_socket=' . ($c['socket'] ?? '') . ';dbname=ATRWEB_VAL_DASH;charset=utf8mb4', $c['user'] ?? '', $c['password'] ?? '', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    $pdo2 = new PDO('mysql:unix_socket=' . ($c['socket'] ?? '') . ';dbname=ATRWEB_VAL_EQ;charset=utf8mb4', $c['user'] ?? '', $c['password'] ?? '', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
     unset($c);
     $svc = new AuthService($pdo2);
     $m = new ReflectionMethod($svc, 'createUserSession'); $m->setAccessible(true);
