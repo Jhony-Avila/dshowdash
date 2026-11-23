@@ -153,6 +153,7 @@ try {
             foreach ($contas as $conta) {
                 foreach (array_keys(BlingSyncService::RECURSOS) as $recurso) {
                     if (BlingSyncService::desativado((int) $conta, $recurso) !== null) { continue; }   // BLING-SEM-RECEBER
+                    if ($repo->escopoSuspenso((int) $conta, $recurso)) { continue; }   // DSHOW-106: suspenso por escopo ausente
                     $estado = $repo->estadoSync($conta, $recurso);
 
                     // Recurso nunca sincronizado espera a carga inicial, que é
@@ -180,6 +181,7 @@ try {
             foreach ($contas as $conta) {
                 foreach (array_keys(BlingSyncService::RECURSOS) as $recurso) {
                     if (BlingSyncService::desativado((int) $conta, $recurso) !== null) { continue; }   // BLING-SEM-RECEBER
+                    if ($repo->escopoSuspenso((int) $conta, $recurso)) { continue; }   // DSHOW-106: suspenso por escopo ausente
                     if ($seco) { $agendados++; continue; }
                     // Prioridade 60: é a mais baixa de propósito. Reconciliação
                     // nunca deve atrasar webhook nem incremental.

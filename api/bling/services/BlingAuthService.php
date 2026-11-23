@@ -107,8 +107,20 @@ final class BlingAuthService
         if (!BlingOAuth::precisaRenovar($t['expira_em'])) {
             return $t['access_token'];
         }
+        // DSHOW-106 (3): renovação SÓ dentro da trava da conta; relê o par lá dentro — se outro processo já renovou, usa o novo
+        return $this->repo->comTravaDeToken($accountId, function () use ($accountId): string {
+            $t = $this->repo->tokens($accountId);
+            if ($t !== null && $t['access_token'] !== null && !BlingOAuth::precisaRenovar($t['expira_em'])) {
+                return $t['access_token'];
+            }
+            return $this->renovarComPar($accountId, $t);
+        });
+    }
 
-        if ($t['refresh_token'] === null) {
+    /** Renova com o refresh_token do par lido (sempre chamado com a trava da conta). */
+    private function renovarComPar(int $accountId, ?array $t): string
+    {
+        if ($t === null || $t['refresh_token'] === null) {
             $this->repo->registrarFalhaRenovacao($accountId, 'Sem refresh_token gravado.');
             throw new RuntimeException(
                 'O token expirou e não há refresh_token. É necessário reconectar a conta.'
@@ -135,21 +147,19 @@ final class BlingAuthService
         return $novos['access_token'];
     }
 
-    /** 401 com token "válido": força a renovação pelo refresh_token (mesmas regras e registros de tokenValido). */
-    public function renovarAgora(int $accountId): string
+    /**
+     * 401 com token "válido": força a renovação — dentro da trava da conta (DSHOW-106). Se o par gravado já não é o que levou o 401
+     * ($recusado), outro processo renovou: devolve o atual sem renovar de novo.
+     */
+    public function renovarAgora(int $accountId, ?string $recusado = null): string
     {
-        $t = $this->repo->tokens($accountId);
-        if ($t === null || $t['refresh_token'] === null) {
-            throw new RuntimeException('Sem refresh_token gravado: é necessário reconectar a conta.');
-        }
-        try {
-            $novos = (new BlingOAuth($this->transporte))->renovar($t['refresh_token']);
-        } catch (Throwable $e) {
-            $this->repo->registrarFalhaRenovacao($accountId, $e->getMessage());
-            throw new RuntimeException('Não foi possível renovar o acesso ao Bling: ' . $e->getMessage());
-        }
-        $this->repo->salvarTokens($accountId, $novos['access_token'], $novos['refresh_token'], $novos['expires_in'], $novos['token_type']);
-        return $novos['access_token'];
+        return $this->repo->comTravaDeToken($accountId, function () use ($accountId, $recusado): string {
+            $t = $this->repo->tokens($accountId);
+            if ($t !== null && $recusado !== null && $t['access_token'] !== null && $t['access_token'] !== $recusado) {
+                return $t['access_token'];
+            }
+            return $this->renovarComPar($accountId, $t);
+        });
     }
 
     /** Cliente pronto para uso, com token já resolvido. */
@@ -160,7 +170,7 @@ final class BlingAuthService
             $this->tokenValido($accountId),
             $this->repo,
             $accountId,
-            fn(): string => $this->renovarAgora($accountId),   // 401 → uma renovação e uma repetição
+            fn(string $recusado): string => $this->renovarAgora($accountId, $recusado),   // 401 → uma renovação e uma repetição
         );
     }
 

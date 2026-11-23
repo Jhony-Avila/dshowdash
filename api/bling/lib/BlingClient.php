@@ -59,7 +59,7 @@ final class BlingClient
         private string $accessToken,
         private readonly ?BlingRepository $repo = null,
         private readonly ?int $accountId = null,
-        /** 401: renova o token UMA vez (fn(): string devolve o novo access_token) e repete o pedido UMA vez. Null = sem renovação. */
+        /** 401: renova o token UMA vez (fn(string $recusado): string devolve o novo access_token) e repete o pedido UMA vez. Null = sem renovação. */
         private readonly ?Closure $renovarToken = null,
     ) {}
 
@@ -206,7 +206,7 @@ final class BlingClient
             if ($r->status === 401 && !$renovou && $this->renovarToken !== null) {
                 $renovou = true;
                 $this->registrarErro($caminho, $r, $tentativa);
-                try { $this->accessToken = ($this->renovarToken)(); } catch (Throwable $e) { return $r; }
+                try { $this->accessToken = ($this->renovarToken)($this->accessToken); } catch (Throwable $e) { return $r; }
                 $tentativa--;
                 continue;
             }
