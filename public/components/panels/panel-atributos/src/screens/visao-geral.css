@@ -1,0 +1,106 @@
+/* panel-atributos/src/screens/visao-geral.css — VISÃO GERAL V2 (ESQUERDA, 19/11; mockup aprovado do Jhony). Escopo: [data-bl-root] .at-vg…
+   (a faixa de indicadores e as cabeças dos cartões vivem no bloco travado — <CabecalhoTravado> — e por isso o escopo também cobre
+   .at-fixo .at-vg__…). Cores só por tokens var(--bl-…) (claro e escuro). Nenhum arquivo de outro dono muda.
+   Tipografia (prioridade do briefing): 400 nas linhas, valores, percentuais e links; 500 no máximo em títulos, cabeçalhos e números dos
+   indicadores. Toda regra de peso aqui é EXPLÍCITA para a cascata do módulo (th 600, .at-resumo strong 650…) não voltar a engrossar. */
+
+[data-bl-root] .at-vg__ic { flex: none; display: block; }
+[data-bl-root] .at-vg__fraco { color: var(--bl-texto-3); font-weight: 400; }
+
+/* ── faixa ÚNICA de indicadores ───────────────────────────────────────────────────────────────────────────────────────────────────── */
+[data-bl-root] .at-vg__indicadores { display: flex; margin: 0 0 12px; padding: 8px 4px; list-style: none; background: var(--bl-superficie);
+  border: 1px solid var(--bl-borda); border-radius: var(--bl-raio); }
+[data-bl-root] .at-vg__indicadores > li { flex: 1 1 0; min-width: 0; display: flex; }
+[data-bl-root] .at-vg__indicadores > li + li { border-left: 1px solid var(--bl-borda); }
+[data-bl-root] .at-vg__indicador { all: unset; box-sizing: border-box; flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; margin: 0 6px; padding: 6px 12px;
+  border-radius: var(--bl-raio-sm, 6px); cursor: pointer; color: var(--bl-texto); }
+[data-bl-root] .at-vg__indicador:hover { background: var(--bl-superficie-2); }
+[data-bl-root] .at-vg__indicador:focus-visible { outline: 2px solid var(--bl-verde-borda, var(--bl-verde)); outline-offset: 1px; }
+[data-bl-root] .at-vg__indicador-ic { flex: none; display: grid; place-items: center; color: var(--bl-texto-3); }
+[data-bl-root] .at-vg__indicador-n { flex: none; font-size: 22px; line-height: 1; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: -.01em; color: var(--bl-texto); }
+[data-bl-root] .at-vg__indicador-n.at-vg__fraco { font-size: 15px; color: var(--bl-texto-3); }
+[data-bl-root] .at-vg__indicador-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; line-height: 1.25; }
+[data-bl-root] .at-vg__indicador-rot { font-size: 13px; font-weight: 400; color: var(--bl-texto); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-bl-root] .at-vg__indicador-comp { font-size: 11.5px; font-weight: 400; color: var(--bl-texto-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── duas colunas (cobertura | obrigatórios): MESMA grade nas cabeças (bloco travado) e no corpo, para os cartões casarem ─────────── */
+[data-bl-root] .at-vg__colunas { display: grid; grid-template-columns: minmax(0, 1.68fr) minmax(300px, 1fr); gap: 16px; align-items: start; }
+/* SEM EMENDA entre a cabeça (no bloco travado) e o corpo do cartão — medido na 8113 em 19/11: o bloco da CIMA tem 4 px de respiro embaixo
+   (.at-faixa-fixa__bloco padding-bottom) e o conteúdo do módulo 16 px em cima (.at-conteudo padding-top). As cabeças descem os 4 px até o fim
+   do bloco e a tela sobe os 16 px: o cartão começa onde a cabeça termina, e o cabeçalho das colunas já nasce onde gruda (topo-tela + topo-fixo). */
+[data-bl-root] .at-vg__cabecas { align-items: stretch; margin-bottom: -4px; }
+[data-bl-root] .at-vg { margin-top: -16px; }
+/* cabeça do cartão = topo do cartão (o corpo continua logo abaixo, sem emenda) */
+[data-bl-root] .at-vg__cabeca { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 14px 16px 14px; background: var(--bl-superficie);
+  border: 1px solid var(--bl-borda); border-bottom: 0; border-radius: var(--bl-raio) var(--bl-raio) 0 0; }
+[data-bl-root] .at-vg__cabeca h3 { margin: 0; font-size: 16px; font-weight: 500; color: var(--bl-texto); white-space: nowrap; }
+[data-bl-root] .at-vg__contador { font-size: 12.5px; font-weight: 400; color: var(--bl-texto-3); white-space: nowrap; }
+[data-bl-root] .at-vg__espaco { flex: 1 1 auto; }
+[data-bl-root] .at-vg__nota { font-size: 12px; line-height: 1.3; font-weight: 400; color: var(--bl-texto-3); text-align: right; min-width: 0; }   /* quebra em vez de cortar */
+[data-bl-root] .at-vg__cartao { min-width: 0; padding: 0 16px 16px; background: var(--bl-superficie); border: 1px solid var(--bl-borda); border-top: 0;
+  border-radius: 0 0 var(--bl-raio) var(--bl-raio); }
+/* o painel da direita fica PARADO alinhado ao topo da grade enquanto as linhas da cobertura rolam */
+[data-bl-root] .at-vg__cartao--lado { position: sticky; top: calc(var(--at-topo-tela, 0px) + var(--at-topo-fixo, 0px)); }
+[data-bl-root] .at-vg__cabeca--local { display: none; }
+[data-bl-root] .at-vg__vazio { margin: 0; padding: 14px 4px; font-size: 13px; }
+
+/* ── controles: "Colunas" e informação ─────────────────────────────────────────────────────────────────────────────────────────── */
+[data-bl-root] .at-vg__pop { position: relative; flex: none; }
+[data-bl-root] .at-vg__botao { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 10px 0 11px; cursor: pointer;
+  font-size: 13px; font-weight: 400; color: var(--bl-texto); background: var(--bl-superficie); border: 1px solid var(--bl-borda); border-radius: var(--bl-raio-sm, 6px); }
+[data-bl-root] .at-vg__botao:hover { background: var(--bl-superficie-2); }
+[data-bl-root] .at-vg__botao[aria-expanded="true"] { border-color: var(--bl-verde-borda, var(--bl-verde)); }
+[data-bl-root] .at-vg__botao:focus-visible, [data-bl-root] .at-vg__info:focus-visible, [data-bl-root] .at-vg__link:focus-visible { outline: 2px solid var(--bl-verde-borda, var(--bl-verde)); outline-offset: 2px; }
+[data-bl-root] .at-vg__info { all: unset; display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; color: var(--bl-texto-3); }
+[data-bl-root] .at-vg__info:hover, [data-bl-root] .at-vg__info[aria-expanded="true"] { color: var(--bl-texto); background: var(--bl-superficie-2); }
+[data-bl-root] .at-vg__menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 40; min-width: 270px; margin: 0; padding: 6px; background: var(--bl-superficie);
+  border: 1px solid var(--bl-borda); border-radius: var(--bl-raio-sm, 6px); box-shadow: var(--bl-sombra-sm, 0 6px 18px rgba(0,0,0,.12)); }
+[data-bl-root] .at-vg__opcao { display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 400; color: var(--bl-texto); }
+[data-bl-root] .at-vg__opcao:hover { background: var(--bl-superficie-2); }
+[data-bl-root] .at-vg__opcao input { margin: 0; accent-color: var(--bl-verde); }
+[data-bl-root] .at-vg__opcao--fixa { cursor: default; color: var(--bl-texto-3); }
+[data-bl-root] .at-vg__nota-info { left: 0; right: auto; width: 340px; padding: 10px 12px; font-size: 12.5px; line-height: 1.45; font-weight: 400; color: var(--bl-texto-2); white-space: normal; }
+
+/* ── datagrids (TabelaDados): linhas de 38 px, zebra suave da TabelaDados, números à direita (tipo numero), pesos leves ─────────────── */
+[data-bl-root] .at-vg .at-td__tabela { font-size: 13.5px; }
+[data-bl-root] .at-vg .at-td__th, [data-bl-root] .at-vg .at-td__ordenar { font-size: 13px; font-weight: 500; }
+[data-bl-root] .at-vg .at-td__th { height: 40px; color: var(--bl-texto-2); }
+[data-bl-root] .at-vg .at-td__tabela > tbody > tr.at-td__linha > td { height: 38px; padding-top: 0; padding-bottom: 0; font-weight: 400; white-space: nowrap; }
+/* LARGURAS PLANEJADAS (parecer do Jhony, 19/11): a Subcategoria ocupava ~70% e afastava os números do nome. Agora a grade é table-layout: fixed —
+   Subcategoria 40% (Categoria 18%, quando ligada) e as colunas numéricas dividem o resto POR IGUAL, alinhadas à direita. Só larguras: a
+   tipografia é a mesma. No painel da direita, Atributo 72% e Produtos o resto. Títulos longos (ex.: "Com kit específico (produtos)") quebram
+   em vez de cortar. */
+[data-bl-root] .at-vg .at-vg__tabela { table-layout: fixed; }
+[data-bl-root] .at-vg [data-cartao="cobertura"] .at-td__th[data-coluna="subcategoria"] { width: 40%; }
+[data-bl-root] .at-vg [data-cartao="cobertura"] .at-td__th[data-coluna="categoria"] { width: 18%; }
+[data-bl-root] .at-vg [data-cartao="obrigatorios"] .at-td__th[data-coluna="rotulo"] { width: 72%; }
+[data-bl-root] .at-vg .at-td__th { white-space: normal; line-height: 1.25; }
+[data-bl-root] .at-vg td.at-vg__nome { overflow: hidden; text-overflow: ellipsis; }
+[data-bl-root] .at-vg .at-td__linha--clicavel:focus-visible { outline: 2px solid var(--bl-verde-borda, var(--bl-verde)); outline-offset: -2px; }
+[data-bl-root] .at-vg__link { all: unset; cursor: pointer; color: var(--bl-info); font-weight: 400; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-bl-root] .at-vg__link:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+/* ── janela média (até 1700 px; ex.: 1440×900): nada de texto cortado nos indicadores — ícone e espaços menores, rótulo e complemento quebram linha ── */
+@media (max-width: 1700px) {
+  /* janela média (ex.: 1440×900): mais espaço para Produtos, Com kit e Essencial, tirado da Subcategoria (parecer do Jhony 19/11) */
+  [data-bl-root] .at-vg [data-cartao="cobertura"] .at-td__th[data-coluna="subcategoria"] { width: 32%; }
+  [data-bl-root] .at-vg__indicador { gap: 8px; margin: 0 3px; padding: 6px 8px; }
+  [data-bl-root] .at-vg__indicador-ic .at-vg__ic { width: 24px; height: 24px; }
+  [data-bl-root] .at-vg__indicador-n { font-size: 19px; }
+  [data-bl-root] .at-vg__indicador-rot, [data-bl-root] .at-vg__indicador-comp { white-space: normal; overflow: visible; text-overflow: clip; }
+}
+
+/* ── janela estreita: os cartões empilham; a cabeça dos obrigatórios desce para o próprio cartão (não fica longe dele no bloco) ─────── */
+@media (max-width: 960px) {
+  [data-bl-root] .at-vg__colunas { grid-template-columns: minmax(0, 1fr); }
+  [data-bl-root] .at-vg__cabecas > [data-cabeca="obrigatorios"] { display: none; }
+  [data-bl-root] .at-vg__cartao--lado { position: static; margin-top: 4px; border-top: 1px solid var(--bl-borda); border-radius: var(--bl-raio); }
+  [data-bl-root] .at-vg__cabeca--local { display: flex; padding: 14px 0 10px; border: 0; background: none; }
+  [data-bl-root] .at-vg__indicadores { flex-wrap: wrap; }
+  [data-bl-root] .at-vg__indicadores > li { flex: 1 1 45%; }
+  [data-bl-root] .at-vg__indicadores > li + li { border-left: 0; }
+}
+
+/* Só nesta aba: sem a sombra/linha do bloco travado (da CIMA), que aqui viraria emenda entre a cabeça e o corpo do cartão. A regra só vale quando o
+   bloco contém as cabeças da Visão geral (:has); nas outras abas o bloco segue igual. */
+[data-bl-root] .at-fixo:has(.at-vg__cabecas) { box-shadow: none; }
