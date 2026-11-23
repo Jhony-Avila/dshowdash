@@ -10,6 +10,7 @@ import { Botao, CabecalhoTravado, Erro, Vazio } from '../../ui/Comuns';
 import { MenuEscolha } from '../../ui/MenuBarra';
 import { TabelaDados, type ColunaTabela } from '../../ui/TabelaDados';
 import { useGravacoes } from '../../ui/CelulaEditavel';
+import { Icone } from '../../ui/Icones';
 import { podeConferir, livre } from '../../ui/celula';
 import { anterior, faixa, PAGINAS0, paginasTotais, POR_PAGINA, proxima, textoAtual, type Atual, type Paginas, type RespFila } from './fila';
 import './conferencia.css';
@@ -77,7 +78,7 @@ export function FilaDerivada({ fila, atributos, subcategorias, kits, podeVincula
         return feitas[chaveDe(fila, x)] ? pilula(feitas[chaveDe(fila, x)], 'ativa') : podeConferir(st.fase) ? pilula('A conferir', 'aviso') : st.fase === 'recusada' || st.fase === 'conflito' ? pilula('Não aplicada', 'erro') : pilula('Pendente', 'pendente'); } },
     { chave: 'acoes', titulo: 'Ações', tipo: 'texto', ordenavel: false, classe: 'cf-col-acoes2', render: (x) => { const k = `${chaveDe(fila, x)}:vincular`; const st = g.estadoDe(k);
         if (podeConferir(st.fase) && !feitas[chaveDe(fila, x)]) return <span className="cf-acoes"><button type="button" className="bl-botao cf-btn cf-btn--conferir" onClick={() => void g.conferir(k)}>Conferir gravação</button><button type="button" className="bl-botao cf-btn" onClick={() => setAberta(chaveDe(fila, x))}>Detalhes</button></span>;
-        return <span className="cf-acoes">{podeVincular && !feitas[chaveDe(fila, x)] && <button type="button" className="bl-botao cf-btn" disabled={!livre(st.fase)} aria-busy={st.fase === 'salvando'} onClick={() => void vincular(x)}>Vincular</button>}
+        return <span className="cf-acoes">{podeVincular && !feitas[chaveDe(fila, x)] && <button type="button" className="bl-botao cf-btn cf-btn--acao" disabled={!livre(st.fase)} aria-busy={st.fase === 'salvando'} onClick={() => void vincular(x)}><Icone nome="link" />Vincular</button>}
           <button type="button" className="at-link" onClick={() => m.abrirProduto(x.product_id, { atributo: x.atributo_id })}>Abrir ficha</button></span>; } }];
   else if (fila === 'obrigatorios_vazios') colunas = [id, prod,
     { chave: 'atributo', titulo: 'Atributo obrigatório', tipo: 'texto', ordenavel: false, classe: 'cf-col-obr', render: (x) => <span className="cf-1l" title={x.atributo}>{x.atributo}</span> },

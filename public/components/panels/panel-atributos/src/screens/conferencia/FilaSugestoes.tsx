@@ -171,7 +171,7 @@ export function FilaSugestoes({ atributos, podeDecidir, administra, aoMudarTotai
         </div>
         {estado === 'ignorada' && <p className="cf-nota" data-nota-ignoradas>Ignoradas por agora. Nenhum valor foi alterado; você pode devolver estas sugestões à fila.</p>}
         {estado === 'recusada' && <p className="cf-nota">Recusadas são decisões finais e ficam aqui para consulta.{administra ? ' Quem administra o catálogo pode reabrir, com motivo.' : ''}</p>}
-        {podeDecidir && selecionados.length > 0 && !pedido && acoesDaSituacao.length > 0 && (
+        {podeDecidir && selecionados.length > 0 && acoesDaSituacao.length > 0 && (   /* R6: continua visível com a confirmação aberta */
           <div className="cf-selecao" role="region" aria-label="Seleção desta página" data-selecao={selecionados.length}>
             <span><strong>{selecionados.length}</strong> selecionada{selecionados.length > 1 ? 's' : ''}
               {estado === 'pendente' && <> · <strong>{contaAcao('aceitar')}</strong> pode{contaAcao('aceitar') === 1 ? '' : 'm'} ser aceita{contaAcao('aceitar') === 1 ? '' : 's'} · {selecionados.length - contaAcao('aceitar')} fora do aceite</>}</span>
@@ -265,7 +265,9 @@ function Evidencia({ it, ultimo, larga }: { it: ItemFila; ultimo?: ResultadoItem
 
 function FaixaLote({ lote, c, aoConferir, aoConcluir, aoOcultar, ocupado }: { lote: EstadoLote; c: ReturnType<typeof contar>; aoConferir: () => void; aoConcluir: () => void; aoOcultar: () => void; ocupado: boolean }) {
   const n = lote.intencao.enviados.length; const f = lote.fase;
-  const resumo = `${c.aplicadas} ${c.aplicadas === 1 ? 'feita' : 'feitas'} · ${c.nao_aplicadas} não aplicada${c.nao_aplicadas === 1 ? '' : 's'} · ${c.a_conferir} a conferir`;
+  // R5 (Jhony, 23/11): o resultado usa o verbo da ação do lote ("2 aceitas", "2 ignoradas")
+  const [um, varios] = ({ aceitar: ['aceita', 'aceitas'], recusar: ['recusada', 'recusadas'], ignorar: ['ignorada', 'ignoradas'], devolver: ['devolvida', 'devolvidas'], reabrir: ['reaberta', 'reabertas'] } as Record<Acao, [string, string]>)[lote.intencao.acao];
+  const resumo = `${c.aplicadas} ${c.aplicadas === 1 ? um : varios} · ${c.nao_aplicadas} não aplicada${c.nao_aplicadas === 1 ? '' : 's'} · ${c.a_conferir} a conferir`;
   return (
     <div className={`cf-lote cf-lote--${f}`} role="status" aria-live="polite" data-lote={f} data-chave={lote.intencao.chave}>
       <div>

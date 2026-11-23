@@ -90,3 +90,10 @@
 [data-bl-root] .cf-grade td.cf-col-prod .cf-1l { text-align: left; }
 [data-bl-root] .cf-grade td.cf-col-prod > .cf-1l, [data-bl-root] .cf-grade td.cf-col-prod button.cf-1l { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 [data-bl-root] .cf-pilula[tabindex]:focus-visible { outline: 2px solid var(--bl-destaque, #1a7f64); outline-offset: 1px; }
+
+/* R2 (Jhony, 23/11): nome do produto na cor de link do módulo, como na prancha */
+[data-bl-root] .cf-grade .at-link-produto { color: var(--bl-info); }
+[data-bl-root] .cf-grade .at-link-produto:hover { text-decoration: underline; }
+/* R7: ação principal da linha com ícone e contorno de destaque (Vincular) */
+[data-bl-root] .cf-btn--acao { display: inline-flex; align-items: center; gap: 6px; border-color: color-mix(in srgb, var(--bl-destaque, #1a7f64) 55%, transparent); color: var(--bl-destaque, #1a7f64); }
+[data-bl-root] .cf-btn--acao svg { width: 14px; height: 14px; }
