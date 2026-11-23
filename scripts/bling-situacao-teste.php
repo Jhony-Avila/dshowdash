@@ -113,8 +113,24 @@ try {
 
     echo "== 3. releitura: para no meio e retoma\n";
     $repo = new BlingRepository($pdo); $auth = new BlingAuthService($repo, $api); $sync = new BlingSyncService($repo, $auth);   // nova instância vê as colunas
+    // ── TESTE DECISIVO (Codex DSHOW-111 A2): pedido de validação COM itens, valores e frete; a releitura só pode mudar situação e loja ──
+    $pid = (int) v($pdo, "SELECT id FROM bling_sales_orders WHERE bling_id = '900001'");
+    $pdo->prepare("UPDATE bling_sales_orders SET subtotal=1234.56, desconto=10.00, frete=55.50, total=1280.06, custo_total=800.00, qtd_itens=2,
+        vendedor='Vendedor Teste', forma_pagamento='Boleto Teste', situacao='aprovado', payload_hash='hash-de-validacao', loja_bling_id=NULL WHERE id=?")->execute([$pid]);
+    $insItem = $pdo->prepare('INSERT INTO bling_sales_order_items (account_id, sales_order_id, bling_id, sku, descricao, quantidade, valor_unitario, valor_total, custo_unitario) VALUES (?,?,?,?,?,?,?,?,?)');
+    $insItem->execute([$conta, $pid, 'it-1', 'SKU-A', 'Item de validação A', 2, 500.00, 1000.00, 300.00]);
+    $insItem->execute([$conta, $pid, 'it-2', 'SKU-B', 'Item de validação B', 1, 234.56, 234.56, 200.00]);
+    $retrato = static function () use ($pdo, $pid): array {
+        $r = $pdo->query("SELECT * FROM bling_sales_orders WHERE id = $pid")->fetch();
+        unset($r['situacao_bling_id'], $r['loja_bling_id'], $r['atualizado_em']);   // só estas podem mudar (atualizado_em é do próprio MySQL)
+        return ['pedido' => $r, 'itens' => $pdo->query("SELECT * FROM bling_sales_order_items WHERE sales_order_id = $pid ORDER BY id")->fetchAll(),
+                'historico' => (int) $pdo->query("SELECT COUNT(*) FROM bling_sales_order_status_history WHERE sales_order_id = $pid")->fetchColumn()];
+    };
+    $retratoAntes = $retrato();
+    $hashes = $pdo->query('SELECT bling_id, payload_hash FROM bling_sales_orders ORDER BY bling_id')->fetchAll(PDO::FETCH_KEY_PAIR);
+    $GLOBALS['PEDIDOS'][] = ['id' => 999999, 'numero' => '99999', 'data' => '2026-11-23', 'situacao' => ['id' => 9, 'valor' => 0], 'loja' => ['id' => 205000]];   // não existe na base
     $antes = $sync->contagemSituacao($conta);
-    ok('contagem ANTES: 0 com id (a loja já veio no passo 2)', $antes['com_situacao_id'] === 0 && $antes['com_loja'] === 250 && $antes['pedidos'] === 250);
+    ok('contagem ANTES: 0 com id; loja em 249 (a do pedido decisivo foi zerada de propósito)', $antes['com_situacao_id'] === 0 && $antes['com_loja'] === 249 && $antes['pedidos'] === 250);
     $chamadas0 = $api->contar('pedidos/vendas'); $pausas = [];
     $paradas = 0;
     $r1 = $sync->releituraPedidos($conta, static function () use (&$paradas): bool { return ++$paradas >= 1; }, static function (int $ms) use (&$pausas): void { $pausas[] = $ms; }, 1500);
@@ -131,7 +147,16 @@ try {
     ok('ids reais por situação: 9 = 200, 12 = 50', (int) $porId['9'] === 200 && (int) $porId['12'] === 50, json_encode($porId));
     ok('campo ANTIGO intacto (situacao_bling = 0 em todos)', n($pdo, "SELECT COUNT(*) FROM bling_sales_orders WHERE situacao_bling = '0'") === 250);
     ok('situação interna intacta (nenhuma linha nova no histórico)', n($pdo, 'SELECT COUNT(*) FROM bling_sales_order_status_history') === 250);
-    ok('hash mudou 1x (por isso a releitura grava)', (string) v($pdo, 'SELECT payload_hash FROM bling_sales_orders WHERE bling_id = ?', ['900001']) !== $hashAntes);
+    $retratoDepois = $retrato();
+    ok('DECISIVO: situação e loja do pedido de validação atualizadas', (string) v($pdo, "SELECT situacao_bling_id FROM bling_sales_orders WHERE id = $pid") === '9'
+        && (string) v($pdo, "SELECT loja_bling_id FROM bling_sales_orders WHERE id = $pid") === '205001');
+    ok('DECISIVO: itens intactos (2 itens, quantidades e valores iguais)', $retratoDepois['itens'] === $retratoAntes['itens'] && count($retratoDepois['itens']) === 2);
+    ok('DECISIVO: valores, desconto, frete, total, custo, qtd, vendedor, pagamento, situação interna e hash intactos', $retratoDepois['pedido'] === $retratoAntes['pedido'],
+        json_encode(array_diff_assoc((array) $retratoDepois['pedido'], (array) $retratoAntes['pedido'])));
+    ok('DECISIVO: histórico de situação intacto', $retratoDepois['historico'] === $retratoAntes['historico']);
+    ok('releitura não mexe no hash de NENHUM pedido', $pdo->query('SELECT bling_id, payload_hash FROM bling_sales_orders ORDER BY bling_id')->fetchAll(PDO::FETCH_KEY_PAIR) === $hashes);
+    ok('pedido que não existe na base NÃO é criado (conta como ausente)', n($pdo, "SELECT COUNT(*) FROM bling_sales_orders WHERE bling_id = '999999'") === 0 && $r2['ausentes'] >= 1, json_encode($r2));
+    ok('releitura não grava NENHUM item', n($pdo, 'SELECT COUNT(*) FROM bling_sales_order_items') === 2);
     ok('estado final: ok', $repo->estadoSync($conta, BlingSyncService::RECURSO_RELEITURA)['situacao'] === 'ok');
     ok('estado da sincronização normal de pedidos NÃO foi tocado', $repo->estadoSync($conta, 'pedidos')['situacao'] !== 'parcial');
     ok('nenhum POST/PUT/DELETE ao Bling', count(array_filter($api->chamadas, static fn($c) => $c['metodo'] !== 'GET' && !str_contains($c['url'], 'oauth/token'))) === 0);
