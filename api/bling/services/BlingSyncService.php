@@ -587,6 +587,12 @@ final class BlingSyncService
         );
 
         $r = $this->repo->upsert('bling_sales_orders', $accountId, $d);
+        if ($r === 'ignorado' && $d['sales_channel_id'] !== null) {
+            // BLING-ESCOPO-AUSENTE (23/11): o hash é do JSON cru → pedido igual não é regravado. Sem isto, os pedidos lidos ANTES de os
+            // canais sincronizarem ficariam sem canal para sempre. Só preenche o que está vazio; nunca troca um canal já gravado.
+            $this->repo->pdo()->prepare('UPDATE bling_sales_orders SET sales_channel_id = ? WHERE account_id = ? AND bling_id = ? AND sales_channel_id IS NULL')
+                ->execute([$d['sales_channel_id'], $accountId, $d['bling_id']]);
+        }
         $pedidoId = $this->repo->idPorBlingId('bling_sales_orders', $accountId, $d['bling_id']);
 
         if ($pedidoId !== null) {

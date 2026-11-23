@@ -16,7 +16,8 @@ $raiz = dirname(__DIR__);
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 define('BLING_ENTRADA', true);   // a mesma entrada do worker (as libs recusam inclusão sem ela)
 foreach (['lib/BlingSituacoes', 'lib/BlingCrypto', 'lib/BlingTransporte', 'lib/BlingOAuth', 'lib/BlingVersionAdapter', 'lib/BlingNormalizer',
-          'repositories/BlingRepository', 'lib/BlingClient', 'services/BlingAuthService', 'services/BlingSyncService', 'services/BlingQueueService'] as $f) {
+          'repositories/BlingRepository', 'lib/BlingClient', 'services/BlingAuthService', 'services/BlingSyncService', 'services/BlingQueueService',
+          'lib/BlingProviderBase', 'lib/BlingProvider', 'lib/BlingReal'] as $f) {
     require_once $raiz . '/api/bling/' . $f . '.php';
 }
 
@@ -48,10 +49,12 @@ if ($existentes > 0) { fwrite(STDERR, "[ERRO] $db já tem $existentes tabela(s) 
 // segredos SINTÉTICOS (nunca do .env)
 foreach (['BLING_CRYPTO_KEY' => str_repeat('5e', 32), 'BLING_CLIENT_ID' => 'teste-sintetico-client', 'BLING_CLIENT_SECRET' => 'teste-sintetico-secret',
           'BLING_REDIRECT_URI' => 'https://exemplo.invalid/api/bling/oauth/callback'] as $k => $v) { putenv("$k=$v"); $_ENV[$k] = $v; }
-BlingClient::$dormirParaTeste = static function (int $ms): void {};
+$SONOS = [];
+BlingClient::$dormirParaTeste = static function (int $ms) use (&$SONOS): void { $SONOS[] = $ms; };
 
 $TABELAS = ['bling_accounts', 'bling_oauth_states', 'bling_oauth_tokens', 'bling_sales_channels', 'bling_sync_state', 'bling_sync_jobs',
-            'bling_sync_errors', 'bling_queue', 'bling_audit_logs'];
+            'bling_sync_errors', 'bling_queue', 'bling_audit_logs', 'bling_contacts', 'bling_sales_orders', 'bling_sales_order_items',
+            'bling_sales_order_status_history'];
 $ddl = (string) file_get_contents($raiz . '/docs/BLING/02-banco-BLING.sql');
 $criadas = [];
 $falhas = 0; $total = 0;
@@ -154,6 +157,57 @@ try {
     ok('ehEscopoAusente só casa 403 + insufficient_scope', BlingSyncService::ehEscopoAusente(new RuntimeException('Falha ao paginar x (página 1, HTTP 403): {"error":{"type":"insufficient_scope"}}'))
         && !BlingSyncService::ehEscopoAusente(new RuntimeException('HTTP 401 insufficient_scope'))
         && !BlingSyncService::ehEscopoAusente(new RuntimeException('HTTP 403 forbidden')));
+    echo "== 7. 401: UMA renovação e UMA repetição (sem laço)\n";
+    $tok0 = $api->contar('oauth/token');
+    $api->responder('contatos', [new BlingResposta(401, ['error' => ['type' => 'invalid_token']]), new BlingResposta(200, ['data' => []])]);
+    $r = $sync->sincronizar($conta, 'contatos', 'incremental', 'teste-7');
+    ok('401 → renova e repete → ok', $r['situacao'] === 'ok' && $api->contar('contatos') === 2 && $api->contar('oauth/token') === $tok0 + 1,
+        $r['situacao'] . ' chamadas=' . $api->contar('contatos'));
+    $api->responder('produtos', [new BlingResposta(401, ['error' => []]), new BlingResposta(401, ['error' => []]), new BlingResposta(200, ['data' => []])]);
+    $r = $sync->sincronizar($conta, 'produtos', 'incremental', 'teste-7b');
+    ok('401 de novo depois de renovar → para (2 chamadas, erro)', $r['situacao'] === 'erro' && $api->contar('produtos') === 2, (string) $api->contar('produtos'));
+
+    echo "== 8. 5xx: poucas tentativas, espera crescente\n";
+    $SONOS = [];
+    $api->responder('pedidos/compras', new BlingResposta(503, ['error' => ['type' => 'indisponivel']]));
+    $r = $sync->sincronizar($conta, 'compras', 'incremental', 'teste-8');
+    ok('503 → 3 tentativas e erro', $r['situacao'] === 'erro' && $api->contar('pedidos/compras') === 3, (string) $api->contar('pedidos/compras'));
+    ok('2 esperas, a 2ª maior que a base da 1ª', count($SONOS) === 2 && $SONOS[1] >= 500, json_encode($SONOS));
+
+    echo "== 9. 429: respeita o prazo do servidor (Retry-After)\n";
+    $SONOS = [];
+    $api->responder('nfe', [new BlingResposta(429, ['error' => []], ['retry-after' => '7', 'Retry-After' => '7']), new BlingResposta(200, ['data' => []])]);
+    $r = $sync->sincronizar($conta, 'notas', 'incremental', 'teste-9');
+    ok('429 → espera 7 s (do servidor) e conclui', $r['situacao'] === 'ok' && $SONOS === [7000], json_encode($SONOS));
+
+    echo "== 10. pedido IGUAL lido antes dos canais ganha o canal depois (sem trocar canal já gravado)\n";
+    $pedido = ['id' => 9001, 'numero' => '1', 'data' => '2026-11-20', 'situacao' => ['id' => 6], 'loja' => ['id' => 777], 'total' => 10, 'itens' => []];
+    $api->responder('pedidos/vendas', new BlingResposta(200, ['data' => [$pedido]]));
+    $sync->sincronizar($conta, 'pedidos', 'reconciliacao', 'teste-10a');
+    $canal = static fn() => $pdo->query("SELECT sales_channel_id FROM bling_sales_orders WHERE bling_id = '9001'")->fetchColumn();
+    ok('sem canais sincronizados: pedido sem canal', $canal() === null);
+    $api->responder('canais-venda', new BlingResposta(200, ['data' => [['id' => 777, 'descricao' => 'Mercado Livre (teste)']]]));
+    $sync->sincronizar($conta, 'canais', 'reconciliacao', 'teste-10b');
+    $sync->sincronizar($conta, 'pedidos', 'reconciliacao', 'teste-10c');
+    $idCanal = (int) $pdo->query("SELECT id FROM bling_sales_channels WHERE bling_id = '777'")->fetchColumn();
+    ok('mesmo pedido (hash igual) agora COM o canal', $idCanal > 0 && (int) $canal() === $idCanal, (string) $canal());
+    $pdo->exec("INSERT INTO bling_sales_channels (account_id, bling_id, nome, integrado) VALUES ($conta, '888', 'Outro', 1)");
+    $pedido['loja']['id'] = 888; $api->responder('pedidos/vendas', new BlingResposta(200, ['data' => [$pedido]]));
+    $pdo->exec("UPDATE bling_sales_orders SET payload_hash = 'x' WHERE bling_id = '9001'");   // força regravação normal (pedido mudou)
+    $sync->sincronizar($conta, 'pedidos', 'reconciliacao', 'teste-10d');
+    ok('pedido que MUDOU regrava normalmente (canal novo)', (int) $canal() !== $idCanal);
+
+    echo "== 11. painel: a última sincronização CONCLUÍDA não some depois de uma falha\n";
+    $real = new BlingReal($repo);
+    $antes = $real->disponibilidade('produtos')['ultimo_sucesso'] ?? null;
+    $pdo->exec("UPDATE bling_sync_jobs SET terminado_em = UTC_TIMESTAMP() - INTERVAL 2 HOUR WHERE situacao = 'concluido'");   // tudo concluído há 2 h
+    $pdo->exec("INSERT INTO bling_sync_jobs (account_id, recurso, estrategia, situacao, iniciado_em, terminado_em) VALUES ($conta, 'produtos', 'incremental', 'concluido', UTC_TIMESTAMP() - INTERVAL 2 HOUR, UTC_TIMESTAMP() - INTERVAL 2 HOUR)");
+    $api->responder('produtos', new BlingResposta(500, ['error' => []]));
+    $sync->sincronizar($conta, 'produtos', 'incremental', 'teste-11');
+    $d = $real->disponibilidade('produtos');
+    ok('após a falha: ultimo_sucesso continua (há ~2 h)', $d['ultimo_sucesso'] !== null && abs(time() - strtotime($d['ultimo_sucesso']) - 7200) < 120, (string) $d['ultimo_sucesso']);
+    ok('ultima_sync do cabeçalho = última CONCLUÍDA (há ~2 h), não a tentativa que falhou agora', $real->ultimaSync() !== null
+        && abs(time() - strtotime((string) $real->ultimaSync()) - 7200) < 120, (string) $real->ultimaSync());
 } catch (Throwable $e) {
     $falhas++;
     echo 'FALHA (exceção) ' . get_class($e) . ': ' . $e->getMessage() . "\n";
