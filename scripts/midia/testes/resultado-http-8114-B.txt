@@ -1,0 +1,5 @@
+ok    B sem segredo: POST capa → 503 APP_UNAVAILABLE, desfecho recusada, gravado false
+ok    B sem segredo: galeria → 503
+ok    B sem segredo: NADA chegou ao app
+3 ok, 0 falhas
+rc=0
