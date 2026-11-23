@@ -57,7 +57,10 @@ export function FilaSugestoes({ atributos, podeDecidir, administra, aoMudarTotai
     const g = ++geracao.current; setLendo(true); setErro(null);
     obter<RespFila<ItemFila>>('conferencia_fila', { fila: 'nome', estado, ...(atr !== 'todos' ? { atributo_id: atr } : {}), ...(q ? { q } : {}), ...(pags.cursores[pags.indice] ? { cursor: pags.cursores[pags.indice]! } : {}) })
       .then((r) => { if (g === geracao.current) { setResp(r); setSel(new Set()); } })
-      .catch((e) => { if (g === geracao.current) setErro(e instanceof ErroApi ? e.message : 'Não foi possível ler a fila.'); })
+      .catch((e) => { if (g !== geracao.current) return;
+        // DSHOW-108 (B): o cursor é de outra consulta (filtros mudaram) → volta à 1ª página, sem erro na tela
+        if (e instanceof ErroApi && e.codigo === 'CURSOR_CONTEXT_MISMATCH') { setPags(PAGINAS0); return; }
+        setErro(e instanceof ErroApi ? e.message : 'Não foi possível ler a fila.'); })
       .finally(() => { if (g === geracao.current) setLendo(false); });
   }, [estado, atr, q, pags]);
   React.useEffect(ler, [ler, m.versao]);

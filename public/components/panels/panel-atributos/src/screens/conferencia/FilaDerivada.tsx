@@ -42,7 +42,10 @@ export function FilaDerivada({ fila, atributos, subcategorias, kits, podeVincula
     obter<RespFila<Linha>>('conferencia_fila', { fila, ...(atr !== 'todos' ? { atributo_id: atr } : {}), ...(sub !== 'todas' ? { subcategoria: sub } : {}), ...(q ? { q } : {}),
       ...(pags.cursores[pags.indice] ? { cursor: pags.cursores[pags.indice]! } : {}) })
       .then((r) => { if (gen === geracao.current) { setResp(r); setFeitas({}); } })
-      .catch((e) => { if (gen === geracao.current) setErro(e instanceof ErroApi ? e.message : 'Não foi possível ler a fila.'); })
+      .catch((e) => { if (gen !== geracao.current) return;
+        // DSHOW-108 (B): o cursor é de outra consulta (filtros mudaram) → volta à 1ª página, sem erro na tela
+        if (e instanceof ErroApi && e.codigo === 'CURSOR_CONTEXT_MISMATCH') { setPags(PAGINAS0); return; }
+        setErro(e instanceof ErroApi ? e.message : 'Não foi possível ler a fila.'); })
       .finally(() => { if (gen === geracao.current) setLendo(false); });
   }, [fila, atr, sub, q, pags]);
   React.useEffect(ler, [ler, m.versao]);
