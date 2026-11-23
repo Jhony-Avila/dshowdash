@@ -3,7 +3,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import type { AtributoDicionario, EventoHistorico, Ficha as TFicha, ItemFicha, KitResumo, Sugestao } from '../lib/tipos';
-import { enviar, ErroApi, obter } from '../lib/api';
+import { ErroApi, obter } from '../lib/api';
 import { campoPrecifica, dataHora, decimal, precifica as fmtPrecifica, pctDe, sugestaoTexto, valor as fmtValor } from '../lib/formatar';
 import { ESTADO, FAMILIAS_PRECIFICA, FONTE_SUGESTAO, IMPORTANCIA, MOTIVO_KIT, rotuloCategoria, rotuloSubcategoria, tituloFamilia } from '../lib/rotulos';
 import { useModulo } from '../app/contexto';
@@ -315,18 +315,19 @@ function DetalhesAtributo({ item: i, aoFechar, aoHistorico }: { item: ItemFicha 
 
 function SugestaoLinha({ s, i, f, recarregar }: { s: Sugestao; i: ItemFicha; f: TFicha; recarregar: () => Promise<boolean> | void }) {
   const m = useModulo();
-  const [trab, setTrab] = React.useState(false);
+  const g = useGravacaoVinculo(recarregar);   // chave por intenção + recibo + "Conferir gravação" (ui/GravacaoVinculo)
+  const trab = g.travado;
   const un = s.unidade_id ? i.unidades.find((u) => u.id === s.unidade_id)?.simbolo ?? '' : '';
   const decidir = (decisao: 'aceitar' | 'recusar') => {
-    setTrab(true);
-    enviar('sugestao', { id: s.id, versao: s.versao, decisao }).then(() => { m.aviso(decisao === 'aceitar' ? 'Sugestão aceita.' : 'Sugestão recusada.'); recarregar(); })
-      .catch((e) => { m.aviso(e instanceof ErroApi ? e.message : 'Falha.', 'erro'); setTrab(false); });
+    const ok = decisao === 'aceitar' ? 'Sugestão aceita.' : 'Sugestão recusada.';
+    g.gravar('sugestao', { id: s.id, versao: s.versao, decisao }, `Sugestão de ${i.rotulo}`, ok, () => m.aviso(ok));
   };
   if (s.tipo === 'conferencia') return <div className="at-sugestao" title={s.evidencia ?? ''}><span className="at-sugestao__rot">conferir ({FONTE_SUGESTAO[s.fonte]}):</span> {s.valor_proposto} {un} <button type="button" className="at-link" onClick={() => m.ir('conferencia')}>resolver na Conferência</button></div>;
   return (
     <div className="at-sugestao" title={s.evidencia ?? ''}>
       <span className="at-sugestao__rot" title={`Fonte: ${FONTE_SUGESTAO[s.fonte]}`}>Sugestão:</span> <span className="at-sugestao__val">{sugestaoTexto(s, i)}</span>
       {f.pode_editar && <>{i.valor ? <span className="at-fraco" title="Sugestão não sobrescreve (D10)"> · campo já preenchido</span> : <> · <button type="button" className="at-link" disabled={trab} onClick={() => decidir('aceitar')}>Usar</button></>} · <button type="button" className="at-link at-link--fraco" disabled={trab} onClick={() => decidir('recusar')}>Recusar</button></>}
+      <EstadoVinculo g={g} />
     </div>);
 }
 
@@ -355,21 +356,23 @@ function AdicionarAoKit({ f, item, aoFechar, aoFeito }: { f: TFicha; item: ItemF
   const m = useModulo();
   const [kit, setKit] = React.useState<number | ''>('');
   const [trab, setTrab] = React.useState(false);
+  const g = useGravacaoVinculo(() => undefined);   // quem recarrega é o aoFeito (depois do recibo)
   const kits = f.kits.filter((k) => !k.motivos.some((x) => x.tipo === 'todos'));
   const confirmar = async () => {
-    if (!item || kit === '') return;
+    if (!item || kit === '' || g.travado) return;
     setTrab(true);
     try {
       const d = await obter<{ kit: { id: number; versao: number; atributos: { atributo_id: number; posicao: number; obrigatorio: number; visivel: number; destaque: number; importancia: string | null; unidade_id: number | null }[] } }>('kit', { id: kit });
       const itens = d.kit.atributos.map((a) => ({ atributo_id: a.atributo_id, posicao: a.posicao, obrigatorio: a.obrigatorio, visivel: a.visivel, destaque: a.destaque, importancia: a.importancia, unidade_id: a.unidade_id }));
       itens.push({ atributo_id: item.atributo_id, posicao: Math.max(0, ...itens.map((x) => x.posicao)) + 1, obrigatorio: 0, visivel: 1, destaque: 0, importancia: null, unidade_id: null });
-      await enviar('kit_itens', { id: kit, versao: d.kit.versao, itens });
-      m.aviso(`"${item.rotulo}" adicionado ao kit.`); aoFeito();
-    } catch (e) { m.aviso(e instanceof ErroApi ? e.message : 'Falha.', 'erro'); } finally { setTrab(false); }
+      // a LEITURA do kit não grava nada; a gravação é UMA intenção: corpo montado e congelado com a sua chave ("Tentar de novo" reenvia igual)
+      const ok = `"${item.rotulo}" adicionado ao kit.`; const nome = kits.find((k) => k.id === kit)?.nome ?? `Kit ${kit}`;
+      await g.gravar('kit_itens', { id: kit, versao: d.kit.versao, itens }, `Kit ${nome}`, ok, () => { m.aviso(ok); aoFeito(); });
+    } catch (e) { m.aviso(e instanceof ErroApi ? `Não foi possível ler o kit agora (${e.message}). Nada foi gravado.` : 'Não foi possível ler o kit agora. Nada foi gravado.', 'erro'); } finally { setTrab(false); }
   };
   return (
     <Dialogo titulo={`Adicionar "${item?.rotulo ?? ''}" a um kit`} aberto={item !== null} aoFechar={aoFechar}
-      rodape={<><Botao aoClicar={aoFechar}>Cancelar</Botao><Botao primario desligado={kit === ''} trabalhando={trab} aoClicar={confirmar}>Adicionar ao kit</Botao></>}>
+      rodape={<><Botao aoClicar={aoFechar}>Cancelar</Botao><EstadoVinculo g={g} /><Botao primario desligado={kit === '' || g.travado} trabalhando={trab} aoClicar={confirmar}>Adicionar ao kit</Botao></>}>
       {kits.length === 0 ? <p>Este produto não tem kit específico. Vincule o atributo só a este produto ou aplique um kit na aba Vínculos.</p> : <>
         <p>O atributo passa a valer para <strong>todos</strong> os produtos que recebem o kit escolhido.</p>
         <label className="at-rotulo-campo">Kit<select className="at-campo" value={kit} onChange={(e) => setKit(e.target.value ? Number(e.target.value) : '')}><option value="">Escolha…</option>{kits.map((k) => <option key={k.id} value={k.id}>{k.nome}</option>)}</select></label></>}

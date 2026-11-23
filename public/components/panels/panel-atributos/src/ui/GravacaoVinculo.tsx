@@ -3,13 +3,14 @@
 // recusa e conflito na linha, resposta perdida = "Não conseguimos confirmar se foi salvo." + [Conferir gravação] (GET, não grava) e
 // [Tentar de novo com segurança] (o MESMO corpo com a MESMA chave: se a 1ª já gravou, o servidor devolve o recibo original — efeito único).
 // Pedido do Jhony (23/11), a partir do inventário da ESQUERDA (PARA-STATUS §93): eram 9 chamadas SEM chave. Só tela; o servidor já trata a chave.
+// Depois (23/11), também as decisões de sugestão da Ficha (sugestao: aceitar/recusar) e "Adicionar ao kit" (kit_itens).
 import React from 'react';
 import { conferirGravacao, enviar, ErroApi, MSG_DESCONHECIDO, novaChaveOperacao } from '../lib/api';
 import { marcarPendencia } from '../lib/pendencias';
 
 export type FaseGravacao = 'parado' | 'salvando' | 'conferindo' | 'salvo' | 'recusada' | 'conflito' | 'desconhecido' | 'emAndamento';
 export interface EstadoGravacao { fase: FaseGravacao; descricao: string; msg?: string; semMudanca?: boolean; podeRepetir?: boolean; reenvio?: boolean }
-interface Intencao { rota: 'produto_atributo' | 'produto_kit'; corpo: Readonly<Record<string, unknown>>; chave: string; descricao: string; ok: string; depois?: () => void }
+interface Intencao { rota: 'produto_atributo' | 'produto_kit' | 'sugestao' | 'kit_itens'; corpo: Readonly<Record<string, unknown>>; chave: string; descricao: string; ok: string; depois?: () => void }
 
 let seq = 0;
 /** Uma gravação de vínculo por vez neste ponto da tela. `aoConfirmar` = recarregar a ficha depois do recibo. */

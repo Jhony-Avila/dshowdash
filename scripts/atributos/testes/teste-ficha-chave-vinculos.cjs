@@ -1,4 +1,5 @@
-// FICHA · VÍNCULOS COM CHAVE (CIMA, 23/11) · teste de GRAVAÇÃO COMPLETO das 9 chamadas produto_atributo / produto_kit da Ficha.
+// FICHA · VÍNCULOS COM CHAVE (CIMA, 23/11) · teste de GRAVAÇÃO COMPLETO das 9 chamadas produto_atributo / produto_kit da Ficha + kit_itens (real, desfeito)
+// e sugestao (SIMULADA: decidir de verdade é irreversível, não há rota para reabrir).
 // Grava de verdade na base de validação COMPARTILHADA (ATRWEB_VAL_EQ, aviso no PARA-STATUS §98) e DESFAZ cada ação pela inversa; no fim, os vínculos
 // do produto (kits diretos, avulsos, exceções, unidades) têm de ser IDÊNTICOS aos do começo. Nenhum valor de atributo é tocado.
 // Por gravação: X-Chave-Operacao presente, NOVA a cada intenção, recibo com a MESMA chave, "Salvo" na tela só com recibo.
@@ -17,7 +18,7 @@ const DLG = '.at-portal-modal [role="dialog"]';
   const api = (rota, q = '') => pg.evaluate(async ([r, q]) => (await (await fetch(`/api/atributos/index.php?r=${r}${q}`, { credentials: 'same-origin' })).json()).data, [rota, q]);
   // registro de TODO POST de vínculo: rota, chave enviada, status e chave do recibo
   const posts = [];
-  pg.on('request', (rq) => { const u = rq.url(); if (rq.method() === 'POST' && /r=produto_(atributo|kit)\b/.test(u)) posts.push({ r: /r=(produto_\w+)/.exec(u)[1], chave: rq.headers()['x-chave-operacao'] ?? null, corpo: rq.postData(), status: null, recibo: null, req: rq }); });
+  pg.on('request', (rq) => { const u = rq.url(); if (rq.method() === 'POST' && /r=(produto_atributo|produto_kit|sugestao|kit_itens)\b/.test(u)) posts.push({ r: /r=(\w+)/.exec(u)[1], chave: rq.headers()['x-chave-operacao'] ?? null, corpo: rq.postData(), status: null, recibo: null, req: rq }); });
   pg.on('response', async (rs) => { const p = posts.find((x) => x.req === rs.request()); if (!p) return; p.status = rs.status(); try { const j = await rs.json(); p.recibo = j?.data?.recibo?.chave ?? null; } catch { /* resposta perdida */ } });
 
   // ── escolher o produto e os alvos (só leitura)
@@ -41,7 +42,9 @@ const DLG = '.at-portal-modal [role="dialog"]';
   const intencao = async (nome, rota, fazer, onde = '', exigirTela = true) => {   // exigirTela=false: o bloco some depois do recibo (último item) → a prova é o recibo
     const n0 = posts.length; await fazer();
     const salvo = exigirTela ? await esperarEstado('salvo', onde) : await pg.waitForFunction(() => true).then(async () => { for (let k = 0; k < 60 && !(posts[n0] && posts[n0].recibo); k++) await pg.waitForTimeout(250); return !!(posts[n0] && posts[n0].recibo); });
-    await pg.waitForTimeout(300);
+    // a resposta é lida pelo ouvinte de forma assíncrona; e a ficha recarrega depois do recibo (a próxima ação precisa da versão nova)
+    for (let k = 0; k < 40 && posts[n0] && posts[n0].status === null; k++) await pg.waitForTimeout(125);
+    await pg.waitForLoadState('networkidle').catch(() => {}); await pg.waitForTimeout(300);
     const novos = posts.slice(n0); const p = novos[0] || {};
     afirma(`${nome}: 1 POST ${rota} com X-Chave-Operacao nova; recibo com a MESMA chave; "Salvo" na tela`, novos.length === 1 && p.r === rota && !!p.chave && !chavesVistas.has(p.chave) && p.recibo === p.chave && p.status >= 200 && p.status < 300 && salvo,
       JSON.stringify({ n: novos.length, r: p.r, chave: p.chave, recibo: p.recibo, status: p.status, salvo }));
@@ -145,9 +148,59 @@ const DLG = '.at-portal-modal [role="dialog"]';
   }
   if (!leg) console.log('aviso  nenhum produto com "legado sem vínculo" ativo na base de validação: caso não exercitado');
 
+
+  // ── (9) "Adicionar ao kit…" (kit_itens) — REAL e desfeito: o kit volta à lista ORIGINAL de itens (pela API, com chave)
+  { let feito = false;
+    for (const q of vit.produtos.filter((p) => p.fora_da_ficha > 0).slice(0, 30)) {
+      const fq = await api('ficha_produto', `&product_id=${q.id}`); const alvo = fq.fora_da_ficha.find((i) => i.atributo_ativo); const kit = fq.kits.find((k) => !k.motivos.some((x) => x.tipo === 'todos'));
+      if (!alvo || !kit || !fq.pode_vincular) continue;
+      const k0 = (await api('kit', `&id=${kit.id}`)).kit; const itens0 = k0.atributos.map((a) => ({ atributo_id: a.atributo_id, posicao: a.posicao, obrigatorio: a.obrigatorio, visivel: a.visivel, destaque: a.destaque, importancia: a.importancia, unidade_id: a.unidade_id }));
+      if (itens0.some((x) => x.atributo_id === alvo.atributo_id)) continue;
+      await pg.goto(`${B}/#/panel-atributos/produto/${q.id}`); await pg.reload({ waitUntil: 'networkidle' }); await pg.waitForSelector('.at-bloco--fora', { timeout: 40000 }); await pg.waitForTimeout(600);
+      await pg.click(`.at-bloco--fora .at-attr:has-text("${alvo.rotulo}") button:has-text("Adicionar ao kit…")`); await pg.waitForSelector(`${DLG} select.at-campo`);
+      await pg.selectOption(`${DLG} select.at-campo`, String(kit.id));
+      await intencao(`adicionar "${alvo.rotulo}" ao kit "${kit.nome}" (kit_itens)`, 'kit_itens', () => pg.click(`${DLG} button:has-text("Adicionar ao kit")`), '', false);
+      const k1 = (await api('kit', `&id=${kit.id}`)).kit;
+      afirma('kit_itens: o atributo entrou no kit UMA vez', k1.atributos.filter((a) => a.atributo_id === alvo.atributo_id).length === 1);
+      // desfaz: devolve a lista original (com chave, como a tela faz)
+      const volta = await pg.evaluate(async ([id, versao, itens]) => { const t = window.SecurityCSRF?.getToken?.() || document.querySelector('meta[name="csrf-token"]')?.content || (await (await fetch('/api/auth/check.php')).json())?.data?.session?.csrf_token || '';
+        const r = await fetch('/api/atributos/index.php?r=kit_itens', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-Token': t, 'X-Chave-Operacao': `op-teste-cima-${Date.now().toString(36)}` }, body: JSON.stringify({ id, versao, itens }) });
+        return r.status; }, [kit.id, k1.versao, itens0]);
+      const k2 = (await api('kit', `&id=${kit.id}`)).kit; const sem = (k) => JSON.stringify(k.atributos.map((a) => [a.atributo_id, a.posicao, a.obrigatorio, a.visivel, a.destaque, a.importancia, a.unidade_id]).sort((x, y) => x[0] - y[0]));
+      afirma(`kit "${kit.nome}": itens de volta IDÊNTICOS aos do começo (desfeito, HTTP ${volta})`, volta === 200 && sem(k2) === sem(k0), JSON.stringify({ volta }));
+      feito = true; break;
+    }
+    if (!feito) console.log('aviso  nenhum produto com "fora da ficha" + kit específico na base de validação: kit_itens não exercitado'); }
+
+  // ── (10) SUGESTÃO (aceitar/recusar) — SIMULADA: decidir uma sugestão de verdade é irreversível (não há rota para reabrir)
+  { const pr = vit.produtos.find((p) => p.ativo) || vit.produtos[0]; const fq = await api('ficha_produto', `&product_id=${pr.id}`);
+    const it = fq.itens.find((i) => !i.valor) || fq.itens[0];
+    const sug = { id: 990001, versao: 1, tipo: 'nome', fonte: 'nome', estado: 'pendente', valor_proposto: '42', unidade_id: null, opcao_id: null, evidencia: 'teste simulado' };
+    await pg.route(`**/api/atributos/index.php?r=ficha_produto*`, async (route) => { const r = await route.fetch(); const j = await r.json(); const x = j.data.itens.find((i) => i.atributo_id === it.atributo_id); if (x) { x.valor = null; x.sugestoes = [sug]; } j.data.pode_editar = true; await route.fulfill({ response: r, json: j }); });
+    let modo = 'ok'; const sugPosts = [];
+    await pg.route('**/api/atributos/index.php?r=sugestao*', async (route) => { const rq = route.request(); if (rq.method() !== 'POST') return route.continue(); const ch = rq.headers()['x-chave-operacao']; sugPosts.push(ch);
+      if (modo === 'perdida') return route.abort('connectionreset');
+      if (modo === 'conflito') return route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ ok: false, data: null, error: 'VERSION_CONFLICT', meta: { message: 'A sugestão mudou.', desfecho: 'conflito' } }) });
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, data: { desfecho: 'aplicada', recibo: { operacao: 'sugestao', chave: ch, desfecho: 'aplicada', confirmado_em: 'agora' } }, error: null }) }); });
+    await pg.route('**/api/atributos/index.php?r=conferir_gravacao*', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, data: { chave: 'x', resultado: 'aplicada', operacao: 'sugestao', recibo: { operacao: 'sugestao', chave: new URL(route.request().url()).searchParams.get('chave'), desfecho: 'aplicada', confirmado_em: 'agora' } }, error: null }) }));
+    const abrirSug = async () => { await pg.goto(`${B}/#/panel-atributos/produto/${pr.id}`); await pg.reload({ waitUntil: 'networkidle' }); await pg.waitForSelector('.at-sugestao', { timeout: 40000 }); await pg.waitForTimeout(500); };
+    await abrirSug(); modo = 'perdida';
+    await pg.click('.at-sugestao button:has-text("Recusar")');
+    const d10 = await esperarEstado('desconhecido', '.at-sugestao'); const t10 = await pg.textContent('.at-sugestao [data-vinculo-estado]').catch(() => '');
+    afirma('sugestão (simulado) · resposta perdida: chave enviada; "Não conseguimos confirmar se foi salvo." + "Conferir gravação"; botões travados', d10 && !!sugPosts[0] && /Não conseguimos confirmar se foi salvo/.test(t10) && (await pg.isDisabled('.at-sugestao button:has-text("Recusar")')), t10);
+    await pg.screenshot({ path: `${CAP}/10-sugestao-perdida.png` });
+    await pg.click('.at-sugestao [data-vinculo-estado] button:has-text("Conferir gravação")');
+    afirma('sugestão (simulado) · "Conferir gravação" acha o recibo → "Salvo"; nenhum POST novo', (await esperarEstado('salvo', '.at-sugestao').catch(() => false)) && sugPosts.length === 1);
+    await abrirSug(); modo = 'conflito';   // página nova: com dados reais a sugestão decidida sai da lista; aqui a rota simulada a devolve await pg.click('.at-sugestao button:has-text("Recusar")');
+    { const c = await esperarEstado('conflito', '.at-sugestao'); const est = await pg.$$eval('.at-sugestao [data-vinculo-estado]', (xs) => xs.map((x) => x.dataset.vinculoEstado + ':' + x.textContent.slice(0, 80))).catch(() => []);
+      afirma('sugestão (simulado) · 409: conflito na linha, nada gravado; chave nova nesta intenção', c && sugPosts.length === 2 && sugPosts[1] && sugPosts[1] !== sugPosts[0], JSON.stringify({ c, n: sugPosts.length, est })); }
+    await pg.waitForSelector('.at-sugestao button:has-text("Recusar"):not([disabled])', { timeout: 20000 }); await pg.waitForTimeout(400); modo = 'ok'; const n10 = sugPosts.length; await pg.click('.at-sugestao button:has-text("Usar")'); await pg.waitForTimeout(800);
+    afirma('sugestão (simulado) · "Usar": 1 POST com chave nova e recibo com a mesma chave', sugPosts.length === n10 + 1 && !!sugPosts[n10] && !sugPosts.slice(0, n10).includes(sugPosts[n10]));
+    await pg.unroute('**/api/atributos/index.php?r=ficha_produto*'); await pg.unroute('**/api/atributos/index.php?r=sugestao*'); await pg.unroute('**/api/atributos/index.php?r=conferir_gravacao*'); }
+
   // ── no fim: os vínculos do produto P idênticos aos do começo
   const fim = await foto(); const sem = (x) => JSON.stringify({ k: x.kitsDiretos, a: x.avulsos, e: x.excecoes, u: x.unidades });
   afirma(`produto ${P}: vínculos IDÊNTICOS aos do começo (kits diretos, avulsos, exceções, unidades)`, sem(fim) === sem(ini), JSON.stringify({ ini: sem(ini), fim: sem(fim) }));
-  afirma(`todas as gravações mandaram chave (${posts.length} POSTs de vínculo, nenhum sem X-Chave-Operacao)`, posts.length > 0 && posts.every((p) => !!p.chave), JSON.stringify(posts.filter((p) => !p.chave).map((p) => p.r)));
+  afirma(`todas as gravações mandaram chave (${posts.length} POSTs de vínculo/kit/sugestão, nenhum sem X-Chave-Operacao)`, posts.length > 0 && posts.every((p) => !!p.chave), JSON.stringify(posts.filter((p) => !p.chave).map((p) => p.r)));
   console.log(`FICHA · VÍNCULOS COM CHAVE (${W}x${H}): ${ok} ok, ${falhas} falhas`); await b.close(); process.exit(falhas ? 1 : 0);
 })().catch((e) => { console.error('ERRO', e.message, e.stack?.split('\n')[1]); process.exit(2); });

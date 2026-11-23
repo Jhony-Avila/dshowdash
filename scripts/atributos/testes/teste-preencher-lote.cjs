@@ -36,8 +36,15 @@ const RUN = 'd099p-' + Date.now().toString(36);
   await pg.evaluate(() => { try { sessionStorage.removeItem('__BOOT_LOOP_TRACKER__'); } catch {} });
   // selecionar os 10 produtos na tela Produtos (busca pelo ID: o produto exato vem primeiro) e usá-los no Preencher
   await pg.goto(`${B}/#/panel-atributos`); await pg.reload({ waitUntil: 'networkidle' }); await pg.waitForSelector('.at-filtros__total', { timeout: 40000 });
-  for (const pid of P) { await pg.fill('.at-fixo input[type="search"]', String(pid)); await pg.waitForTimeout(350); await pg.locator('label.at-cartao__sel, label.at-cartao__marcar').first().click(); await pg.waitForTimeout(120); }
-  afirma('10 produtos selecionados', /10 selecionad/.test(await pg.textContent('.at-filtros__sel').catch(() => '')));
+  // lista de Produtos v2: busca/filtro novo desmarca o que fica invisível (A.5). Então: Tabela, sem busca, Situação "todos" e marcar os 10
+  // percorrendo as PÁGINAS (trocar de página não desmarca); o contador fica em [data-pl-sel]
+  await pg.click('.at-pl-alternador button:has-text("Tabela")').catch(() => {}); await pg.fill('.at-fixo input[type="search"]', ''); await pg.selectOption('select[aria-label="Situação"]', 'todos'); await pg.waitForTimeout(500);
+  { const faltam = new Set(P);
+    for (let pag = 0; pag < 30 && faltam.size; pag++) {
+      const marcados = await pg.evaluate((ids) => { const out = []; for (const tr of document.querySelectorAll('.at-pl-tabela tbody tr')) { const id = Number(tr.querySelector('.at-pl-id')?.textContent); if (ids.includes(id)) { const c = tr.querySelector('input[type="checkbox"]'); if (c && !c.checked) c.click(); out.push(id); } } return out; }, [...faltam]);
+      marcados.forEach((i) => faltam.delete(i)); if (!faltam.size) break;
+      const prox = await pg.$('nav.at-paginas button:has-text("Próxima"):not([disabled])'); if (!prox) break; await prox.click(); await pg.waitForTimeout(350); } }
+  afirma('10 produtos selecionados', /10 selecionad/.test(await pg.textContent('[data-pl-sel], .at-filtros__sel').catch(() => '')));
   await pg.click('.at-nav button:has-text("Preencher")'); await pg.waitForSelector('button:has-text("Usar os 10 selecionados")', { timeout: 30000 });
   await pg.click('button:has-text("Usar os 10 selecionados")'); await pg.waitForSelector('.pv2-grade, table.at-tabela--grade', { timeout: 90000 }); await pg.waitForTimeout(1200);
   const link = pg.locator(`.pv2-cab .pv2-th:has-text("${ROT}") button:has-text("aceitar"), table.at-tabela--grade thead th:has-text("${ROT}") button.at-link:has-text("aceitar")`).first();
