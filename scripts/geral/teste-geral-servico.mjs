@@ -1,7 +1,8 @@
 // scripts/geral/teste-geral-servico.mjs — tela Geral (panel-dashboard): Pipedrive REAL, "Aguardando conexão" sem números inventados, Outlook fora.
 // Testa o GeralService.ts REAL empacotado (sem rede, sem navegador; fetch e localStorage falsos):
 //   ESB=<node_modules do build>/.bin/esbuild; $ESB public/components/panels/panel-dashboard/src/services/GeralService.ts --bundle \
-//     --platform=node --format=esm --outfile=<temporário fora de /tmp>/G.mjs && node scripts/geral/teste-geral-servico.mjs <temporário>/G.mjs
+//     --platform=node --format=esm --outfile=<temporário fora de /tmp>/G.mjs   (idem HomeService.ts → H.mjs)
+//   node scripts/geral/teste-geral-servico.mjs <temporário>/G.mjs <temporário>/H.mjs public/components/panels/panel-dashboard/src/app/App.tsx
 // Contraprova: o GeralService da produção d714c6bc reprova (mostra 47 negócios, R$ 842.000, 18% de demonstração).
 // teste do GeralService REAL (empacotado do .ts) com fetch falso — sem rede, sem navegador
 const mem = new Map(); globalThis.window = { localStorage: { getItem: (k) => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, v), removeItem: (k) => mem.delete(k) } };
@@ -49,4 +50,28 @@ for (const id of ['metaads', 'mercadolivre', 'ecommerce', 'compras', 'financeiro
 }
 // (C) Outlook fora
 ok('C · Outlook fora das integrações', !integ.some((i) => /Outlook/.test(i.nome)), integ.map((i) => i.nome).join(','));
+// ── 23/11 (decisão do Jhony): só o REAL na tela ──
+rotas = { ...BASE, '/api/pipedrive/overview': { status: 200, body: PD } };
+const al2 = await S.getAlertas();
+ok('só alertas REAIS (nenhum simulado; sem ML, Compras, Financeiro)', al2.every((a) => a.simulado === false) && !al2.some((a) => ['Mercado Livre', 'Compras', 'Financeiro'].includes(a.modulo)), al2.map((a) => a.modulo).join(','));
+window.localStorage.setItem('dshow.home.cenario', 'critico');
+const al3 = await S.getAlertas(); const in3 = await S.getIntegracoes();
+ok('nem o cenário oculto de QA injeta alerta/erro falso', al3.every((a) => a.simulado === false) && !in3.some((i) => i.estado === 'erro' && /simulada/i.test(i.detalhe)));
+window.localStorage.removeItem('dshow.home.cenario');
+const ads = await S.getResumoModulo('ads', '30d');
+ok('Ads com provedor mock: "Aguardando conexão", sem número', ads.statusRotulo === 'Aguardando conexão' && ads.metricas.length === 0 && ads.simulado === false);
+ok('integração Google Ads (mock): sem contas/campanhas inventadas', (await S.getIntegracoes()).find((i) => i.nome === 'Google Ads').detalhe === 'Aguardando conexão');
+for (const fn of ['getAtividades', 'getSerieConsolidada', 'getDistribuicao']) ok(`GeralService sem ${fn} (seção de demonstração removida)`, !(fn in S));
+if (process.argv[3]) {
+  globalThis.fetch = async (url) => ({ ok: false, status: 404, json: async () => ({}) });   // fontes fora: nada pode ser inventado
+  const H = await import(process.argv[3]);
+  for (const fn of ['getAgenda', 'getEmails']) ok(`HomeService sem ${fn} (widget de demonstração removido)`, !(fn in H));
+  const ins = await H.getInsights();
+  ok('nenhum insight de demonstração', ins.every((i) => i.simulado === false), ins.map((i) => i.id).join(','));
+}
+if (process.argv[4]) {
+  const fs = await import('node:fs'); const app = fs.readFileSync(process.argv[4], 'utf8');
+  for (const t of ['Desempenho consolidado', 'Atividade por módulo', 'Atividades recentes', '<EmailsWidget', '<AgendaWidget', "'Demonstração'", "id: 'outlook'"])
+    ok(`App.tsx não renderiza mais: ${t}`, !app.includes(t));
+}
 console.log(`== ${total} verificações, ${falhas} falha(s)`); process.exit(falhas ? 1 : 0);

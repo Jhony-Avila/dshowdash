@@ -19,29 +19,28 @@ import {
   Share2, ShoppingBag, ShoppingCart, SlidersHorizontal, Star, Store, Table2,
 } from 'lucide-react';
 import {
-  alternarCenario, cenarioAtual, getAlertas, getAtividades, getDistribuicao,
-  getIntegracoes, getResumoModulo, getSerieConsolidada, getTransito,
+  alternarCenario, cenarioAtual, getAlertas,
+  getIntegracoes, getResumoModulo, getTransito,
   lerOcultos, restaurarPadrao, salvarOcultos,
 } from '../services/GeralService';
 import type { CenarioMock } from '../services/GeralService';
 import {
-  getAgenda, getClima, getEmails, getInsights, getSaudacao,
+  getClima, getInsights, getSaudacao,
 } from '../services/HomeService';
 import {
   alternarFavoritoModulo, favoritosModulos, registrarRecente, rotasRecentes,
 } from '../services/PessoalService';
 import { LinksWidget, NotasWidget } from '../components/Pessoal';
 import { useDados } from '../components/useDados';
-import { GChart } from '../components/GChart';
 import { CeuFundo, GreetingHero, ceuAtual } from '../components/Hero';
 import { ClimaAtualCard, PrevisaoDezDias } from '../components/Clima';
-import { AgendaWidget, EmailsWidget, InsightsPanel, TrafficWidget } from '../components/Extras';
+import { InsightsPanel, TrafficWidget } from '../components/Extras';
 import {
   CartaoSaudeView, ErroWidget, Secao, SeloSimulado, Skeleton, WidgetModulo,
   relTempo,
 } from '../components/ui';
 import type {
-  AlertaGeral, CartaoSaude, CategoriaAtividade, ModoHome, ModuloId,
+  AlertaGeral, CartaoSaude, ModoHome, ModuloId,
   PeriodoId, ShellConfig, StatusIntegracao,
 } from '../domain/types';
 import '../styles/tokens.css';
@@ -68,21 +67,6 @@ const PERIODOS: { id: PeriodoId; rotulo: string }[] = [
   { id: 'mes_atual', rotulo: 'Mês atual' },
 ];
 
-type MetricaGrafico = 'faturamento' | 'pedidos' | 'investimento' | 'leads' | 'recebimentos';
-const METRICAS: { id: MetricaGrafico; rotulo: string; moeda: boolean }[] = [
-  { id: 'faturamento', rotulo: 'Faturamento', moeda: true },
-  { id: 'pedidos', rotulo: 'Pedidos', moeda: false },
-  { id: 'investimento', rotulo: 'Mídia', moeda: true },
-  { id: 'leads', rotulo: 'Leads', moeda: false },
-  { id: 'recebimentos', rotulo: 'Recebimentos', moeda: true },
-];
-
-const FILTROS_ATV: { id: CategoriaAtividade | 'todos'; rotulo: string }[] = [
-  { id: 'todos', rotulo: 'Todos' }, { id: 'vendas', rotulo: 'Vendas' },
-  { id: 'financeiro', rotulo: 'Financeiro' }, { id: 'marketing', rotulo: 'Marketing' },
-  { id: 'operacoes', rotulo: 'Operações' }, { id: 'sistema', rotulo: 'Sistema' },
-];
-
 const AUTO_REFRESH: { s: number; rotulo: string }[] = [
   { s: 0, rotulo: 'Auto: off' }, { s: 60, rotulo: '1 min' }, { s: 300, rotulo: '5 min' },
   { s: 900, rotulo: '15 min' }, { s: 1800, rotulo: '30 min' },
@@ -90,9 +74,6 @@ const AUTO_REFRESH: { s: number; rotulo: string }[] = [
 
 // Modo executivo esconde o operacional fino (§26)
 const OCULTAS_EXECUTIVO = new Set(['agenda', 'emails', 'atividades', 'integracoes', 'pessoais']);
-
-const fmtMoeda = (v: number) =>
-  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 
 function navegar(rota: string) { registrarRecente(rota); window.location.hash = rota; }
 function rolarPara(id: string) {
@@ -163,7 +144,7 @@ function LinhaSaude({ alertas, integracoes, visiveis }: {
     { id: 'modulos', rotulo: 'Módulos', valor: `${visiveis} ativos`,
       detalhe: `${MODULOS.length} disponíveis no dash`, nivel: 'ok', rota: 'sec:widgets' },
     { id: 'integracoes', rotulo: 'Integrações', valor: `${conectadas} conectadas`,
-      detalhe: `${demo} em demonstração · ${comErro} com erro`,
+      detalhe: `${demo} aguardando conexão · ${comErro} com erro`,
       nivel: comErro > 0 ? 'atencao' : 'ok', rota: 'sec:integracoes' },
     { id: 'alertas', rotulo: 'Alertas em aberto', valor: String(alertas.length),
       detalhe: criticos > 0 ? `${criticos} crítico(s)` : 'nenhum crítico',
@@ -189,7 +170,6 @@ function Shell({ config }: { config: ShellConfig }) {
   const [periodo, setPeriodo] = useState<PeriodoId>('30d');
   const [versao, setVersao] = useState(0);
   const [carimbo, setCarimbo] = useState(() => new Date().toISOString());
-  const [metrica, setMetrica] = useState<MetricaGrafico>('faturamento');
   const [personalizar, setPersonalizar] = useState(false);
   const [organizar, setOrganizar] = useState(false);
   const [ocultos, setOcultos] = useState<Set<ModuloId>>(() => lerOcultos());
@@ -198,7 +178,6 @@ function Shell({ config }: { config: ShellConfig }) {
   const [densidade, setDensidade] = useState<'conforto' | 'compacto'>(
     () => lerLS(K_DENS, 'conforto', (r) => (r === 'compacto' ? 'compacto' : 'conforto')));
   const [autoS, setAutoS] = useState<number>(() => lerLS(K_AUTO, 0, (r) => Number(r) || 0));
-  const [filtroAtv, setFiltroAtv] = useState<CategoriaAtividade | 'todos'>('todos');
   const [layouts, setLayouts] = useState<ResponsiveLayouts | null>(() =>
     lerLS<ResponsiveLayouts | null>(K_LAYOUT, null, (r) => JSON.parse(r) as ResponsiveLayouts));
   // favoritos + recentes (§24) e cenário de QA (§45 — gatilho oculto)
@@ -220,13 +199,8 @@ function Shell({ config }: { config: ShellConfig }) {
   // fontes — cada uma independente (§32)
   const { dados: alertas, carregando: cAlertas } = useDados(() => getAlertas(), [versao]);
   const { dados: integracoes } = useDados(() => getIntegracoes(), [versao]);
-  const { dados: atividades } = useDados(() => getAtividades(), [versao]);
-  const { dados: serie } = useDados(() => getSerieConsolidada(periodo), [periodo, versao]);
-  const { dados: distribuicao } = useDados(() => getDistribuicao(), [versao]);
   const { dados: clima } = useDados(() => getClima(), [versao]);
   const { dados: saudacao } = useDados(() => getSaudacao(alertas ? alertas.length : null), [alertas === null, versao]);
-  const { dados: agenda, carregando: cAgenda } = useDados(() => getAgenda(), [versao]);
-  const { dados: emails, carregando: cEmails } = useDados(() => getEmails(), [versao]);
   const { dados: insights, carregando: cInsights } = useDados(() => getInsights(), [versao]);
   const { dados: transito, carregando: cTransito, erro: eTransito, recarregar: rTransito } =
     useDados(() => getTransito(), [versao]);
@@ -290,8 +264,6 @@ function Shell({ config }: { config: ShellConfig }) {
     gravarLS(K_LAYOUT, JSON.stringify(todos));
   };
 
-  const atvFiltradas = (atividades ?? []).filter((a) => filtroAtv === 'todos' || a.categoria === filtroAtv);
-  const mMeta = METRICAS.find((m) => m.id === metrica)!;
 
   const ceu = ceuAtual();
   const grupoClima = clima?.atual.grupo ?? null;
@@ -404,9 +376,9 @@ function Shell({ config }: { config: ShellConfig }) {
       {/* Faixa 2 — KPIs executivos (dashboard) */}
       {!imersivo && <LinhaSaude alertas={alertas} integracoes={integracoes} visiveis={visiveis.length} />}
 
-      {/* Faixa 3 — atenção (5) + atividades (4) + agenda (3) */}
+      {/* Faixa 3 — atenção (23/11/2026: atividades e agenda de demonstração removidas — só o real) */}
       <div className="ger-faixa">
-        <div className={!imersivo && mostrar('atividades') ? 'ger-col-5' : 'ger-col-12'} data-ger-sec="alertas">
+        <div className="ger-col-12" data-ger-sec="alertas">
           {cAlertas && !alertas ? <Skeleton altura={200} /> : (
             <Secao titulo="Exige atenção" sub="alertas consolidados de todos os módulos">
               {(alertas ?? []).length === 0 ? (
@@ -429,108 +401,7 @@ function Shell({ config }: { config: ShellConfig }) {
           )}
         </div>
 
-        {!imersivo && mostrar('atividades') && (
-          <div className="ger-col-4">
-            <Secao titulo="Atividades recentes" sub="últimos eventos nos módulos"
-              acoes={(
-                <div className="ger-filtros-atv" role="tablist" aria-label="Filtro de atividades">
-                  {FILTROS_ATV.map((f) => (
-                    <button key={f.id} role="tab" aria-selected={filtroAtv === f.id}
-                      className={`ger-filtro-atv${filtroAtv === f.id ? ' is-on' : ''}`}
-                      onClick={() => setFiltroAtv(f.id)}>{f.rotulo}</button>
-                  ))}
-                </div>
-              )}>
-              {!atividades ? <Skeleton altura={200} /> : atvFiltradas.length === 0 ? (
-                <p className="ger-vazio-inline">Sem atividades nesta categoria.</p>
-              ) : (
-                <div className="ger-atividades">
-                  {atvFiltradas.map((a) => (
-                    <button key={a.id} className="ger-atv" disabled={!a.rota}
-                      onClick={() => a.rota && navegar(a.rota)}>
-                      <span className="ger-atv-dot" aria-hidden />
-                      <span className="ger-atv-corpo">
-                        <strong>{a.descricao} {a.simulado && <SeloSimulado />}</strong>
-                        <span>{a.modulo} · {relTempo(a.quando)}</span>
-                      </span>
-                      {a.rota && <ArrowRight size={12} aria-hidden />}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </Secao>
-          </div>
-        )}
-
-        {!imersivo && mostrar('agenda') && (
-          <div className="ger-col-3"><AgendaWidget itens={agenda} carregando={cAgenda} /></div>
-        )}
       </div>
-
-      {/* Faixa 4 — gráfico consolidado (8) + distribuição (4) (§14–§15) */}
-      {!imersivo && (
-      <div className="ger-faixa">
-        <div className="ger-col-8">
-          <Secao titulo="Desempenho consolidado" sub="visão de demonstração — os pontos virão dos módulos reais"
-            acoes={(
-              <div className="ger-periodos" role="tablist" aria-label="Métrica">
-                {METRICAS.map((m) => (
-                  <button key={m.id} role="tab" aria-selected={metrica === m.id}
-                    className={`ger-periodo${metrica === m.id ? ' is-on' : ''}`}
-                    onClick={() => setMetrica(m.id)}>{m.rotulo}</button>
-                ))}
-              </div>
-            )}>
-            {!serie ? <Skeleton altura={240} /> : (
-              <GChart altura={240} deps={[serie, metrica]} montar={(_e, t) => ({
-                grid: { left: 64, right: 14, top: 16, bottom: 30 },
-                tooltip: { trigger: 'axis', valueFormatter: (v: number) => (mMeta.moeda ? fmtMoeda(v) : String(v)) },
-                dataZoom: serie.length > 10 ? [{ type: 'inside' }] : undefined,
-                xAxis: {
-                  type: 'category',
-                  data: serie.map((p) => String(p.dia).slice(8, 10) + '/' + String(p.dia).slice(5, 7)),
-                  axisLine: { lineStyle: { color: t.borda } }, axisTick: { show: false },
-                  axisLabel: { color: t.textoDim, fontSize: 10 },
-                },
-                yAxis: {
-                  type: 'value',
-                  axisLabel: { color: t.textoDim, fontSize: 10, formatter: mMeta.moeda ? (v: number) => (v >= 1000 ? `${Math.round(v / 1000)}k` : v) : undefined },
-                  splitLine: { lineStyle: { color: t.borda, opacity: 0.5 } },
-                },
-                series: [{
-                  name: mMeta.rotulo, type: 'line', smooth: 0.25, showSymbol: false,
-                  data: serie.map((p) => p[metrica] as number),
-                  lineStyle: { width: 2, color: t.primaria },
-                  itemStyle: { color: t.primaria },
-                  areaStyle: { color: t.primaria, opacity: 0.1 },
-                }],
-              })} />
-            )}
-          </Secao>
-        </div>
-        <div className="ger-col-4">
-          <Secao titulo="Atividade por módulo" sub="distribuição de eventos — demonstração">
-            {!distribuicao ? <Skeleton altura={240} /> : (
-              <div className="ger-barras">
-                {distribuicao.map((d) => {
-                  const maior = distribuicao[0]?.valor ?? 1;
-                  return (
-                    <div key={d.rotulo} className="ger-barra-row">
-                      <span className="ger-barra-rotulo" title={d.rotulo}>{d.rotulo}</span>
-                      <span className="ger-barra-track" aria-hidden>
-                        <span className="ger-barra-fill" style={{ width: `${Math.max(3, (d.valor / maior) * 100)}%` }} />
-                      </span>
-                      <span className="ger-barra-valor">{d.valor}%</span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </Secao>
-        </div>
-      </div>
-
-      )}
 
       {/* Faixa 5 — widgets dos módulos com drag/resize (§12–§13 + Fase 4) — dashboard */}
       {!imersivo && (
@@ -578,20 +449,14 @@ function Shell({ config }: { config: ShellConfig }) {
       {/* Faixa 7 — previsão 10 dias (§9) */}
       <PrevisaoDezDias clima={clima} />
 
-      {/* Faixa 8 — trânsito + e-mails — dashboard */}
+      {/* Faixa 8 — trânsito (23/11/2026: widget E-mails de demonstração removido) — dashboard */}
       {!imersivo && (
       <div className="ger-faixa">
-        <div className={mostrar('emails') ? 'ger-col-6' : 'ger-col-12'}>
+        <div className="ger-col-12">
           <TrafficWidget transito={transito} carregando={cTransito} erro={eTransito}
             aoTentar={rTransito} aoAbrir={() => navegar('#/panel-transito-sp')} />
         </div>
-        {mostrar('emails') && (
-          <div className="ger-col-6">
-            <EmailsWidget resumo={emails} carregando={cEmails} aoAbrir={() => navegar('#/panel-outlook')} />
-          </div>
-        )}
       </div>
-
       )}
 
       {/* Faixa 9 — integrações (§20) — dashboard */}
@@ -611,7 +476,7 @@ function Shell({ config }: { config: ShellConfig }) {
                       {i.estado === 'conectada' ? 'Conectada'
                         : i.estado === 'sincronizando' ? 'Sincronizando'
                         : i.estado === 'desatualizada' ? 'Desatualizada'
-                        : i.estado === 'erro' ? 'Erro' : 'Demonstração'}
+                        : i.estado === 'erro' ? 'Erro' : 'Aguardando conexão'}
                       {i.ultimaSync && <em>{relTempo(i.ultimaSync)}</em>}
                     </span>
                   </div>
