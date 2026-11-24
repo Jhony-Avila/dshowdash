@@ -135,6 +135,11 @@ final class GeralV2
             $f = ['estado' => 'indisponivel', 'atualizado_em' => null, 'detalhe' => 'erro_leitura'];
         }
         $f = ['id' => $id] + $f + ['corte' => $this->agora->format(DATE_ATOM), 'detalhe' => null];
+        $f['conexao'] ??= match (true) {
+            $f['estado'] === 'aguardando_conexao' => ['estado' => 'aguardando', 'detalhe' => $f['detalhe']],
+            in_array($f['detalhe'], ['sem_conexao_banco', 'erro_leitura'], true) => ['estado' => 'problema', 'detalhe' => $f['detalhe']],
+            default => ['estado' => 'conectada', 'detalhe' => null],
+        };
         $f['completa'] = $f['estado'] === 'ok';   // só a fonte em dia E com a última leitura completa vale 'ok'
         return $this->fontes[$id] = $f;
     }
@@ -146,26 +151,8 @@ final class GeralV2
      */
     public function conexao(string $id): array
     {
-        $f = $this->fonte($id === 'pipedrive' ? 'pipedrive_negocios' : $id);
-        if ($f['estado'] === 'aguardando_conexao') return ['estado' => 'aguardando', 'detalhe' => $f['detalhe']];
-        if (in_array($f['detalhe'], ['sem_conexao_banco', 'erro_leitura'], true)) return ['estado' => 'problema', 'detalhe' => $f['detalhe']];
-        try {
-            if ($id === 'bling') {
-                $e = $this->bling->query("SELECT estado_conexao FROM `{$this->p}bling_accounts` WHERE is_ativo = 1 ORDER BY is_padrao DESC, id LIMIT 1")->fetchColumn();
-                if ($e !== 'conectado') return ['estado' => 'problema', 'detalhe' => 'conexao_' . (string) $e];
-                if ($f['detalhe'] === 'escopo_ausente') return ['estado' => 'problema', 'detalhe' => 'escopo_ausente'];
-            }
-            if ($id === 'google_calendar') {
-                $st = $this->gcal->prepare("SELECT COUNT(*) FROM `{$this->p}gcal_accounts` a JOIN `{$this->p}gcal_calendars` c ON c.account_id = a.id AND c.deleted = 0
-                                             WHERE a.user_id = ? AND a.is_active = 1 AND a.connection_status = 'connected'");
-                $st->execute([$this->usuario]);
-                if ((int) $st->fetchColumn() === 0) return ['estado' => 'problema', 'detalhe' => 'reautorizar'];
-            }
-        } catch (Throwable $e) {
-            error_log('[geral-v2] conexão ' . $id . ': ' . get_class($e));
-            return ['estado' => 'problema', 'detalhe' => 'erro_leitura'];
-        }
-        return ['estado' => 'conectada', 'detalhe' => null];
+        // da MESMA leitura da fonte (decisão do Jhony 24/11: cartões e linha de fontes saem de uma leitura só) — nenhuma consulta nova aqui
+        return $this->fonte($id === 'pipedrive' ? 'pipedrive_negocios' : $id)['conexao'];
     }
 
     /**
@@ -174,11 +161,18 @@ final class GeralV2
      * (SyncService:221–224; resposta da ACIMA_DIREITA, 24/11 15:53) → não é sucesso completo e nunca dá zero.
      * @param list<string> $ents
      */
+    private ?array $contasPipe = null;
+
     private function fontePipe(array $ents): array
     {
         if ($this->pipe === null) return ['estado' => 'indisponivel', 'atualizado_em' => null, 'detalhe' => 'sem_conexao_banco'];
-        $contas = (int) $this->pipe->query("SELECT COUNT(*) FROM `{$this->p}pipe_accounts` WHERE is_active = 1 AND status = 'connected'")->fetchColumn();
-        if ($contas === 0) return ['estado' => 'aguardando_conexao', 'atualizado_em' => null, 'detalhe' => 'sem_conta_conectada'];
+        // Decisão do Jhony (24/11): conta EXPIRADA ou INVÁLIDA = "Com problema · pede nova autorização" (como Bling e Google);
+        // "aguardando" só para fonte NUNCA conectada. A leitura das contas é uma só por requisição (negócios e atividades usam a mesma).
+        $this->contasPipe ??= $this->pipe->query("SELECT COALESCE(SUM(status = 'connected'), 0) AS ok,
+                COALESCE(SUM(status IN ('invalid','expired','insufficient_scope','error')), 0) AS ruim FROM `{$this->p}pipe_accounts` WHERE is_active = 1")->fetch(PDO::FETCH_ASSOC);
+        $reaut = (int) $this->contasPipe['ok'] === 0;
+        if ($reaut && (int) $this->contasPipe['ruim'] === 0) return ['estado' => 'aguardando_conexao', 'atualizado_em' => null, 'detalhe' => 'sem_conta_conectada'];
+        $conReaut = ['estado' => 'problema', 'detalhe' => 'reautorizar'];
         $ult = []; $completa = true;
         foreach ($ents as $ent) {
             $st = $this->pipe->prepare("SELECT MAX(finished_at) FROM `{$this->p}pipe_sync_runs` WHERE entity = ? AND status = 'completed' AND COALESCE(errors, 0) = 0");
@@ -191,9 +185,12 @@ final class GeralV2
             $r = $st->fetch(PDO::FETCH_ASSOC);
             if ($r === false || $r['status'] !== 'completed' || (int) $r['errors'] > 0) $completa = false;
         }
-        if (in_array(null, $ult, true)) return ['estado' => 'parcial', 'atualizado_em' => null, 'detalhe' => 'sem_sincronizacao_completa'];
+        if (in_array(null, $ult, true)) return $reaut ? ['estado' => 'indisponivel', 'atualizado_em' => null, 'detalhe' => 'reautorizar', 'conexao' => $conReaut]
+                                                       : ['estado' => 'parcial', 'atualizado_em' => null, 'detalhe' => 'sem_sincronizacao_completa'];
         $velho = min($ult);   // 'Y-m-d H:i:s' em −03:00 (NOW() da sessão); vale a entidade mais velha
         $t = new DateTimeImmutable($velho, $this->br);
+        // conta sem autorização: o último dado lido continua visível, sempre como desatualizado (nunca em dia, nunca zero)
+        if ($reaut) return ['estado' => 'desatualizado', 'atualizado_em' => $t->format(DATE_ATOM), 'detalhe' => 'reautorizar', 'conexao' => $conReaut];
         if ($this->idadeMin($t) > self::VELHA_MIN['pipedrive']) return ['estado' => 'desatualizado', 'atualizado_em' => $t->format(DATE_ATOM)];
         if (!$completa) return ['estado' => 'parcial', 'atualizado_em' => $t->format(DATE_ATOM), 'detalhe' => 'sync_incompleta'];
         return ['estado' => 'ok', 'atualizado_em' => $t->format(DATE_ATOM)];
@@ -213,17 +210,19 @@ final class GeralV2
         $st->execute([$this->usuario]);
         $cals = $st->fetchAll(PDO::FETCH_ASSOC);
         if ($cals === []) return ['estado' => 'aguardando_conexao', 'atualizado_em' => null, 'detalhe' => 'sem_agenda_conectada'];
-        $velhos = 0; $mais = null;
+        $velhos = 0; $mais = null; $conectadas = 0;
         foreach ($cals as $c) {
             // conta que pede nova autorização não sincroniza mais: os calendários dela contam como atrasados (dado velho, não "sem conexão")
             $ok = $c['last_sync_at'] !== null && in_array($c['status'], ['ok', 'stale'], true) && $c['connection_status'] === 'connected';
+            if ($c['connection_status'] === 'connected') $conectadas++;
             $t = $c['last_sync_at'] !== null ? new DateTimeImmutable($c['last_sync_at'], $this->utc) : null;
             if (!$ok || $t === null || $this->idadeMin($t) > self::VELHA_MIN['google_calendar']) { $velhos++; }
             if ($t !== null && ($mais === null || $t < $mais)) $mais = $t;
         }
         $estado = $velhos === 0 ? 'ok' : ($velhos === count($cals) ? 'desatualizado' : 'parcial');
         return ['estado' => $estado, 'atualizado_em' => $mais?->setTimezone($this->br)->format(DATE_ATOM),
-                'detalhe' => $velhos > 0 ? "calendarios_atrasados_{$velhos}_de_" . count($cals) : null];
+                'detalhe' => $velhos > 0 ? "calendarios_atrasados_{$velhos}_de_" . count($cals) : null,
+                'conexao' => $conectadas > 0 ? ['estado' => 'conectada', 'detalhe' => null] : ['estado' => 'problema', 'detalhe' => 'reautorizar']];
     }
 
     private function fonteBling(): array
@@ -235,7 +234,8 @@ final class GeralV2
                LEFT JOIN `{$this->p}bling_sync_state` s ON s.account_id = a.id AND s.recurso = 'pedidos'
               WHERE a.is_ativo = 1 ORDER BY a.is_padrao DESC, a.id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
         if ($r === false || $r['estado_conexao'] === 'nao_configurado') return ['estado' => 'aguardando_conexao', 'atualizado_em' => null, 'detalhe' => 'sem_conta_conectada'];
-        if ($r['ultima_execucao_em'] === null) return ['estado' => 'parcial', 'atualizado_em' => null, 'detalhe' => 'pedidos_nunca_sincronizados'];
+        $con = $r['estado_conexao'] === 'conectado' ? ['estado' => 'conectada', 'detalhe' => null] : ['estado' => 'problema', 'detalhe' => 'conexao_' . $r['estado_conexao']];
+        if ($r['ultima_execucao_em'] === null) return ['conexao' => $con, 'estado' => 'parcial', 'atualizado_em' => null, 'detalhe' => 'pedidos_nunca_sincronizados'];
         $conta = (int) $r['account_id'];
         // Último sucesso = a MESMA regra do módulo Bling (BlingReal::disponibilidade, pacote B 88d2bd83): último job `concluido` do recurso;
         // sem job, a última execução com situação `ok`. Nunca a hora de uma TENTATIVA (antes: ultima_execucao_em, mesmo de uma rodada com erro).
@@ -257,15 +257,16 @@ final class GeralV2
             $st = $this->bling->prepare("SELECT codigo FROM `{$this->p}bling_sync_errors` WHERE account_id = ? AND recurso = 'pedidos' ORDER BY id DESC LIMIT 1");
             $st->execute([$conta]); $err = $st->fetchColumn();
             if ($job === 'cancelado' && $err === 'ESCOPO_AUSENTE') {
-                return ['estado' => $t !== null ? 'desatualizado' : 'indisponivel', 'atualizado_em' => $quando, 'detalhe' => 'escopo_ausente'];
+                return ['estado' => $t !== null ? 'desatualizado' : 'indisponivel', 'atualizado_em' => $quando, 'detalhe' => 'escopo_ausente',
+                        'conexao' => ['estado' => 'problema', 'detalhe' => 'escopo_ausente']];
             }
         }
-        if ($t === null) return ['estado' => 'parcial', 'atualizado_em' => null, 'detalhe' => 'sync_' . $r['situacao']];
-        if ($r['estado_conexao'] !== 'conectado') return ['estado' => 'desatualizado', 'atualizado_em' => $quando, 'detalhe' => 'conexao_' . $r['estado_conexao']];
-        if ($this->idadeMin($t) > self::VELHA_MIN['bling']) return ['estado' => 'desatualizado', 'atualizado_em' => $quando];
+        if ($t === null) return ['conexao' => $con, 'estado' => 'parcial', 'atualizado_em' => null, 'detalhe' => 'sync_' . $r['situacao']];
+        if ($r['estado_conexao'] !== 'conectado') return ['conexao' => $con, 'estado' => 'desatualizado', 'atualizado_em' => $quando, 'detalhe' => 'conexao_' . $r['estado_conexao']];
+        if ($this->idadeMin($t) > self::VELHA_MIN['bling']) return ['conexao' => $con, 'estado' => 'desatualizado', 'atualizado_em' => $quando];
         // `atencao` = a coleta leu tudo, mas alguns registros não foram gravados (BlingSyncService:216–220) → consulta incompleta: parcial, nunca zero
-        if ($r['situacao'] !== 'ok') return ['estado' => 'parcial', 'atualizado_em' => $quando, 'detalhe' => 'sync_' . $r['situacao']];
-        return ['estado' => 'ok', 'atualizado_em' => $quando];
+        if ($r['situacao'] !== 'ok') return ['conexao' => $con, 'estado' => 'parcial', 'atualizado_em' => $quando, 'detalhe' => 'sync_' . $r['situacao']];
+        return ['conexao' => $con, 'estado' => 'ok', 'atualizado_em' => $quando];
     }
 
     /**

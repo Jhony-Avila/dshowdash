@@ -248,7 +248,7 @@ $nulos = function (array $r): bool {
     foreach ($r['prioridades'] as $p) if ($p['id'] !== 'conflito_agenda' && $p['total'] !== null) return false;
     return $r['ganhos']['quantidade'] === null && $r['ganhos']['valor'] === null && $r['funil']['quantidade'] === null && $r['funil']['valor'] === null && $r['funil']['sem_valor'] === null;
 };
-$pdo->exec("UPDATE `{$P}pipe_accounts` SET status='invalid'");
+$pdo->exec("UPDATE `{$P}pipe_accounts` SET status='not_configured'");
 $r = $sv(cf: $cf)->resumo('7d');
 check('Pipedrive sem conta conectada → aguardando_conexao e TODOS os números do Pipedrive null', $nulos($r) && $r['funil']['estado'] === 'aguardando_conexao' && $prio($r, 'atividade_vencida')['estado'] === 'aguardando_conexao');
 check('lista com Pipedrive aguardando → total null, sem itens', ($x = $sv()->lista('atividade_vencida'))['total'] === null && $x['itens'] === [] && $x['estado'] === 'aguardando_conexao');
@@ -352,7 +352,7 @@ $fo = array_column($K()->fontes(), null, 'fonte');
 check('contrato · fontes: as 6 da tela, com estados do enum', array_keys($fo) === ['pipedrive', 'bling', 'calendar', 'asaas', 'mercadolivre', 'lojaintegrada']
     && $fo['pipedrive']['estado'] === 'conectada' && $fo['asaas']['estado'] === 'aguardando' && $fo['asaas']['ultimo_sucesso'] === null);
 // estados e motivos
-$pdo->exec("UPDATE `{$P}pipe_accounts` SET status='invalid'");
+$pdo->exec("UPDATE `{$P}pipe_accounts` SET status='not_configured'");
 $c = $K()->resumo('7d'); $pr = array_column($K()->prioridades()['itens'], null, 'id');
 check('contrato · Pipedrive sem conta: "aguardando", números null, motivo', $c['funil_aberto']['estado'] === 'aguardando' && $c['funil_aberto']['quantidade'] === null && $c['funil_aberto']['motivo'] === 'Pipedrive sem conta conectada.'
     && $pr['atividade_vencida']['quantidade'] === null && $pr['atividade_vencida']['detalhe'] === 'Pipedrive');
@@ -376,8 +376,26 @@ check('contrato · camada da tela sem SQL nenhum', preg_match('/\b(SELECT|INSERT
 // ---------- ESTADO POR INDICADOR (ACIMA_ESQUERDA, 24/11 · contrato com a CIMA) ----------
 $Kag = fn(string $quando) => new GeralV2Contrato($sv(ag: new DateTimeImmutable($quando, $BR), cf: $cf2));
 $NOVOS = ['fonte', 'consulta_completa', 'fonte_atualizada_em', 'valor_em', 'lacunas'];
+/** Decisão do Jhony (24/11): cartões e linha de fontes saem da MESMA leitura. Checa UMA resposta do painel (nada é consultado de novo aqui). */
+$coerentePainel = function (array $pa): string {
+    $blocos = ['pedidos_bling' => $pa['resumo']['pedidos_bling'], 'negocios_ganhos' => $pa['resumo']['negocios_ganhos'], 'funil_aberto' => $pa['resumo']['funil_aberto'], 'agenda' => $pa['agenda']];
+    foreach ($pa['prioridades']['itens'] as $x) $blocos[$x['id']] = $x;
+    $fo = array_column($pa['fontes'], null, 'fonte');
+    $CONS = ['pedidos_bling' => 'pedidos', 'negocios_ganhos' => 'ganhos', 'funil_aberto' => 'funil', 'agenda' => 'agenda',
+             'atividade_vencida' => 'atividades', 'sem_proxima_atividade' => 'atividades', 'conflito_agenda' => 'conflitos'];
+    foreach ($blocos as $id => $b) {
+        $f = $fo[$b['fonte']]; $c = array_column($f['consultas'], null, 'id')[$CONS[$id]];
+        $soDado = $b['estado'] === 'parcial' && $b['lacunas'] !== [] && array_diff($b['lacunas'], ['sem_valor', 'fora_brl', 'sem_canal']) === [];
+        $esperado = in_array($b['estado'], ['ok', 'zero'], true) || $soDado ? 'ok' : $b['estado'];
+        if ($c['estado'] !== $esperado && !($CONS[$id] === 'atividades')) return "painel: $id {$b['estado']} e a consulta {$CONS[$id]} {$c['estado']} na MESMA leitura";
+        if ($b['estado'] === 'erro' && $f['estado'] !== 'problema') return "painel: $id com problema e a fonte {$f['estado']}";
+        if (in_array($b['estado'], ['desatualizado', 'aguardando'], true) && $f['estado'] === 'conectada') return "painel: $id {$b['estado']} e a fonte conectada";
+    }
+    if ($pa['prioridades']['sem_pendencias'] && $pa['prioridades']['verificacao']['estado'] !== 'completa') return 'painel: sem pendências sem verificação completa';
+    return '';
+};
 /** Invariantes de coerência numa visão inteira: "zero" só com fonte conectada e consulta completa; fonte "conectada" só sem indicador pior. */
-$coerente = function (GeralV2Contrato $k, string $per = '7d') use ($NOVOS): string {
+$coerente = function (GeralV2Contrato $k, string $per = '7d') use ($NOVOS, $coerentePainel): string {
     $r = $k->resumo($per); $prT = $k->prioridades(); $pr = $prT['itens']; $ag = $k->agenda(); $fo = array_column($k->fontes($per), null, 'fonte');
     $blocos = ['pedidos_bling' => $r['pedidos_bling'], 'negocios_ganhos' => $r['negocios_ganhos'], 'funil_aberto' => $r['funil_aberto'], 'agenda' => $ag];
     foreach ($pr as $x) $blocos[$x['id']] = $x;
@@ -395,6 +413,7 @@ $coerente = function (GeralV2Contrato $k, string $per = '7d') use ($NOVOS): stri
         if (!array_key_exists('indicadores', $f)) return "fonte {$f['fonte']} sem indicadores";
         foreach ($f['indicadores'] as $i) if ($f['estado'] === 'conectada' && $i['estado'] !== 'ok') return "fonte {$f['fonte']} conectada com {$i['id']} {$i['estado']}";
     }
+    if (($e = $coerentePainel($k->painel($per))) !== '') return $e;
     // ── PARECER DO MOCKUP (24/11 noite) · 1: verificação das prioridades e "Sem pendências" ──
     foreach ($pr as $x) {
         $v = $x['verificacao'] ?? null;
@@ -631,6 +650,59 @@ check('MOCK 4 · ganhos/funil: aviso pronto da lacuna de valor', $c['funil_abert
 $pdo->exec("UPDATE `{$P}bling_sync_state` SET situacao='atencao'");
 check('MOCK 4 · lacuna da LEITURA (não do dado) → aviso null, o motivo explica', $K()->resumo('7d')['pedidos_bling']['aviso'] === null);
 $pdo->exec("UPDATE `{$P}bling_sync_state` SET situacao='ok'");
+// ---------- DECISÕES DO JHONY (24/11 noite) ----------
+// D1 · o conflito de agenda entra no "Sem pendências": a agenda atrasada impede o "Sem pendências" mesmo com tudo zero
+$volta = $tmpTab('pipe_deals'); $pdo->exec("CREATE TABLE `{$P}pipe_deals` LIKE `{$P}pipe_deals__fora`"); $criadas[] = "{$P}pipe_deals";
+$pdo->exec("UPDATE `{$P}gcal_sync_state` SET last_sync_at = '2026-11-23 08:00:00' WHERE calendar_id = 'b@exemplo.test'");   // 1 de 2 agendas há 5 h
+$Kz = new GeralV2Contrato($sv(cf: fn() => [])); $pT = $Kz->prioridades(); $pi = array_column($pT['itens'], null, 'id');
+check('D1 · tudo 0, mas 1 de 2 agendas atrasada → conflito parcial, Google Agenda afetada, sem_pendencias FALSE', $pT['sem_pendencias'] === false
+    && $pi['conflito_agenda']['quantidade'] === 0 && $pi['conflito_agenda']['verificacao']['estado'] === 'parcial'
+    && $pi['conflito_agenda']['verificacao']['fontes_afetadas'][0]['fonte'] === 'calendar' && $pi['conflito_agenda']['verificacao']['fontes_afetadas'][0]['consulta'] === 'conflitos'
+    && $pi['atividade_vencida']['verificacao']['estado'] === 'completa' && $pT['verificacao']['estado'] === 'parcial', json_encode([$pT['verificacao'], $pi['conflito_agenda']['verificacao']]));
+check('D1 · coerente', ($e = $coerente($Kz)) === '', $e);
+$pdo->exec("UPDATE `{$P}gcal_sync_state` SET last_sync_at = '2026-11-23 12:50:00'");
+check('D1 · agenda em dia de novo → sem_pendencias TRUE', (new GeralV2Contrato($sv(cf: fn() => [])))->prioridades()['sem_pendencias'] === true);
+$pdo->exec("DROP TABLE `{$P}pipe_deals`"); $volta();
+// D2 · Pipedrive com conta EXPIRADA ou INVÁLIDA → "Com problema · pede nova autorização" (como Bling e Google); aguardando só nunca conectada
+foreach (['expired', 'invalid'] as $st) {
+    $pdo->exec("UPDATE `{$P}pipe_accounts` SET status = '$st'");
+    $c = $K()->resumo('7d'); $fp = array_column($K()->fontes(), null, 'fonte')['pipedrive']; $pT = $K()->prioridades();
+    check("D2 · conta $st → linha Pipedrive \"problema\", conexão \"pede nova autorização\" (nunca \"aguardando\")", $fp['estado'] === 'problema'
+        && $fp['conexao'] === ['estado' => 'problema', 'motivo' => 'A conta do Pipedrive pede nova autorização.'], json_encode($fp));
+    check("D2 · conta $st → cartões desatualizados com o último dado (negócios, 09:59), motivo de reautorizar, nunca zero nem aguardando", $c['funil_aberto']['estado'] === 'desatualizado'
+        && $c['funil_aberto']['quantidade'] !== null && $c['funil_aberto']['motivo'] === 'A conta do Pipedrive pede nova autorização. Última leitura completa às 09:59.'
+        && $c['funil_aberto']['consulta_completa'] === false && $pT['itens'][0]['verificacao']['estado'] === 'parcial' && $pT['sem_pendencias'] === false, json_encode($c['funil_aberto']));
+    check("D2 · conta $st coerente", ($e = $coerente($K())) === '', $e);
+}
+$pdo->exec("UPDATE `{$P}pipe_accounts` SET status = 'not_configured'");
+check('D2 · nunca conectada (not_configured) → "aguardando"', array_column($K()->fontes(), null, 'fonte')['pipedrive']['conexao']['estado'] === 'aguardando'
+    && $K()->resumo('7d')['funil_aberto']['estado'] === 'aguardando');
+$pdo->exec("UPDATE `{$P}pipe_accounts` SET status = 'connected'");
+// D3 · UMA leitura: a fonte MUDA no meio (a consulta dos pedidos passa a falhar depois que os cartões foram lidos) → cartão e linha seguem coerentes
+$mudou = false;
+$cfMuda = function (string $de, string $ate) use (&$mudou, $tmpTab, &$voltaMuda, $conf2): array {   // chamado DEPOIS dos cartões do resumo
+    if (!$mudou) { $mudou = true; $voltaMuda = $tmpTab('bling_sales_orders'); }
+    return $conf2;
+};
+$pa = (new GeralV2Contrato($sv(cf: $cfMuda)))->painel('7d');
+$fb = array_column($pa['fontes'], null, 'fonte')['bling'];
+check('D3 · fonte mudou no meio da leitura: o painel usa o MESMO resultado (pedidos lido antes; linha Bling derivada dele, sem consultar de novo)', $mudou
+    && $pa['resumo']['pedidos_bling']['quantidade'] !== null && $fb['consultas'][0]['estado'] === 'ok' && $fb['estado'] === 'conectada', json_encode([$pa['resumo']['pedidos_bling']['estado'], $fb]));
+check('D3 · painel coerente com a mudança no meio', ($e = $coerentePainel($pa)) === '', $e);
+check('D3 · um instante de leitura só (leitura_em) e o mesmo período', $pa['leitura_em'] === $pa['prioridades']['gerado_em'] && $pa['leitura_em'] === $pa['resumo']['gerado_em'] && $pa['periodo']['id'] === '7d');
+$voltaMuda();
+// … e o porquê: em chamadas SEPARADAS (resumo.php e depois fontes.php), a mesma mudança deixa cartão e linha divergentes — por isso a tela usa o painel
+$antes = $K()->resumo('7d')['pedidos_bling']; $volta = $tmpTab('bling_sales_orders'); $depois = array_column($K()->fontes(), null, 'fonte')['bling']; $volta();
+check('D3 · (demonstração) chamadas separadas divergem com a mesma mudança: cartão lido ok, linha depois "problema"', $antes['quantidade'] !== null && $depois['estado'] === 'problema');
+// D3 · carga: o painel não consulta os dados duas vezes (a linha de fontes não repete a consulta dos pedidos)
+$conta = 0; $pdoConta = new class ($pdo, $conta) extends PDO {
+    public function __construct(private PDO $real, private int &$n) {}
+    public function prepare(string $q, array $o = []): PDOStatement|false { if (str_contains($q, 'bling_sales_orders') && str_contains($q, 'GROUP BY o.data_pedido')) $this->n++; return $this->real->prepare($q, $o); }
+    public function query(string $q, ?int $m = null, mixed ...$a): PDOStatement|false { return $this->real->query($q); }
+    public function exec(string $q): int|false { return $this->real->exec($q); }
+};
+(new GeralV2Contrato(new GeralV2($pdo, $pdo, $pdoConta, 75, $AGORA, $provDe($cf2), $P)))->painel('7d');
+check('D3 · o painel lê os pedidos UMA vez (antes: resumo + fontes = 2)', $conta === 1, (string) $conta);
 // 3 · contraprova embutida: a lista e o cartão chamam a MESMA função de filtro
 check('MOCK 3 · cartão e lista contam pela MESMA função (contarPrioridade), sem outro COUNT de prioridade', substr_count($src = (string) file_get_contents($argv[1] ?? "$RAIZ/api/geral/GeralV2.php"), 'contarPrioridade(') === 4
     && preg_match('/SELECT COUNT\(\*\) \$from"\)/', $src) === 0);

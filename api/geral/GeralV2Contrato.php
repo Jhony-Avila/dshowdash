@@ -156,9 +156,26 @@ final class GeralV2Contrato
      */
     public function fontes(string $periodo = '7d'): array
     {
-        $r = $this->resumo($periodo);
-        $blocos = ['pedidos_bling' => $r['pedidos_bling'], 'negocios_ganhos' => $r['negocios_ganhos'], 'funil_aberto' => $r['funil_aberto'], 'agenda' => $this->agenda()];
-        foreach ($this->prioridades()['itens'] as $x) $blocos[$x['id']] = $x;
+        return $this->fontesDe($this->resumo($periodo), $this->prioridades(), $this->agenda());
+    }
+
+    /**
+     * UMA leitura para a tela inteira (decisão do Jhony, 24/11): cartões, prioridades, agenda e a linha de fontes saem do MESMO resultado —
+     * a linha de fontes é derivada dos blocos desta resposta, sem consultar de novo. Chamadas separadas podiam divergir entre uma e outra
+     * (o defeito do parecer) e dobravam a carga. `leitura_em` = o instante desta leitura, igual em todas as partes.
+     */
+    public function painel(string $periodo): array
+    {
+        $r = $this->resumo($periodo); $pr = $this->prioridades(); $ag = $this->agenda();
+        return ['leitura_em' => $this->agora->format(DATE_ATOM), 'periodo' => $r['periodo'], 'resumo' => $r, 'prioridades' => $pr, 'agenda' => $ag,
+                'fontes' => $this->fontesDe($r, $pr, $ag)];
+    }
+
+    /** Linha de fontes a partir de blocos JÁ lidos (nenhuma consulta de dado; a conexão vem da mesma leitura da fonte, em cache). */
+    private function fontesDe(array $r, array $prioridades, array $agenda): array
+    {
+        $blocos = ['pedidos_bling' => $r['pedidos_bling'], 'negocios_ganhos' => $r['negocios_ganhos'], 'funil_aberto' => $r['funil_aberto'], 'agenda' => $agenda];
+        foreach ($prioridades['itens'] as $x) $blocos[$x['id']] = $x;
         $out = [];
         foreach (self::CONSULTAS as $id => $consultas) {
             $con = $this->g->conexao($id);
@@ -230,7 +247,7 @@ final class GeralV2Contrato
             'aguardando' => $id === 'google_calendar' ? 'Nenhuma agenda Google conectada.' : "$nome sem conta conectada.",
             default => match ($c['detalhe']) {
                 'escopo_ausente' => 'O acesso ao Bling não inclui os pedidos; é preciso reautorizar.',
-                'reautorizar' => 'A conta Google pede nova autorização.',
+                'reautorizar' => $id === 'google_calendar' ? 'A conta Google pede nova autorização.' : "A conta do $nome pede nova autorização.",
                 'sem_conexao_banco', 'erro_leitura' => "Não foi possível ler o $nome agora.",
                 default => "O acesso ao $nome precisa ser renovado.",
             },
@@ -300,6 +317,9 @@ final class GeralV2Contrato
     {
         $nome = self::NOME[$fonte];
         $quando = $f['atualizado_em'] !== null ? $this->quando($f['atualizado_em']) : null;
+        if ($f['detalhe'] === 'reautorizar' && in_array($estado, ['desatualizado', 'indisponivel'], true)) {   // decisão do Jhony (24/11)
+            return "A conta do $nome pede nova autorização." . ($quando !== null ? " Última leitura completa $quando." : '');
+        }
         if ($f['detalhe'] === 'escopo_ausente' && in_array($estado, ['desatualizado', 'indisponivel'], true)) {
             return 'O acesso ao Bling não inclui os pedidos; é preciso reautorizar.' . ($quando !== null ? " Última leitura completa $quando." : '');
         }
