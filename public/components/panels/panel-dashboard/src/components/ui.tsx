@@ -160,7 +160,7 @@ export function CartaoAguardando({ nome, icone, falta, aoAbrir, ordem = 0 }: {
       <div className="ger-aguardando-corpo">
         <div className="ger-aguardando-topo">
           <span className="ger-wg-ic" aria-hidden>{icone}</span>
-          <strong>{nome}</strong>
+          <strong title={nome}>{nome}</strong>
           <span className="ger-wg-status ger-status-dim">Aguardando conexão</span>
         </div>
         <span className="ger-aguardando-falta">
@@ -206,7 +206,7 @@ export function WidgetModulo({ nome, icone, resumo, rota, aoAbrir, sincronizando
         <span className="ger-wg-ic" aria-hidden>{icone}</span>
         <span className="ger-wg-nome">{nome}</span>
         {resumo.simulado && <SeloSimulado />}
-        <span className={`ger-wg-status ger-status-${NIVEL_CLASSE[resumo.status]}`}>{resumo.statusRotulo}</span>
+        <span className={`ger-wg-status ger-status-${NIVEL_CLASSE[resumo.status]}`} title={resumo.statusRotulo}>{resumo.statusRotulo}</span>
       </header>
 
       {problema && resumo.problema && (

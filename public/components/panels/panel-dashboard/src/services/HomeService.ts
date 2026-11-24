@@ -64,17 +64,16 @@ export async function getSaudacao(totalAlertas: number | null): Promise<Saudacao
       ? 'A operação está estável, sem alertas em aberto.'
       : `A operação está estável, com ${totalAlertas} alerta${totalAlertas === 1 ? '' : 's'} que exige${totalAlertas === 1 ? '' : 'm'} atenção.`);
   }
-  // Frases auxiliares — cada fonte falha sem derrubar a saudação.
-  try {
-    const t = await getTransito();
-    if (t.nivel === 'intense') frases.push('O trânsito está intenso em São Paulo.');
-    else if (t.nivel === 'moderate') frases.push('O trânsito está moderado em São Paulo.');
-  } catch { /* segue */ }
-  try {
-    const c = await getClima();
-    const chance = c.atual.chanceChuva;
+  // Frases auxiliares — cada fonte falha sem derrubar a saudação; as duas em PARALELO (antes em fila: a saudação esperava a soma)
+  const [rt, rc] = await Promise.allSettled([getTransito(), getClima()]);
+  if (rt.status === 'fulfilled') {
+    if (rt.value.nivel === 'intense') frases.push('O trânsito está intenso em São Paulo.');
+    else if (rt.value.nivel === 'moderate') frases.push('O trânsito está moderado em São Paulo.');
+  }
+  if (rc.status === 'fulfilled') {
+    const chance = rc.value.atual.chanceChuva;
     if (chance !== null && chance >= 60) frases.push(`Há ${chance}% de chance de chuva hoje.`);
-  } catch { /* segue */ }
+  }
 
   return { saudacao, nome, frases: frases.slice(0, 2) };
 }

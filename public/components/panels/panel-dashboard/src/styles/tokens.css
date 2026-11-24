@@ -541,3 +541,18 @@ html[data-shell-layout-v2="on"] [data-geral-react-root] .ger-prev-det-info { min
 [data-geral-react-root] .ger-wg-metricas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 [data-geral-react-root] .ger-wg-metrica { min-width: 0; }
 [data-geral-react-root] .ger-wg-metrica-valor { overflow-wrap: anywhere; }
+
+/* ── Revisão cruzada da ESQUERDA (23/11 21:45) ─────────────────────────────────────────────────────────────────────────────
+   P1: número NUNCA quebra no meio ("R$ 1.834.50" / "0"): o valor fica numa linha só e, se as duas métricas não cabem lado a lado,
+       a métrica INTEIRA desce para a linha de baixo (sem cortar nem abreviar dinheiro). Substitui o overflow-wrap: anywhere.
+   P2: o nome do módulo continua visível quando a pílula de situação é longa (a pílula encolhe com reticências; texto completo no title).
+   P3: título do cartão "Aguardando conexão" numa linha (reticências). */
+[data-geral-react-root] .ger-wg-metricas { display: flex; flex-wrap: wrap; gap: 8px 12px; }
+[data-geral-react-root] .ger-wg-metrica { flex: 1 1 calc(50% - 12px); min-width: max-content; }
+[data-geral-react-root] .ger-wg-metrica-valor { white-space: nowrap; overflow-wrap: normal; }
+[data-geral-react-root] .ger-wg-metricas.is-desatualizado .ger-wg-metrica { min-width: 0; }
+[data-geral-react-root] .ger-wg-head .ger-wg-nome { flex: 0 1 auto; min-width: 7ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-geral-react-root] .ger-wg-head .ger-wg-status { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+[data-geral-react-root] .ger-aguardando-topo strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+[data-geral-react-root] .ger-hero-frase--carregando { display: flex; align-items: center; gap: 8px; opacity: .85; }
+[data-geral-react-root] .ger-hero-frase--carregando .ger-osso { width: 64px; height: 8px; margin: 0; }

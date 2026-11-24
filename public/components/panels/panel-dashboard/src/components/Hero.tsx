@@ -7,7 +7,7 @@
 import { useMemo } from 'react';
 import { CalendarDays, MapPin, RefreshCw, Thermometer } from 'lucide-react';
 import type { ClimaCompleto, GrupoClima, Saudacao } from '../domain/types';
-import { Skeleton, fmtHora } from './ui';
+import { fmtHora } from './ui';
 
 export type Ceu = 'madrugada' | 'manha' | 'tarde' | 'entardecer' | 'noite';
 
@@ -66,7 +66,18 @@ export function GreetingHero({ saudacao, clima, carimbo }: {
     weekday: 'long', day: 'numeric', month: 'long',
   });
 
-  if (!saudacao) return <Skeleton altura={150} />;
+  // revisão cruzada (ESQUERDA, P2): enquanto a saudação completa não chega, o cartão JÁ mostra o cumprimento da hora local e o estado
+  // escrito — antes ficava uma caixa em branco (esqueleto) que parecia travada (as frases esperam o trânsito, 5–6 s na produção)
+  if (!saudacao) {
+    const h = new Date().getHours(); const base = h < 5 ? 'Boa noite' : h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
+    return (
+      <section className="ger-hero" aria-label="Saudação e contexto do dia" aria-busy="true" data-ger-estado="carregando">
+        <h1 className="ger-hero-saudacao">{base}</h1>
+        <p className="ger-hero-frase ger-hero-frase--carregando"><span className="ger-osso ger-osso-rotulo" aria-hidden /> Carregando o resumo do dia…</p>
+        <div className="ger-hero-meta"><span><CalendarDays size={12} aria-hidden /> {dataLonga}</span><span><MapPin size={12} aria-hidden /> São Paulo</span></div>
+      </section>
+    );
+  }
 
   return (
     <section className="ger-hero" aria-label="Saudação e contexto do dia">

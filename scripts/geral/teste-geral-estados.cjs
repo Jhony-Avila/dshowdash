@@ -74,6 +74,11 @@ function fontes() {
       car.length >= 4 && car.every((c) => /Carregando…/.test(c.txt) && c.ossos === 8 && c.anim === 'ger-shimmer'), JSON.stringify(car.slice(0, 2)));
     const ag0 = await pg.$$eval('[data-ger-estado="aguardando"]', (xs) => xs.length);
     afirma('os 6 sem fonte já aparecem na faixa "Aguardando conexão" (sem caixa vazia na grade, sem esperar carga)', ag0 === 6, String(ag0));
+    // revisão cruzada (ESQUERDA 23/11): a saudação nunca é caixa em branco e os 5 resumos do topo dizem "Carregando…"
+    { const h = await pg.$eval('.ger-hero', (x) => ({ t: x.textContent.replace(/\s+/g, ' ').trim(), busy: x.getAttribute('aria-busy') })).catch(() => ({ t: '' }));
+      afirma('CARREGANDO: a saudação já mostra o cumprimento + "Carregando o resumo do dia…" (sem caixa em branco)', /^(Bom dia|Boa tarde|Boa noite)/.test(h.t) && /Carregando o resumo do dia…/.test(h.t), JSON.stringify(h));
+      const kpi = await pg.$$eval('.ger-saudes[data-ger-estado="carregando"] .ger-saude', (xs) => xs.map((x) => x.textContent));
+      afirma('CARREGANDO: os 5 resumos do topo com "Carregando…" escrito', kpi.length === 5 && kpi.every((t) => /Carregando…/.test(t)), JSON.stringify(kpi)); }
     await cap(pg, '1-carregando');
     await pg.waitForFunction(() => !document.querySelector('[data-ger-estado="carregando"]'), null, { timeout: 30000 }); await pg.waitForTimeout(400);
     const est = await estados(pg);
@@ -83,6 +88,11 @@ function fontes() {
     afirma('CONECTADO: números reais + "Conectado · atualizado agora"; o ponto fica PARADO fora da sincronização', /57/.test(pd.t) && /Conectado · atualizado agora/.test(pd.t) && pd.ponto === 'none', JSON.stringify(pd));
     const nAg = await pg.$$eval('[data-ger-estado="aguardando"]', (xs) => xs.length);
     afirma('Ads em modo de testes vai para a faixa: 7 cartões "Aguardando conexão"', nAg === 7, String(nAg));
+    // revisão cruzada P1: número de dinheiro NUNCA quebra no meio ("R$ 1.834.50" / "0"); P2: o nome do módulo continua visível com pílula longa
+    { const quebra = await pg.$$eval('.ger-wg-metrica-valor', (xs) => xs.filter((x) => { const lh = parseFloat(getComputedStyle(x).lineHeight) || parseFloat(getComputedStyle(x).fontSize) * 1.3; return x.getBoundingClientRect().height > lh * 1.5; }).map((x) => x.textContent));
+      afirma('P1: nenhum valor de métrica quebrado em duas linhas (ex.: valor do funil R$ 1.834.500 inteiro)', quebra.length === 0 && /R\$\s?1\.834\.500/.test(await pg.textContent('[data-ger-estado="conectado"]:has(.ger-wg-nome:text-is("Pipedrive"))')), JSON.stringify(quebra));
+      const nomes = await pg.$$eval('.ger-rgl-item .ger-wg-nome', (xs) => xs.map((x) => [x.textContent, Math.round(x.getBoundingClientRect().width)]));
+      afirma('P2: o nome de cada módulo continua visível (≥ 40 px) mesmo com a pílula longa do Pipedrive', nomes.every(([, w]) => w >= 40), JSON.stringify(nomes)); }
     await cap(pg, '2-conectado');
     // sincronizando: o ponto pulsa SÓ enquanto atualiza
     f.atraso = 2500; await pg.click('[data-geral-react-root] .ger-btn:has-text("Atualizar")'); await pg.waitForTimeout(500);
@@ -139,6 +149,10 @@ function fontes() {
     afirma('"Com problema" legível em cartão estreito: texto com largura ≥ 160 px e menos linhas que palavras', esp.every((e) => e.w >= 160 && e.linhas < e.palavras / 2), JSON.stringify(esp));
     const corte = await pg.$$eval('.ger-rgl-item [data-ger-estado]', (xs) => xs.map((x) => { const r = x.getBoundingClientRect(); const fora = [...x.querySelectorAll('.ger-wg-metrica-valor, .ger-wg-metrica-rotulo, .ger-problema')].filter((e) => { const q = e.getBoundingClientRect(); return q.right > r.right + 1 || q.left < r.left - 1 || (e.scrollWidth > e.clientWidth + 1 && !e.classList.contains('ger-wg-metrica-rotulo')); }).length; return [x.querySelector('.ger-wg-nome')?.textContent, Math.max(x.scrollHeight - x.clientHeight, x.scrollWidth - x.clientWidth, fora ? 99 : 0)]; }).filter(([, d]) => d > 2));
     afirma('nenhum cartão da grade com conteúdo cortado, na altura nem na largura (Com problema + números desatualizados cabem no cartão)', corte.length === 0, JSON.stringify(corte));
+    // nota da revisão: captura do TOPO no estado "com problema" (Pipedrive E Trânsito com problema → o topo diz 2)
+    await pg.evaluate(() => { const sc = document.querySelector('[data-geral-react-root]')?.closest('main') || document.scrollingElement; sc.scrollTop = 0; document.scrollingElement.scrollTop = 0; }); await pg.waitForTimeout(300);
+    afirma('topo no estado "com problema": "2 com problema" no resumo (Pipedrive e Trânsito)', /2 com problema/.test(await pg.textContent('.ger-saudes').catch(() => '')), await pg.textContent('.ger-saudes').catch(() => ''));
+    await cap(pg, '4-com-problema-topo');
     await rolar(pg, 'widgets'); await cap(pg, '4-com-problema');
     f.pipedrive = 'ok'; f.pdAtraso = 1500;
     await pg.click('[data-ger-estado="problema"]:has(.ger-wg-nome:text-is("Pipedrive")) button:has-text("Tentar de novo")'); await pg.waitForTimeout(400);

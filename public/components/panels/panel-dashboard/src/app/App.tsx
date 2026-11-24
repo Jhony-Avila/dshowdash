@@ -149,10 +149,9 @@ function LinhaSaude({ alertas, integracoes, visiveis }: {
           <div key={r} className="ger-saude ger-nivel-dim ger-entra" style={{ ['--ger-ordem' as string]: k }}>
             <span className="ger-saude-rotulo">{r}</span>
             <span className="ger-osso ger-osso-numero" aria-hidden />
-            <span className="ger-osso ger-osso-rotulo" aria-hidden />
+            <span className="ger-saude-detalhe">Carregando…</span>
           </div>
         ))}
-        <span className="ger-sr">Carregando o resumo de saúde…</span>
       </div>
     );
   }
