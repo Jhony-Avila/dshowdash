@@ -448,7 +448,16 @@ export function FluxoCaixa({ filtros, aoMudarFiltros, larguraPainel }: PropsTela
                 : <SankeyFinanceiro dados={sankey.dados} altura={larguraPainel < 980 ? 260 : 320} />}
               {sankey.dados.nos.length > 0 && (sankey.dados.custo_desconhecido || motivoIndisponivel((sankey.dados as any).indisponivel)) && (
               <p data-bl-aviso="fluxo-custo-desconhecido" style={{ fontSize: 12, color: 'var(--bl-texto-2)', margin: '8px 0 0' }}>
-                Parte dos pedidos tem custo de produto desconhecido: o fluxo não mostra custo nem margem (não é zero).
+                {motivoIndisponivel((sankey.dados as any).indisponivel) === 'valores_desconhecidos'
+                  ? TEXTO_INDISPONIVEL.valores_desconhecidos
+                  : 'Parte dos pedidos tem custo de produto desconhecido: o fluxo não mostra custo nem margem (não é zero).'}
+              </p>
+              )}
+              {/* 32e46b62: ligações com valor desconhecido NUNCA somem em silêncio — cada uma é listada (não é zero) */}
+              {Array.isArray((sankey.dados as any).links_desconhecidos) && (sankey.dados as any).links_desconhecidos.length > 0 && (
+              <p data-bl-aviso="fluxo-links-desconhecidos" style={{ fontSize: 12, color: 'var(--bl-texto-2)', margin: '6px 0 0' }}>
+                Valor desconhecido (fora do desenho, não é zero): {(sankey.dados as any).links_desconhecidos
+                  .map((l: { origem: string; destino: string }) => `${l.origem} → ${l.destino}`).join(' · ')}.
               </p>
               )}
               {!sankey.dados.custo_desconhecido && !(sankey.dados as any).indisponivel && sankey.dados.prejuizo_total > 0 && (

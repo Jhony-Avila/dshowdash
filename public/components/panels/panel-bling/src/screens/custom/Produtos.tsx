@@ -372,6 +372,13 @@ export function Estoque({ filtros, aoMudarFiltros, larguraPainel }: PropsTela) {
                 <p style={{ fontSize: 10.5, color: 'var(--bl-texto-3)', margin: '6px 0 0' }}>
                   {analise.dados.nota_aging}
                 </p>
+                {/* 32e46b62: item sem movimentação registrada (ultima_movimentacao null) não entra em faixa nenhuma — escrito aqui, nunca some */}
+                {(analise.dados.aging_sem_registro?.itens ?? 0) > 0 && (
+                  <p data-bl-aviso="aging-sem-registro" style={{ fontSize: 12, color: 'var(--bl-texto-2)', margin: '4px 0 0' }}>
+                    Sem movimentação registrada: {inteiro(analise.dados.aging_sem_registro.itens)} {analise.dados.aging_sem_registro.itens === 1 ? 'item' : 'itens'}
+                    {' · '}{desconhecido(analise.dados.aging_sem_registro.valor) ? 'valor desconhecido' : moeda(analise.dados.aging_sem_registro.valor)} (fora das faixas acima).
+                  </p>
+                )}
               </>
             ) : <BlocoCarregando linhas={4} />}
           </div>

@@ -1,3 +1,4 @@
+import { registrarMetaForaDoBling } from '../lib/foraDoBling';
 // panel-bling/src/services/api.ts — cliente da API interna
 // @version 1.0.0  @created 2026-07-30
 //
@@ -66,6 +67,7 @@ async function desembrulhar<T>(res: Response): Promise<Resposta<T>> {
     );
   }
 
+  registrarMetaForaDoBling(corpo.meta);
   return { dados: corpo.data as T, meta: corpo.meta as MetaResposta };
 }
 
