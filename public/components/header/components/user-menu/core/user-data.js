@@ -102,16 +102,17 @@ function clearUser(component) {
 function handleLogout(component) {
   if (component.isDestroyed) return Promise.resolve();
   component._announce("Saindo da conta...");
-  emitUIAction("logout", { confirmed: true });
-  const eb = getPort("eventBus");
-  if (eb && eb.emit) {
-    eb.emit(UI_EVENTS.ACTION, {
-      action: "logout",
-      source: COMPONENT_MODULE_ID,
-      timestamp: Date.now()
-    });
-  }
-  return component.circuitBreaker.execute(() => component.api.logout()).then(() => {
+  return component.circuitBreaker.execute(() => component.api.logout()).then((confirmado) => {
+    if (!confirmado) throw new Error("logout n\xE3o confirmado pelo servidor");
+    emitUIAction("logout", { confirmed: true });
+    const eb = getPort("eventBus");
+    if (eb && eb.emit) {
+      eb.emit(UI_EVENTS.ACTION, {
+        action: "logout",
+        source: COMPONENT_MODULE_ID,
+        timestamp: Date.now()
+      });
+    }
     clearUser(component);
     const hns = getHardNavService();
     hns.redirect("/login", "logout", COMPONENT_MODULE_ID);

@@ -2334,3 +2334,9 @@ dist/
 
 # Trânsito (23/11/2026): diagnóstico de 1 chamada do provedor
 !/scripts/traffic/
+!/scripts/sessao/
+!/scripts/sessao/**
+# DSHOW-110 (23/11): config dos bundles Lote 3B+C (inclui header-components) recuperada de /backup/telemetry-sem-token-20260916/ — ROOT padrão = produção: SEMPRE via scripts/build/build-bundle-seguro.sh
+!/public/vite.lote3bc.config.js
+# DSHOW-110 (23/11): módulo NOVO de public/core gerado pela receita — versionado para o publicador aceitar (diff git × diff das releases)
+!/public/core/auth/logout-client.js

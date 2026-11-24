@@ -1,4 +1,5 @@
 import { createCorePorts } from "/core/runtime/ports-profiles.js";
+import { encerrarSessao } from "/core/auth/logout-client.js";
 const VERSION = "5.4.0-FIX";
 const MODULE_ID = "session-api-client";
 const Ports = createCorePorts({ moduleId: MODULE_ID });
@@ -133,14 +134,15 @@ function logout(options) {
   _metrics.logoutRequests++;
   const tracker = getTracker();
   if (tracker.track) tracker.track("session:api:logout:start");
-  return fetchWithTimeout(config.endpoints.logout, { method: "POST", headers: { "Accept": "application/json" } }, options.timeout).then(() => {
-    _metrics.successfulRequests++;
-    if (tracker.track) tracker.track("session:api:logout:complete");
-    return { ok: true };
-  }).catch((error) => {
+  return encerrarSessao(options.timeout || 1e4).then((r) => {
+    if (r.ok) {
+      _metrics.successfulRequests++;
+      if (tracker.track) tracker.track("session:api:logout:complete");
+      return { ok: true };
+    }
     _metrics.failedRequests++;
-    if (tracker.track) tracker.track("session:api:logout:error", { error: error.message });
-    return { ok: true, serverError: error.message };
+    if (tracker.track) tracker.track("session:api:logout:error", { error: r.motivo });
+    return { ok: false, error: r.motivo || "falha", status: r.status };
   });
 }
 function refresh(options) {

@@ -27,7 +27,10 @@ function requireAuth(int $minLevel = 0): array {
     SessionGate::start();
 
     // Compatibilidade: SessionGate armazena user_id diretamente, não em $_SESSION['user']
-    $userId = $_SESSION['user_id'] ?? ($_SESSION['user']['id'] ?? null);
+    // DSHOW-110: sessão do PHP válida + registro obrigatório em app_user_sessions (SessionGate::validate). Falha de consulta não autoriza;
+    // sessão antiga sem registro, revogada ou expirada exige novo login.
+    $sessaoValida = SessionGate::validate();
+    $userId = $sessaoValida['user_id'] ?? null;
 
     if (empty($userId)) {
         http_response_code(401);
@@ -89,7 +92,10 @@ function getCurrentUser(): ?array {
     SessionGate::start();
 
     // Compatibilidade: SessionGate armazena user_id diretamente
-    $userId = $_SESSION['user_id'] ?? ($_SESSION['user']['id'] ?? null);
+    // DSHOW-110: sessão do PHP válida + registro obrigatório em app_user_sessions (SessionGate::validate). Falha de consulta não autoriza;
+    // sessão antiga sem registro, revogada ou expirada exige novo login.
+    $sessaoValida = SessionGate::validate();
+    $userId = $sessaoValida['user_id'] ?? null;
     if (empty($userId)) {
         return null;
     }
@@ -112,7 +118,10 @@ function getCurrentUser(): ?array {
  */
 function isAuthenticated(): bool {
     SessionGate::start();
-    $userId = $_SESSION['user_id'] ?? ($_SESSION['user']['id'] ?? null);
+    // DSHOW-110: sessão do PHP válida + registro obrigatório em app_user_sessions (SessionGate::validate). Falha de consulta não autoriza;
+    // sessão antiga sem registro, revogada ou expirada exige novo login.
+    $sessaoValida = SessionGate::validate();
+    $userId = $sessaoValida['user_id'] ?? null;
     return !empty($userId);
 }
 

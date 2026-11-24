@@ -12,7 +12,7 @@ const VERSION = "10.1.0-ES6";
 const id = "email-integration";
 const capabilities = { type: "integration", reorderable: true, hideable: true, critical: false, rendersUI: true };
 const MODULE_ID = "header/components/email-integration";
-const ROUTE = "#/panel-outlook";
+const ROUTE = "#/status-mail";
 const Ports = createUiPorts({ moduleId: MODULE_ID });
 function _initPorts() {
   Ports.init();
@@ -45,7 +45,7 @@ const ICON_EMAIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 function EmailIntegrationComponent(options) {
   options = options || {};
   this.container = options.container;
-  this.store = new StateStore({ received_today: 0, unread: 0, status: "loading" });
+  this.store = new StateStore({ unreadCount: 0, status: "loading" });
   this.eventBus = _getPort("eventBus");
   this.lifecycle = new LifecycleManager(this);
   const cfg = _getPort("config");
@@ -87,7 +87,7 @@ EmailIntegrationComponent.prototype.render = function() {
   this.element.addEventListener("click", () => {
     self._metrics.clickCount++;
     self._metrics.lastClickAt = Date.now();
-    emitUIAction({ clicked: true, value: self.store && self.store.getState ? self.store.getState().received_today : 0 });
+    emitUIAction({ clicked: true, value: self.store && self.store.getState ? self.store.getState().unreadCount : 0 });
     navigateToRoute(ROUTE, MODULE_ID);
   });
   this.unsubscribe = this.store.subscribe((state) => {
@@ -97,22 +97,13 @@ EmailIntegrationComponent.prototype.render = function() {
 };
 EmailIntegrationComponent.prototype.updateUI = function(state) {
   const badgeEl = this.element.querySelector(".integration-badge");
-  const rec = state.received_today;
-  if (state.status !== "offline" && rec !== null && rec !== void 0) {
-    // Badge = e-mails RECEBIDOS HOJE (§4.1); sempre visível, mostra 0 quando não há.
-    this.element.dataset.count = String(rec);
-    this.element.dataset.status = rec > 0 ? "has-unread" : "ok";
-    badgeEl.textContent = rec > 99 ? "99+" : String(rec);
-    let hora = "--:--";
-    if (state.lastUpdate) {
-      try { hora = new Date(state.lastUpdate).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); } catch (e) {}
-    }
-    this.element.title = `E-mails recebidos hoje: ${rec}\n${state.unread || 0} mensagens não lidas\nÚltima atualização: ${hora}`;
+  if (state.unreadCount !== null) {
+    this.element.dataset.count = String(state.unreadCount);
+    this.element.dataset.status = state.unreadCount > 0 ? "has-unread" : "ok";
+    badgeEl.textContent = state.unreadCount > 99 ? "99+" : state.unreadCount;
   } else {
     this.element.dataset.count = "0";
     this.element.dataset.status = "offline";
-    badgeEl.textContent = "0";
-    this.element.title = "E-mails — não foi possível atualizar";
   }
 };
 EmailIntegrationComponent.prototype.fetchStatus = function() {
@@ -122,10 +113,9 @@ EmailIntegrationComponent.prototype.fetchStatus = function() {
   this._metrics.lastFetchAt = Date.now();
   return this.api.fetchStatus().then((data) => {
     if (self.isDestroyed) return;
-    if (data && data._fallback) { self.store.setState({ status: "offline" }); return; }
-    self.store.setState({ received_today: data.received_today || 0, unread: data.unread || 0, status: "ok", lastUpdate: (/* @__PURE__ */ new Date()).toISOString() });
+    self.store.setState({ unreadCount: data.unread_count || 0, status: "ok", lastUpdate: (/* @__PURE__ */ new Date()).toISOString() });
     const eb = _getPort("eventBus");
-    if (eb && eb.emit) eb.emit(COMPONENT_EVENTS.DATA_UPDATED, { componentId: id, moduleId: MODULE_ID, data: { received_today: data.received_today, unread: data.unread }, timestamp: Date.now() });
+    if (eb && eb.emit) eb.emit(COMPONENT_EVENTS.DATA_UPDATED, { componentId: id, moduleId: MODULE_ID, data: { unreadCount: data.unread_count }, timestamp: Date.now() });
   }).catch((error) => {
     if (self.isDestroyed) return;
     self.store.setState({ status: "offline" });
@@ -166,7 +156,7 @@ EmailIntegrationComponent.prototype.healthCheck = function() {
   return { status: passed === 5 ? "HEALTHY" : passed >= 3 ? "DEGRADED" : "UNHEALTHY", score: passed, maxScore: 5, checks, portsInitialized: Ports.isInitialized(), version: VERSION, moduleId: MODULE_ID };
 };
 EmailIntegrationComponent.prototype.info = function() {
-  return { version: VERSION, moduleId: MODULE_ID, id, capabilities, portsInitialized: Ports.isInitialized(), mounted: !!this.element, received_today: this.store.getState().received_today, metrics: this._metrics };
+  return { version: VERSION, moduleId: MODULE_ID, id, capabilities, portsInitialized: Ports.isInitialized(), mounted: !!this.element, unreadCount: this.store.getState().unreadCount, metrics: this._metrics };
 };
 var email_integration_default = EmailIntegrationComponent;
 export {
