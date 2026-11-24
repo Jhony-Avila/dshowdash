@@ -252,7 +252,8 @@ check('Bling sem conta → aguardando_conexao, números null', $r['pedidos']['es
 $pdo->exec("UPDATE `{$P}bling_accounts` SET estado_conexao='conectado'");
 $pdo->exec("UPDATE `{$P}bling_sync_state` SET ultima_execucao_em='2026-11-23 08:00:00'");   // 05:00 BR = 5 h
 $r = $sv(cf: $cf)->resumo('7d');
-check('Bling velho → desatualizado, números mostrados', $r['pedidos']['estado'] === 'desatualizado' && $r['pedidos']['quantidade'] === 4);
+check('Bling velho → desatualizado, números mostrados; dia sem pedido = null (não 0)', $r['pedidos']['estado'] === 'desatualizado' && $r['pedidos']['quantidade'] === 4
+    && $r['pedidos']['por_dia'][1]['quantidade'] === null && $r['pedidos']['por_dia'][0]['quantidade'] === 2, json_encode($r['pedidos']['por_dia']));
 $pdo->exec("UPDATE `{$P}bling_sync_state` SET ultima_execucao_em='2026-11-23 12:40:00'");
 $pdo->exec("UPDATE `{$P}pipe_sync_runs` SET finished_at='2026-11-23 07:00:00' WHERE entity='activities'");
 $r = $sv(cf: $cf)->resumo('7d');

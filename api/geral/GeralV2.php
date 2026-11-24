@@ -383,7 +383,8 @@ final class GeralV2
             $st = $b->prepare("SELECT o.data_pedido AS dia, COUNT(*) AS n, SUM(o.total) AS v FROM `{$p}bling_sales_orders` o WHERE $w GROUP BY o.data_pedido");
             $st->execute($par);
             $n = 0; $v = '0.00';
-            foreach ($dias as $k => $_) { $dias[$k]['quantidade'] = 0; $dias[$k]['valor'] = '0.00'; }   // a fonte respondeu: dia sem linha = 0 de verdade
+            // dia sem linha = 0 de verdade SÓ com a fonte em dia; fonte velha/parcial: o dia sem pedido fica null (pode ser só atraso da sincronização)
+            if ($f['estado'] === 'ok') foreach ($dias as $k => $_) { $dias[$k]['quantidade'] = 0; $dias[$k]['valor'] = '0.00'; }
             foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
                 $k = substr((string) $r['dia'], 0, 10);
                 if (!isset($dias[$k])) continue;
