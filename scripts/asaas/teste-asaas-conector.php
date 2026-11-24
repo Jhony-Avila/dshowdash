@@ -323,5 +323,30 @@ if ($pdo !== null) {
     check('volume inesperado (200 páginas) → erro', $syncM->sincronizar('conta-m', $agora)['erro'] === 'volume_inesperado');
 }
 
+// ================= H. CONFERÊNCIA (portão de ativação): os 11 rótulos, total e detalhe por empresa =================
+require_once __DIR__ . '/../../api/asaas/AsaasConferencia.php';
+$ONZE = ['zenthra', 'astrelux', 'lunvox', 'loja-painel-led', 'led-lovers', 'j-carvalho', 'jwa', 'a-marques', 'gav', 'neoled', 'rovic'];
+check('os 11 rótulos passam na regra do script e do conector', count(array_filter($ONZE, fn($r) => preg_match(AsaasChaves::RE_ROTULO, $r) === 1)) === 11);
+$disp = fn(string $r, string $saldo) => ['conta' => $r, 'nome' => 'Empresa ' . strtoupper($r), 'disponivel' => true, 'atualizado_em' => '2026-11-23T13:05:00+00:00', 'aviso' => null, 'motivo' => null,
+    'valores' => ['saldo' => $saldo, 'a_receber' => '100.00', 'vencido' => '10.50', 'vencido_qtd' => 2, 'recebido_mes' => '1000.00', 'recebido_mes_liquido' => '980.01']];
+$todas = ['contas' => array_map(fn($r) => $disp($r, '1234.56'), $ONZE), 'total' => ['saldo' => '13580.16', 'a_receber' => '1100.00', 'vencido' => '115.50', 'recebido_mes' => '11000.00'], 'total_parcial' => false];
+$tx = AsaasConferencia::texto($todas);
+check('conferência: uma seção por empresa (11) + TOTAL com os 4 números', substr_count($tx, ' · Empresa ') === 11 && str_contains($tx, 'TOTAL (11 empresa(s)): saldo R$ 13.580,16 · a receber R$ 1.100,00 · vencido R$ 115,50 · recebido no mês R$ 11.000,00'), $tx);
+check('conferência: valores em reais, hora de Brasília', str_contains($tx, "zenthra · Empresa ZENTHRA · sincronizada 23/11 10:05\n  saldo ............ R$ 1.234,56") && str_contains($tx, 'R$ 10,50 em 2 cobrança(s)') && str_contains($tx, '(líquido R$ 980,01)'));
+$parcial = $todas; $parcial['total'] = null; $parcial['total_parcial'] = true;
+$parcial['contas'][1] = ['conta' => 'astrelux', 'nome' => null, 'disponivel' => false, 'valores' => null, 'atualizado_em' => null, 'aviso' => null, 'motivo' => 'nunca_sincronizada'];
+$parcial['contas'][2] = ['conta' => 'lunvox', 'nome' => 'Lunvox', 'disponivel' => false, 'valores' => null, 'atualizado_em' => null, 'aviso' => null, 'motivo' => 'conta_divergente'];
+$tp = AsaasConferencia::texto($parcial);
+check('conferência: empresa sem números → "sem números" + motivo, nunca 0', str_contains($tp, "astrelux · (nome ainda não lido)\n  sem números: ainda não sincronizada") && str_contains($tp, 'lunvox · Lunvox') && str_contains($tp, 'identidade não confere'));
+check('conferência: total indisponível com empresa faltando (nunca soma parcial)', str_contains($tp, 'TOTAL (11 empresa(s)): indisponível — 2 empresa(s) sem números') && !str_contains($tp, 'R$ 13.580,16'));
+check('conferência: --conta mostra só a empresa, sem TOTAL', ($t1 = AsaasConferencia::texto($todas, 'gav')) === AsaasConferencia::texto(['contas' => [$disp('gav', '1234.56')]], 'gav') && !str_contains($t1, 'TOTAL') && substr_count($t1, ' · Empresa ') === 1);
+check('conferência: negativos e centavos', AsaasConferencia::brl('-0.5') === '-R$ 0,50' && AsaasConferencia::brl('1000000') === 'R$ 1.000.000,00' && AsaasConferencia::brl(null) === '—');
+if ($pdo !== null) {
+    $tx2 = AsaasConferencia::texto($resumo->montar(['conta-a', 'conta-b', 'conta-c'], $agora->modify('+5 minutes')));
+    check('conferência sobre o resumo REAL do banco de validação: monta sem erro e sem chave', str_contains($tx2, 'TOTAL (3 empresa(s))') && !str_contains($tx2, '$aact_'));
+}
+$srcC = (string) file_get_contents(__DIR__ . '/../../api/asaas/AsaasConferencia.php') . (string) file_get_contents(__DIR__ . '/asaas-conferir.php');
+check('conferência: só leitura (sem INSERT/UPDATE/DELETE, sem cliente HTTP)', preg_match('/\b(INSERT|UPDATE|DELETE|curl_|AsaasCliente|sincronizar)\b/', $srcC) === 0);
+
 echo 'teste-asaas-conector: ', $ok, ' ok, ', count($falhas), " falha(s)", $semBanco ? ' (sem banco)' : '', "\n";
 exit($falhas === [] ? 0 : 1);
