@@ -348,13 +348,16 @@ final class AsaasResumo
         $q = $this->pdo->prepare("SELECT COALESCE(SUM(CASE WHEN `status`='PENDING' THEN `valor` END),0) a_receber,
                COALESCE(SUM(CASE WHEN `status`='OVERDUE' THEN `valor` END),0) vencido, COALESCE(SUM(`status`='OVERDUE'),0) vencido_qtd,
                COALESCE(SUM(CASE WHEN `status` IN ($in) AND `data_pagamento` BETWEEN ? AND ? THEN `valor` END),0) recebido_mes,
-               COALESCE(SUM(CASE WHEN `status` IN ($in) AND `data_pagamento` BETWEEN ? AND ? THEN COALESCE(`valor_liquido`,`valor`) END),0) recebido_mes_liquido
+               COALESCE(SUM(CASE WHEN `status` IN ($in) AND `data_pagamento` BETWEEN ? AND ? THEN `valor_liquido` END),0) recebido_mes_liquido,
+               COALESCE(SUM(`status` IN ($in) AND `data_pagamento` BETWEEN ? AND ? AND `valor_liquido` IS NULL),0) liquido_ausente
              FROM `{$this->p}asaas_cobrancas` WHERE `conta`=? AND `geracao`=? AND `presente`=1 AND `deletada`=0");
-        $q->execute([...self::RECEBIDO, $mesIni, $mesFim, ...self::RECEBIDO, $mesIni, $mesFim, $r, $ger]);
+        $q->execute([...self::RECEBIDO, $mesIni, $mesFim, ...self::RECEBIDO, $mesIni, $mesFim, ...self::RECEBIDO, $mesIni, $mesFim, $r, $ger]);
         $v = $q->fetch(PDO::FETCH_ASSOC);
         $dec = static fn($x) => AsaasValor::deCentavos(AsaasValor::centavos((string) $x));
+        // Decisão do Jhony (24/11): líquido ausente ou null explícito em QUALQUER cobrança recebida no mês → o líquido do mês fica INDISPONÍVEL
+        // (null, "—" na conferência). Nunca o bruto no lugar, nunca uma soma parcial (mesma regra do Bling: ausência não vira valor).
         $valores = ['saldo' => $dec($c['saldo']), 'a_receber' => $dec($v['a_receber']), 'vencido' => $dec($v['vencido']), 'vencido_qtd' => (int) $v['vencido_qtd'],
-                    'recebido_mes' => $dec($v['recebido_mes']), 'recebido_mes_liquido' => $dec($v['recebido_mes_liquido'])];
+                    'recebido_mes' => $dec($v['recebido_mes']), 'recebido_mes_liquido' => (int) $v['liquido_ausente'] === 0 ? $dec($v['recebido_mes_liquido']) : null];
         $e = $this->pdo->prepare("SELECT `chave`,`valor` FROM `{$this->p}asaas_estatisticas` WHERE `conta`=? AND `geracao`=?");
         $e->execute([$r, $ger]);
         $avisos = $c['estado'] === 'erro' ? ['ultima_tentativa_falhou:' . $c['erro_codigo']] : [];

@@ -433,6 +433,38 @@ if ($pdo !== null) {
     $apiA->rotas['/financialTransactions'] = $extOrig;
     $rOk = $sync->sincronizar('conta-a', $agora->modify('+7 hours 20 minutes'));
     check('113: com os campos válidos de novo, a rodada seguinte volta a dar ok', $rOk['resultado'] === 'ok', json_encode($rOk));
+
+    // ===== Decisão do Jhony (24/11): líquido AUSENTE ou NULL numa cobrança recebida no mês → líquido do mês INDISPONÍVEL, nunca o bruto =====
+    require_once __DIR__ . '/../../api/asaas/AsaasConferencia.php';
+    $vLiq = fn(string $quando) => array_column((new AsaasResumo($pdo, $P))->montar(['conta-a'], $agora->modify($quando))['contas'], null, 'conta')['conta-a'];
+    $base = $vLiq('+7 hours 21 minutes')['valores'];
+    check('LIQ: base com todos os líquidos presentes tem número', $base['recebido_mes_liquido'] !== null && $base['recebido_mes'] !== null, json_encode($base));
+    $cents = fn(?string $x) => $x === null ? null : AsaasValor::centavos($x);
+    $recebida = ['object' => 'payment', 'id' => 'pay_liq_ausente', 'dateCreated' => '2026-11-20', 'value' => 40.00, 'billingType' => 'PIX', 'status' => 'RECEIVED',
+                 'paymentDate' => '2026-11-21', 'deleted' => false];                                         // SEM a chave netValue
+    $estado['A']['nov'][] = $recebida;
+    $rL1 = $sync->sincronizar('conta-a', $agora->modify('+7 hours 25 minutes'));
+    $pL1 = $vLiq('+7 hours 26 minutes');
+    check('LIQ ausente: sincronização ok (ausente não é inválido)', $rL1['resultado'] === 'ok', json_encode($rL1));
+    check('LIQ ausente: gravado como NULL, não como bruto', $n("SELECT IFNULL(valor_liquido,'NULL') FROM `{$P}asaas_cobrancas` WHERE conta='conta-a' AND geracao=? AND payment_id='pay_liq_ausente'", [$rL1['geracao']]) === 'NULL');
+    check('LIQ ausente: líquido do mês INDISPONÍVEL (null), nunca bruto nem soma parcial', $pL1['valores']['recebido_mes_liquido'] === null, json_encode($pL1['valores']));
+    check('LIQ ausente: o bruto do mês continua certo (+40.00) e a conta segue disponível', $pL1['disponivel'] === true
+        && $cents($pL1['valores']['recebido_mes']) === $cents($base['recebido_mes']) + 4000, json_encode($pL1['valores']));
+    check('LIQ ausente: conferência mostra "líquido —", nunca um valor', str_contains(AsaasConferencia::texto(['contas' => [$pL1]], 'conta-a'), '(líquido —)'));
+    $estado['A']['nov'][count($estado['A']['nov']) - 1]['netValue'] = null;                                  // null EXPLÍCITO
+    $rL2 = $sync->sincronizar('conta-a', $agora->modify('+7 hours 30 minutes'));
+    $pL2 = $vLiq('+7 hours 31 minutes');
+    check('LIQ null explícito: ok e líquido do mês indisponível', $rL2['resultado'] === 'ok' && $pL2['valores']['recebido_mes_liquido'] === null, json_encode([$rL2, $pL2['valores']]));
+    $estado['A']['nov'][count($estado['A']['nov']) - 1]['netValue'] = 38.01;                                 // líquido válido
+    $rL3 = $sync->sincronizar('conta-a', $agora->modify('+7 hours 35 minutes'));
+    $pL3 = $vLiq('+7 hours 36 minutes');
+    check('LIQ válido: o líquido volta, somado exato (+38.01)', $rL3['resultado'] === 'ok'
+        && $cents($pL3['valores']['recebido_mes_liquido']) === $cents($base['recebido_mes_liquido']) + 3801, json_encode($pL3['valores']));
+    $pPend = $estado['A']['nov']; $estado['A']['nov'][] = ['object' => 'payment', 'id' => 'pay_pend_sem_liq', 'dateCreated' => '2026-11-20', 'value' => 5.00, 'status' => 'PENDING', 'deleted' => false];
+    $rL4 = $sync->sincronizar('conta-a', $agora->modify('+7 hours 40 minutes'));
+    check('LIQ: cobrança NÃO recebida sem líquido não derruba o líquido do mês', $rL4['resultado'] === 'ok'
+        && $cents($vLiq('+7 hours 41 minutes')['valores']['recebido_mes_liquido']) === $cents($pL3['valores']['recebido_mes_liquido']));
+    $estado['A']['nov'] = $pPend;
 }
 
 // ================= H. CONFERÊNCIA (portão de ativação): os 11 rótulos, total e detalhe por empresa =================
