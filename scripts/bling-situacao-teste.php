@@ -486,6 +486,63 @@ try {
     ok('normal, situação "0" e 0: situação conhecida PRESERVADA', $sitDe('900071') === $sn71 && $sitDe('900072') === $sn72 && $sn71 !== '' && $sn71 !== '0',
         "$sn71 → " . $sitDe('900071') . "; $sn72 → " . $sitDe('900072'));
     ok('nenhuma situação "0" gravada em lugar nenhum', n($pdo, "SELECT COUNT(*) FROM bling_sales_orders WHERE situacao_bling_id = '0'") === 0);
+
+    echo "== 14. Codex DSHOW-115 (P6.1) · valor BRUTO validado antes de qualquer coerção — booleano, float, array, vazio, \"0\", \"01\", espaço… preservam; id válido atualiza — normal, geral e seletivo\n";
+    $ruins = ['true' => true, 'false' => false, 'float-1' => 1.0, 'float-id' => 205777.0, 'array-vazio' => [], 'array' => ['205777'], 'vazio' => '', 'zero-texto' => '0',
+              'zero-esquerda' => '01', 'espaco' => ' 205777', 'negativo' => -3, 'zero' => 0];
+    $bons = ['int' => 205991, 'texto' => '205992'];
+    $variantes14 = $ruins + $bons;
+    $preparar = static function (array $ids) use ($pdo): void {   // ids conhecidos: loja 205000, situação 15
+        $st = $pdo->prepare("UPDATE bling_sales_orders SET loja_bling_id = '205000', situacao_bling_id = '15' WHERE bling_id = ?");
+        foreach ($ids as $b) { $st->execute([$b]); }
+    };
+    $conferir = static function (string $modo, array $alvos) use ($ruins, $bons, $sitDe, $lojaAntes): void {
+        foreach ($ruins as $nome => $_) {
+            ok("$modo, $nome: loja 205000 e situação 15 PRESERVADAS", $lojaAntes($alvos[$nome]) === '205000' && $sitDe($alvos[$nome]) === '15',
+                $alvos[$nome] . ': loja ' . $lojaAntes($alvos[$nome]) . ', situação ' . $sitDe($alvos[$nome]));
+        }
+        foreach ($bons as $nome => $v) {
+            ok("$modo, id válido ($nome $v): loja e situação ATUALIZADAS", $lojaAntes($alvos[$nome]) === (string) $v && $sitDe($alvos[$nome]) === (string) $v,
+                $alvos[$nome] . ': loja ' . $lojaAntes($alvos[$nome]) . ', situação ' . $sitDe($alvos[$nome]));
+        }
+    };
+    // (a) SINCRONIZAÇÃO NORMAL (listagem → gravarPedido): pedidos 900101..
+    $GLOBALS['PEDIDOS'] = pedidosFalsos(250, static fn(int $i) => 15);
+    $alvosN = []; $k = 0;
+    foreach ($variantes14 as $nome => $v) {
+        $i = 101 + $k++; $alvosN[$nome] = (string) (900000 + $i);
+        $GLOBALS['PEDIDOS'][$i - 1]['situacao'] = ['id' => $v, 'valor' => 0]; $GLOBALS['PEDIDOS'][$i - 1]['loja'] = ['id' => $v];
+        $GLOBALS['PEDIDOS'][$i - 1]['total'] = $GLOBALS['PEDIDOS'][$i - 1]['totalProdutos'] = 3000 + $i;   // muda o hash → regrava
+    }
+    $preparar(array_values($alvosN));
+    $api->responder('pedidos/vendas', static fn($m, $url) => $paginaDe($GLOBALS['PEDIDOS'], $url));
+    $sync->sincronizar($conta, 'pedidos', 'carga_inicial', 't14-normal');
+    ok('normal: pedidos regravados (total novo)', (string) v($pdo, 'SELECT total FROM bling_sales_orders WHERE bling_id = ?', [$alvosN['true']]) === '3101.00'
+        || (float) v($pdo, 'SELECT total FROM bling_sales_orders WHERE bling_id = ?', [$alvosN['true']]) === 3101.0);
+    $conferir('normal', $alvosN);
+    // (b) RELEITURA GERAL (listagem → gravarSituacaoLoja): pedidos 900121..
+    $GLOBALS['PEDIDOS'] = pedidosFalsos(250, static fn(int $i) => 15);
+    $alvosG = []; $k = 0;
+    foreach ($variantes14 as $nome => $v) {
+        $i = 121 + $k++; $alvosG[$nome] = (string) (900000 + $i);
+        $GLOBALS['PEDIDOS'][$i - 1]['situacao'] = ['id' => $v, 'valor' => 0]; $GLOBALS['PEDIDOS'][$i - 1]['loja'] = ['id' => $v];
+    }
+    $preparar(array_values($alvosG));
+    $pdo->exec("DELETE FROM bling_sync_state WHERE account_id = $conta AND recurso = '" . BlingSyncService::RECURSO_RELEITURA . "'");
+    $r14 = $sync->releituraPedidos($conta, static fn() => false, static fn(int $ms) => null, 1500);
+    ok('geral: releitura concluída', $r14['situacao'] === 'concluida', json_encode($r14));
+    $conferir('geral', $alvosG);
+    // (c) RELEITURA DE PEDIDOS (--pedidos, detalhe → gravarSituacaoLoja): pedidos 900141..
+    $alvosS = []; $k = 0;
+    foreach ($variantes14 as $nome => $v) {
+        $b = (string) (900141 + $k++); $alvosS[$nome] = $b;
+        $DET[$b] = new BlingResposta(200, ['data' => ['id' => (int) $b, 'situacao' => ['id' => $v, 'valor' => 0], 'loja' => ['id' => $v]]]);
+    }
+    $preparar(array_values($alvosS));
+    $r14s = $sync4->releituraPedidosIds($conta, array_values($alvosS), static fn() => false, static fn(int $ms) => null, 1500);
+    ok('seletivo: concluída', $r14s['situacao'] === 'concluida', json_encode($r14s));
+    $conferir('seletivo', $alvosS);
+    ok('nenhuma loja/situação "1" vinda de booleano em lugar nenhum', n($pdo, "SELECT COUNT(*) FROM bling_sales_orders WHERE loja_bling_id = '1' OR situacao_bling_id = '1'") === 0);
 } catch (Throwable $e) {
     $falhas++; echo 'FALHA exceção: ', get_class($e), ': ', $e->getMessage(), ' @', basename($e->getFile()), ':', $e->getLine(), "\n";
 } finally {
