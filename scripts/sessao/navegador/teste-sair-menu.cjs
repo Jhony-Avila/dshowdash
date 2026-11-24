@@ -47,5 +47,27 @@ const abrirMenuESair = async (pg) => { await pg.click('.user-menu-trigger', { ti
   afirma('B) registro INATIVO com motivo logout', sql(`SELECT CONCAT(is_active,'/',IFNULL(logout_reason,'')) FROM ATRWEB_VAL_DASH.app_user_sessions WHERE session_token='${id.replace(/[^A-Za-z0-9,-]/g, '')}'`) === '0/logout');
   const r2 = await pg2.evaluate(async () => (await fetch('/api/auth/check.php', { credentials: 'include', cache: 'no-store' })).json());
   afirma('B) a outra aba reconhece na próxima chamada (desautenticada)', !(r2.data && r2.data.authenticated));
-  await b.close(); console.log(`SAIR MENU (código novo): ${ok} ok, ${falhas} falhas`); process.exit(falhas ? 1 : 0);
+
+  // C/D) SESSION-MANAGER (o caminho que ainda tinha o logout antigo sem CSRF — usado pelo rodapé/ação 'logout'). No layout v2 o rodapé
+  // NÃO desenha o slot de controles (.dsd-footer__controls ausente) → não há botão "Sair" no rodapé para clicar; testa-se o MESMO caminho
+  // pela API global do session-manager, exatamente o que o botão chamaria.
+  const pg3 = await ctx.newPage(); await pg3.goto(`${B}/__entrar?perfil=admin&ir=%2F`, { waitUntil: 'networkidle', timeout: 60000 });
+  const id3 = (await ctx.cookies()).find((c) => c.name === 'DSHOWSESS')?.value || '';
+  afirma('C) rodapé do layout v2: sem slot de controles (não há botão Sair no rodapé)', await pg3.evaluate(() => !document.querySelector('.dsd-footer__controls')));
+  const smSair = () => pg3.evaluate(async () => { const mod = await import('/components/session-manager/dist/session-manager.bundle.js'); const sm = mod.default || mod.SessionManager; if (!sm || !sm.logout) return { semApi: true }; try { return await sm.logout(); } catch (e) { return { erro: String(e) }; } });
+  const posts3 = [], ab3 = []; let resp3 = null;
+  pg3.on('request', (r) => { if (r.url().endsWith('/api/auth/logout.php') && r.method() === 'POST') posts3.push(r.headers()['x-csrf-token'] ? 'com-csrf' : 'SEM-CSRF'); });
+  pg3.on('requestfailed', (r) => { if (r.url().endsWith('/api/auth/logout.php')) ab3.push(r.failure() && r.failure().errorText); });
+  pg3.on('response', (r) => { if (r.url().endsWith('/api/auth/logout.php')) resp3 = r.status(); });
+  await pg3.route('**/api/auth/logout.php', (r) => r.abort('failed'));
+  const rc = await smSair(); await pg3.waitForTimeout(1500);
+  afirma('C) session-manager, falha de rede: devolve ok:false (antes devolvia ok:true com serverError)', rc && rc.ok === false, JSON.stringify(rc));
+  afirma('C) session-manager, falha de rede: sessão viva no servidor', await autenticado(pg3));
+  await pg3.unroute('**/api/auth/logout.php'); posts3.length = 0; ab3.length = 0; resp3 = null;
+  const rd = await smSair(); await pg3.waitForTimeout(1500);
+  console.log(`      (session-manager: POSTs ${posts3.join(',') || 'nenhum'}; abortados ${ab3.length}; resposta ${resp3}; retorno ${JSON.stringify(rd)})`);
+  afirma('D) session-manager: o POST de logout leva o X-CSRF-Token (nenhum caminho antigo sem CSRF)', posts3.length > 0 && posts3.every((x) => x === 'com-csrf'), posts3.join(','));
+  afirma('D) session-manager: servidor confirmou (2xx), retorno ok:true', resp3 >= 200 && resp3 < 300 && rd && rd.ok === true, `${resp3} ${JSON.stringify(rd)}`);
+  afirma('D) session-manager: registro INATIVO com motivo logout', sql(`SELECT CONCAT(is_active,'/',IFNULL(logout_reason,'')) FROM ATRWEB_VAL_DASH.app_user_sessions WHERE session_token='${id3.replace(/[^A-Za-z0-9,-]/g, '')}'`) === '0/logout');
+  await b.close(); console.log(`SAIR MENU + RODAPÉ (código novo): ${ok} ok, ${falhas} falhas`); process.exit(falhas ? 1 : 0);
 })();
