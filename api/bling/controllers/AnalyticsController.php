@@ -253,15 +253,34 @@ final class AnalyticsController
         $linhas = $p->rentabilidade('canal', $f);
         $ind = $p->rentabilidadeIndisponivel('canal', $f);
         if ($ind !== null) {   // "ausência ≠ zero": sem receita líquida conhecida não há fluxo (antes: nós vazios = "nada entrou")
-            ApiResponse::success(['nos' => [], 'links' => [], 'indisponivel' => $ind, 'prejuizo_total' => null,
+            ApiResponse::success(['nos' => [], 'links' => [], 'links_desconhecidos' => [], 'indisponivel' => $ind, 'prejuizo_total' => null,
                 'nota' => 'Impostos e taxas são estimativas.'], bling_meta(['filtros' => $f]));
+            return;
         }
 
+        ApiResponse::success(self::montarFluxo($linhas) + ['nota' => 'Impostos e taxas são estimativas.'], bling_meta(['filtros' => $f]));
+    }
+
+    /**
+     * Monta o Sankey a partir das linhas de rentabilidade por canal. Função pura (testada direto).
+     * Valor desconhecido (null) NUNCA some em silêncio: antes, $add com null só não desenhava a ligação e o fluxo parecia completo
+     * (ex.: um canal com desconto não lido saía da receita; frete desconhecido sumia como se fosse zero). Agora cada ligação desconhecida
+     * vai para links_desconhecidos e o fluxo fica 'indisponivel' = 'valores_desconhecidos' (ou 'custo_desconhecido', que já existia).
+     * Zero e negativo continuam sem ligação (o Sankey não desenha) — são valores CONHECIDOS; o prejuízo sai em prejuizo_total.
+     * @param list<array<string,mixed>> $linhas
+     * @return array{nos:list<array{id:string,nome:string}>, links:list<array>, links_desconhecidos:list<array{origem:string,destino:string}>, indisponivel:?string, prejuizo_total:?float}
+     */
+    public static function montarFluxo(array $linhas): array
+    {
         $nos = [];
         $links = [];
-        // revisão da ACIMA_ESQUERDA (achado 2): aceita null (= desconhecido, não desenha o nó) em vez de quebrar com erro de tipo
-        $add = static function (string $de, string $para, ?float $valor) use (&$links, &$nos): void {
-            if ($valor === null || $valor <= 0) {
+        $desconhecidos = [];
+        $add = static function (string $de, string $para, ?float $valor) use (&$links, &$nos, &$desconhecidos): void {
+            if ($valor === null) {   // desconhecido: registrado, nunca tratado como "nada passou por aqui"
+                $desconhecidos[] = ['origem' => $de, 'destino' => $para];
+                return;
+            }
+            if ($valor <= 0) {
                 return;
             }
             $nos[$de] = true;
@@ -271,7 +290,7 @@ final class AnalyticsController
         };
 
         foreach ($linhas as $l) {
-            $add($l['rotulo'], 'Receita', $l['receita']);
+            $add((string) $l['rotulo'], 'Receita', $l['receita'] === null ? null : (float) $l['receita']);
         }
 
         $soma = static function (string $c) use ($linhas): ?float { $s = BlingProviderBase::somaConhecida($linhas, $c); return $s === null ? null : round($s, 2); };
@@ -286,18 +305,18 @@ final class AnalyticsController
         } else {
             // "ausência ≠ zero": sem custo conhecido, custo e margem NÃO são separados — o resto da receita vai para um nó só, rotulado.
             $partes = [$soma('receita'), $soma('impostos'), $soma('taxas'), $soma('comissao'), $soma('frete')];
-            // nunca (float) null → 0: com qualquer parte desconhecida o resto também é desconhecido (o nó não é desenhado)
+            // nunca (float) null → 0: com qualquer parte desconhecida o resto também é desconhecido (registrado em links_desconhecidos)
             $resto = in_array(null, $partes, true) ? null : $partes[0] - $partes[1] - $partes[2] - $partes[3] - $partes[4];
             $add('Receita', 'Custo e margem (não informados)', $resto === null ? null : round($resto, 2));
         }
 
-        ApiResponse::success([
+        return [
             'nos' => array_values(array_map(static fn($n) => ['id' => $n, 'nome' => $n], array_keys($nos))),
             'links' => array_values($links),
-            'indisponivel' => $custo === null ? 'custo_desconhecido' : null,
+            'links_desconhecidos' => $desconhecidos,   // aditivo (24/11)
+            'indisponivel' => $custo === null ? 'custo_desconhecido' : ($desconhecidos !== [] ? 'valores_desconhecidos' : null),
             'prejuizo_total' => $lucro === null ? null : ($lucro < 0 ? abs($lucro) : 0.0),
-            'nota' => 'Impostos e taxas são estimativas.',
-        ], bling_meta(['filtros' => $f]));
+        ];
     }
 
     /**

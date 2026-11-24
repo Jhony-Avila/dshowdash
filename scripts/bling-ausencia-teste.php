@@ -516,6 +516,27 @@ try {
     $srcQ = (string) file_get_contents($raiz . '/api/bling/controllers/AnalyticsController.php');
     ok('… e o endpoint de qualidade usa ESSA regra (nenhuma prioridade calculada à parte)', substr_count($srcQ, 'self::prioridadePendencia($receitaAfetada, $qtd, $total)') === 1
         && !preg_match("/'prioridade'\s*=>\s*\$receitaAfetada/", $srcQ));
+    // fluxo financeiro ($add com null): valor desconhecido nunca some em silêncio — testado direto na função pura
+    $linF = static fn(string $canal, ?float $rec, ?float $frete = 10.0, ?float $custo = 40.0) => ['rotulo' => $canal, 'receita' => $rec, 'impostos' => $rec === null ? null : 5.0,
+        'taxas' => $rec === null ? null : 2.0, 'comissao' => $rec === null ? null : 1.0, 'frete' => $frete, 'custo' => $custo,
+        'lucro' => ($rec === null || $custo === null || $frete === null) ? null : $rec - 8.0 - $frete - $custo];
+    $fx = AnalyticsController::montarFluxo([$linF('Loja A', 100.0), $linF('Loja B', 200.0)]);
+    ok('fluxo: tudo conhecido → nenhuma ligação desconhecida, disponível, frete 20 desenhado', $fx['links_desconhecidos'] === [] && $fx['indisponivel'] === null
+        && in_array(['origem' => 'Receita', 'destino' => 'Frete', 'valor' => 20.0], $fx['links'], true), json_encode($fx));
+    $fx = AnalyticsController::montarFluxo([$linF('Loja A', 100.0), $linF('Loja B', null)]);
+    ok('fluxo: receita de um canal desconhecida → a ligação "Loja B → Receita" é DECLARADA desconhecida e o fluxo fica indisponível (antes: sumia e a receita parecia completa)',
+        in_array(['origem' => 'Loja B', 'destino' => 'Receita'], $fx['links_desconhecidos'], true) && $fx['indisponivel'] === 'valores_desconhecidos', json_encode($fx));
+    $fx = AnalyticsController::montarFluxo([$linF('Loja A', 100.0, null), $linF('Loja B', 200.0)]);
+    ok('fluxo: frete desconhecido → "Receita → Frete" desconhecida, nunca omitida como se fosse zero', in_array(['origem' => 'Receita', 'destino' => 'Frete'], $fx['links_desconhecidos'], true)
+        && !in_array('Frete', array_column($fx['nos'], 'id'), true) && $fx['indisponivel'] !== null, json_encode($fx));
+    $fx = AnalyticsController::montarFluxo([$linF('Loja A', 100.0, null, null)]);
+    ok('fluxo: custo E frete desconhecidos → custo_desconhecido e o resto "não informados" também declarado desconhecido', $fx['indisponivel'] === 'custo_desconhecido'
+        && in_array(['origem' => 'Receita', 'destino' => 'Custo e margem (não informados)'], $fx['links_desconhecidos'], true), json_encode($fx));
+    $fx = AnalyticsController::montarFluxo([$linF('Loja A', 100.0, 0.0)]);
+    ok('fluxo: frete ZERO conhecido → sem ligação e NÃO desconhecido (zero legítimo)', $fx['links_desconhecidos'] === [] && $fx['indisponivel'] === null
+        && !in_array('Frete', array_column($fx['nos'], 'id'), true), json_encode($fx));
+    ok('… e o endpoint usa essa função', str_contains($srcQ, 'ApiResponse::success(self::montarFluxo($linhas)'));
+
     // ultima_movimentacao: o estoque sintético não tem registro de movimentação
     ok('revisão ESQUERDA 24/11: estoque sem movimentação registrada → ultima_movimentacao null (antes: "hoje")', $e31['ultima_movimentacao'] === null && $e32['ultima_movimentacao'] === null,
         json_encode([$e31['ultima_movimentacao'], $e32['ultima_movimentacao']]));
