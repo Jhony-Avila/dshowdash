@@ -31,6 +31,9 @@ html[data-theme]:not([data-theme="dark"]) .dsd-marca--escuro { display: none !im
 
 /* ── Login (fundo escuro fixo): logotipo branco, altura 41 → largura 120 px ─────── */
 .lm-logo.dsd-marca-logo { height: 41px; width: auto; animation: none !important; }
+/* o login tinha uma camada preta a 30 % (.lm-wrapper::before, z-index 2) para escurecer o VÍDEO de fundo; o vídeo saiu
+   (arquivo inexistente, 404) e a camada ficava por cima do cartão — logotipo inclusive (guia: sem transparência). Sai junto. */
+.login-container-wrapper::before, .lm-wrapper::before { content: none !important; }
 
 /* ── Boot e carregamento (fundo #0a0e27 fixo): logotipo branco horizontal, 240 px ─ */
 /* o guia não admite forma em volta do logo, nem brilho ou pulsação */
