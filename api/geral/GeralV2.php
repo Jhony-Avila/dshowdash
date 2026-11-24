@@ -115,40 +115,59 @@ final class GeralV2
 
     // ─────────────────────────────────────────── fontes ───────────────────────────────────────────
 
-    /** Estado de uma fonte: ok · desatualizado · parcial · aguardando_conexao · indisponivel (com o horário do último sucesso). */
+    /**
+     * Estado de uma fonte: ok · desatualizado · parcial · aguardando_conexao · indisponivel, com o horário do último sucesso COMPLETO.
+     * `completa` = a última sincronização terminada leu e gravou tudo (base do "zero confirmado"; ACIMA_ESQUERDA, 24/11, contrato com a CIMA).
+     * Ids: 'pipedrive' (negócios E atividades — prioridades), 'pipedrive_negocios' (só negócios — ganhos e funil), 'bling' (pedidos), 'google_calendar'.
+     */
     public function fonte(string $id): array
     {
         if (isset($this->fontes[$id])) return $this->fontes[$id];
         try {
             $f = match ($id) {
-                'pipedrive'       => $this->fontePipe(),
-                'google_calendar' => $this->fonteGcal(),
-                'bling'           => $this->fonteBling(),
+                'pipedrive'          => $this->fontePipe(['deals', 'activities']),
+                'pipedrive_negocios' => $this->fontePipe(['deals']),
+                'google_calendar'    => $this->fonteGcal(),
+                'bling'              => $this->fonteBling(),
             };
         } catch (Throwable $e) {
             error_log('[geral-v2] fonte ' . $id . ': ' . get_class($e));
             $f = ['estado' => 'indisponivel', 'atualizado_em' => null, 'detalhe' => 'erro_leitura'];
         }
         $f = ['id' => $id] + $f + ['corte' => $this->agora->format(DATE_ATOM), 'detalhe' => null];
+        $f['completa'] = $f['estado'] === 'ok';   // só a fonte em dia E com a última leitura completa vale 'ok'
         return $this->fontes[$id] = $f;
     }
 
-    private function fontePipe(): array
+    /**
+     * Pipedrive por ENTIDADE (o indicador usa só as entidades de que depende).
+     * Sucesso completo = run `completed` com `errors = 0`. Um run `completed` com `errors > 0` leu todas as páginas mas NÃO gravou N registros
+     * (SyncService:221–224; resposta da ACIMA_DIREITA, 24/11 15:53) → não é sucesso completo e nunca dá zero.
+     * @param list<string> $ents
+     */
+    private function fontePipe(array $ents): array
     {
         if ($this->pipe === null) return ['estado' => 'indisponivel', 'atualizado_em' => null, 'detalhe' => 'sem_conexao_banco'];
         $contas = (int) $this->pipe->query("SELECT COUNT(*) FROM `{$this->p}pipe_accounts` WHERE is_active = 1 AND status = 'connected'")->fetchColumn();
         if ($contas === 0) return ['estado' => 'aguardando_conexao', 'atualizado_em' => null, 'detalhe' => 'sem_conta_conectada'];
-        // último sucesso por entidade que a Geral usa; a fonte vale o MAIS VELHO dos dois (negócios e atividades)
-        $ult = [];
-        foreach (['deals', 'activities'] as $ent) {
-            $st = $this->pipe->prepare("SELECT MAX(finished_at) FROM `{$this->p}pipe_sync_runs` WHERE entity = ? AND status = 'completed'");
+        $ult = []; $completa = true;
+        foreach ($ents as $ent) {
+            $st = $this->pipe->prepare("SELECT MAX(finished_at) FROM `{$this->p}pipe_sync_runs` WHERE entity = ? AND status = 'completed' AND COALESCE(errors, 0) = 0");
             $st->execute([$ent]);
             $ult[$ent] = $st->fetchColumn() ?: null;
+            // a última execução TERMINADA (uma em andamento não conta, nem para o bem nem para o mal)
+            $st = $this->pipe->prepare("SELECT status, COALESCE(errors, 0) AS errors FROM `{$this->p}pipe_sync_runs` WHERE entity = ? AND finished_at IS NOT NULL
+                                         AND status IS NOT NULL ORDER BY finished_at DESC, id DESC LIMIT 1");
+            $st->execute([$ent]);
+            $r = $st->fetch(PDO::FETCH_ASSOC);
+            if ($r === false || $r['status'] !== 'completed' || (int) $r['errors'] > 0) $completa = false;
         }
-        if ($ult['deals'] === null || $ult['activities'] === null) return ['estado' => 'parcial', 'atualizado_em' => null, 'detalhe' => 'sem_sincronizacao_completa'];
-        $velho = min($ult);   // 'Y-m-d H:i:s' em −03:00 (NOW() da sessão)
+        if (in_array(null, $ult, true)) return ['estado' => 'parcial', 'atualizado_em' => null, 'detalhe' => 'sem_sincronizacao_completa'];
+        $velho = min($ult);   // 'Y-m-d H:i:s' em −03:00 (NOW() da sessão); vale a entidade mais velha
         $t = new DateTimeImmutable($velho, $this->br);
-        return ['estado' => $this->idadeMin($t) > self::VELHA_MIN['pipedrive'] ? 'desatualizado' : 'ok', 'atualizado_em' => $t->format(DATE_ATOM)];
+        if ($this->idadeMin($t) > self::VELHA_MIN['pipedrive']) return ['estado' => 'desatualizado', 'atualizado_em' => $t->format(DATE_ATOM)];
+        if (!$completa) return ['estado' => 'parcial', 'atualizado_em' => $t->format(DATE_ATOM), 'detalhe' => 'sync_incompleta'];
+        return ['estado' => 'ok', 'atualizado_em' => $t->format(DATE_ATOM)];
     }
 
     private function fonteGcal(): array
@@ -182,18 +201,42 @@ final class GeralV2
     {
         if ($this->bling === null) return ['estado' => 'indisponivel', 'atualizado_em' => null, 'detalhe' => 'sem_conexao_banco'];
         $r = $this->bling->query(
-            "SELECT s.situacao, s.ultima_execucao_em, a.estado_conexao
+            "SELECT a.id AS account_id, s.situacao, s.ultima_execucao_em, a.estado_conexao
                FROM `{$this->p}bling_accounts` a
                LEFT JOIN `{$this->p}bling_sync_state` s ON s.account_id = a.id AND s.recurso = 'pedidos'
               WHERE a.is_ativo = 1 ORDER BY a.is_padrao DESC, a.id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
         if ($r === false || $r['estado_conexao'] === 'nao_configurado') return ['estado' => 'aguardando_conexao', 'atualizado_em' => null, 'detalhe' => 'sem_conta_conectada'];
         if ($r['ultima_execucao_em'] === null) return ['estado' => 'parcial', 'atualizado_em' => null, 'detalhe' => 'pedidos_nunca_sincronizados'];
-        $t = new DateTimeImmutable($r['ultima_execucao_em'], $this->utc);
-        $estado = $this->idadeMin($t) > self::VELHA_MIN['bling'] ? 'desatualizado' : 'ok';
-        if ($estado === 'ok' && !in_array($r['situacao'], ['ok', 'atencao'], true)) $estado = 'parcial';
-        if ($r['estado_conexao'] !== 'conectado' && $estado === 'ok') $estado = 'desatualizado';
-        return ['estado' => $estado, 'atualizado_em' => $t->setTimezone($this->br)->format(DATE_ATOM),
-                'detalhe' => $r['estado_conexao'] !== 'conectado' ? 'conexao_' . $r['estado_conexao'] : ($r['situacao'] !== 'ok' ? 'sync_' . $r['situacao'] : null)];
+        $conta = (int) $r['account_id'];
+        // Último sucesso = a MESMA regra do módulo Bling (BlingReal::disponibilidade, pacote B 88d2bd83): último job `concluido` do recurso;
+        // sem job, a última execução com situação `ok`. Nunca a hora de uma TENTATIVA (antes: ultima_execucao_em, mesmo de uma rodada com erro).
+        $temJobs = $this->tabelaExiste($this->bling, 'bling_sync_jobs');
+        $suc = null;
+        if ($temJobs) {
+            $st = $this->bling->prepare("SELECT MAX(terminado_em) FROM `{$this->p}bling_sync_jobs` WHERE account_id = ? AND recurso = 'pedidos' AND situacao = 'concluido'");
+            $st->execute([$conta]);
+            $suc = $st->fetchColumn() ?: null;
+        }
+        if ($suc === null && $r['situacao'] === 'ok') $suc = $r['ultima_execucao_em'];
+        $t = $suc !== null ? (new DateTimeImmutable((string) $suc, $this->utc))->setTimezone($this->br) : null;
+        $quando = $t?->format(DATE_ATOM);
+        // ESCOPO AUSENTE (403 insufficient_scope): o Bling marca `atencao` mas NADA foi lido. Regra da ACIMA_DIREITA (24/11 16:02), sem comparar horários:
+        // job mais recente do recurso `cancelado` E erro mais recente do recurso `ESCOPO_AUSENTE` → fonte sem leitura, nunca em dia.
+        if ($temJobs && $this->tabelaExiste($this->bling, 'bling_sync_errors')) {
+            $st = $this->bling->prepare("SELECT situacao FROM `{$this->p}bling_sync_jobs` WHERE account_id = ? AND recurso = 'pedidos' ORDER BY iniciado_em DESC, id DESC LIMIT 1");
+            $st->execute([$conta]); $job = $st->fetchColumn();
+            $st = $this->bling->prepare("SELECT codigo FROM `{$this->p}bling_sync_errors` WHERE account_id = ? AND recurso = 'pedidos' ORDER BY id DESC LIMIT 1");
+            $st->execute([$conta]); $err = $st->fetchColumn();
+            if ($job === 'cancelado' && $err === 'ESCOPO_AUSENTE') {
+                return ['estado' => $t !== null ? 'desatualizado' : 'indisponivel', 'atualizado_em' => $quando, 'detalhe' => 'escopo_ausente'];
+            }
+        }
+        if ($t === null) return ['estado' => 'parcial', 'atualizado_em' => null, 'detalhe' => 'sync_' . $r['situacao']];
+        if ($r['estado_conexao'] !== 'conectado') return ['estado' => 'desatualizado', 'atualizado_em' => $quando, 'detalhe' => 'conexao_' . $r['estado_conexao']];
+        if ($this->idadeMin($t) > self::VELHA_MIN['bling']) return ['estado' => 'desatualizado', 'atualizado_em' => $quando];
+        // `atencao` = a coleta leu tudo, mas alguns registros não foram gravados (BlingSyncService:216–220) → consulta incompleta: parcial, nunca zero
+        if ($r['situacao'] !== 'ok') return ['estado' => 'parcial', 'atualizado_em' => $quando, 'detalhe' => 'sync_' . $r['situacao']];
+        return ['estado' => 'ok', 'atualizado_em' => $quando];
     }
 
     /**
@@ -279,53 +322,56 @@ final class GeralV2
 
     private function ganhos(DateTimeImmutable $de, DateTimeImmutable $ate): array
     {
-        $f = $this->fonte('pipedrive');
-        $out = ['quantidade' => null, 'valor' => null, 'sem_valor' => null, 'fora_brl' => null, 'atualizado_em' => $f['atualizado_em']];
-        if ($this->semNumero($f)) return $out + ['estado' => $f['estado']];
-        try {
-            // won_time é UTC: o dia de Brasília [de 00:00, ate+1 00:00) vira o intervalo UTC equivalente
-            $ini = $de->setTimezone($this->utc)->format('Y-m-d H:i:s');
-            $fim = $ate->modify('+1 day')->setTimezone($this->utc)->format('Y-m-d H:i:s');
-            $st = $this->pipe->prepare(
-                "SELECT COUNT(*) AS n, SUM(CASE WHEN currency = 'BRL' THEN value END) AS v, SUM(value IS NULL OR value = 0) AS sem,
-                        SUM(value IS NOT NULL AND value <> 0 AND (currency IS NULL OR currency <> 'BRL')) AS fora
-                   FROM `{$this->p}pipe_deals` WHERE is_deleted = 0 AND status = 'won' AND won_time >= ? AND won_time < ?");
-            $st->execute([$ini, $fim]);
-            $r = $st->fetch(PDO::FETCH_ASSOC);
-            $out['quantidade'] = (int) $r['n'];
-            $out['sem_valor'] = (int) $r['sem'];
-            $out['fora_brl'] = (int) $r['fora'];
-            $out['valor'] = $this->dinheiro($r['v'], $out['quantidade'] - $out['sem_valor'] - $out['fora_brl']);
-        } catch (Throwable $e) {
-            error_log('[geral-v2] ganhos: ' . get_class($e));
-            return ['quantidade' => null, 'valor' => null, 'sem_valor' => null, 'fora_brl' => null, 'atualizado_em' => $f['atualizado_em'], 'estado' => 'indisponivel'];
-        }
-        $estado = $this->estadoCartao($f, $out['quantidade']);
-        if ($out['fora_brl'] > 0 && in_array($estado, ['ok', 'zero_confirmado'], true)) $estado = 'parcial';   // valor só soma BRL
-        return $out + ['estado' => $estado];
+        // won_time é UTC: o dia de Brasília [de 00:00, ate+1 00:00) vira o intervalo UTC equivalente
+        $ini = $de->setTimezone($this->utc)->format('Y-m-d H:i:s');
+        $fim = $ate->modify('+1 day')->setTimezone($this->utc)->format('Y-m-d H:i:s');
+        return $this->negocios('ganhos', "status = 'won' AND won_time >= ? AND won_time < ?", [$ini, $fim]);
     }
 
     private function funil(): array
     {
-        $f = $this->fonte('pipedrive');
+        return $this->negocios('funil', "status = 'open'", []);
+    }
+
+    /**
+     * Ganhos e funil (contrato por indicador, ACIMA_ESQUERDA 24/11): fonte = SÓ os negócios do Pipedrive (as atividades não mudam estes números).
+     *  - `valor` = soma dos valores INFORMADOS em BRL. Nenhum informado (todos sem valor ou em outra moeda) → null, nunca "0.00".
+     *    Conjunto vazio de verdade → "0.00" (e `zero` só com a fonte em dia e a leitura completa).
+     *  - `sem_valor > 0` ou `fora_brl > 0` → `parcial` (a tela mostra "Dados parciais · Soma dos valores informados · X negócios sem valor").
+     */
+    private function negocios(string $nome, string $cond, array $par): array
+    {
+        $f = $this->fonte('pipedrive_negocios');
         $out = ['quantidade' => null, 'valor' => null, 'sem_valor' => null, 'fora_brl' => null, 'atualizado_em' => $f['atualizado_em']];
-        if ($this->semNumero($f)) return $out + ['estado' => $f['estado']];
+        if ($this->semNumero($f)) return $out + ['estado' => $f['estado'], 'lacunas' => []];
         try {
-            $r = $this->pipe->query(
-                "SELECT COUNT(*) AS n, SUM(CASE WHEN currency = 'BRL' THEN value END) AS v, SUM(value IS NULL OR value = 0) AS sem,
+            $st = $this->pipe->prepare(
+                "SELECT COUNT(*) AS n, SUM(CASE WHEN currency = 'BRL' AND value IS NOT NULL AND value <> 0 THEN value END) AS v, SUM(value IS NULL OR value = 0) AS sem,
                         SUM(value IS NOT NULL AND value <> 0 AND (currency IS NULL OR currency <> 'BRL')) AS fora
-                   FROM `{$this->p}pipe_deals` WHERE is_deleted = 0 AND status = 'open'")->fetch(PDO::FETCH_ASSOC);
-            $out['quantidade'] = (int) $r['n'];
-            $out['sem_valor'] = (int) $r['sem'];
-            $out['fora_brl'] = (int) $r['fora'];
-            $out['valor'] = $this->dinheiro($r['v'], $out['quantidade'] - $out['sem_valor'] - $out['fora_brl']);
+                   FROM `{$this->p}pipe_deals` WHERE is_deleted = 0 AND $cond");
+            $st->execute($par);
+            $r = $st->fetch(PDO::FETCH_ASSOC);
+            $n = (int) $r['n']; $sem = (int) $r['sem']; $fora = (int) $r['fora'];
+            $informados = $n - $sem - $fora;
+            $out['quantidade'] = $n; $out['sem_valor'] = $sem; $out['fora_brl'] = $fora;
+            $out['valor'] = $n === 0 ? '0.00' : ($informados === 0 ? null : $this->dinheiro($r['v'], $informados));
         } catch (Throwable $e) {
-            error_log('[geral-v2] funil: ' . get_class($e));
-            return ['quantidade' => null, 'valor' => null, 'sem_valor' => null, 'fora_brl' => null, 'atualizado_em' => $f['atualizado_em'], 'estado' => 'indisponivel'];
+            error_log('[geral-v2] ' . $nome . ': ' . get_class($e));
+            return ['quantidade' => null, 'valor' => null, 'sem_valor' => null, 'fora_brl' => null, 'atualizado_em' => $f['atualizado_em'],
+                    'estado' => 'indisponivel', 'lacunas' => []];
         }
+        $lacunas = $this->lacunasFonte($f);
+        if ($out['sem_valor'] > 0) $lacunas[] = 'sem_valor';
+        if ($out['fora_brl'] > 0) $lacunas[] = 'fora_brl';
         $estado = $this->estadoCartao($f, $out['quantidade']);
-        if ($out['fora_brl'] > 0 && in_array($estado, ['ok', 'zero_confirmado'], true)) $estado = 'parcial';
-        return $out + ['estado' => $estado];
+        if ($lacunas !== [] && in_array($estado, ['ok', 'zero_confirmado'], true)) $estado = 'parcial';
+        return $out + ['estado' => $estado, 'lacunas' => $lacunas];
+    }
+
+    /** Lacunas que vêm da FONTE (não do dado): leitura incompleta da última sincronização. */
+    private function lacunasFonte(array $f): array
+    {
+        return $f['estado'] === 'parcial' ? ['sync_incompleta'] : [];
     }
 
     // ─────────────────────────────────────────── Google Calendar ───────────────────────────────────────────
@@ -492,7 +538,7 @@ final class GeralV2
 
         $f = $this->fonte('pipedrive');
         $base = ['prioridade' => $prioridade, 'total' => null, 'total_sem_filtro' => null, 'pagina' => $pagina, 'por_pagina' => $porPagina,
-                 'paginas' => null, 'atualizado_em' => $f['atualizado_em'], 'responsaveis' => null, 'itens' => []];
+                 'paginas' => null, 'atualizado_em' => $f['atualizado_em'], 'responsaveis' => null, 'sem_responsavel' => null, 'itens' => []];
         if ($this->semNumero($f)) return $base + ['estado' => $f['estado']];
         try {
             [$from, $par, $ref] = $this->basePrioridade($prioridade);
@@ -504,6 +550,10 @@ final class GeralV2
                                         $from AND d.owner_id IS NOT NULL GROUP BY d.owner_id ORDER BY nome IS NULL, nome, d.owner_id");
             $st->execute($par);
             $base['responsaveis'] = array_map(fn($x) => ['id' => (int) $x['id'], 'nome' => $x['nome'], 'quantidade' => (int) $x['n']], $st->fetchAll(PDO::FETCH_ASSOC));
+            // negócios do conjunto SEM responsável: entram no número, mas não há o que escolher no seletor → Σ responsáveis + sem_responsavel = total_sem_filtro
+            $st = $this->pipe->prepare("SELECT COUNT(*) $from AND d.owner_id IS NULL");
+            $st->execute($par);
+            $base['sem_responsavel'] = (int) $st->fetchColumn();
             if ($responsavel !== null) { $from .= ' AND d.owner_id = :resp'; $par[':resp'] = $responsavel; }
             $st = $this->pipe->prepare("SELECT COUNT(*) $from");
             $st->execute($par);
@@ -545,7 +595,7 @@ final class GeralV2
             $base['paginas'] = max(1, (int) ceil($total / $porPagina));
         } catch (Throwable $e) {
             error_log('[geral-v2] lista ' . $prioridade . ': ' . get_class($e));
-            return array_merge($base, ['total' => null, 'total_sem_filtro' => null, 'paginas' => null, 'responsaveis' => null, 'itens' => [], 'estado' => 'indisponivel']);
+            return array_merge($base, ['total' => null, 'total_sem_filtro' => null, 'paginas' => null, 'responsaveis' => null, 'sem_responsavel' => null, 'itens' => [], 'estado' => 'indisponivel']);
         }
         return $base + ['estado' => $this->estadoCartao($f, $base['total'])];
     }

@@ -5,6 +5,11 @@
  *
  * Estado de cada bloco (mesmo enum em todos): ok · zero · parcial · desatualizado · aguardando · erro.
  * Todo bloco traz `ultimo_sucesso` (ISO, −03:00) e `motivo` (texto curto em português, sem detalhe técnico). Valor desconhecido = null, nunca 0.
+ *
+ * Estado POR INDICADOR (ACIMA_ESQUERDA, 24/11; contrato da CIMA 15:4x + proposta 16:30). Aditivos em cada indicador:
+ *   `fonte` ('pipedrive'|'bling'|'calendar'), `consulta_completa` (a última sincronização da fonte DAQUELE indicador leu e gravou tudo e a
+ *   consulta de agora não falhou), `fonte_atualizada_em` (último sucesso completo), `valor_em` (quando o número mostrado foi lido; null sem número)
+ *   e `lacunas` (sem_valor | fora_brl | sync_incompleta). `zero` só com 0 + fonte em dia + consulta completa.
  */
 declare(strict_types=1);
 
@@ -14,10 +19,17 @@ final class GeralV2Contrato
 {
     private const ESTADO = ['ok' => 'ok', 'zero_confirmado' => 'zero', 'parcial' => 'parcial', 'desatualizado' => 'desatualizado',
                             'aguardando_conexao' => 'aguardando', 'indisponivel' => 'erro'];
-    private const NOME = ['pipedrive' => 'Pipedrive', 'bling' => 'Bling', 'google_calendar' => 'Google Agenda'];
+    private const NOME = ['pipedrive' => 'Pipedrive', 'pipedrive_negocios' => 'Pipedrive', 'bling' => 'Bling', 'google_calendar' => 'Google Agenda'];
     public const URL_AGENDA = '#/panel-google-calendar';
     private const GRAVIDADE = ['atividade_vencida' => 1, 'sem_proxima_atividade' => 2, 'conflito_agenda' => 3];
-    private const FONTE_TELA = ['pipedrive' => 'pipedrive', 'bling' => 'bling', 'google_calendar' => 'calendar'];
+    private const FONTE_TELA = ['pipedrive' => 'pipedrive', 'pipedrive_negocios' => 'pipedrive', 'bling' => 'bling', 'google_calendar' => 'calendar'];
+    /** de que fonte interna cada indicador depende (ganhos e funil: só negócios; prioridades do Pipedrive: negócios E atividades) */
+    private const INDICADORES = [
+        'pipedrive' => ['negocios_ganhos' => 'pipedrive_negocios', 'funil_aberto' => 'pipedrive_negocios', 'atividade_vencida' => 'pipedrive', 'sem_proxima_atividade' => 'pipedrive'],
+        'bling' => ['pedidos_bling' => 'bling'],
+        'google_calendar' => ['agenda' => 'google_calendar', 'conflito_agenda' => 'google_calendar'],
+    ];
+    private const PIOR = ['ok' => 0, 'parcial' => 1, 'desatualizado' => 2, 'aguardando_conexao' => 3, 'indisponivel' => 4];
     /** fontes que ainda não têm conector publicado no Dash: o que falta (mesmos textos da Geral, confirmados pelo Jhony) */
     private const SEM_CONECTOR = [
         'asaas'         => 'Asaas em auditoria; faltam as chaves.',
@@ -34,7 +46,7 @@ final class GeralV2Contrato
     {
         $r = $this->g->numeros($periodo);
         $p = $r['pedidos']; $w = $r['ganhos']; $f = $r['funil'];
-        $fb = $this->g->fonte('bling'); $fp = $this->g->fonte('pipedrive');
+        $fb = $this->g->fonte('bling'); $fp = $this->g->fonte('pipedrive_negocios');
         return [
             'gerado_em' => $r['gerado_em'],
             'periodo' => ['id' => $periodo, 'de' => $r['periodo']['de'], 'ate' => $r['periodo']['ate'], 'rotulo' => $this->rotuloPeriodo($periodo, $r['periodo']['de'], $r['periodo']['ate'])],
@@ -42,15 +54,15 @@ final class GeralV2Contrato
                 'estado' => self::ESTADO[$p['estado']], 'quantidade' => $p['quantidade'], 'valor' => $p['valor'], 'por_dia' => $p['por_dia'],
                 'inclui_canceladas' => $p['inclui_cancelados'], 'inclui_teste_ml' => $p['inclui_teste_ml'],
                 'ultimo_sucesso' => $p['atualizado_em'], 'motivo' => $this->motivo('bling', $p['estado'], $fb),
-            ],
+            ] + $this->meta('bling', $p['estado'], $p['quantidade'] !== null, $this->lacunasFonte($fb)),
             'negocios_ganhos' => [
                 'estado' => self::ESTADO[$w['estado']], 'quantidade' => $w['quantidade'], 'valor' => $w['valor'], 'sem_valor' => $w['sem_valor'],
-                'ultimo_sucesso' => $w['atualizado_em'], 'motivo' => $this->motivo('pipedrive', $w['estado'], $fp, $w['fora_brl'] ?? null),
-            ],
+                'fora_brl' => $w['fora_brl'], 'ultimo_sucesso' => $w['atualizado_em'], 'motivo' => $this->motivo('pipedrive_negocios', $w['estado'], $fp, $this->lacunaDado($w)),
+            ] + $this->meta('pipedrive_negocios', $w['estado'], $w['quantidade'] !== null, $w['lacunas']),
             'funil_aberto' => [
                 'estado' => self::ESTADO[$f['estado']], 'quantidade' => $f['quantidade'], 'valor' => $f['valor'], 'sem_valor' => $f['sem_valor'],
-                'ultimo_sucesso' => $f['atualizado_em'], 'motivo' => $this->motivo('pipedrive', $f['estado'], $fp, $f['fora_brl'] ?? null),
-            ],
+                'fora_brl' => $f['fora_brl'], 'ultimo_sucesso' => $f['atualizado_em'], 'motivo' => $this->motivo('pipedrive_negocios', $f['estado'], $fp, $this->lacunaDado($f)),
+            ] + $this->meta('pipedrive_negocios', $f['estado'], $f['quantidade'] !== null, $f['lacunas']),
         ];
     }
 
@@ -68,7 +80,7 @@ final class GeralV2Contrato
                     ? 'Google Agenda' . ($n !== null ? ' · ' . $n . ($n === 1 ? ' conflito hoje' : ' conflitos hoje') : '')
                     : 'Pipedrive' . ($n !== null ? ' · ' . $n . ($n === 1 ? ' negócio distinto' : ' negócios distintos') : ''),
                 'ultimo_sucesso' => $x['atualizado_em'], 'motivo' => $this->motivo($fonte, $x['estado'], $this->g->fonte($fonte)),
-            ];
+            ] + $this->meta($fonte, $x['estado'], $n !== null, $this->lacunasFonte($this->g->fonte($fonte)));
         }
         return ['gerado_em' => $this->agora->format(DATE_ATOM), 'itens' => $itens];
     }
@@ -81,11 +93,12 @@ final class GeralV2Contrato
         $nomeResp = null;
         foreach ($l['responsaveis'] ?? [] as $x) if ($x['id'] === $responsavel) $nomeResp = $x['nome'];
         $base = [
-            'id' => $id, 'estado' => self::ESTADO[$l['estado']], 'total' => $l['total'], 'pagina' => $l['pagina'], 'por_pagina' => $l['por_pagina'],
+            'id' => $id, 'estado' => self::ESTADO[$l['estado']], 'total' => $l['total'], 'total_sem_filtro' => $l['total_sem_filtro'],
+            'sem_responsavel' => $l['sem_responsavel'] ?? null, 'pagina' => $l['pagina'], 'por_pagina' => $l['por_pagina'],
             'paginas' => $l['paginas'], 'ultimo_sucesso' => $l['atualizado_em'], 'motivo' => $this->motivo($fonte, $l['estado'], $this->g->fonte($fonte)),
             'criterios' => ['texto' => $this->criterio($id, $responsavel === null ? null : ($nomeResp ?? 'responsável escolhido'))],
             'responsaveis' => $l['responsaveis'] === null ? null : array_map(fn($x) => ['id' => $x['id'], 'nome' => $x['nome']], $l['responsaveis']),
-        ];
+        ] + $this->meta($fonte, $l['estado'], $l['total'] !== null, $this->lacunasFonte($this->g->fonte($fonte)));
         if ($id === 'conflito_agenda') return $base + ['itens' => $l['itens']];   // a tela abre a agenda; a lista existe e reproduz a contagem
         return $base + ['itens' => array_map(fn($x) => [
             'deal_id' => $x['negocio_id'], 'titulo' => $x['titulo'], 'organizacao' => $x['organizacao'], 'responsavel' => $x['responsavel'],
@@ -106,36 +119,77 @@ final class GeralV2Contrato
                 'conflito' => $e['conflito'],
             ], $a['itens']),
             'url_agenda' => self::URL_AGENDA,
-        ];
+        ] + $this->meta('google_calendar', $a['estado'], $a['itens'] !== null, $this->lacunasFonte($f));
     }
 
     // ─────────────── 5. fontes ───────────────
+    /**
+     * Linha de fontes COERENTE com os indicadores (pedido da CIMA, 24/11): o estado da fonte é o PIOR entre os indicadores dela, e
+     * `indicadores: [{id, estado}]` diz o de cada um. É o estado da LEITURA (frescor e completude); a lacuna do dado (negócio sem valor) deixa
+     * o cartão `parcial`, mas não a fonte.
+     */
     public function fontes(): array
     {
         $out = [];
-        foreach (['pipedrive', 'bling', 'google_calendar'] as $id) {
-            $f = $this->g->fonte($id);
-            $out[] = ['fonte' => self::FONTE_TELA[$id], 'estado' => match ($f['estado']) {
+        foreach (self::INDICADORES as $id => $inds) {
+            $pior = null; $lista = [];
+            foreach ($inds as $ind => $fid) {
+                $f = $this->g->fonte($fid);
+                $lista[] = ['id' => $ind, 'estado' => self::ESTADO[$f['estado']]];
+                if ($pior === null || self::PIOR[$f['estado']] > self::PIOR[$pior['estado']]
+                    || (self::PIOR[$f['estado']] === self::PIOR[$pior['estado']] && ($f['atualizado_em'] ?? '') < ($pior['atualizado_em'] ?? ''))) $pior = $f + ['_fid' => $fid];
+            }
+            $out[] = ['fonte' => self::FONTE_TELA[$id], 'estado' => match ($pior['estado']) {
                     'ok' => 'conectada', 'desatualizado', 'parcial' => 'desatualizada', 'aguardando_conexao' => 'aguardando', default => 'problema' },
-                'ultimo_sucesso' => $f['atualizado_em'], 'motivo' => $this->motivo($id, $f['estado'], $f)];
+                'ultimo_sucesso' => $pior['atualizado_em'], 'motivo' => $this->motivo($pior['_fid'], $pior['estado'], $pior), 'indicadores' => $lista];
         }
-        foreach (self::SEM_CONECTOR as $id => $txt) $out[] = ['fonte' => $id, 'estado' => 'aguardando', 'ultimo_sucesso' => null, 'motivo' => $txt];
+        foreach (self::SEM_CONECTOR as $id => $txt) $out[] = ['fonte' => $id, 'estado' => 'aguardando', 'ultimo_sucesso' => null, 'motivo' => $txt, 'indicadores' => []];
         return $out;
+    }
+
+    // ─────────────── estado por indicador ───────────────
+
+    /**
+     * Aditivos por indicador. `consulta_completa`: a última sincronização da fonte DAQUELE indicador leu e gravou tudo E a consulta de agora
+     * não falhou. `valor_em` = quando o número mostrado foi lido (o último sucesso completo da fonte); sem número, null.
+     */
+    private function meta(string $fonteId, string $estado, bool $temNumero, array $lacunas): array
+    {
+        $f = $this->g->fonte($fonteId);
+        return ['fonte' => self::FONTE_TELA[$fonteId], 'consulta_completa' => $f['completa'] && $estado !== 'indisponivel',
+                'fonte_atualizada_em' => $f['atualizado_em'], 'valor_em' => $temNumero ? $f['atualizado_em'] : null, 'lacunas' => array_values($lacunas)];
+    }
+
+    private function lacunasFonte(array $f): array
+    {
+        return $f['estado'] === 'parcial' ? ['sync_incompleta'] : [];
+    }
+
+    /** Texto da lacuna do DADO em ganhos/funil (a fonte em si está bem): "3 negócios sem valor" — a tela compõe "Dados parciais · Soma dos valores informados · …". */
+    private function lacunaDado(array $b): ?string
+    {
+        $sem = (int) ($b['sem_valor'] ?? 0); $fora = (int) ($b['fora_brl'] ?? 0);
+        if ($sem > 0) return $sem . ($sem === 1 ? ' negócio sem valor' : ' negócios sem valor') . ($fora > 0 ? ' · ' . $fora . ' em outra moeda' : '');
+        if ($fora > 0) return $fora . ($fora === 1 ? ' negócio em outra moeda ficou' : ' negócios em outra moeda ficaram') . ' fora do valor.';
+        return null;
     }
 
     // ─────────────── textos ───────────────
 
-    /** Motivo curto em português, sem detalhe técnico. ok/zero = null. */
-    private function motivo(string $fonte, string $estado, array $f, ?int $foraBrl = null): ?string
+    /** Motivo curto em português, sem detalhe técnico. ok/zero = null. `$dado` = lacuna do dado (ganhos/funil), usada quando a fonte em si está bem. */
+    private function motivo(string $fonte, string $estado, array $f, ?string $dado = null): ?string
     {
         $nome = self::NOME[$fonte];
         $quando = $f['atualizado_em'] !== null ? $this->quando($f['atualizado_em']) : null;
+        if ($f['detalhe'] === 'escopo_ausente' && in_array($estado, ['desatualizado', 'indisponivel'], true)) {
+            return 'O acesso ao Bling não inclui os pedidos; é preciso reautorizar.' . ($quando !== null ? " Última leitura completa $quando." : '');
+        }
         return match ($estado) {
             'ok', 'zero_confirmado' => null,
             'aguardando_conexao' => $fonte === 'google_calendar' ? 'Nenhuma agenda Google conectada.' : "$nome sem conta conectada.",
             'desatualizado' => $quando !== null ? "Última atualização do $nome $quando." : "$nome sem atualização recente.",
             'parcial' => match (true) {
-                $foraBrl !== null && $foraBrl > 0 && $f['estado'] === 'ok' => $foraBrl . ($foraBrl === 1 ? ' negócio em outra moeda ficou' : ' negócios em outra moeda ficaram') . ' fora do valor.',
+                $dado !== null && $f['estado'] === 'ok' => $dado,
                 preg_match('/^calendarios_atrasados_(\d+)_de_(\d+)$/', (string) $f['detalhe'], $m) === 1 => "{$m[1]} de {$m[2]} agendas com atualização atrasada.",
                 $f['detalhe'] === 'pedidos_nunca_sincronizados' => 'Os pedidos do Bling ainda não foram sincronizados.',
                 default => "A última sincronização do $nome ficou incompleta.",
@@ -165,7 +219,7 @@ final class GeralV2Contrato
         $hoje = $this->agora->format('d/m/Y');
         $quem = $resp ?? 'todos os responsáveis';
         return match ($id) {
-            'atividade_vencida' => "atividade vencida até $hoje · aberto · $quem",
+            'atividade_vencida' => "atividade não concluída com prazo antes de hoje ($hoje), ou de hoje com horário já passado · aberto · $quem",
             'sem_proxima_atividade' => 'sem atividade futura · fechamento previsto até ' . $this->agora->modify('+7 days')->format('d/m/Y') . " (inclui vencidos) · aberto · $quem",
             default => "conflitos de hoje ($hoje) na sua agenda",
         };
