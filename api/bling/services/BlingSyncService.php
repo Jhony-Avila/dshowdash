@@ -605,7 +605,7 @@ final class BlingSyncService
         // nunca apaga um id já conhecido.
         if (!$this->repo->temColuna('bling_sales_orders', 'situacao_bling_id')) {
             unset($d['situacao_bling_id']);
-        } elseif ($d['situacao_bling_id'] === null) {
+        } elseif (($d['situacao_bling_id'] = self::idPositivo($d['situacao_bling_id'])) === null) {   // 0/"0"/ilegível = não informado (mesma regra da releitura)
             $conhecido = $this->repo->consultar('SELECT situacao_bling_id FROM bling_sales_orders WHERE account_id = ? AND bling_id = ?',
                 [$accountId, $d['bling_id']]);
             if (($conhecido[0]['situacao_bling_id'] ?? null) !== null) { $d['situacao_bling_id'] = (string) $conhecido[0]['situacao_bling_id']; }
@@ -1173,16 +1173,21 @@ final class BlingSyncService
      * Valor ausente na resposta nunca apaga o conhecido (COALESCE).
      * @return 'atualizado'|'ignorado'|'ausente'
      */
+    /** Id externo do Bling só se for inteiro POSITIVO (int ou texto de dígitos sem zero à esquerda); 0, "0", vazio, ilegível ou ausente → null. */
+    private static function idPositivo(mixed $v): ?string
+    {
+        return ((is_int($v) || is_string($v)) && preg_match('/^[1-9][0-9]{0,19}$/', (string) $v)) ? (string) $v : null;
+    }
+
     private function gravarSituacaoLoja(int $accountId, array $bruto): string
     {
         $blingId = isset($bruto['id']) && (is_int($bruto['id']) || (is_string($bruto['id']) && ctype_digit($bruto['id']))) ? (string) $bruto['id'] : null;
         if ($blingId === null) { throw new InvalidArgumentException('pedido sem id na listagem'); }
-        $sit = $bruto['situacao']['id'] ?? null;
-        $sit = (is_int($sit) || (is_string($sit) && ctype_digit($sit))) ? (string) $sit : null;
-        $loja = $bruto['loja']['id'] ?? null;
-        // Codex DSHOW-114: a MESMA validação de id positivo da sincronização normal (gravarPedido) — 0, "0", ilegível ou ausente = sem loja informada
-        // (COALESCE mantém a conhecida). Antes `ctype_digit` aceitava "0" e a releitura trocava uma loja válida por 0.
-        $loja = ((is_int($loja) || is_string($loja)) && preg_match('/^[1-9][0-9]{0,19}$/', (string) $loja)) ? (string) $loja : null;
+        // revisão da ACIMA_ESQUERDA (P6.1, 24/11): situação e loja pela MESMA regra — ausente, ilegível, 0 ou "0" = não informado
+        // (COALESCE mantém o conhecido). Antes `ctype_digit` aceitava "0" na situação e a releitura trocava uma situação conhecida por 0.
+        $sit = self::idPositivo($bruto['situacao']['id'] ?? null);
+        // Codex DSHOW-114: a MESMA validação de id positivo da sincronização normal (gravarPedido) — 0, "0", ilegível ou ausente = sem loja informada.
+        $loja = self::idPositivo($bruto['loja']['id'] ?? null);
         $existe = $this->repo->consultar('SELECT situacao_bling_id, loja_bling_id FROM bling_sales_orders WHERE account_id = ? AND bling_id = ?', [$accountId, $blingId]);
         if ($existe === []) { return 'ausente'; }
         $novoSit = $sit ?? $existe[0]['situacao_bling_id']; $novaLoja = $loja ?? $existe[0]['loja_bling_id'];
