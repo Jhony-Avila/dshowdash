@@ -206,7 +206,8 @@ function CartaoNumero({ titulo, icone, estado, carregando, valor, linha, rodape,
 /** Linha do cartão pelo estado EFETIVO (coerencia.ts): zero não confirmado, desatualizado, soma parcial. */
 function linhaEstado(e: Efetivo, normal: ReactNode, valor: number | null = 0): ReactNode {
   // no cartão, só o motivo (cabe numa linha em 1440); o horário do último sucesso fica no gráfico e na linha de fontes
-  if (e.estado === 'desatualizado' && e.zeroNaoConfirmado) return <span title={e.quando ? `Último sucesso ${fmtQuando(e.quando)}` : undefined}>{e.motivo}</span>;
+  // zero não confirmado (desatualizado ou parcial): só o motivo — nunca "0 pedidos" nem "R$ 0"
+  if (e.zeroNaoConfirmado) return <span data-gv2-zero-nc title={e.quando ? `Último sucesso ${fmtQuando(e.quando)}` : undefined}>{e.motivo || 'Zero não confirmado'}</span>;
   if (e.estado === 'desatualizado') return <>Último valor válido preservado{e.quando ? ` · ${fmtQuando(e.quando)}` : ''}</>;
   // todos sem valor (valor null): não há soma — "Nenhum valor informado"; alguns sem valor: soma dos informados
   if (e.estado === 'parcial' && e.semValor !== null) return <>{normal}<span className="gv2-aviso-linha" data-gv2-soma-parcial>{valor === null ? 'Nenhum valor informado' : 'Soma dos valores informados'} · {textoSemValor(e.semValor)}</span></>;

@@ -26,7 +26,7 @@ export const NOME_FONTE: Record<IdFonte, string> = {
 
 export interface IndicadorBruto {
   estado: EstadoBloco; ultimo_sucesso: string | null; motivo: string | null;
-  fonte?: IdFonte; consulta_completa?: boolean; sem_valor?: number | null; lacunas?: string[];
+  fonte?: IdFonte; consulta_completa?: boolean; sem_valor?: number | null; lacunas?: string[]; quantidade?: number | null;
 }
 /** 'carregando' = o fontes.php ainda não respondeu (não rebaixa nada); null = não respondeu (não dá para confirmar zero). */
 export type FontesLidas = Fonte[] | null | 'carregando';
@@ -56,11 +56,22 @@ export function efetivo(id: IdIndicador, ind: IndicadorBruto, fontes: FontesLida
   const nome = NOME_FONTE[fonte];
   const fonteAtrasada = !!f && f.estado !== 'conectada';
 
-  if (ind.estado === 'aguardando' || ind.estado === 'erro' || ind.estado === 'desatualizado') return base;
+  if (ind.estado === 'aguardando' || ind.estado === 'erro') return base;
+  // um 0 que não é "zero" (consulta incompleta, parcial ou desatualizado) NUNCA aparece como 0: "—" + o estado escrito
+  const zeroSemConfirmar = ind.quantidade === 0 && ind.estado !== 'zero';
+  if (ind.estado === 'desatualizado') return { ...base, zeroNaoConfirmado: zeroSemConfirmar };
 
   if (falhaAtualizacao) {
     return { ...base, estado: 'desatualizado', zeroNaoConfirmado: ind.estado === 'zero',
       motivo: 'A atualização falhou; abaixo, a última leitura válida.', quando: okEm ?? ind.ultimo_sucesso };
+  }
+
+  // Contrato novo (serviço 2a035013 manda `consulta_completa`): o serviço já decidiu o estado pela fonte DAQUELE indicador
+  // e o fontes.php já traz o pior estado — a tela não rebaixa um `parcial` correto para "Desatualizado".
+  if (ind.consulta_completa !== undefined) {
+    const sv0 = typeof ind.sem_valor === 'number' && ind.sem_valor > 0 && (!ind.lacunas || ind.lacunas.includes('sem_valor')) ? ind.sem_valor : null;
+    if (ind.estado === 'zero' && ind.consulta_completa === false) return { ...base, estado: 'desatualizado', zeroNaoConfirmado: true, motivo: 'Zero não confirmado · a consulta não veio completa' };
+    return { ...base, zeroNaoConfirmado: zeroSemConfirmar, semValor: ind.estado === 'parcial' ? sv0 : null };
   }
 
   if (ind.estado === 'zero') {
