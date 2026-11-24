@@ -7,8 +7,8 @@
  *   (UMA chamada por bbox). A chave é injetada server-side; nunca vai ao frontend.
  *
  *   ⚠️ ORÇAMENTO DE CHAMADAS: cada refresh de fluxo faz N chamadas (N = nº de vias). Com o
- *   cache de 60s isso pode estourar o free tier — antes do go-live, ajustar TTL/nº de vias
- *   em config.php (ver README, seção "limites da API").
+ *   TTL de 300s estourou a cota diária (nov/2026) → TTL 900s em config.php; antes de baixar
+ *   TTL ou somar vias, refazer a conta do README, seção "limites da API".
  */
 
 require_once __DIR__ . '/TrafficProvider.php';
@@ -20,26 +20,39 @@ final class TomTomTrafficProvider implements TrafficProvider {
 
     private string $key;
     private array $cfg;
+    /** @var Closure(string,int):array{status:int,json:?array} transporte injetável (testes) */
+    private Closure $http;
+    /** diagnóstico da última leitura (sem detalhe do provedor): vias esperadas/lidas e classes de erro */
+    private array $diag = ['flow_esperado' => 0, 'flow_ok' => 0, 'erros' => []];
 
-    public function __construct(string $apiKey, array $cfg) {
+    public function __construct(string $apiKey, array $cfg, ?Closure $http = null) {
         $this->key = $apiKey;
         $this->cfg = $cfg;
+        $this->http = $http ?? static fn(string $url, int $t): array => traffic_http_get($url, $t);
     }
+
+    public function diagnostico(): array { return $this->diag; }
+
+    private function erro(string $classe): void { $this->diag['erros'][$classe] = ($this->diag['erros'][$classe] ?? 0) + 1; }
 
     public function name(): string { return 'tomtom'; }
 
     public function health(): array {
-        // Ping barato: uma consulta de fluxo no centro da cidade.
+        // Ping barato: UMA consulta de fluxo no centro — "up" só com FLUXO DE VERDADE (velocidade numérica), nunca com JSON de erro.
         $c = $this->cfg['center'];
-        $seg = $this->flowAtPoint((float)$c['lat'], (float)$c['lng']);
-        return $seg === null
-            ? ['status' => 'down', 'detail' => 'flow endpoint sem resposta']
-            : ['status' => 'up', 'detail' => 'ok'];
+        $this->diag = ['flow_esperado' => 1, 'flow_ok' => 0, 'erros' => []];
+        $raw = $this->flowAtPoint((float)$c['lat'], (float)$c['lng']);
+        if ($raw === null) {
+            return ['status' => 'down', 'detail' => array_key_first($this->diag['erros']) ?? 'sem_resposta'];
+        }
+        $v = $raw['flowSegmentData']['currentSpeed'] ?? null;
+        return (is_int($v) || is_float($v)) ? ['status' => 'up', 'detail' => 'ok'] : ['status' => 'down', 'detail' => 'sem_fluxo'];
     }
 
     /** Uma via monitorada = um ponto de amostra (midpoint da geometria da via). */
     public function getTrafficFlow(array $bounds): array {
         $roads = require __DIR__ . '/fixtures/sp-roads.php'; // reusa a lista de vias monitoradas
+        $this->diag = ['flow_esperado' => count($roads), 'flow_ok' => 0, 'erros' => []];
         $out = [];
         foreach ($roads as $r) {
             $coords = $r['geometry']['coordinates'];
@@ -47,7 +60,8 @@ final class TomTomTrafficProvider implements TrafficProvider {
             $raw = $this->flowAtPoint((float)$mid[1], (float)$mid[0]);
             if ($raw === null) continue;
             $f = $raw['flowSegmentData'] ?? null;
-            if (!is_array($f)) continue;
+            if (!is_array($f)) { $this->erro('sem_fluxo'); continue; }
+            $this->diag['flow_ok']++;
 
             // Geometria: usa a da TomTom se vier; senão a da via monitorada.
             $geom = $r['geometry'];
@@ -72,6 +86,10 @@ final class TomTomTrafficProvider implements TrafficProvider {
                 'updatedAt'                 => gmdate('c'),
             ]);
         }
+        // nenhuma via lida: FALHA (o serviço usa o último dado bom marcado como velho), nunca "zero de lentidão"
+        if ($out === [] && $roads !== []) {
+            throw new RuntimeException('flow_indisponivel:' . (array_key_first($this->diag['erros']) ?? 'sem_fluxo'));
+        }
         return $out;
     }
 
@@ -81,7 +99,10 @@ final class TomTomTrafficProvider implements TrafficProvider {
             . '?point=' . rawurlencode($lat . ',' . $lng)
             . '&unit=KMPH'
             . '&key=' . rawurlencode($this->key);
-        return traffic_http_get_json($url, (int)$t['timeout_flow']);
+        $r = ($this->http)($url, (int)$t['timeout_flow']);
+        $classe = traffic_http_classificar((int) $r['status'], $r['json']);
+        if ($classe !== 'ok') { $this->erro($classe); return null; }
+        return $r['json'];
     }
 
     /** Uma chamada por bbox → todas as ocorrências. */
@@ -97,8 +118,15 @@ final class TomTomTrafficProvider implements TrafficProvider {
             . '&timeValidityFilter=present'
             . '&key=' . rawurlencode($this->key);
 
-        $raw = traffic_http_get_json($url, (int)$t['timeout_incidents']);
-        if ($raw === null || empty($raw['incidents'])) return [];
+        $r = ($this->http)($url, (int)$t['timeout_incidents']);
+        $classe = traffic_http_classificar((int) $r['status'], $r['json']);
+        // erro do provedor ou resposta sem a lista: FALHA (nunca "zero ocorrências"); lista vazia de verdade continua valendo []
+        if ($classe !== 'ok') { $this->erro('ocorrencias_' . $classe); throw new RuntimeException('incidents_indisponivel:' . $classe); }
+        $raw = $r['json'];
+        if (!is_array($raw) || !array_key_exists('incidents', $raw) || !is_array($raw['incidents'])) {
+            $this->erro('ocorrencias_formato'); throw new RuntimeException('incidents_indisponivel:formato');
+        }
+        if ($raw['incidents'] === []) return [];
 
         $out = [];
         foreach ($raw['incidents'] as $i => $feat) {

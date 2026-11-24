@@ -2331,3 +2331,6 @@ dist/
 !/db/
 !/db/equipamentos/
 !/db/equipamentos/**
+
+# Trânsito (23/11/2026): diagnóstico de 1 chamada do provedor
+!/scripts/traffic/

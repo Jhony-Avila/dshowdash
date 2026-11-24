@@ -71,8 +71,10 @@ Provider **tomtom ATIVO** (`TRAFFIC_PROVIDER=tomtom`, chave no `.env`). Dados re
 
 ⚠️ **Orçamento de chamadas:** cada refresh do payload compartilhado = **~13 chamadas** = 12 Flow Segment
 (uma por via em `providers/fixtures/sp-roads.php`) + 1 Incident Details (bbox, ~500 ocorrências).
-Com **TTL 300s** e cache **compartilhado server-side** (o nº de usuários NÃO multiplica): ~12h de uso
-contínuo ≈ **1.900 chamadas/dia** (< 2.500 do free tier típico). Alavancas p/ ajustar: `cache.ttl_*`
+Com **TTL 900s** (15 min, aprovado em 23/11/2026) e cache **compartilhado server-side** (o nº de usuários
+NÃO multiplica): 96 renovações/dia × 13 + 96 do health ≈ **1.350 chamadas/dia mesmo 24 h por dia**
+(< 2.500 do free tier típico). Histórico: com TTL 300s o consumo real era ~4.000/dia (o app amostra 24 h)
+e a cota diária estourou a partir de 09/11/2026 — o health agora acusa isso (`down`/`cota`). Alavancas p/ ajustar: `cache.ttl_*`
 (↑ reduz chamadas) e o nº de vias monitoradas (↓ reduz o custo de flow). **Recomendado:** confirmar o
 limite exato do seu plano e configurar um teto de consumo no painel da TomTom (evitar cobrança).
 
