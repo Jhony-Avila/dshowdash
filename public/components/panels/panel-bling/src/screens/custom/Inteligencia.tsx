@@ -12,7 +12,7 @@ import { PropsTela } from '../generic/TelaCatalogo';
 import { Grafico, tokens, opcaoWaterfall, opcaoPareto, opcaoBarras } from '../../viz/Echarts';
 import { MatrizQuadrantes } from '../../viz/D3';
 import { useSelecao } from '../../app/selecao';
-import { somaOuNulo, margemOuNulo, desconhecido, TOOLTIP_DESCONHECIDO } from '../../lib/ausencia';
+import { somaOuNulo, margemOuNulo, desconhecido, TOOLTIP_DESCONHECIDO, TEXTO_INDISPONIVEL, motivoIndisponivel } from '../../lib/ausencia';
 
 const GRID_INICIAL: EstadoGrid = { ordenar: '', direcao: 'desc', pagina: 1, limite: 50, busca: '' };
 
@@ -56,13 +56,18 @@ export function Rentabilidade({ filtros, aoMudarFiltros, larguraPainel }: PropsT
   const wf: any[] = carga.dados?.waterfall ?? [];
   const prejuizo: any[] = carga.dados?.prejuizo ?? [];
 
-  // Ausência ≠ zero: total com qualquer linha desconhecida é desconhecido.
-  const soma = (c: string) => somaOuNulo(itens.map(i => i[c]));
+  // Ausência ≠ zero: total com qualquer linha desconhecida é desconhecido. Com `indisponivel` da API, o que depende
+  // dele é desconhecido mesmo com a lista vazia (somar nada daria R$ 0,00 — e não é zero).
+  const motivo = motivoIndisponivel(carga.dados?.indisponivel);
+  const DEPENDE_DO_CUSTO = new Set(['custo', 'lucro', 'margem_pct']);
+  const soma = (c: string) => (motivo === 'itens_desconhecidos' || (motivo === 'custo_desconhecido' && DEPENDE_DO_CUSTO.has(c))
+    ? null : somaOuNulo(itens.map(i => i[c])));
   const receita = soma('receita');
   const lucro = soma('lucro');
   const deducoes = somaOuNulo([soma('comissao'), soma('taxas'), soma('impostos'), soma('frete')]);
   const margemTotal = margemOuNulo(receita, receita !== null && lucro !== null ? receita - lucro : null);
-  const custoDesconhecido = itens.some(i => desconhecido(i.custo)) || wf.some((p: any) => desconhecido(p.valor));
+  const custoDesconhecido = motivo !== null || itens.some(i => desconhecido(i.custo)) || wf.some((p: any) => desconhecido(p.valor));
+  const motivoMatriz = motivoIndisponivel(matriz.dados?.indisponivel);
   // Matriz: produto sem margem conhecida não tem posição — sai da matriz e é contado à parte.
   const itensMatriz: any[] = (matriz.dados?.itens ?? []).filter((i: any) => !desconhecido(i.margem_pct) && !desconhecido(i.receita));
   const semMargem = Number(matriz.dados?.sem_margem ?? 0) + ((matriz.dados?.itens ?? []).length - itensMatriz.length);
@@ -135,7 +140,8 @@ export function Rentabilidade({ filtros, aoMudarFiltros, larguraPainel }: PropsT
         kpi('lucro', 'Lucro', lucro, 'moeda', lucro !== null && lucro < 0 ? 'critico' : 'ok'),
         kpi('margem', 'Margem', margemTotal, 'percentual',
           lucro !== null && lucro < 0 ? 'critico' : 'ok'),
-        kpi('prejuizo', 'Itens com prejuízo', prejuizoConhecido.length, 'inteiro',
+        // com o lucro indisponível para o conjunto (API `indisponivel`), não dá para contar prejuízo: "—", nunca 0
+        kpi('prejuizo', 'Itens com prejuízo', motivo ? null : prejuizoConhecido.length, 'inteiro',
           prejuizoConhecido.length > 0 ? 'atencao' : 'ok',
           custoDesconhecido ? 'Conta só os itens com custo conhecido; os de custo desconhecido não entram.' : null),
       ]} />
@@ -147,7 +153,7 @@ export function Rentabilidade({ filtros, aoMudarFiltros, larguraPainel }: PropsT
             descricao="Waterfall da receita bruta até o lucro, passando por descontos, custo, comissões, taxas, impostos e frete." />
           {custoDesconhecido && (
             <p data-bl-aviso="custo-desconhecido" style={{ fontSize: 12, color: 'var(--bl-texto-2)', margin: '8px 0 0' }}>
-              Há pedidos com custo de produto desconhecido: custo, lucro e margem aparecem como "—" e não são calculados.
+              {motivo ? TEXTO_INDISPONIVEL[motivo] : 'Há pedidos com custo de produto desconhecido: custo, lucro e margem aparecem como "—" e não são calculados.'}
             </p>
           )}
           <p style={{ fontSize: 10.5, color: 'var(--bl-texto-3)', margin: '8px 0 0' }}>
@@ -166,7 +172,7 @@ export function Rentabilidade({ filtros, aoMudarFiltros, larguraPainel }: PropsT
           )}
           {matriz.dados && (itensMatriz.length === 0 || desconhecido(matriz.dados.cortes?.margem_pct)) ? (
             <EstadoVazio titulo="Sem itens com margem conhecida"
-              descricao="A matriz precisa do custo de produto para posicionar cada item." />
+              descricao={motivoMatriz ? TEXTO_INDISPONIVEL[motivoMatriz] : 'A matriz precisa do custo de produto para posicionar cada item.'} />
           ) : matriz.dados ? (
             <MatrizQuadrantes
               itens={(quadrante
@@ -260,7 +266,9 @@ export function CurvaAbc({ filtros, aoMudarFiltros, larguraPainel }: PropsTela) 
   if (!carga.dados) return <BlocoCarregando linhas={8} rotulo="Calculando curva ABC" />;
 
   const itens: any[] = carga.dados.itens ?? [];
-  const classes: any[] = carga.dados.classes ?? [];
+  // Pacote B: com `indisponivel`, as classes vêm zeradas por falta de dado — não mostrar "0 item(ns) · R$ 0" como se fosse zero.
+  const motivoAbc = motivoIndisponivel(carga.dados.indisponivel);
+  const classes: any[] = motivoAbc ? [] : carga.dados.classes ?? [];
   const formato = metrica === 'unidades' || metrica === 'frequencia' ? 'inteiro' : 'moeda';
 
   const filtrados = classe ? itens.filter(i => i.classe === classe) : itens;
@@ -342,7 +350,9 @@ export function CurvaAbc({ filtros, aoMudarFiltros, larguraPainel }: PropsTela) 
       <Secao titulo="Curva de concentração">
         <div className="bl-cartao" style={{ padding: '12px 14px', minWidth: 0 }}>
           {itens.length === 0 ? (
-            <EstadoVazio titulo="Sem itens no recorte" descricao="Ajuste o período ou a dimensão." />
+            motivoAbc
+              ? <EstadoVazio titulo="Curva indisponível nesta métrica" descricao={TEXTO_INDISPONIVEL[motivoAbc]} />
+              : <EstadoVazio titulo="Sem itens no recorte" descricao="Ajuste o período ou a dimensão." />
           ) : (
             <Grafico altura={larguraPainel < 980 ? 250 : 300}
               opcao={opcaoPareto(t, itens.slice(0, 30).map(i => ({ rotulo: i.rotulo, valor: i.valor })), formato)}

@@ -46,17 +46,28 @@ export function margemOuNulo(receita: unknown, custo: unknown): number | null {
   return Math.round(((r - c) / r) * 1000) / 10;
 }
 
+/** Motivo de indisponibilidade das análises (campo `indisponivel` da API, ACIMA_DIREITA 24/11). */
+export type MotivoIndisponivel = 'itens_desconhecidos' | 'custo_desconhecido';
+export const TEXTO_INDISPONIVEL: Record<MotivoIndisponivel, string> = {
+  itens_desconhecidos: 'O detalhe dos pedidos ainda não foi lido do Bling: itens, subtotal, desconto, frete, custo e margem aparecem como "—" (não é zero).',
+  custo_desconhecido: 'O custo dos produtos vendidos não vem nos pedidos do Bling: custo, lucro e margem aparecem como "—" e não são calculados.',
+};
+export const motivoIndisponivel = (v: unknown): MotivoIndisponivel | null =>
+  v === 'itens_desconhecidos' || v === 'custo_desconhecido' ? v : null;
+
 export const TOOLTIP_DESCONHECIDO =
   'Valor desconhecido: há pedidos cujo custo ou itens ainda não foram lidos do Bling. Não é zero.';
 
 /**
  * KPI da API → KPI da tela.
- * DSHOW-012: null com a FONTE fora do ar = "Indisponível".
- * Pacote B: null com a fonte no ar (estado 'ok' ou sem estado declarado) = valor DESCONHECIDO = "—".
+ * DSHOW-012: a FONTE sem dados / incompleta / desativada (estados 'sem_dados', 'incompleto', fonte_desativada) = "Indisponível".
+ * Pacote B: valor DESCONHECIDO com a fonte no ar ('ok', 'indisponivel' com motivo de dado, ou sem estado) = "—",
+ * com o motivo no tooltip ("Indisponível: <motivo>", como a API manda). Nunca zero.
  */
 export function kpiDaApi(k: Record<string, any>): Kpi {
-  const estado = k?.disponibilidade?.estado as string | undefined;
-  const foraDoAr = estado !== undefined && estado !== 'ok';
+  const disp = k?.disponibilidade ?? null;
+  const estado = disp?.estado as string | undefined;
+  const foraDoAr = estado === 'sem_dados' || estado === 'incompleto' || disp?.fonte_desativada === true;
   const nulo = desconhecido(k.valor);
   return {
     ...(k as Kpi),

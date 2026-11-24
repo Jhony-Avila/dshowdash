@@ -5,7 +5,7 @@ import React from 'react';
 import {
   DataGrid, EstadoGrid, ColunaGrid, GradeKpis, Kpi, Secao, BarraFiltros,
   EstadoErro, BlocoCarregando, Drawer, Badge, LinhaDoTempo, EtapaLinha,
-  moeda, inteiro, data as fmtData,
+  EstadoVazio, moeda, inteiro, data as fmtData,
 } from '@shared';
 import { api, RespostaRecurso } from '../../services/api';
 import { useCarga, useDebounce } from '../../app/estado';
@@ -13,7 +13,7 @@ import { PropsTela } from '../generic/TelaCatalogo';
 // A tela financeira reusa o MESMO componente D3 do fluxo empresarial —
 // não existe um segundo Sankey no projeto.
 import { SankeyD3 as SankeyFinanceiro } from '../../viz/D3';
-import { numOuNulo } from '../../lib/ausencia';
+import { numOuNulo, TEXTO_INDISPONIVEL, motivoIndisponivel } from '../../lib/ausencia';
 import { Grafico, tokens, opcaoFunil } from '../../viz/Echarts';
 
 const GRID_INICIAL: EstadoGrid = { ordenar: '', direcao: 'desc', pagina: 1, limite: 50, busca: '' };
@@ -443,13 +443,15 @@ export function FluxoCaixa({ filtros, aoMudarFiltros, larguraPainel }: PropsTela
         <div className="bl-cartao" style={{ padding: '12px 14px', minWidth: 0 }}>
           {sankey.dados ? (
             <>
-              <SankeyFinanceiro dados={sankey.dados} altura={larguraPainel < 980 ? 260 : 320} />
-              {sankey.dados.custo_desconhecido && (
+              {sankey.dados.nos.length === 0
+                ? <EstadoVazio titulo="Fluxo indisponível" descricao={TEXTO_INDISPONIVEL[motivoIndisponivel((sankey.dados as any).indisponivel) ?? 'itens_desconhecidos']} />
+                : <SankeyFinanceiro dados={sankey.dados} altura={larguraPainel < 980 ? 260 : 320} />}
+              {sankey.dados.nos.length > 0 && (sankey.dados.custo_desconhecido || motivoIndisponivel((sankey.dados as any).indisponivel)) && (
               <p data-bl-aviso="fluxo-custo-desconhecido" style={{ fontSize: 12, color: 'var(--bl-texto-2)', margin: '8px 0 0' }}>
                 Parte dos pedidos tem custo de produto desconhecido: o fluxo não mostra custo nem margem (não é zero).
               </p>
               )}
-              {!sankey.dados.custo_desconhecido && sankey.dados.prejuizo_total > 0 && (
+              {!sankey.dados.custo_desconhecido && !(sankey.dados as any).indisponivel && sankey.dados.prejuizo_total > 0 && (
                 <div style={{
                   marginTop: 10, padding: '7px 10px', fontSize: 11.5,
                   borderRadius: 'var(--bl-raio-sm)', background: 'var(--bl-erro-bg)',
