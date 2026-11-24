@@ -44,6 +44,7 @@ import type {
   PeriodoId, ResumoModulo, ShellConfig, StatusIntegracao,
 } from '../domain/types';
 import '../styles/tokens.css';
+import { GeralV2 } from '../v2/GeralV2';
 
 // ── registro de módulos (§12) ───────────────────────────────────────
 interface DefModulo { id: ModuloId; nome: string; icone: ReactNode; rota: string | null; }
@@ -577,5 +578,8 @@ function Shell({ config }: { config: ShellConfig }) {
 }
 
 export function App({ config }: { config: ShellConfig }) {
+  // Geral V2 · Lançamento (23/11/2026): a GERAL (botão da sidebar) vira a V2 dos mockups aprovados; a página inicial imersiva
+  // (config.home) continua a mesma. O shell do Dash não muda — isto é só o miolo.
+  if (config.home !== true) return <div className="ger-tela-toda" data-imersivo="0" data-densidade="conforto" data-geral-v2="1"><GeralV2 /></div>;
   return <Shell config={config} />;
 }
