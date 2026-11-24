@@ -39,6 +39,11 @@ final class GeralV2Contrato
     private const PIOR = ['ok' => 0, 'parcial' => 1, 'desatualizado' => 2, 'aguardando_conexao' => 3, 'indisponivel' => 4];
     /** ordem de gravidade das CONSULTAS (enum da tela) */
     private const PIOR_CONSULTA = ['ok' => 0, 'parcial' => 1, 'desatualizado' => 2, 'aguardando' => 3, 'erro' => 4];
+    /** rótulo pronto do estado (proposta da CIMA, 24/11 20:0x): a tela só exibe */
+    private const ROTULO_ESTADO = ['ok' => 'Atualizado', 'parcial' => 'Dados parciais', 'desatualizado' => 'Desatualizado', 'erro' => 'Com problema', 'aguardando' => 'Aguardando conexão'];
+    private const ROTULO_FONTE = ['pipedrive' => 'Pipedrive', 'bling' => 'Bling', 'calendar' => 'Google Agenda'];
+    private const ROTULO_IND = ['negocios_ganhos' => 'ganhos', 'funil_aberto' => 'funil', 'atividade_vencida' => 'atividades vencidas',
+                                'sem_proxima_atividade' => 'sem próxima atividade', 'pedidos_bling' => 'pedidos', 'agenda' => 'agenda de hoje', 'conflito_agenda' => 'conflitos'];
     /** lacunas do DADO: deixam o cartão "Dados parciais", mas a consulta e a fonte estão bem */
     private const LACUNA_DADO = ['sem_valor', 'fora_brl', 'sem_canal'];
     /** consultas de cada fonte usadas na tela → os indicadores que cada uma alimenta */
@@ -105,6 +110,14 @@ final class GeralV2Contrato
             $itens[count($itens) - 1]['verificacao'] = $this->verificacao($itens[count($itens) - 1]);
         }
         $ver = $this->verificacaoAgregada(array_column($itens, 'verificacao'));
+        // proposta da CIMA (20:0x): por FONTE exigida, o estado da consulta das prioridades dela e o rótulo pronto (Pipedrive = pior entre P1 e P2)
+        $porFonte = [];
+        foreach ($itens as $x) {
+            $e = $this->estadoConsulta($x);
+            if (!isset($porFonte[$x['fonte']]) || self::PIOR_CONSULTA[$e] > self::PIOR_CONSULTA[$porFonte[$x['fonte']]]) $porFonte[$x['fonte']] = $e;
+        }
+        $ver['fontes'] = array_map(fn($f, $e) => ['fonte' => $f, 'rotulo' => self::ROTULO_FONTE[$f], 'estado' => $e, 'rotulo_estado' => self::ROTULO_ESTADO[$e]],
+            array_keys($porFonte), array_values($porFonte));
         return ['gerado_em' => $this->agora->format(DATE_ATOM), 'itens' => $itens, 'verificacao' => $ver,
                 // "Sem pendências" SÓ de verificação completa com zero itens (parecer do mockup): nunca de ausência
                 'sem_pendencias' => $ver['estado'] === 'completa' && array_sum(array_map(fn($i) => $i['quantidade'] ?? 1, $itens)) === 0];
@@ -204,10 +217,15 @@ final class GeralV2Contrato
                 'conexao' => ['estado' => $con['estado'], 'motivo' => $motivoCon],
                 'consultas' => $lista,
                 'parte_afetada' => array_values(array_map(fn($c) => $c['id'], array_filter($lista, fn($c) => $c['estado'] !== 'ok'))),
-                'indicadores' => $inds];
+                'indicadores' => $inds,
+                // proposta da CIMA (20:0x): rótulo pronto do estado da linha e os INDICADORES afetados ("Pipedrive · Com problema (funil)")
+                'rotulo_estado' => $con['estado'] === 'problema' ? 'Com problema' : ($con['estado'] === 'aguardando' && $estado === 'aguardando' ? 'Aguardando conexão' : self::ROTULO_ESTADO[$pc['estado']]),
+                'afetado' => array_values(array_map(fn($i) => ['id' => $i['id'], 'rotulo' => self::ROTULO_IND[$i['id']], 'estado' => $i['estado']],
+                    array_filter($inds, fn($i) => $i['estado'] !== 'ok')))];
         }
         foreach (self::SEM_CONECTOR as $id => $txt) $out[] = ['fonte' => $id, 'estado' => 'aguardando', 'ultimo_sucesso' => null, 'motivo' => $txt,
-            'conexao' => ['estado' => 'aguardando', 'motivo' => $txt], 'consultas' => [], 'parte_afetada' => [], 'indicadores' => []];
+            'conexao' => ['estado' => 'aguardando', 'motivo' => $txt], 'consultas' => [], 'parte_afetada' => [], 'indicadores' => [],
+            'rotulo_estado' => 'Aguardando conexão', 'afetado' => []];
         return $out;
     }
 

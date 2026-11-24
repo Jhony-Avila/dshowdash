@@ -392,6 +392,21 @@ $coerentePainel = function (array $pa): string {
         if (in_array($b['estado'], ['desatualizado', 'aguardando'], true) && $f['estado'] === 'conectada') return "painel: $id {$b['estado']} e a fonte conectada";
     }
     if ($pa['prioridades']['sem_pendencias'] && $pa['prioridades']['verificacao']['estado'] !== 'completa') return 'painel: sem pendências sem verificação completa';
+    // proposta da CIMA (20:0x): rótulos prontos e parte afetada coerentes com o estado
+    $RE = ['ok' => 'Atualizado', 'parcial' => 'Dados parciais', 'desatualizado' => 'Desatualizado', 'erro' => 'Com problema', 'aguardando' => 'Aguardando conexão'];
+    $vf = $pa['prioridades']['verificacao']['fontes'] ?? null;
+    if (!is_array($vf) || array_column($vf, 'fonte') !== ['pipedrive', 'calendar']) return 'painel: verificacao.fontes ausente ou sem Pipedrive e Google Agenda';
+    foreach ($vf as $x) if ($x['rotulo_estado'] !== $RE[$x['estado']]) return "painel: verificacao.fontes {$x['fonte']} rótulo ≠ estado";
+    if ($pa['prioridades']['verificacao']['estado'] === 'completa' && array_filter($vf, fn($x) => $x['estado'] !== 'ok') !== []) return 'painel: completa com fonte exigida não ok';
+    foreach ($pa['fontes'] as $f) {
+        $okR = match ($f['estado']) { 'conectada' => ['Atualizado'], 'problema' => ['Com problema'], 'aguardando' => ['Aguardando conexão'], default => ['Desatualizado', 'Dados parciais'] };
+        if (!in_array($f['rotulo_estado'] ?? null, $okR, true)) return "painel: fonte {$f['fonte']} {$f['estado']} com rótulo " . var_export($f['rotulo_estado'] ?? null, true);
+        if (array_column($f['afetado'] ?? [], 'id') !== array_column(array_filter($f['indicadores'], fn($i) => $i['estado'] !== 'ok'), 'id')) return "painel: fonte {$f['fonte']} afetado ≠ indicadores não ok";
+    }
+    foreach ($blocos as $id => $b) {
+        $soDado = $b['estado'] === 'parcial' && $b['lacunas'] !== [] && array_diff($b['lacunas'], ['sem_valor', 'fora_brl', 'sem_canal']) === [];
+        if (!in_array($b['estado'], ['ok', 'zero'], true) && !$soDado && !in_array($id, array_column($fo[$b['fonte']]['afetado'], 'id'), true)) return "painel: $id {$b['estado']} fora do afetado da fonte";
+    }
     return '';
 };
 /** Invariantes de coerência numa visão inteira: "zero" só com fonte conectada e consulta completa; fonte "conectada" só sem indicador pior. */
@@ -703,6 +718,22 @@ $conta = 0; $pdoConta = new class ($pdo, $conta) extends PDO {
 };
 (new GeralV2Contrato(new GeralV2($pdo, $pdo, $pdoConta, 75, $AGORA, $provDe($cf2), $P)))->painel('7d');
 check('D3 · o painel lê os pedidos UMA vez (antes: resumo + fontes = 2)', $conta === 1, (string) $conta);
+// CIMA (20:0x) · "fonte com problema numa parte (funil)": SÓ a consulta do funil falha (o banco recusa essa consulta); ganhos e atividades leem
+$pdoFunil = new class ($pdo) extends PDO {
+    public function __construct(private PDO $real) {}
+    public function prepare(string $q, array $o = []): PDOStatement|false { if (str_contains($q, "status = 'open'") && str_contains($q, 'SUM(CASE')) throw new PDOException('x'); return $this->real->prepare($q, $o); }
+    public function query(string $q, ?int $m = null, mixed ...$a): PDOStatement|false { return $this->real->query($q); }
+    public function exec(string $q): int|false { return $this->real->exec($q); }
+};
+$pa = (new GeralV2Contrato(new GeralV2($pdoFunil, $pdo, $pdo, 75, $AGORA, $provDe($cf2), $P)))->painel('7d');
+$fp = array_column($pa['fontes'], null, 'fonte')['pipedrive'];
+check('CIMA · só o funil falha → "Pipedrive · Com problema (funil)": rotulo_estado e afetado = [funil erro]; ganhos seguem ok', $pa['resumo']['funil_aberto']['estado'] === 'erro'
+    && $pa['resumo']['negocios_ganhos']['quantidade'] !== null && $fp['rotulo_estado'] === 'Com problema'
+    && $fp['afetado'] === [['id' => 'funil_aberto', 'rotulo' => 'funil', 'estado' => 'erro']], json_encode([$fp['rotulo_estado'], $fp['afetado']]));
+check('CIMA · funil com problema: painel coerente', ($e = $coerentePainel($pa)) === '', $e);
+$vf = $K()->prioridades()['verificacao']['fontes'];
+check('CIMA · verificacao.fontes no topo: Pipedrive e Google Agenda, rótulo pronto', $vf === [['fonte' => 'pipedrive', 'rotulo' => 'Pipedrive', 'estado' => 'ok', 'rotulo_estado' => 'Atualizado'],
+    ['fonte' => 'calendar', 'rotulo' => 'Google Agenda', 'estado' => 'ok', 'rotulo_estado' => 'Atualizado']], json_encode($vf));
 // 3 · contraprova embutida: a lista e o cartão chamam a MESMA função de filtro
 check('MOCK 3 · cartão e lista contam pela MESMA função (contarPrioridade), sem outro COUNT de prioridade', substr_count($src = (string) file_get_contents($argv[1] ?? "$RAIZ/api/geral/GeralV2.php"), 'contarPrioridade(') === 4
     && preg_match('/SELECT COUNT\(\*\) \$from"\)/', $src) === 0);
