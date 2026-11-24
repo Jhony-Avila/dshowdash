@@ -243,6 +243,8 @@ try {
     $nos = array_column($d['nos'] ?? [], 'id');
     ok('fluxo financeiro sem detalhe: sem nós (nunca "nada entrou"), indisponivel itens_desconhecidos, prejuízo null', $rc2 === 0 && $nos === []
         && ($d['links'] ?? null) === [] && $d['prejuizo_total'] === null && $d['indisponivel'] === 'itens_desconhecidos', mb_substr($txt, 0, 200));
+    ok('DSHOW-115: endpoint sem base (itens desconhecidos) manda fluxo_indisponivel = true e fluxo_zerado = false explícitos', ($d['fluxo_indisponivel'] ?? null) === true
+        && ($d['fluxo_zerado'] ?? null) === false, json_encode([$d['fluxo_indisponivel'] ?? '(sem)', $d['fluxo_zerado'] ?? '(sem)']));
     [$rc2, $d, $txt] = $endpoint('AnalyticsController', 'abc', ['dimensao' => 'canais', 'metrica' => 'margem']);
     ok('/abc (canais, margem): indisponivel custo_desconhecido', $rc2 === 0 && $d['indisponivel'] === 'custo_desconhecido' && $d['itens'] === [], mb_substr($txt, 0, 200));
     ok('/abc indisponível: classes com itens, valor e participação = null (antes: 0 itens / R$ 0 — pedido da CIMA)', count($d['classes'] ?? []) === 3
@@ -520,6 +522,22 @@ try {
     $linF = static fn(string $canal, ?float $rec, ?float $frete = 10.0, ?float $custo = 40.0) => ['rotulo' => $canal, 'receita' => $rec, 'impostos' => $rec === null ? null : 5.0,
         'taxas' => $rec === null ? null : 2.0, 'comissao' => $rec === null ? null : 1.0, 'frete' => $frete, 'custo' => $custo,
         'lucro' => ($rec === null || $custo === null || $frete === null) ? null : $rec - 8.0 - $frete - $custo];
+    // Codex DSHOW-115 (decisivo): fluxo TODO ZERADO e conhecido × fluxo com dados DESCONHECIDOS → resultados distintos; zero nunca é "desconhecido"
+    $lin0 = ['rotulo' => 'Loja A', 'receita' => 0.0, 'impostos' => 0.0, 'taxas' => 0.0, 'comissao' => 0.0, 'frete' => 0.0, 'custo' => 0.0, 'lucro' => 0.0];
+    $linN = array_map(static fn($v) => is_string($v) ? $v : null, $lin0);
+    $fxZ = AnalyticsController::montarFluxo([$lin0]); $fxD = AnalyticsController::montarFluxo([$linN]);
+    ok('DSHOW-115: fluxo todo ZERADO e conhecido → fluxo_zerado, NÃO indisponível, nada desconhecido, zeros declarados em links_zero',
+        $fxZ['fluxo_zerado'] === true && $fxZ['fluxo_indisponivel'] === false && $fxZ['links_desconhecidos'] === [] && $fxZ['indisponivel'] === null
+        && in_array(['origem' => 'Loja A', 'destino' => 'Receita'], $fxZ['links_zero'], true), json_encode($fxZ));
+    ok('DSHOW-115: fluxo com dados DESCONHECIDOS → fluxo_indisponivel, não zerado, ligações listadas, nenhum zero', $fxD['fluxo_indisponivel'] === true
+        && $fxD['fluxo_zerado'] === false && $fxD['links_desconhecidos'] !== [] && $fxD['links_zero'] === [], json_encode($fxD));
+    ok('DSHOW-115: os dois têm `nos` vazio, mas os indicadores são DISTINTOS (a tela não precisa deduzir de nos.length)', $fxZ['nos'] === [] && $fxD['nos'] === []
+        && [$fxZ['fluxo_zerado'], $fxZ['fluxo_indisponivel']] !== [$fxD['fluxo_zerado'], $fxD['fluxo_indisponivel']]);
+    $fxV = AnalyticsController::montarFluxo([]);
+    ok('DSHOW-115: período sem vendas (nenhuma linha) = zerado conhecido, não indisponível', $fxV['fluxo_zerado'] === true && $fxV['fluxo_indisponivel'] === false, json_encode($fxV));
+    $fxP = AnalyticsController::montarFluxo([$linF('Loja A', 100.0), $linF('Loja B', null)]);
+    ok('DSHOW-115: parcial (desenha o conhecido e lista o desconhecido) = nem indisponível nem zerado', $fxP['fluxo_indisponivel'] === false && $fxP['fluxo_zerado'] === false
+        && $fxP['links'] !== [] && $fxP['links_desconhecidos'] !== [], json_encode([$fxP['fluxo_indisponivel'], $fxP['fluxo_zerado']]));
     $fx = AnalyticsController::montarFluxo([$linF('Loja A', 100.0), $linF('Loja B', 200.0)]);
     ok('fluxo: tudo conhecido → nenhuma ligação desconhecida, disponível, frete 20 desenhado', $fx['links_desconhecidos'] === [] && $fx['indisponivel'] === null
         && in_array(['origem' => 'Receita', 'destino' => 'Frete', 'valor' => 20.0], $fx['links'], true), json_encode($fx));

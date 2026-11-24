@@ -253,8 +253,8 @@ final class AnalyticsController
         $linhas = $p->rentabilidade('canal', $f);
         $ind = $p->rentabilidadeIndisponivel('canal', $f);
         if ($ind !== null) {   // "ausência ≠ zero": sem receita líquida conhecida não há fluxo (antes: nós vazios = "nada entrou")
-            ApiResponse::success(['nos' => [], 'links' => [], 'links_desconhecidos' => [], 'indisponivel' => $ind, 'prejuizo_total' => null,
-                'nota' => 'Impostos e taxas são estimativas.'], bling_meta(['filtros' => $f]));
+            ApiResponse::success(['nos' => [], 'links' => [], 'links_desconhecidos' => [], 'links_zero' => [], 'fluxo_indisponivel' => true, 'fluxo_zerado' => false,
+                'indisponivel' => $ind, 'prejuizo_total' => null, 'nota' => 'Impostos e taxas são estimativas.'], bling_meta(['filtros' => $f]));
             return;
         }
 
@@ -267,6 +267,9 @@ final class AnalyticsController
      * (ex.: um canal com desconto não lido saía da receita; frete desconhecido sumia como se fosse zero). Agora cada ligação desconhecida
      * vai para links_desconhecidos e o fluxo fica 'indisponivel' = 'valores_desconhecidos' (ou 'custo_desconhecido', que já existia).
      * Zero e negativo continuam sem ligação (o Sankey não desenha) — são valores CONHECIDOS; o prejuízo sai em prejuizo_total.
+     * Codex DSHOW-115 (pacote B): indicadores EXPLÍCITOS para a tela não deduzir "indisponível" de `nos` vazio (antes: fluxo todo ZERADO e conhecido
+     * aparecia "Fluxo indisponível"): fluxo_indisponivel (nada conhecido a desenhar porque há valor desconhecido), fluxo_zerado (tudo conhecido e
+     * nada se moveu), links_zero (ligações com ZERO conhecido — nunca em links_desconhecidos).
      * @param list<array<string,mixed>> $linhas
      * @return array{nos:list<array{id:string,nome:string}>, links:list<array>, links_desconhecidos:list<array{origem:string,destino:string}>, indisponivel:?string, prejuizo_total:?float}
      */
@@ -275,12 +278,17 @@ final class AnalyticsController
         $nos = [];
         $links = [];
         $desconhecidos = [];
-        $add = static function (string $de, string $para, ?float $valor) use (&$links, &$nos, &$desconhecidos): void {
+        $zeros = [];
+        $add = static function (string $de, string $para, ?float $valor) use (&$links, &$nos, &$desconhecidos, &$zeros): void {
             if ($valor === null) {   // desconhecido: registrado, nunca tratado como "nada passou por aqui"
                 $desconhecidos[] = ['origem' => $de, 'destino' => $para];
                 return;
             }
-            if ($valor <= 0) {
+            if ($valor == 0.0) {   // zero CONHECIDO: declarado à parte, nunca "desconhecido"
+                $zeros[] = ['origem' => $de, 'destino' => $para];
+                return;
+            }
+            if ($valor < 0) {
                 return;
             }
             $nos[$de] = true;
@@ -314,6 +322,9 @@ final class AnalyticsController
             'nos' => array_values(array_map(static fn($n) => ['id' => $n, 'nome' => $n], array_keys($nos))),
             'links' => array_values($links),
             'links_desconhecidos' => $desconhecidos,   // aditivo (24/11)
+            'links_zero' => $zeros,                                                  // aditivo (DSHOW-115)
+            'fluxo_indisponivel' => $links === [] && $desconhecidos !== [],           // aditivo (DSHOW-115): nada conhecido a desenhar por falta de dado
+            'fluxo_zerado' => $links === [] && $desconhecidos === [],                 // aditivo (DSHOW-115): tudo conhecido e zero — NÃO é indisponível
             'indisponivel' => $custo === null ? 'custo_desconhecido' : ($desconhecidos !== [] ? 'valores_desconhecidos' : null),
             'prejuizo_total' => $lucro === null ? null : ($lucro < 0 ? abs($lucro) : 0.0),
         ];
