@@ -554,7 +554,7 @@ export function opcaoWaterfall(
  */
 export function opcaoFaixas(
   t: ReturnType<typeof tokens>,
-  faixas: { rotulo: string; itens: number; valor: number; cor?: string }[],
+  faixas: { rotulo: string; itens: Talvez; valor: Talvez; cor?: string }[],
   metrica: 'itens' | 'valor' = 'valor',
 ): echarts.EChartsCoreOption {
   const cor = (c?: string) => ({
@@ -585,8 +585,9 @@ export function opcaoFaixas(
       itemStyle: { borderRadius: [0, 3, 3, 0] },
       label: { show: true, position: 'right', color: t.texto2, fontSize: 10,
         formatter: (p: any) => fmtValor(p.value, formato) },
+      // faixa desconhecida (consumo não lido): sem barra e rótulo "—" — nunca 0
       data: [...faixas].reverse().map(f => ({
-        value: metrica === 'valor' ? f.valor : f.itens,
+        value: (() => { const v = metrica === 'valor' ? f.valor : f.itens; return desconhecido(v) ? null : v; })(),
         itemStyle: { color: cor(f.cor) },
       })),
     }],

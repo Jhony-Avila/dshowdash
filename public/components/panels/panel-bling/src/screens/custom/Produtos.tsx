@@ -6,6 +6,7 @@ import {
   DataGrid, EstadoGrid, ColunaGrid, GradeKpis, Kpi, Secao, BarraFiltros,
   EstadoErro, BlocoCarregando, Badge, moeda, percentual, inteiro, numero,
   parseNum, Medidor, data as dataBr,
+  EstadoVazio,
 } from '@shared';
 import { api, RespostaRecurso } from '../../services/api';
 import { useCarga, useDebounce } from '../../app/estado';
@@ -16,6 +17,7 @@ import {
   opcaoDispersao, opcaoPrecoCusto,
 } from '../../viz/Echarts';
 import { useSelecao } from '../../app/selecao';
+import { numOuNulo, desconhecido, TEXTO_INDISPONIVEL, motivoIndisponivel, TOOLTIP_DESCONHECIDO } from '../../lib/ausencia';
 
 const GRID_INICIAL: EstadoGrid = { ordenar: '', direcao: 'desc', pagina: 1, limite: 50, busca: '' };
 
@@ -315,10 +317,11 @@ export function Estoque({ filtros, aoMudarFiltros, larguraPainel }: PropsTela) {
   const conta = (s: string) => porStatus.find(x => x.valor === s)?.quantidade ?? 0;
 
   const kpis: Kpi[] = [
-    k('fisico', 'Estoque físico', totais.fisico ?? 0, 'inteiro'),
-    k('disponivel', 'Disponível', totais.disponivel ?? 0, 'inteiro'),
-    k('reservado', 'Reservado', totais.reservado ?? 0, 'inteiro'),
-    k('valor', 'Valor em estoque', totais.valor ?? 0, 'moeda'),
+    // ausência ≠ zero (pacote B, Codex DSHOW-114): total desconhecido = "—"
+    k('fisico', 'Estoque físico', numOuNulo(totais.fisico), 'inteiro'),
+    k('disponivel', 'Disponível', numOuNulo(totais.disponivel), 'inteiro'),
+    k('reservado', 'Reservado', numOuNulo(totais.reservado), 'inteiro'),
+    k('valor', 'Valor em estoque', numOuNulo(totais.valor), 'moeda'),
     k('zerado', 'Produtos zerados', conta('zerado'), 'inteiro', conta('zerado') > 0 ? 'atencao' : 'ok'),
     k('negativo', 'Saldo negativo', conta('negativo'), 'inteiro', conta('negativo') > 0 ? 'critico' : 'ok'),
     k('critico', 'Estoque crítico', conta('critico'), 'inteiro', conta('critico') > 0 ? 'atencao' : 'ok'),
@@ -344,11 +347,14 @@ export function Estoque({ filtros, aoMudarFiltros, larguraPainel }: PropsTela) {
                       gap: 12 }}>
           <div className="bl-cartao" style={{ padding: '12px 14px', minWidth: 0 }}>
             <div className="bl-titulo-secao">Cobertura do estoque</div>
-            {analise.dados ? (
+            {analise.dados ? ((analise.dados.cobertura ?? []).every((f: any) => desconhecido(f.valor)) ? (
+              <EstadoVazio titulo="Cobertura indisponível"
+                descricao={analise.dados.indisponivel ? TEXTO_INDISPONIVEL[motivoIndisponivel(analise.dados.indisponivel) ?? 'itens_desconhecidos'] : 'O consumo dos produtos ainda não foi lido do Bling: a cobertura não é calculada (não é zero).'} />
+            ) : (
               <Grafico altura={210}
                 opcao={opcaoFaixas(t, analise.dados.cobertura, 'valor')}
                 descricao="Valor em estoque distribuído por faixa de cobertura, de ruptura a excesso." />
-            ) : <BlocoCarregando linhas={4} />}
+            )) : <BlocoCarregando linhas={4} />}
           </div>
           <div className="bl-cartao" style={{ padding: '12px 14px', minWidth: 0 }}>
             <div className="bl-titulo-secao">Aging — tempo sem movimentação</div>
@@ -394,7 +400,10 @@ export function Estoque({ filtros, aoMudarFiltros, larguraPainel }: PropsTela) {
       <Secao titulo="Matriz giro × margem"
         descricao="Cada ponto é um produto; o tamanho é o valor imobilizado. Clique num quadrante para isolá-lo.">
         <div className="bl-cartao" style={{ padding: '12px 14px', minWidth: 0 }}>
-          {matriz.dados ? (
+          {matriz.dados && (matriz.dados.indisponivel || desconhecido(matriz.dados.cortes?.margem_pct) || desconhecido(matriz.dados.cortes?.giro)) ? (
+            <EstadoVazio titulo="Matriz indisponível"
+              descricao={TEXTO_INDISPONIVEL[motivoIndisponivel(matriz.dados.indisponivel) ?? 'itens_desconhecidos']} />
+          ) : matriz.dados ? (
             <MatrizQuadrantes
               itens={itensMatriz}
               cortes={matriz.dados.cortes}
@@ -426,11 +435,12 @@ export function Estoque({ filtros, aoMudarFiltros, larguraPainel }: PropsTela) {
   );
 }
 
-function k(id: string, rotulo: string, valor: number, formato: string,
+function k(id: string, rotulo: string, valor: number | null, formato: string,
   semantica: 'ok' | 'atencao' | 'critico' = 'ok'): Kpi {
   return {
     id, rotulo, valor, formato: formato as any, variacao: null, tendencia: 'estavel',
-    sparkline: null, drilldown: null, semantica, tooltip: null,
+    sparkline: null, drilldown: null, semantica, tooltip: valor === null ? TOOLTIP_DESCONHECIDO : null,
+    rotuloNulo: valor === null ? '—' : undefined,
   };
 }
 
