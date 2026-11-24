@@ -5,7 +5,8 @@ const { chromium } = require('/srv/dshow-work/atributos-web-wt/node_modules/play
 const fs = require('fs'); const path = require('path'); const { execFileSync } = require('child_process');
 const RAIZ = '/srv/dshow-modularizacao/app/20261124-geral-v2-indicador';
 const CEN = process.env.CENARIO === '2' ? 'cenario-2-degradado' : 'cenario-1-normal';
-const R = path.join(RAIZ, 'respostas-2a035013', CEN);
+const RESP = process.env.RESP || 'respostas-2a035013';   // ex.: respostas-d007d2c1 (pedido sem canal = parcial)
+const R = path.join(RAIZ, RESP, CEN);
 const B = `http://127.0.0.1:${process.env.PORTA || 8112}`; const W = Number(process.env.W || 2200), H = Number(process.env.H || 1470);
 const CAP = process.env.CAP || `capturas-indicador-${CEN}-${W}`; fs.mkdirSync(CAP, { recursive: true });
 let ok = 0, falhas = 0; const afirma = (n, c, x = '') => { if (c) { ok++; console.log('ok    ' + n); } else { falhas++; console.log('FALHA ' + n + (x ? ' · ' + String(x).slice(0, 300) : '')); } };
@@ -113,5 +114,5 @@ function rotear(ctx, troca = {}) {
       afirma('Pipedrive sem conta: prioridades "Aguardando conexão", nunca "Sem pendências"', /Aguardando conexão/.test(t) && !/Sem pendências/.test(t), t.slice(0, 200)); await ctx.close(); }
   }
 
-  console.log(`GERAL V2 × SERVIÇO 2a035013 (${CEN}, ${W}x${H}): ${ok} ok, ${falhas} falhas`); await b.close(); process.exit(falhas ? 1 : 0);
+  console.log(`GERAL V2 × SERVIÇO ${RESP.replace('respostas-', '')} (${CEN}, ${W}x${H}): ${ok} ok, ${falhas} falhas`); await b.close(); process.exit(falhas ? 1 : 0);
 })().catch((e) => { console.error('ERRO', e.message, (e.stack || '').split('\n')[1]); process.exit(2); });
