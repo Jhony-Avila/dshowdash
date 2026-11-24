@@ -230,6 +230,11 @@ try {
     $sync2->sincronizar($conta, 'pedidos', 'incremental', 'b1');
     ok('listagem depois da migração: NÃO carimba (sem coleção completa) → continua desconhecido', v($pdo, "SELECT itens_lidos_em FROM bling_sales_orders WHERE bling_id = '900001'") === null
         && $pedidoApi('900001')['subtotal'] === null);
+    $VENDAS = [pedido(3, true)];                                              // listagem COM lista de itens (estado "preservar")
+    $sync2->sincronizar($conta, 'pedidos', 'incremental', 'b1b');
+    ok('listagem COM lista de itens também NÃO carimba (pode ser parcial; só o detalhe prova coleção completa)', v($pdo, "SELECT itens_lidos_em FROM bling_sales_orders WHERE bling_id = '900003'") === null
+        && $pedidoApi('900003')['subtotal'] === null && $pedidoApi('900003')['itens_conhecidos'] === false);
+    $sync2->gravarPedidoDetalhe($conta, pedido(3, true));                     // o detalhe dele chega depois (os agregados abaixo pedem todos lidos)
     $sync2->gravarPedidoDetalhe($conta, pedido(1, true));
     $p1 = $pedidoApi('900001');
     ok('DETALHE completo carimba: itens, subtotal e qtd viram conhecidos', v($pdo, "SELECT itens_lidos_em FROM bling_sales_orders WHERE bling_id = '900001'") !== null
@@ -243,7 +248,7 @@ try {
     $p1b = $pedidoApi('900001');
     ok('listagem depois do detalhe: o carimbo e os itens ficam (a listagem não "desconhece" o que o detalhe provou)', $p1b['itens_conhecidos'] === true && $p1b['qtd_itens'] === 2);
     $k = $real()->kpis($F);
-    ok('KPI produtos vendidos: todos os pedidos com itens lidos → número (2 + 0 unidades... = 3)', $kpi($k, 'produtos_vendidos')['valor'] === 3.0, json_encode($kpi($k, 'produtos_vendidos')['valor']));
+    ok('KPI produtos vendidos: todos os pedidos com itens lidos → número (3 + 0 + 3 = 6)', $kpi($k, 'produtos_vendidos')['valor'] === 6.0, json_encode($kpi($k, 'produtos_vendidos')['valor']));
     ok('KPI margem: continua null (custo nunca conhecido nos pedidos do Bling)', $kpi($k, 'margem_estimada')['valor'] === null);
     $cp = $real()->curvaAbc('produtos', 'faturamento', $F);
     ok('curva por produto com todos os itens lidos → disponível', !isset($cp['indisponivel']) && $cp['total'] > 0 && $cp['itens'] !== [], json_encode($cp));
