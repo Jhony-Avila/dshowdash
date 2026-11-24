@@ -113,7 +113,10 @@ final class SessaoRegistro
         try {
             $st = self::pdo()->prepare('UPDATE app_user_sessions SET is_active = 0, logout_at = NOW(3), logout_reason = ? WHERE session_token = ? AND user_id = ? AND is_active = 1');
             $st->execute([substr($motivo, 0, 50), $token, $userId]);
-            return true;
+            // Codex DSHOW-113 (4): "encerrado" só com prova de que NÃO sobrou registro ativo com este id (o UPDATE sem erro não basta)
+            $v = self::pdo()->prepare('SELECT COUNT(*) FROM app_user_sessions WHERE session_token = ? AND is_active = 1');
+            $v->execute([$token]);
+            return (int) $v->fetchColumn() === 0;
         } catch (\Throwable $e) {
             error_log('[SessaoRegistro] encerramento falhou: ' . get_class($e));
             return false;

@@ -62,4 +62,15 @@ for (const arq of ['public/components/header/components/user-menu/api/fetch.js',
   const s = readFileSync(path.join(RAIZ, arq), 'utf8');
   afirma(`${arq.split('/').slice(-3).join('/')}: usa o cliente único (encerrarSessao)`, s.includes('encerrarSessao(') && s.includes('/core/auth/logout-client.js') && !/fetch\(['"]\/api\/auth\/logout\.php/.test(s.replace(/logout-client/g, '')));
 }
+// Codex DSHOW-113 (3): o session-manager (o .js servido e o .ts) só limpa a identidade e anuncia LOGOUT_SUCCESS DEPOIS de r.ok;
+// com a consulta indisponível (check ≠ 2xx/401) ele NÃO limpa store, tokens nem cookie.
+for (const arq of ['public/components/session-manager/core/auth.js', 'public/components/session-manager/core/auth.ts']) {
+  const s = readFileSync(path.join(RAIZ, arq), 'utf8'); const nome = arq.split('/').slice(-2).join('/');
+  const corpo = (fn) => { const i = s.indexOf(`function ${fn}(`); const j = s.indexOf('\nfunction ', i + 10); return s.slice(i, j > i ? j : undefined); };
+  const lo = corpo('logout'), iFalha = lo.search(/if \(!r \|\| !r\.ok\) return \{ ok: false/), iLimpa = lo.indexOf('sessionStore.clear()'), iAnuncia = lo.indexOf('LOGOUT_SUCCESS');
+  afirma(`${nome}: logout limpa e anuncia só DEPOIS da confirmação (r.ok)`, iFalha > 0 && iLimpa > iFalha && iAnuncia > iLimpa, `${iFalha}/${iLimpa}/${iAnuncia}`);
+  const ck = corpo('checkSession'); const a = ck.indexOf('if (!result.ok) {'), b = ck.indexOf('return { ok: false, error: result.error }', a);
+  const ramo = a > 0 && b > a ? ck.slice(a, b) : null;   // do teste de erro até o return do ramo de erro
+  afirma(`${nome}: check indisponível não limpa identidade, tokens nem cookie`, ramo !== null && !/sessionStore\.clear|TokenManager\.clearAll|clearInvalidSessionCookie/.test(ramo), ramo ? ramo.replace(/\s+/g, ' ').slice(0, 160) : 'sem o ramo de erro');
+}
 console.log(`LOGOUT CLIENTE: ${ok} ok, ${falhas} falhas`); process.exit(falhas ? 1 : 0);

@@ -5,6 +5,7 @@
 //  6 logout-falha-csrf (servidor; a falha de REDE é do cliente: teste-logout-cliente.mjs)   7 duas-abas   8 logout-concorrente-refresh
 //  9 duas-renovacoes   10 falha-persistencia   11 recuperacao-encerrada   12 proxy-fotos-revogada
 //  13 check-banco-fora (P2-1: check.php com o banco fora = 503, nunca "não autenticado")
+//  14 logout-banco-fora (Codex DSHOW-113 P1-C: logout com o banco fora NÃO conclui; de volta, revoga de verdade, inclusive na 2ª aba)
 //  regressões: login, revogar-tudo, sessao-antiga-sem-registro
 // Banco: SÓ a conexão de validação (ATRWEB_VAL_*), com TABELAS TEMPORÁRIAS app_users/app_user_sessions (somem ao fim do processo).
 // Sessões PHP: rode por rodar-teste-sessao.sh (pasta de sessões isolada por unshare -m). Uso: php teste-sessao-renovacao.php <raiz> <caso>
@@ -193,6 +194,31 @@ case 'sessao-antiga-sem-registro': {
     $t0 = session_id();
     $afirma('sessão antiga sem registro: o gate nega e encerra (exige novo login)', $valida() === null && empty($_SESSION['user_id']));
     $afirma('nenhum registro foi criado por isso', $linha($t0) === null && $ativas() === 0);
+    break; }
+case 'logout-banco-fora': {   // Codex DSHOW-113 (P1-C): contraprova obrigatória, lado do servidor
+    $t0 = $entrar(); $fora = function () { SessaoRegistro::definirConexao(function () { throw new RuntimeException('banco fora (sintético)'); }); };
+    $fora();
+    $r = (new AuthService($pdo))->logout($U, $t0, '127.0.0.1');
+    $afirma('banco fora: o logout NÃO conclui (LOGOUT_NOT_PERSISTED, 503)', $r['success'] === false && $r['error'] === 'LOGOUT_NOT_PERSISTED' && $r['code'] === 503, json_encode($r));
+    $afirma('…nada foi destruído pela metade: sessão do PHP intacta e registro ainda ativo', ($_SESSION['user_id'] ?? 0) == $U && ($linha($t0)['is_active'] ?? 0) == 1);
+    SessaoRegistro::definirConexao(fn () => $pdo);
+    $afirma('banco de volta: a sessão continua válida (o "Sair" anterior não foi dado como feito)', ($valida()['user_id'] ?? 0) == $U);
+    $r = (new AuthService($pdo))->logout($U, $t0, '127.0.0.1');
+    $afirma('logout de novo com o banco de volta → sucesso e registro INATIVO (logout)', $r['success'] === true && ($linha($t0)['is_active'] ?? 1) == 0 && ($linha($t0)['logout_reason'] ?? '') === 'logout', json_encode($r));
+    $chegaCom($t0);   // segunda aba: o MESMO cookie, outra requisição
+    $afirma('segunda aba com o cookie antigo: o gate nega, a leitura só-leitura dá vazio e o proxy das fotos recusa', $valida() === null && SessionGate::readOnly($t0) === [] && $proxy() !== 'aceita', $proxy());
+    // destroy() com o banco fora (sessão expirada, por exemplo): o registro não encerra → NÃO pode ficar backup que a reviva depois
+    (function () { self::$_initialized = false; })->bindTo(null, SessionGate::class)(); $_SESSION = []; session_id('');
+    $t1 = $entrar(); session_write_close(); $chegaCom($t1);   // requisição seguinte: o arquivo da sessão já está gravado no disco (como em produção)
+    $fora(); SessionGate::destroy(); SessaoRegistro::definirConexao(fn () => $pdo); $novaRequisicao();
+    $afirma('destroy() com o banco fora: o registro continua ativo (não deu para gravar)…', ($linha($t1)['is_active'] ?? 0) == 1);
+    $afirma('…mas não fica backup: com o banco de volta a sessão NÃO revive pela recuperação', SessionRecovery::attemptRecovery($t1) === null && SessionGate::readOnly($t1) === []);
+    // encerrar() só confirma com prova de que não sobrou registro ativo
+    $t2 = $linha($t1)['session_token'];
+    $afirma('encerrar() com o banco ok: confirma e não sobra ativo', SessaoRegistro::encerrar($t2, $U, 'teste') === true && ($linha($t2)['is_active'] ?? 1) == 0);
+    $pdo->prepare('INSERT INTO app_user_sessions (user_id, session_token, is_active, expires_at) VALUES (?, ?, 1, NOW() + INTERVAL 1 DAY)')->execute([$U + 1, 'sintetico-outro-titular-' . bin2hex(random_bytes(4))]);
+    $t3 = (string) $pdo->query("SELECT session_token FROM app_user_sessions WHERE user_id = " . ($U + 1))->fetchColumn();
+    $afirma('encerrar() pelo titular ERRADO não afeta a linha e devolve false (sobrou ativo)', SessaoRegistro::encerrar($t3, $U, 'teste') === false && ($linha($t3)['is_active'] ?? 0) == 1);
     break; }
 case 'check-banco-fora': {   // P2-1 (revisão da ACIMA_DIREITA, 24/11): check.php com a consulta do registro falhando → 503, nunca "não autenticado"
     $t0 = $entrar();

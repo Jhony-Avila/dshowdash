@@ -372,12 +372,15 @@ class SessionGate {
         $sessionId = session_id();
         
         // DSHOW-110: sessão encerrada no servidor = registro inativo também (a recuperação do backup não a revive: readOnly confere o registro)
+        $registroEncerrado = true;
         if ($userId && !empty($sessionId)) {
-            SessaoRegistro::encerrar($sessionId, (int) $userId, 'sessao_encerrada');
+            $registroEncerrado = SessaoRegistro::encerrar($sessionId, (int) $userId, 'sessao_encerrada');
         }
         
-        // Criar backup antes de destruir (para recovery se necessário)
-        if (self::ENABLE_AUTO_RECOVERY && !empty($sessionId)) {
+        // Criar backup antes de destruir (para recovery se necessário).
+        // Codex DSHOW-113: se o registro NÃO pôde ser encerrado (banco fora), não deixa backup — com o banco de volta o registro ainda
+        // ativo + o backup reviveriam pela recuperação uma sessão que o servidor já destruiu.
+        if (self::ENABLE_AUTO_RECOVERY && !empty($sessionId) && $registroEncerrado) {
             SessionRecovery::createBackup($sessionId);
         }
         
