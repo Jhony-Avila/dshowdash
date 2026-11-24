@@ -93,9 +93,9 @@ final class ResourceController
 
         $totais = [];
         foreach ($totalizar as $campo) {
-            $totais[$campo] = round(array_sum(array_map(
-                static fn($l) => (float) ($l[$campo] ?? 0), $linhas
-            )), 2);
+            // "ausência ≠ zero": uma linha com o campo null (desconhecido) torna o total desconhecido — nunca soma parcial
+            $s = BlingProviderBase::somaConhecida($linhas, $campo);
+            $totais[$campo] = $s === null ? null : round($s, 2);
         }
 
         $total = count($linhas);
@@ -150,9 +150,9 @@ final class ResourceController
         // Totais sobre o conjunto FILTRADO inteiro, não sobre o recorte exportado.
         $totais = [];
         foreach (($dados['totalizar'] ?? []) as $campo) {
-            $totais[$campo] = round(array_sum(array_map(
-                static fn($l) => (float) ($l[$campo] ?? 0), $linhas
-            )), 2);
+            // "ausência ≠ zero": uma linha com o campo null (desconhecido) torna o total desconhecido — nunca soma parcial
+            $s = BlingProviderBase::somaConhecida($linhas, $campo);
+            $totais[$campo] = $s === null ? null : round($s, 2);
         }
 
         $total = count($linhas);

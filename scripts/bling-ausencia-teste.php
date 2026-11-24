@@ -89,7 +89,7 @@ if (!preg_match('#^/srv/dshow-work/bling-ausencia-teste\.[A-Za-z0-9]{6}$#', $TMP
 file_put_contents("$TMP/endpoint.php", <<<'PHP'
 <?php
 declare(strict_types=1);
-[$_, $raiz, $classe, $metodo, $getJson] = $argv;
+[$_, $raiz, $classe, $metodo, $getJson] = $argv; $arg = $argv[5] ?? null;
 define('BLING_ENTRADA', true);
 $_SERVER['REQUEST_METHOD'] = 'GET';
 // sem o _init.php inteiro: ele carrega CORS e autenticação (UARPSGate exige config/ local do Dash, que este servidor não tem e não precisa
@@ -117,15 +117,49 @@ unset($cli);
 $r = new ReflectionProperty(BlingProvider::class, 'instancia');
 $r->setValue(null, getenv('PROVEDOR') === 'mock' ? new BlingMockProvider() : new BlingReal(new BlingRepository($pdo)));
 $_GET = json_decode($getJson, true);
-[$classe, $metodo]();
+$arg === null ? [$classe, $metodo]() : [$classe, $metodo]($arg);
 PHP);
-$endpoint = static function (string $classe, string $metodo, array $get = [], string $provedor = 'real') use ($raiz, $TMP, $cnf, $db): array {
+$endpoint = static function (string $classe, string $metodo, array $get = [], string $provedor = 'real', ?string $arg = null) use ($raiz, $TMP, $cnf, $db): array {
     $cmd = 'PROVEDOR=' . escapeshellarg($provedor) . ' BLING_TESTE_CNF=' . escapeshellarg($cnf) . ' BLING_TESTE_DB=' . escapeshellarg($db) . ' '
          . escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg("$TMP/endpoint.php") . ' ' . escapeshellarg($raiz) . ' ' . escapeshellarg($classe) . ' '
-         . escapeshellarg($metodo) . ' ' . escapeshellarg(json_encode($get + ['periodo' => '30d'])) . ' 2>&1';
+         . escapeshellarg($metodo) . ' ' . escapeshellarg(json_encode($get + ['periodo' => '30d'])) . ($arg === null ? '' : ' ' . escapeshellarg($arg)) . ' 2>/dev/null';
     $out = []; exec($cmd, $out, $rc);
     $txt = implode("\n", $out); $j = json_decode((string) substr($txt, (int) strpos($txt, '{"ok"')), true);
     return [$rc, is_array($j) ? ($j['data'] ?? null) : null, $txt];
+};
+
+// MODO EXEMPLOS (opcional, para a CIMA): BLING_AUSENCIA_EXEMPLOS=<pasta existente> grava as respostas CRUAS dos endpoints (envelope {ok,data,meta})
+// nos dois estados. Só escreve dentro dessa pasta (conferida); dados 100 % sintéticos.
+$EXDIR = (string) getenv('BLING_AUSENCIA_EXEMPLOS');
+if ($EXDIR !== '' && (!is_dir($EXDIR) || realpath($EXDIR) !== rtrim($EXDIR, '/') || !preg_match('#^/srv/dshow-modularizacao/app/[^.]+/exemplos-api$#', $EXDIR))) {
+    fwrite(STDERR, "[ERRO] BLING_AUSENCIA_EXEMPLOS precisa ser uma pasta …/exemplos-api existente em /srv/dshow-modularizacao/app — ABORTADO\n"); exit(2);
+}
+$exemplos = static function (string $estado) use ($EXDIR, $raiz, $TMP, $cnf, $db): void {
+    if ($EXDIR === '') { return; }
+    $chamadas = [
+        'overview'           => ['OverviewController', 'overview', [], null],
+        'evolucao'           => ['OverviewController', 'evolucao', [], null],
+        'pedidos-venda'      => ['ResourceController', 'listar', [], 'sales-orders'],
+        'vendas-dia-canal'   => ['ResourceController', 'listar', [], 'sales'],
+        'canais'             => ['ResourceController', 'listar', [], 'channels'],
+        'vendedores'         => ['ResourceController', 'listar', [], 'sellers'],
+        'pedidos-compra'     => ['ResourceController', 'listar', [], 'purchase-orders'],
+        'recebimentos'       => ['ResourceController', 'listar', [], 'receipts'],
+        'abc-canais-margem'  => ['AnalyticsController', 'abc', ['dimensao' => 'canais', 'metrica' => 'margem'], null],
+        'abc-produtos-fat'   => ['AnalyticsController', 'abc', ['dimensao' => 'produtos', 'metrica' => 'faturamento'], null],
+        'rentabilidade-canal'=> ['AnalyticsController', 'rentabilidade', ['dimensao' => 'canal'], null],
+        'fluxo-financeiro'   => ['AnalyticsController', 'fluxoFinanceiro', [], null],
+        'margem-volume-canal'=> ['HistoryController', 'margemVolume', ['dimensao' => 'canal'], null],
+    ];
+    foreach ($chamadas as $nome => [$c, $m, $g, $a]) {
+        $cmd = 'PROVEDOR=real BLING_TESTE_CNF=' . escapeshellarg($cnf) . ' BLING_TESTE_DB=' . escapeshellarg($db) . ' ' . escapeshellarg(PHP_BINARY) . ' '
+             . escapeshellarg("$TMP/endpoint.php") . ' ' . escapeshellarg($raiz) . ' ' . escapeshellarg($c) . ' ' . escapeshellarg($m) . ' '
+             . escapeshellarg(json_encode($g + ['periodo' => '30d'])) . ($a === null ? '' : ' ' . escapeshellarg($a)) . ' 2>/dev/null';
+        $out = []; exec($cmd, $out);
+        $j = json_decode(implode("\n", $out), true);
+        if (is_array($j)) { unset($j['meta']['correlation_id'], $j['meta']['gerado_em']); }   // estáveis entre execuções
+        file_put_contents("$EXDIR/$estado--$nome.json", json_encode($j, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
+    }
 };
 
 try {
@@ -209,6 +243,9 @@ try {
     if (!class_exists('ResourceController')) { require_once $raiz . '/api/bling/controllers/ResourceController.php'; }
     $lp = array_values(array_filter($res('pedidosVenda')['linhas'], static fn($l) => (string) $l['bling_id'] === '900001'))[0];
     ok('tabela de pedidos: Itens e Subtotal = null + itens_conhecidos false', $lp['itens'] === null && $lp['subtotal'] === null && $lp['itens_conhecidos'] === false, json_encode($lp));
+    [$rcT, $dT, $txtT] = $endpoint('ResourceController', 'listar', [], 'real', 'sales-orders');
+    ok('/sales-orders totais: Subtotal e Itens = null (uma linha desconhecida = total desconhecido); Total número', $rcT === 0 && array_key_exists('subtotal', $dT['totais'] ?? [])
+        && $dT['totais']['subtotal'] === null && $dT['totais']['itens'] === null && is_numeric($dT['totais']['total']), json_encode($dT['totais'] ?? $txtT));
     $lv = $res('vendas')['linhas'][0];
     ok('vendas por dia × canal: custo, unidades e margem = null; receita número', $lv['custo'] === null && $lv['unidades'] === null && $lv['margem_pct'] === null && $lv['receita'] > 0, json_encode($lv));
     $lc = array_values(array_filter($res('canais')['linhas'], static fn($l) => $l['pedidos'] > 0))[0] ?? null;
@@ -219,6 +256,7 @@ try {
     $lr = $res('recebimentos')['linhas'][0] ?? null;
     ok('recebimento: conferência "desconhecida" (antes: 0 ≥ 0 = "Completa")', $lr !== null && $lr['conferencia'] === 'desconhecida' && $lr['situacao_info']['chave'] === 'desconhecida', json_encode($lr));
 
+    $exemplos('1-producao-hoje-itens-desconhecidos');
     echo "== 3. com a migração 20261124 (coluna NOVA, só ADD): a listagem continua desconhecida; o DETALHE carimba\n";
     $sqlMig = (string) file_get_contents($raiz . '/scripts/deploy/bling-migracao-20261124-itens-lidos.sql');
     $sqlMig = str_replace('BLING.', '', preg_replace('/^--.*$/m', '', $sqlMig));
@@ -254,6 +292,7 @@ try {
     ok('curva por produto com todos os itens lidos → disponível', !isset($cp['indisponivel']) && $cp['total'] > 0 && $cp['itens'] !== [], json_encode($cp));
     ok('curva por produto, margem → custo_desconhecido', $real()->curvaAbc('produtos', 'margem', $F)['indisponivel'] === 'custo_desconhecido');
 
+    $exemplos('2-com-migracao-e-detalhe-itens-conhecidos-custo-desconhecido');
     echo "== 3b. hash: detalhe idêntico gravado ANTES da coluna ganha o carimbo depois (sem regravação em massa da listagem)\n";
     $pdo->exec('ALTER TABLE bling_sales_orders DROP COLUMN itens_lidos_em');
     $repo3 = new BlingRepository($pdo); $sync3 = new BlingSyncService($repo3, new BlingAuthService($repo3, $api));
