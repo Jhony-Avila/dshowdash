@@ -37,6 +37,8 @@ class SessionGate {
     private static bool $_initialized = false;
     private static array $_readOnlyCache = [];
     private static ?string $_requestId = null;
+    // P2-1 (revisão da ACIMA_DIREITA, 24/11): situação do registro na última validate() desta requisição (null = não chegou a consultar)
+    private static ?string $_ultimaSituacaoRegistro = null;
     
     // Storage abstraction
     private static ?FileSessionStorage $_storage = null;
@@ -172,12 +174,22 @@ class SessionGate {
         self::$_initialized = true;
     }
     
+    /**
+     * P2-1: situação do registro (SessaoRegistro::OK|AUSENTE|...|FALHA) vista pela última validate() desta requisição; null se ela não consultou
+     * (sem user_id, expirada, impressão digital). Quem responde ao cliente usa para distinguir "sem sessão" de "não deu para conferir" (FALHA).
+     */
+    public static function ultimaSituacaoRegistro(): ?string {
+        return self::$_ultimaSituacaoRegistro;
+    }
+    
     public static function validate(): ?array {
         self::start();
         
         if (self::$_sessionCache !== null) {
             return self::$_sessionCache;
         }
+        
+        self::$_ultimaSituacaoRegistro = null;
         
         if (empty($_SESSION['user_id'])) {
             return null;
@@ -221,6 +233,7 @@ class SessionGate {
         // DSHOW-110: sessão do PHP válida + registro existente, ativo, do mesmo titular, com o mesmo id e dentro da validade.
         // Falha de consulta NÃO autoriza (nega sem destruir); sem registro, revogada, expirada ou de outro titular → encerra (novo login).
         $situacao = SessaoRegistro::situacao(session_id(), (int) $_SESSION['user_id']);
+        self::$_ultimaSituacaoRegistro = $situacao;
         if ($situacao !== SessaoRegistro::OK) {
             self::logSecurity('SessionGate', 'session_registro_' . $situacao, [
                 'user_id' => $_SESSION['user_id'] ?? null,

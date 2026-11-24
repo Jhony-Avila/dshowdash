@@ -38,6 +38,11 @@ p = cenario((u) => u.includes('check') ? resp(200, { ok: true, data: { authentic
 r = await encerrarSessao();
 afirma('já sem sessão no servidor (outra aba saiu) → ok:true sem POST', r.ok === true && r.motivo === 'sem-sessao' && !p.some((x) => x.metodo === 'POST'));
 
+// P2-1 (24/11): banco fora → o check.php responde 503 SESSION_CHECK_UNAVAILABLE; o logout NÃO pode virar "sem-sessao" (sucesso)
+p = cenario((u) => u.includes('check') ? resp(503, { ok: false, data: null, error: 'SESSION_CHECK_UNAVAILABLE' }) : resp(403, { ok: false, error: 'INVALID_CSRF_TOKEN' }));
+r = await encerrarSessao();
+afirma('check 503 (banco fora) → segue para o POST sem CSRF → 403 → ok:false ("Erro ao sair")', r.ok === false && r.motivo === 'csrf' && p.some((x) => x.metodo === 'POST' && !x.csrf), JSON.stringify(r));
+
 p = cenario(async (u) => { await new Promise((s) => setTimeout(s, 30)); return u.includes('check') ? resp(200, CHECK_AUT) : resp(200, {}); });
 const [a, b] = await Promise.all([encerrarSessao(), encerrarSessao()]);
 afirma('dois cliques: UMA chamada ao servidor, o mesmo resultado', a === b && p.filter((x) => x.metodo === 'POST').length === 1);

@@ -12,7 +12,7 @@ L=$(mktemp /tmp/teste-sessao-log-XXXXXX); case "$L" in /tmp/teste-sessao-log-???
 CFG=${ATRWEB_CONFIG:-/srv/dshow-modularizacao/atributos-web/validacao/config}; [ -f "$CFG/uarps.php" ] || { echo "recusado: $CFG sem uarps.php"; exit 2; }
 [ -e "$RAIZ/config" ] || mkdir "$RAIZ/config"
 falhou=0
-for caso in renovacao-automatica renovacao-explicita revogacao-apos-renovacao revogacao-sem-renovacao logout-confirmado logout-falha-csrf duas-abas logout-concorrente-refresh duas-renovacoes falha-persistencia recuperacao-encerrada proxy-fotos-revogada login revogar-tudo sessao-antiga-sem-registro; do
+for caso in renovacao-automatica renovacao-explicita revogacao-apos-renovacao revogacao-sem-renovacao logout-confirmado logout-falha-csrf duas-abas logout-concorrente-refresh duas-renovacoes falha-persistencia check-banco-fora recuperacao-encerrada proxy-fotos-revogada login revogar-tudo sessao-antiga-sem-registro; do
   unshare -m --propagation private bash -c "mount --bind '$S' /var/lib/php/sessions && mount --bind '$CFG' '$RAIZ/config' && exec env ATRWEB_CRED='$ATRWEB_CRED' php -d error_log='$L' -d log_errors=1 -d display_errors=stderr '$D/teste-sessao-renovacao.php' '$RAIZ' '$caso'" || falhou=1
 done
 echo "sessões temporárias: $S · log do PHP: $L (mova para /backup se quiser guardar)"

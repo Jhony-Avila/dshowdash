@@ -4,6 +4,7 @@
 //  1 renovacao-automatica   2 renovacao-explicita   3 revogacao-apos-renovacao   4 revogacao-sem-renovacao   5 logout-confirmado
 //  6 logout-falha-csrf (servidor; a falha de REDE é do cliente: teste-logout-cliente.mjs)   7 duas-abas   8 logout-concorrente-refresh
 //  9 duas-renovacoes   10 falha-persistencia   11 recuperacao-encerrada   12 proxy-fotos-revogada
+//  13 check-banco-fora (P2-1: check.php com o banco fora = 503, nunca "não autenticado")
 //  regressões: login, revogar-tudo, sessao-antiga-sem-registro
 // Banco: SÓ a conexão de validação (ATRWEB_VAL_*), com TABELAS TEMPORÁRIAS app_users/app_user_sessions (somem ao fim do processo).
 // Sessões PHP: rode por rodar-teste-sessao.sh (pasta de sessões isolada por unshare -m). Uso: php teste-sessao-renovacao.php <raiz> <caso>
@@ -192,6 +193,37 @@ case 'sessao-antiga-sem-registro': {
     $t0 = session_id();
     $afirma('sessão antiga sem registro: o gate nega e encerra (exige novo login)', $valida() === null && empty($_SESSION['user_id']));
     $afirma('nenhum registro foi criado por isso', $linha($t0) === null && $ativas() === 0);
+    break; }
+case 'check-banco-fora': {   // P2-1 (revisão da ACIMA_DIREITA, 24/11): check.php com a consulta do registro falhando → 503, nunca "não autenticado"
+    $t0 = $entrar();
+    SessaoRegistro::definirConexao(function () { throw new RuntimeException('banco fora (sintético)'); });
+    $afirma('banco fora: validate nega e a última situação é FALHA', $valida() === null && SessionGate::ultimaSituacaoRegistro() === SessaoRegistro::FALHA);
+    SessaoRegistro::definirConexao(fn () => $pdo);
+    $afirma('banco de volta: validate OK e a última situação é OK', ($valida()['user_id'] ?? 0) == $U && SessionGate::ultimaSituacaoRegistro() === SessaoRegistro::OK);
+    session_write_close();
+    // o check.php DE VERDADE num processo filho (mesma pasta de sessões isolada); o prefixo injeta a conexão do registro antes do check.php rodar
+    $chama = function (string $modo) use ($RAIZ, $t0): array {
+        $pre = tempnam(sys_get_temp_dir(), 'check-pre-'); $tabela = "CREATE TEMPORARY TABLE app_user_sessions (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, user_id INT UNSIGNED NOT NULL, session_token VARCHAR(255) NOT NULL, is_active TINYINT(1) DEFAULT 1, expires_at DATETIME(3) NOT NULL)";
+        file_put_contents($pre, '<?php $_SERVER["REQUEST_METHOD"]="GET"; $_SERVER["HTTP_USER_AGENT"]="teste-sessao/1.0"; $_SERVER["REMOTE_ADDR"]="127.0.0.1"; $_SERVER["HTTP_HOST"]="validacao.local";'
+            . ' ini_set("session.use_cookies","0"); ini_set("session.use_only_cookies","0"); ini_set("session.cache_limiter","");'
+            . ' $_COOKIE["DSHOWSESS"]=' . var_export($t0, true) . '; session_id(' . var_export($t0, true) . ');'
+            . ' require_once ' . var_export("$RAIZ/config/db_connection.php", true) . '; require_once ' . var_export("$RAIZ/api/core/SessionGate.php", true) . ';'
+            . ($modo === 'falha'
+                ? ' SessaoRegistro::definirConexao(function () { throw new RuntimeException("banco fora (sintético)"); });'
+                : ' $p = getConnection("DSHOWDASH"); if (!str_starts_with((string) $p->query("SELECT DATABASE()")->fetchColumn(), "ATRWEB_VAL_")) exit(9); $p->exec(' . var_export($tabela, true) . '); SessaoRegistro::definirConexao(fn () => $p);')
+            . ' register_shutdown_function(function () { echo "\nHTTP=" . (http_response_code() ?: 200) . "\n"; });');
+        $pr = proc_open([PHP_BINARY, '-d', 'auto_prepend_file=' . $pre, '-d', 'display_errors=stderr', "$RAIZ/api/auth/check.php"], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $io);
+        $out = stream_get_contents($io[1]); $err = stream_get_contents($io[2]); proc_close($pr); unlink($pre);
+        preg_match('/HTTP=(\d+)/', $out, $m); $j = json_decode(trim(preg_replace('/HTTP=\d+/', '', $out)), true);
+        return [(int) ($m[1] ?? 0), is_array($j) ? $j : [], $err];
+    };
+    [$st, $j, $err] = $chama('falha');
+    $afirma('check.php com o banco fora → 503 SESSION_CHECK_UNAVAILABLE (não "authenticated:false")', $st === 503 && ($j['error'] ?? '') === 'SESSION_CHECK_UNAVAILABLE' && !isset($j['data']['authenticated']), "HTTP $st · " . json_encode($j) . ' · ' . substr($err, 0, 300));
+    $chegaCom($t0);
+    $afirma('…e a sessão continua no servidor (com o banco de volta, ela vale)', ($valida()['user_id'] ?? 0) == $U);
+    session_write_close();
+    [$st, $j, $err] = $chama('vazio');   // contraprova: SEM registro (AUSENTE) continua sendo "não autenticado" com 200
+    $afirma('contraprova: sem registro (ausente) → 200 authenticated:false, como antes', $st === 200 && ($j['data']['authenticated'] ?? null) === false, "HTTP $st · " . json_encode($j) . ' · ' . substr($err, 0, 300));
     break; }
 default: fwrite(STDERR, "caso desconhecido: $CASO\n"); exit(2);
 }
