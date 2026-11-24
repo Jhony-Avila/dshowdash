@@ -8,9 +8,9 @@ declare(strict_types=1);
  *    transação, troca a geração ativa junto com saldo, estatísticas e horário. O resumo lê só a geração ATIVA: uma rodada interrompida nunca
  *    aparece misturada; o último retrato completo continua na tela até o novo ciclo terminar. Sucesso só é marcado no fim.
  *    Nada é apagado: linha que não veio na rodada fica `presente = 0` na sua geração (UPDATE), nunca DELETE.
- *  - B2 IDENTIDADE: antes de gravar qualquer coisa, a rodada confere /myAccount/commercialInfo → sha256(cpfCnpj) = identidade presa ao rótulo.
+ *  - B2 IDENTIDADE: antes de gravar qualquer coisa, a rodada confere /myAccount/commercialInfo → HMAC-SHA256(segredo, cpfCnpj) = identidade presa ao rótulo (DSHOW-112 C).
  *    Divergência → erro `conta_divergente`, nada gravado.
- *  - B3 CENTAVOS: todo valor vira centavos INTEIROS a partir da representação decimal exata (sem conta em ponto flutuante); o banco recebe
+ *  - B3 CENTAVOS: todo valor vira centavos INTEIROS a partir do TEXTO decimal exato (DSHOW-112 B: o JSON nunca vira float; > 2 casas = recusado); o banco recebe
  *    o decimal montado desses centavos.
  *  - Várias contas: toda tabela tem `conta`; cobrança = uma linha por (conta, geração, payment_id).
  *  - Prefixo de tabela só para os testes (tabelas próprias no banco de validação); em produção é ''.
@@ -56,21 +56,17 @@ final class AsaasEsquema
 final class AsaasValor
 {
     /**
-     * Número do JSON → centavos. int → ×100. float → a representação decimal MAIS CURTA que volta ao mesmo float (serialize_precision −1),
-     * que para valores monetários é exatamente o literal enviado pelo Asaas; daí em diante só aritmética de inteiros sobre os dígitos.
-     * Mais de 2 casas: arredonda meio para longe do zero, nos dígitos. String numérica também é aceita. Outro tipo → null.
+     * Codex DSHOW-112 B: TEXTO decimal → centavos INTEIROS, sem nenhum arredondamento. O conector entrega cada número do JSON como o
+     * literal exato enviado pelo Asaas (AsaasJson); do banco vem o DECIMAL(15,2) em texto. Aceita até 2 casas; MAIS de 2 casas
+     * (ex.: 19.999), notação científica, float, booleano ou qualquer outro tipo → null (o chamador recusa a resposta: resposta_invalida).
+     * int (só de código interno) → ×100.
      */
     public static function centavosDe(mixed $v): ?int
     {
         if (is_int($v)) return $v * 100;
-        if (is_float($v)) {
-            if (!is_finite($v)) return null;
-            $s = var_export($v, true);
-        } elseif (is_string($v)) { $s = trim($v); } else { return null; }
-        if (preg_match('/^(-?)(\d{1,13})(?:\.(\d+))?$/', $s, $m) !== 1) return null;   // sem notação científica
-        $frac = $m[3] ?? '';
-        $c = (int) $m[2] * 100 + (int) str_pad(substr($frac, 0, 2), 2, '0');
-        if (strlen($frac) > 2 && (int) $frac[2] >= 5) $c++;
+        if (!is_string($v)) return null;                                         // float NUNCA: já perdeu o literal
+        if (preg_match('/^(-?)(\d{1,13})(?:\.(\d{1,2}))?$/', $v, $m) !== 1) return null;
+        $c = (int) $m[2] * 100 + (int) str_pad($m[3] ?? '', 2, '0');
         return $m[1] === '-' ? -$c : $c;
     }
 
@@ -167,8 +163,9 @@ final class AsaasRepositorio
 
     public function gravarEstatistica(string $conta, int $ger, string $chave, array $d, string $agora): void
     {
-        $q = $d['quantity'] ?? null; $v = AsaasValor::dinheiro($d['value'] ?? null);
-        if (!is_int($q) || $q < 0 || $v === null) throw new AsaasErro('resposta_invalida', 200);
+        $q = $d['quantity'] ?? null; $v = AsaasValor::dinheiro($d['value'] ?? null);   // números chegam como texto (AsaasJson)
+        $q = is_string($q) && preg_match('/^(0|[1-9][0-9]{0,8})$/', $q) === 1 ? (int) $q : (is_int($q) && $q >= 0 ? $q : null);
+        if ($q === null || $v === null) throw new AsaasErro('resposta_invalida', 200);
         $this->q("INSERT INTO `{p}asaas_estatisticas` (`conta`,`geracao`,`chave`,`quantidade`,`valor`,`valor_liquido`,`consultado_em`) VALUES (?,?,?,?,?,?,?)
                   ON DUPLICATE KEY UPDATE `quantidade`=VALUES(`quantidade`),`valor`=VALUES(`valor`),`valor_liquido`=VALUES(`valor_liquido`),`consultado_em`=VALUES(`consultado_em`)",
                  [$conta, $ger, $chave, $q, $v, AsaasValor::dinheiro($d['netValue'] ?? null), $agora]);
@@ -226,7 +223,7 @@ final class AsaasSincronizador
             $identidade = $k['identidade']; unset($k);
             $cli = ($this->cliente)($conta);
             // B2: a conta da chave tem de ser a mesma presa ao rótulo — ANTES de gravar qualquer dado
-            if (!hash_equals($identidade, AsaasChaves::identidade($cli->get('conta')))) throw new AsaasErro('conta_divergente');
+            if (!hash_equals($identidade, $this->chaves->identidadeDe($cli->get('conta')))) throw new AsaasErro('conta_divergente');
             $saldo = AsaasValor::dinheiro(($cli->get('saldo'))['balance'] ?? null);
             if ($saldo === null) throw new AsaasErro('resposta_invalida', 200);
 
@@ -276,21 +273,37 @@ final class AsaasResumo
     public const LIMITE_ATRASO_MIN = 180;
     private const RECEBIDO = ['RECEIVED', 'CONFIRMED', 'RECEIVED_IN_CASH'];
 
-    public function __construct(private readonly PDO $pdo, private readonly string $p = '', private readonly DateTimeZone $fuso = new DateTimeZone('America/Sao_Paulo'))
+    /** @param ?Closure(string):void $aposPonteiro SÓ para teste: chamado depois de ler o ponteiro da geração de cada conta */
+    public function __construct(private readonly PDO $pdo, private readonly string $p = '', private readonly DateTimeZone $fuso = new DateTimeZone('America/Sao_Paulo'),
+                                private readonly ?Closure $aposPonteiro = null)
     {
         AsaasEsquema::prefixo($p);
     }
 
+    /**
+     * Codex DSHOW-112 A: o painel lê ponteiro da geração, saldo, cobranças e estatísticas de TODAS as contas sob UM MESMO retrato do banco
+     * (transação REPEATABLE READ, READ ONLY, WITH CONSISTENT SNAPSHOT). Uma geração publicada — ou reaproveitada — no meio da leitura não
+     * entra: a resposta é inteira do retrato do início. Conexão já dentro de transação → recusa (não dá para garantir o retrato).
+     */
     public function montar(array $rotulos, DateTimeImmutable $agora): array
     {
+        if ($this->pdo->inTransaction()) throw new LogicException('AsaasResumo precisa de uma conexão fora de transação');
         $agora = $agora->setTimezone($this->fuso);
-        $contas = []; $todas = $rotulos !== [];
-        $tot = ['saldo' => 0, 'a_receber' => 0, 'vencido' => 0, 'recebido_mes' => 0];   // centavos
-        foreach ($rotulos as $r) {
-            $c = $this->conta($r, $agora);
-            $contas[] = $c;
-            if ($c['disponivel'] !== true) { $todas = false; continue; }
-            foreach ($tot as $k => $v) $tot[$k] = $v + AsaasValor::centavos($c['valores'][$k]);
+        $this->pdo->exec('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+        $this->pdo->exec('START TRANSACTION READ ONLY, WITH CONSISTENT SNAPSHOT');
+        try {
+            $contas = []; $todas = $rotulos !== [];
+            $tot = ['saldo' => 0, 'a_receber' => 0, 'vencido' => 0, 'recebido_mes' => 0];   // centavos
+            foreach ($rotulos as $r) {
+                $c = $this->conta($r, $agora);
+                $contas[] = $c;
+                if ($c['disponivel'] !== true) { $todas = false; continue; }
+                foreach ($tot as $k => $v) $tot[$k] = $v + AsaasValor::centavos($c['valores'][$k]);
+            }
+            $this->pdo->exec('COMMIT');
+        } catch (Throwable $e) {
+            try { $this->pdo->exec('ROLLBACK'); } catch (Throwable) {}
+            throw $e;
         }
         return ['contas' => $contas, 'total' => $todas ? array_map([AsaasValor::class, 'deCentavos'], $tot) : null,
                 'total_parcial' => !$todas && $rotulos !== [], 'moeda' => 'BRL', 'gerado_em' => $agora->format(DATE_ATOM)];
@@ -301,7 +314,9 @@ final class AsaasResumo
         $st = $this->pdo->prepare("SELECT `nome`,`estado`,`erro_codigo`,`geracao_ativa`,`ultima_sync_ok`,`saldo` FROM `{$this->p}asaas_contas` WHERE `conta`=?");
         $st->execute([$r]);
         $c = $st->fetch(PDO::FETCH_ASSOC) ?: null;
-        $base = ['conta' => $r, 'nome' => $c['nome'] ?? null, 'disponivel' => false, 'valores' => null, 'atualizado_em' => null, 'aviso' => null, 'motivo' => null];
+        $st->closeCursor();
+        if ($this->aposPonteiro !== null) ($this->aposPonteiro)($r);
+        $base =['conta' => $r, 'nome' => $c['nome'] ?? null, 'disponivel' => false, 'valores' => null, 'atualizado_em' => null, 'aviso' => null, 'motivo' => null];
         if ($c !== null && $c['estado'] === 'divergente') return ['motivo' => 'conta_divergente'] + $base;   // B2: nunca mostra números de conta trocada
         if ($c === null || $c['ultima_sync_ok'] === null || $c['geracao_ativa'] === null) {
             return ['motivo' => $c !== null && $c['estado'] === 'erro' ? 'erro:' . $c['erro_codigo'] : 'nunca_sincronizada'] + $base;

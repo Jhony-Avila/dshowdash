@@ -47,11 +47,12 @@ $sonos = [];
 // ================= A. lista fixa de rotas e parâmetros =================
 check('5 rotas permitidas (as 4 de dados + identidade da conta)', array_keys(AsaasRotas::ROTAS) === ['cobrancas', 'estatisticas_cobrancas', 'extrato', 'saldo', 'conta']);
 // B3 (Codex DSHOW-111): centavos INTEIROS, conversão decimal exata
-foreach ([[1000.5, 100050], [199.99, 19999], [0.1, 10], [12345678.9, 1234567890], [2500.0, 250000], [7, 700], ['0.105', 11], ['-3.10', -310], ['19.999', 2000], [1.0E-7, null], ['1e3', null], [true, null], [NAN, null]] as [$e, $c]) {
-    check('centavos exatos: ' . var_export($e, true) . ' → ' . var_export($c, true), AsaasValor::centavosDe($e) === $c, var_export(AsaasValor::centavosDe($e), true));
+foreach ([['1000.5', 100050], ['199.99', 19999], ['0.1', 10], ['12345678.9', 1234567890], ['2500.0', 250000], [7, 700], ['-3.10', -310], ['19.99', 1999],
+          ['9999999999999.99', 999999999999999], ['19.999', null], ['0.105', null], ['10.500', null], [19.99, null], [1000.5, null], ['1e3', null], ['1.0E-7', null], [true, null], [NAN, null]] as [$e, $c]) {
+    check('B: centavos exatos sem arredondar: ' . var_export($e, true) . ' → ' . var_export($c, true), AsaasValor::centavosDe($e) === $c);
 }
-check('soma de 0.1 três vezes em centavos = 0.30 exato', AsaasValor::deCentavos(AsaasValor::centavosDe(0.1) * 3) === '0.30');
-check('dinheiro() devolve o decimal montado dos centavos', AsaasValor::dinheiro(1000.5) === '1000.50' && AsaasValor::dinheiro(0.07) === '0.07');
+check('soma de 0.1 três vezes em centavos = 0.30 exato', AsaasValor::deCentavos(AsaasValor::centavosDe('0.1') * 3) === '0.30');
+check('dinheiro() devolve o decimal montado dos centavos', AsaasValor::dinheiro('1000.5') === '1000.50' && AsaasValor::dinheiro('0.07') === '0.07' && AsaasValor::dinheiro(1000.5) === null);
 check('url cobranças', AsaasRotas::url($BASE, 'cobrancas', ['limit' => 100, 'offset' => 0]) === "$BASE/payments?limit=100&offset=0");
 check('url estatísticas', AsaasRotas::url($BASE, 'estatisticas_cobrancas', ['status' => 'PENDING']) === "$BASE/finance/payment/statistics?status=PENDING");
 check('url extrato', str_starts_with(AsaasRotas::url($BASE, 'extrato', ['startDate' => '2026-10-01', 'finishDate' => '2026-11-01']), "$BASE/financialTransactions?"));
@@ -84,12 +85,12 @@ check('transporte real recusa base parecida', erroDe(fn() => (new AsaasTransport
 $fx = new AsaasFalso(); $cli = new AsaasCliente($fx, $CH_A, $BASE, $semSono);
 $fx->fila = [['status' => 429, 'cabecalhos' => ['ratelimit-reset' => '7'], 'corpo' => ''], json200(['balance' => 10])];
 $sonos = []; $d = $cli->get('saldo');
-check('429 respeita RateLimit-Reset (7 s) e repete', $sonos === [7] && $d['balance'] === 10 && count($fx->chamadas) === 2);
+check('429 respeita RateLimit-Reset (7 s) e repete', $sonos === [7] && $d['balance'] === '10' && count($fx->chamadas) === 2);
 $fx->fila = array_fill(0, 4, ['status' => 429, 'cabecalhos' => ['retry-after' => '999'], 'corpo' => '']); $sonos = [];
 check('429 x4 → limite (3 esperas, teto 60 s)', erroDe(fn() => $cli->get('saldo')) === 'limite' && $sonos === [60, 60, 60]);
 check('espera sem cabeçalho: recuo 5·n', AsaasCliente::espera([], 2) === 10 && AsaasCliente::espera(['retry-after' => 'abc'], 1) === 5);
 $fx->fila = [['status' => 500, 'cabecalhos' => [], 'corpo' => ''], ['status' => 0, 'cabecalhos' => [], 'corpo' => ''], json200(['balance' => 1])];
-check('5xx/rede: 2 novas tentativas', ($cli->get('saldo'))['balance'] === 1);
+check('5xx/rede: 2 novas tentativas', ($cli->get('saldo'))['balance'] === '1');
 $fx->fila = array_fill(0, 3, ['status' => 502, 'cabecalhos' => [], 'corpo' => '']);
 check('5xx x3 → indisponivel', erroDe(fn() => $cli->get('saldo')) === 'indisponivel');
 $n0 = count($fx->chamadas); $fx->fila = [['status' => 401, 'cabecalhos' => [], 'corpo' => '']];
@@ -105,6 +106,15 @@ try { $cli2 = new AsaasCliente($fx, $CH_A, $BASE, $semSono); $fx->fila = [['stat
 catch (AsaasErro $e) { $dump .= $e->getMessage() . $e->getTraceAsString(); }
 check('chave não aparece em print_r/debug/mensagem/rastro', !str_contains($dump, 'ChaveInventadaContaA'));
 
+// ================= B (Codex DSHOW-112): número do JSON nunca passa por float =================
+check('B: AsaasJson preserva o literal', AsaasJson::decodificar('{"a":19.999,"b":-0.10,"c":[1,2.50],"d":"7.5","e":true,"f":null,"g":"x\\"1.5"}')
+    === ['a' => '19.999', 'b' => '-0.10', 'c' => ['1', '2.50'], 'd' => '7.5', 'e' => true, 'f' => null, 'g' => 'x"1.5']);
+check('B: AsaasJson recusa JSON quebrado', AsaasJson::decodificar('{"a":1') === null && AsaasJson::decodificar('{"a":"x}') === null && AsaasJson::decodificar('{"a":01}') === null);
+$fx->fila = [['status' => 200, 'cabecalhos' => [], 'corpo' => '{"balance":19.999,"x":12345678901234.56}']];
+$d = $cli->get('saldo');
+check('B DECISIVO: 19.999 chega como "19.999" e é RECUSADO (nunca 20.00)', $d['balance'] === '19.999' && AsaasValor::dinheiro($d['balance']) === null);
+check('B: valor grande chega intacto como texto', $d['x'] === '12345678901234.56');
+
 // ================= D. chaves por arquivo =================
 $TMP = sys_get_temp_dir() . '/asaas-conector.' . bin2hex(random_bytes(4));
 if (!preg_match('#/asaas-conector\.[0-9a-f]{8}$#', $TMP) || !mkdir($TMP, 0700)) { echo "temporário falhou\n"; exit(2); }
@@ -112,14 +122,21 @@ file_put_contents("$TMP/conta-a.key", $CH_A . "\n"); file_put_contents("$TMP/con
 file_put_contents("$TMP/sandbox.key", $CH_S . "\n"); file_put_contents("$TMP/quebrada.key", "nao-e-chave\n");
 file_put_contents("$TMP/Maiuscula.key", $CH_A); symlink("$TMP/conta-a.key", "$TMP/link.key");
 $DOC = ['conta-a' => '11111111000111', 'conta-b' => '22222222000122', 'conta-c' => '33333333000133', 'conta-m' => '44444444000144', 'sandbox' => '55555555000155'];
-$prende = static function (string $r) use ($TMP, $DOC): void { file_put_contents("$TMP/$r.id", hash('sha256', $DOC[$r]) . "\n"); };
+$SEG = bin2hex(random_bytes(32));   // segredo INVENTADO deste teste (Codex DSHOW-112 C)
+$hm = static fn(string $doc): string => hash_hmac('sha256', $doc, $SEG);
+$prende = static function (string $r) use ($TMP, $DOC, $hm): void { file_put_contents("$TMP/$r.id", $hm($DOC[$r]) . "\n"); };
+check('C: sem o segredo da identidade → sem_identidade (antes de qualquer rede)', (function () use ($TMP, $CH_A, $prende) {
+    file_put_contents("$TMP/conta-a.key", $CH_A . "\n"); $prende('conta-a'); return erroDe(fn() => (new AsaasChaves($TMP))->ler('conta-a')) === 'sem_identidade'; })());
+file_put_contents("$TMP/" . AsaasChaves::SEGREDO, $SEG . "\n");
 foreach (['conta-a', 'conta-b', 'sandbox'] as $r) $prende($r);
 file_put_contents("$TMP/sem-id.key", '$aact_prod_000ChaveInventadaSemIdentidade::$aach_x' . "\n");
 $info = static fn(string $r) => fn() => json200(['companyName' => "Empresa $r", 'cpfCnpj' => $DOC[$r]]);
 $ks = new AsaasChaves($TMP);
 check('rótulos: só nomes válidos e sem link', $ks->rotulos() === ['conta-a', 'conta-b', 'quebrada', 'sandbox', 'sem-id']);
 check('B2: chave sem identidade presa → sem_identidade', erroDe(fn() => $ks->ler('sem-id')) === 'sem_identidade');
-check('B2: identidade lida é o sha256 do documento', $ks->ler('conta-a')['identidade'] === hash('sha256', '11111111000111') && AsaasChaves::identidade(['cpfCnpj' => '11.111.111/0001-11']) === hash('sha256', '11111111000111'));
+check('C: identidade = HMAC-SHA256(segredo, dígitos do documento), nunca o sha256 simples', $ks->ler('conta-a')['identidade'] === $hm('11111111000111')
+    && $ks->identidadeDe(['cpfCnpj' => '11.111.111/0001-11']) === $hm('11111111000111') && $hm('11111111000111') !== hash('sha256', '11111111000111'));
+check('C: documento ausente/numérico/curto → resposta_invalida', erroDe(fn() => $ks->identidadeDe([])) === 'resposta_invalida' && erroDe(fn() => $ks->identidadeDe(['cpfCnpj' => '123'])) === 'resposta_invalida');
 check('chave lida e ambiente produção', $ks->ler('conta-a')['ambiente'] === 'producao' && $ks->ler('conta-a')['base'] === $BASE);
 check('chave hmlg → sandbox', $ks->ler('sandbox')['base'] === AsaasRotas::BASES['sandbox']);
 check('conteúdo inválido → chave_invalida', erroDe(fn() => $ks->ler('quebrada')) === 'chave_invalida');
@@ -189,7 +206,7 @@ $limparBanco = function () use (&$pdo, $P): void {
 };
 register_shutdown_function(function () use ($limparBanco, $TMP): void {
     $limparBanco();
-    if (preg_match('#/asaas-conector\.[0-9a-f]{8}$#', $TMP) && is_dir($TMP)) { foreach (array_merge(glob("$TMP/*.key"), glob("$TMP/*.id")) as $f) unlink($f); rmdir($TMP); }
+    if (preg_match('#/asaas-conector\.[0-9a-f]{8}$#', $TMP) && is_dir($TMP)) { foreach (array_merge(glob("$TMP/*.key"), glob("$TMP/*.id"), glob("$TMP/" . AsaasChaves::SEGREDO)) as $f) unlink($f); rmdir($TMP); }
 });
 
 if ($pdo !== null) {
@@ -304,7 +321,7 @@ if ($pdo !== null) {
     check('retrato novo correto (a receber 2490.00, recebido 1200.50)', $r5['valores']['a_receber'] === '2490.00' && $r5['valores']['recebido_mes'] === '1200.50', json_encode($r5['valores']));
     // B2 (Codex DSHOW-111) no conector: rótulo preso a OUTRA empresa → não sincroniza, nada gravado, painel sem números
     $antesC = (int) $n("SELECT COUNT(*) FROM `{$P}asaas_cobrancas` WHERE conta='conta-c'");
-    file_put_contents("$TMP/conta-c.id", hash('sha256', $DOC['conta-a']) . "\n");   // chave de C num rótulo preso à empresa A
+    file_put_contents("$TMP/conta-c.id", $hm($DOC['conta-a']) . "\n");   // chave de C num rótulo preso à empresa A
     $resC = $sync->sincronizar('conta-c', $agora->modify('+6 hours'));
     check('TROCA CRUZADA no conector: conta_divergente', $resC['erro'] === 'conta_divergente', json_encode($resC));
     check('troca cruzada: nenhuma cobrança nova gravada', (int) $n("SELECT COUNT(*) FROM `{$P}asaas_cobrancas` WHERE conta='conta-c'") === $antesC);
@@ -321,6 +338,47 @@ if ($pdo !== null) {
     check('hasMore sem itens → erro (sem laço infinito)', $syncM->sincronizar('conta-m', $agora)['erro'] === 'resposta_invalida');
     $apiM->rotas = ['/myAccount/commercialInfo' => $info('conta-m'), '/finance/balance' => fn() => json200(['balance' => 1]), '/payments' => fn($p, $q) => json200(['hasMore' => true, 'data' => [$cob('pay_x' . $q['offset'], 'PENDING', '1', '2026-11-01')]])];
     check('volume inesperado (200 páginas) → erro', $syncM->sincronizar('conta-m', $agora)['erro'] === 'volume_inesperado');
+
+    // ===== A (Codex DSHOW-112) TESTE DECISIVO: leitura pausada no meio; outra conexão publica uma geração e REAPROVEITA a anterior =====
+    $ini2 = parse_ini_file('/srv/dshow-modularizacao/atributos-web/validacao/credenciais/atrweb_val.ini', true, INI_SCANNER_RAW)['client'] ?? [];
+    $pdo2 = new PDO($dsn, $ini2['user'] ?? '', $ini2['password'] ?? '', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]); unset($ini2);
+    check('A: 2ª conexão também no banco de validação', $pdo2->query('SELECT DATABASE()')->fetchColumn() === 'ATRWEB_VAL_T_13');
+    $tA = $agora->modify('+6 hours 30 minutes');
+    $antes = array_column((new AsaasResumo($pdo, $P))->montar(['conta-a'], $tA)['contas'], null, 'conta')['conta-a'];
+    $gerAntes = (int) $n("SELECT geracao_ativa FROM `{$P}asaas_contas` WHERE conta='conta-a'");
+    $sync2 = new AsaasSincronizador(new AsaasRepositorio($pdo2, $P), $ks,
+        function (string $r) use ($apis, $ks, $semSono): AsaasCliente { $k = $ks->ler($r); return new AsaasCliente($apis[$r], $k['chave'], $k['base'], $semSono); }, fn(int $ms) => null);
+    $publicadas = [];
+    $pausa = function (string $r) use (&$publicadas, $sync2, $agora, &$estado, $apiA, $cob): void {
+        if ($publicadas !== []) return;                                            // só na 1ª conta lida
+        $estado['A']['nov'][] = $cob('pay_novo1', 'PENDING', '1000.00', '2026-11-21'); $estado['A']['nov'][] = $cob('pay_novo2', 'PENDING', '1000.00', '2026-11-22');
+        $apiA->rotas['/finance/payment/statistics'] = fn($p, $q) => json200($q['status'] === 'PENDING' ? ['quantity' => 251, 'value' => 4490.0] : ['quantity' => 1, 'value' => 300.0]);
+        $apiA->rotas['/finance/balance'] = fn() => json200(['balance' => 55555.55]);
+        $publicadas[] = $sync2->sincronizar('conta-a', $agora->modify('+6 hours 10 minutes'));   // publica a geração inativa
+        $publicadas[] = $sync2->sincronizar('conta-a', $agora->modify('+6 hours 20 minutes'));   // REAPROVEITA a geração que o painel está lendo
+    };
+    $durante = array_column((new AsaasResumo($pdo, $P, new DateTimeZone('America/Sao_Paulo'), $pausa))->montar(['conta-a'], $tA)['contas'], null, 'conta')['conta-a'];
+    check('A: durante a pausa, duas gerações publicadas (a 2ª reaproveita a que estava sendo lida)', count($publicadas) === 2 && $publicadas[0]['resultado'] === 'ok' && $publicadas[1]['resultado'] === 'ok'
+        && $publicadas[1]['geracao'] === $gerAntes && $publicadas[0]['geracao'] === 1 - $gerAntes, json_encode($publicadas));
+    check('A DECISIVO: a resposta pausada é INTEIRA do retrato do início (saldo, cobranças, estatísticas e horário coerentes)', $durante['valores'] === $antes['valores']
+        && $durante['atualizado_em'] === $antes['atualizado_em'] && $durante['aviso'] === $antes['aviso'], json_encode([$durante['valores'], $antes['valores']]));
+    $depois = array_column((new AsaasResumo($pdo, $P))->montar(['conta-a'], $tA)['contas'], null, 'conta')['conta-a'];
+    check('A: a leitura seguinte já vê o retrato novo inteiro (saldo 55555.55, a receber 4490.00, sem divergência)', $depois['valores']['saldo'] === '55555.55'
+        && $depois['valores']['a_receber'] === '4490.00' && $depois['aviso'] === null, json_encode([$depois['valores'], $depois['aviso']]));
+    check('A: conexão já em transação → recusa (sem retrato garantido)', (function () use ($pdo, $P, $tA) { $pdo->beginTransaction();
+        try { (new AsaasResumo($pdo, $P))->montar(['conta-a'], $tA); return false; } catch (LogicException) { return true; } finally { $pdo->rollBack(); } })());
+
+    // ===== B (Codex DSHOW-112) ponta a ponta: saldo 19.999 do Asaas → rodada recusada, painel intacto (nunca 20.00) =====
+    $apiA->rotas['/finance/balance'] = fn() => ['status' => 200, 'cabecalhos' => [], 'corpo' => '{"balance":19.999}'];
+    $rB = $sync->sincronizar('conta-a', $agora->modify('+6 hours 40 minutes'));
+    $posB = array_column((new AsaasResumo($pdo, $P))->montar(['conta-a'], $agora->modify('+6 hours 41 minutes'))['contas'], null, 'conta')['conta-a'];
+    check('B DECISIVO: saldo com 3 casas → resposta_invalida; nada de 20.00 no banco nem no painel', $rB['erro'] === 'resposta_invalida' && $posB['valores']['saldo'] === '55555.55'
+        && (int) $n("SELECT COUNT(*) FROM `{$P}asaas_contas` WHERE saldo=20.00") === 0, json_encode([$rB, $posB['valores']['saldo']]));
+    $apiA->rotas['/finance/balance'] = fn() => json200(['balance' => 55555.55]);
+    $estado['A']['nov'][] = ['object' => 'payment', 'id' => 'pay_tres_casas', 'dateCreated' => '2026-11-22', 'value' => 19.999, 'status' => 'PENDING', 'deleted' => false];
+    $rB2 = $sync->sincronizar('conta-a', $agora->modify('+6 hours 50 minutes'));
+    check('B: cobrança com 3 casas → rodada recusada, nenhuma linha dela gravada', $rB2['erro'] === 'resposta_invalida'
+        && (int) $n("SELECT COUNT(*) FROM `{$P}asaas_cobrancas` WHERE payment_id='pay_tres_casas'") === 0);
 }
 
 // ================= H. CONFERÊNCIA (portão de ativação): os 11 rótulos, total e detalhe por empresa =================

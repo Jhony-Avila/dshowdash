@@ -15,7 +15,11 @@
 #
 # A chave começa com `$`: ela NUNCA passa por argumento de comando, eval, log, histórico ou saída. Fica só numa variável do próprio
 # script (nunca exportada), vai ao curl pela entrada padrão (`curl --config -`, escrita com o builtin printf → não aparece em `ps`),
-# e ao arquivo pelo builtin printf. `set -x` é desligado à força. A resposta do Asaas fica num arquivo 0600 temporário removido ao sair.
+# e ao arquivo pelo builtin printf. `set -x` é desligado à força.
+# Codex DSHOW-112 C: a resposta do Asaas (com o CPF/CNPJ) NUNCA vai para arquivo: sai do curl pela saída padrão direto para um python em
+# memória, que devolve só o código HTTP, o nome da conta e a identidade DERIVADA = HMAC-SHA256(segredo, dígitos do cpfCnpj).
+# Segredo: <pasta das chaves>/.identidade.hmac — 32 bytes aleatórios (secrets.token_hex), gerado UMA vez por este script, 0600, dono do
+# php-fpm, dentro da pasta 0700 sem ACL; nunca exibido; o conector lê o mesmo arquivo. Substituído só à mão (invalida todas as .id).
 #
 # Uso:  sudo bash asaas-chaves.sh                 # simulação: mostra caminhos, dono, rótulos já guardados (só nomes)
 #       sudo bash asaas-chaves.sh --executar      # pede rótulo + chave, confere, grava
@@ -28,6 +32,7 @@ set -euo pipefail
 set +x
 umask 077
 unset HISTFILE 2>/dev/null || true
+unset CH CH2 NOME IDENT RESP 2>/dev/null || true   # nada herdado do ambiente de quem roda (nunca exportadas aqui)
 RE_CHAVE='^\$aact_[A-Za-z0-9_$:=+/.-]{20,400}$'
 
 DASH_CONFIG="/srv/dshow-shared/dash/config"; DASH_USER=""; EXEC=0; LISTAR=0; SANDBOX=0
@@ -40,7 +45,7 @@ TESTE="${ASAAS_CHAVES_TESTE:-0}"
 while [ $# -gt 0 ]; do case "$1" in
   --dash-config) DASH_CONFIG="${2:?}"; shift 2;; --dash-user) DASH_USER="${2:?}"; shift 2;;
   --executar) EXEC=1; shift;; --dry-run) EXEC=0; shift;; --listar) LISTAR=1; shift;; --sandbox) SANDBOX=1; shift;;
-  -h|--help) sed -n '2,27p' "$0"; exit 0;;
+  -h|--help) sed -n '2,30p' "$0"; exit 0;;
   *) case "$1" in *aact*|\$*) echo "[ERRO] parece uma CHAVE na linha de comando — recusada e não exibida. Ela pode ter ficado no histórico do shell: apague-o (history -d) e, por segurança, gere outra chave no Asaas.";;
        *) echo "[ERRO] argumento desconhecido (não exibido). Opções: --executar --listar --sandbox --dash-config --dash-user";; esac; exit 2;; esac; done
 
@@ -84,11 +89,8 @@ if [ "$EXEC" = 0 ]; then
 fi
 if [ "$TESTE" != 1 ]; then [ -t 0 ] || { echo "[ERRO] rode num terminal interativo (a chave é digitada com read -s)"; exit 2; }; fi
 
-# ---- temporário próprio (resposta do Asaas), removido ao sair ----
-TMPD="$(mktemp -d "${TMPDIR:-/tmp}/asaas-chaves.XXXXXX")" || { echo "[ERRO] mktemp falhou"; exit 2; }
-case "$TMPD" in */asaas-chaves.??????) ;; *) echo "[ERRO] temporário inesperado"; exit 2;; esac
-[ -d "$TMPD" ] || { echo "[ERRO] temporário não criado"; exit 2; }
-limpar() { unset CH CH2 2>/dev/null || true; if [ -n "${TMPD:-}" ] && [ -d "$TMPD" ]; then case "$TMPD" in */asaas-chaves.??????) rm -f -- "$TMPD"/resp "$TMPD"/nome; rmdir -- "$TMPD";; esac; fi; }
+# ---- nenhum temporário: a resposta do Asaas só existe na memória do python da conferência ----
+limpar() { unset CH CH2 NOME IDENT RESP 2>/dev/null || true; }
 trap limpar EXIT; trap 'echo; echo "[ERRO] interrompido — o que já tinha [OK] ficou gravado; o resto não"; exit 130' INT TERM
 
 # ---- pasta das chaves: 0700, dono do php-fpm, SEM ACL (a config tem ACL de leitura para agentes) ----
@@ -98,6 +100,18 @@ fi
 command -v setfacl >/dev/null 2>&1 && setfacl -b "$DIR" 2>/dev/null || true
 [ "$(stat -c '%U %a' "$DIR")" = "$DASH_USER 700" ] || { echo "[ERRO] $DIR precisa ser $DASH_USER 0700 (está $(stat -c '%U %a' "$DIR"))"; exit 1; }
 
+# ---- segredo da identidade (HMAC): criado UMA vez; existente é só conferido (nunca lido para a tela, nunca regravado) ----
+SEG="$DIR/.identidade.hmac"
+if [ -e "$SEG" ] || [ -L "$SEG" ]; then
+  { [ ! -L "$SEG" ] && [ -f "$SEG" ] && [ "$(stat -c '%U %a' "$SEG")" = "$DASH_USER 600" ] && grep -qxE '[0-9a-f]{64}' "$SEG"; } \
+    || { echo "[ERRO] segredo da identidade fora do padrão ($SEG: precisa ser arquivo comum, $DASH_USER 0600, 64 hexadecimais) — nada foi gravado"; exit 1; }
+else
+  NSEG="$(mktemp "$DIR/.novo.XXXXXX")"
+  python3 -I -c 'import secrets,sys; f=open(sys.argv[1],"w"); f.write(secrets.token_hex(32)+"\n"); f.close()' "$NSEG"
+  chown "$DASH_USER:$DASH_USER" "$NSEG"; chmod 0600 "$NSEG"; mv -- "$NSEG" "$SEG"; unset NSEG
+  echo "[OK]   segredo da identidade criado: $SEG (0600, $DASH_USER) — valor NÃO exibido"
+fi
+
 TS="$(date +%Y%m%d-%H%M%S)"; BK="$BK_BASE/${TS}-asaas-chaves"; BK_CRIADO=0
 preparar_backup() {
   [ "$BK_CRIADO" = 1 ] && return 0
@@ -106,12 +120,28 @@ preparar_backup() {
   chmod 0700 "$BK/revert-all.sh"; BK_CRIADO=1
 }
 
-# conferência: 1 GET; a chave vai pelo stdin do curl (config), nunca pela linha de comando. Devolve o código HTTP em $HTTP.
+# conferência: 1 GET; a chave vai pelo stdin do curl (config), nunca pela linha de comando. A resposta vai pela saída padrão do curl
+# DIRETO para o python (memória); só voltam 3 linhas: código HTTP, nome da conta (imprimível, ≤ 120) e a identidade HMAC (ou vazio).
 conferir() {
-  local url="$1"; HTTP="000"
-  HTTP="$(printf 'url = "%s"\nheader = "access_token: %s"\nheader = "User-Agent: dshow-asaas-leitura/1"\nheader = "Accept: application/json"\n' "$url" "$CH" \
-          | "$CURL" --silent --show-error --max-time 20 --request GET --config - --output "$TMPD/resp" --write-out '%{http_code}' 2>/dev/null)" || true
-  [ -n "$HTTP" ] || HTTP="000"
+  local url="$1"; HTTP="000"; NOME=""; IDENT=""
+  RESP="$(printf 'url = "%s"\nheader = "access_token: %s"\nheader = "User-Agent: dshow-asaas-leitura/1"\nheader = "Accept: application/json"\n' "$url" "$CH" \
+          | "$CURL" --silent --show-error --max-time 20 --request GET --config - --output - --write-out '\n%{http_code}' 2>/dev/null \
+          | python3 -I -c 'import sys,json,hmac,hashlib,re
+raw=sys.stdin.buffer.read(); corpo,_,cod=raw.rpartition(b"\n"); cod=cod.decode("ascii","replace").strip()
+if not re.fullmatch(r"[0-9]{3}",cod): cod="000"
+n=h=""
+if cod=="200":
+  try:
+    d=json.loads(corpo.decode("utf-8")); n=(d.get("companyName") or d.get("name") or "").strip()
+    n="".join(c for c in n if c.isprintable())[:120]
+    doc=d.get("cpfCnpj"); doc=re.sub(r"[^0-9]","",doc) if isinstance(doc,str) else ""
+    if len(doc) in (11,14):
+      seg=open(sys.argv[1],encoding="ascii").read().strip()
+      if re.fullmatch(r"[0-9a-f]{64}",seg): h=hmac.new(seg.encode(),doc.encode(),hashlib.sha256).hexdigest()
+  except Exception: n=h=""
+print(cod); print(n); print(h)' "$SEG" 2>/dev/null)" || true
+  HTTP="$(printf '%s\n' "$RESP" | sed -n 1p)"; NOME="$(printf '%s\n' "$RESP" | sed -n 2p)"; IDENT="$(printf '%s\n' "$RESP" | sed -n 3p)"; unset RESP
+  [[ "$HTTP" =~ ^[0-9]{3}$ ]] || HTTP="000"
 }
 
 FEITOS=" "
@@ -146,7 +176,7 @@ while :; do
   if [ -n "$DUP" ]; then unset CH; echo "[ERRO] esta chave já está guardada no rótulo '$DUP' — nada foi gravado"; continue; fi
 
   echo "       conferindo no Asaas ($AMB), 1 consulta GET…"
-  rm -f -- "$TMPD/resp"; conferir "$URL"
+  conferir "$URL"
   case "$HTTP" in
     200) ;;
     401) unset CH; echo "[ERRO] o Asaas recusou a chave (401) — confira se copiou a chave inteira; nada foi gravado"; continue;;
@@ -155,18 +185,8 @@ while :; do
     000) unset CH; echo "[ERRO] sem resposta do Asaas (rede/tempo esgotado) — nada foi gravado"; continue;;
     *)   unset CH; echo "[ERRO] o Asaas respondeu $HTTP — nada foi gravado"; continue;;
   esac
-  # só o nome da conta é exibido. Codex DSHOW-111 (B2): a identidade estável da conta = sha256 dos dígitos do cpfCnpj, calculada em memória
-  # (o número NUNCA é exibido nem gravado); o rótulo fica PRESO a ela.
-  SAIDA="$(python3 -I -c 'import json,sys,hashlib,re
-try:
-  d=json.load(open(sys.argv[1],encoding="utf-8"))
-  n=(d.get("companyName") or d.get("name") or "").strip()
-  doc=re.sub(r"\D","",str(d.get("cpfCnpj") or ""))
-  h=hashlib.sha256(doc.encode()).hexdigest() if len(doc) in (11,14) else ""
-  print("".join(c for c in n if c.isprintable())[:120]); print(h)
-except Exception: print(""); print("")' "$TMPD/resp" 2>/dev/null || true)"
-  rm -f -- "$TMPD/resp"
-  NOME="$(printf '%s\n' "$SAIDA" | sed -n 1p)"; IDENT="$(printf '%s\n' "$SAIDA" | sed -n 2p)"; unset SAIDA
+  # só o nome da conta é exibido. Codex DSHOW-111 (B2) + DSHOW-112 C: a identidade (HMAC) veio da conferência em memória; o CPF/CNPJ
+  # nunca foi gravado nem exibido.
   if [ -z "$NOME" ]; then unset CH; echo "[ERRO] o Asaas respondeu 200 mas sem nome de conta — nada foi gravado"; continue; fi
   if ! [[ "$IDENT" =~ ^[0-9a-f]{64}$ ]]; then unset CH; echo "[ERRO] o Asaas não devolveu o CPF/CNPJ da conta (identidade) — nada foi gravado"; continue; fi
   if [ -e "$ALVO" ]; then

@@ -56,7 +56,7 @@ final class AsaasRotas
             'offset' => self::OFFSET, 'limit' => self::LIMITE, 'startDate' => self::DATA, 'finishDate' => self::DATA, 'order' => '/^(asc|desc)$/',
         ]],
         'saldo' => ['caminho' => '/finance/balance', 'params' => []],
-        // Codex DSHOW-111 (B2): identidade estável da conta (cpfCnpj → sha256, nunca guardado em claro). Leitura, GET.
+        // Codex DSHOW-111 (B2): identidade estável da conta (cpfCnpj → HMAC-SHA256 com segredo, DSHOW-112 C; nunca guardado em claro). Leitura, GET.
         'conta' => ['caminho' => '/myAccount/commercialInfo', 'params' => []],
     ];
 
@@ -73,6 +73,38 @@ final class AsaasRotas
         ksort($query);
         $qs = $query === [] ? '' : '?' . http_build_query(array_map('strval', $query), '', '&', PHP_QUERY_RFC3986);
         return $base . $def['caminho'] . $qs;
+    }
+}
+
+/**
+ * Codex DSHOW-112 B: JSON com os NÚMEROS preservados como TEXTO (o literal exato enviado pelo Asaas). json_decode transformaria 19.999 em
+ * float, e daí em diante qualquer conversão arredonda em silêncio. Aqui cada número fora de string vira string ANTES do json_decode; o
+ * dinheiro só vira centavos inteiros em AsaasValor, que recusa mais de 2 casas.
+ */
+final class AsaasJson
+{
+    private const NUMERO = '/-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?/A';
+
+    /** @return array<mixed>|null null = JSON inválido */
+    public static function decodificar(string $corpo): ?array
+    {
+        $out = ''; $n = strlen($corpo); $i = 0;
+        while ($i < $n) {
+            $c = $corpo[$i];
+            if ($c === '"') {                                   // string: copia intacta até a aspa de fechamento (pula escapes)
+                $j = $i + 1;
+                while ($j < $n && $corpo[$j] !== '"') $j += $corpo[$j] === '\\' ? 2 : 1;
+                if ($j >= $n) return null;
+                $out .= substr($corpo, $i, $j - $i + 1); $i = $j + 1; continue;
+            }
+            if ($c === '-' || ($c >= '0' && $c <= '9')) {        // número: vira "literal"
+                if (preg_match(self::NUMERO, $corpo, $m, 0, $i) !== 1) return null;
+                $out .= '"' . $m[0] . '"'; $i += strlen($m[0]); continue;
+            }
+            $out .= $c; $i++;
+        }
+        $d = json_decode($out, true, 64);
+        return is_array($d) ? $d : null;
     }
 }
 
@@ -141,7 +173,7 @@ final class AsaasCliente
             $r = $this->transporte->get($url, $this->chave);
             $st = (int) ($r['status'] ?? 0);
             if ($st === 200) {
-                $d = json_decode((string) ($r['corpo'] ?? ''), true);
+                $d = AsaasJson::decodificar((string) ($r['corpo'] ?? ''));   // Codex DSHOW-112 B: número nunca passa por float
                 if (!is_array($d)) throw new AsaasErro('resposta_invalida', 200);
                 return $d;
             }
@@ -207,18 +239,35 @@ final class AsaasChaves
         $k = trim((string) @file_get_contents($f));
         if (preg_match(self::RE_CHAVE, $k) !== 1) throw new AsaasErro('chave_invalida');
         $amb = str_starts_with($k, '$aact_hmlg_') ? 'sandbox' : 'producao';
-        // Codex DSHOW-111 (B2): o rótulo é PRESO à identidade da conta (sha256 do cpfCnpj, gravado pelo asaas-chaves.sh em <rótulo>.id)
+        // Codex DSHOW-111 (B2): o rótulo é PRESO à identidade da conta (gravada pelo asaas-chaves.sh em <rótulo>.id).
+        // Codex DSHOW-112 C: identidade = HMAC-SHA256(segredo, dígitos do cpfCnpj) — sem o segredo não há identidade (nem sincronização).
         $fi = $this->pasta . '/' . $rotulo . '.id';
         $id = is_file($fi) && !is_link($fi) ? trim((string) @file_get_contents($fi)) : '';
         if (preg_match('/^[0-9a-f]{64}$/', $id) !== 1) throw new AsaasErro('sem_identidade');
+        $this->segredo();
         return ['chave' => $k, 'base' => AsaasRotas::BASES[$amb], 'ambiente' => $amb, 'identidade' => $id];
     }
 
-    /** identidade estável da conta a partir da resposta de /myAccount/commercialInfo: sha256 dos dígitos do cpfCnpj (nunca o número em si) */
-    public static function identidade(array $info): string
+    /**
+     * Identidade estável da conta a partir da resposta de /myAccount/commercialInfo: HMAC-SHA256 dos dígitos do cpfCnpj com o segredo
+     * de <pasta>/.identidade.hmac (gerado UMA vez pelo asaas-chaves.sh; 0600, dono do php-fpm, na pasta 0700 das chaves, sem ACL).
+     * O número nunca é guardado nem exibido; sem o segredo, o hash não pode ser recalculado a partir de uma lista de CNPJs.
+     */
+    public function identidadeDe(array $info): string
     {
-        $d = preg_replace('/\D/', '', (string) ($info['cpfCnpj'] ?? ''));
+        $doc = $info['cpfCnpj'] ?? null;
+        $d = is_string($doc) ? preg_replace('/\D/', '', $doc) : '';
         if (!is_string($d) || (strlen($d) !== 11 && strlen($d) !== 14)) throw new AsaasErro('resposta_invalida', 200);
-        return hash('sha256', $d);
+        return hash_hmac('sha256', $d, $this->segredo());
+    }
+
+    public const SEGREDO = '.identidade.hmac';
+
+    private function segredo(): string
+    {
+        $f = $this->pasta . '/' . self::SEGREDO;
+        $s = is_file($f) && !is_link($f) ? trim((string) @file_get_contents($f)) : '';
+        if (preg_match('/^[0-9a-f]{64}$/', $s) !== 1) throw new AsaasErro('sem_identidade');
+        return $s;
     }
 }

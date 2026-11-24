@@ -28,7 +28,8 @@ cat > "$W/bin/curl" <<'FAKE'
 set -euo pipefail
 D="$(dirname "$(dirname "$(readlink -f "$0")")")"
 printf '%s\n' "$*" >> "$D/argv.log"
-out=""; while [ $# -gt 0 ]; do case "$1" in --output) out="$2"; shift 2;; *) shift;; esac; done
+out=""; wo=""; while [ $# -gt 0 ]; do case "$1" in --output) out="$2"; shift 2;; --write-out) wo="$2"; shift 2;; *) shift;; esac; done
+[ -n "${CH:-}${CH2:-}" ] && echo "HERDADA" >> "$D/ambiente.log"   # P2: a chave digitada nunca pode chegar ao ambiente do curl
 cfg="$(cat)"
 url="$(printf '%s\n' "$cfg" | sed -n 's/^url = "\(.*\)"$/\1/p')"; echo "$url" >> "$D/urls.log"
 key="$(printf '%s\n' "$cfg" | sed -n 's/^header = "access_token: \(.*\)"$/\1/p')"
@@ -40,13 +41,16 @@ code=401; body='{"errors":[{"code":"invalid_access_token"}]}'
 [ "$key" = "$KH" ] && code=200 && body='{"companyName":"Sandbox Teste"}'
 [ "$key" = "$K4" ] && code=200 && body='{"companyName":"Outra Empresa Teste","cpfCnpj":"98765432000111"}'
 [ "$key" = "$K5" ] && code=200 && body='{"companyName":"Sem Documento Teste"}'
-printf '%s' "$body" > "$out"; printf '%s' "$code"
+# Codex DSHOW-112 C: a resposta só pode sair pela saída padrão (memória). Arquivo = registrado e gravado, para o teste reprovar.
+if [ "$out" = "-" ]; then printf '%s' "$body"; else echo "ARQUIVO:$out" >> "$D/saida-em-arquivo.log"; printf '%s' "$body" > "$out"; fi
+w="${wo//\\n/$'\n'}"; printf '%s' "${w//%\{http_code\}/$code}"
 FAKE
 chmod 700 "$W/bin/curl"
 
 export PATH="$W/bin:$PATH" TMPDIR="$W/tmp" ASAAS_CHAVES_TESTE=1
 CFG="$W/config"; DIRK="$CFG/asaas"
 ok=0; falha=0
+hm() { python3 -I -c 'import hmac,hashlib,sys; print(hmac.new(open(sys.argv[1]).read().strip().encode(),sys.argv[2].encode(),hashlib.sha256).hexdigest())' "$DIRK/.identidade.hmac" "$1"; }
 check() { if eval "$2"; then ok=$((ok+1)); else falha=$((falha+1)); echo "FALHOU: $1"; fi; }
 rodar() { local entrada="$1" rc=0; shift; printf '%s' "$entrada" | bash "$SCRIPT" --dash-config "$CFG" "$@" > "$W/saida.txt" 2>&1 || rc=$?; echo "$rc" > "$W/rc"; cat "$W/saida.txt" >> "$W/todas-saidas.txt"; }
 ncurl() { [ -f "$W/urls.log" ] && wc -l < "$W/urls.log" || echo 0; }
@@ -80,6 +84,8 @@ check "não mostra CNPJ/CPF nem e-mail" '! grep -qE "12345678000199|11122233344|
 check "1 GET por chave conferida" '[ "$(ncurl)" = 2 ]'
 check "conferência na URL de produção" '! grep -qv "^https://api.asaas.com/v3/myAccount/commercialInfo$" $W/urls.log'
 check "nenhum temporário sobra" '[ -z "$(ls -A $W/tmp)" ]'
+check "C: segredo da identidade criado (0600, 64 hex)" '[ "$(stat -c %a $DIRK/.identidade.hmac)" = 600 ] && grep -qxE "[0-9a-f]{64}" $DIRK/.identidade.hmac'
+SEG_SHA="$(sha256sum "$DIRK/.identidade.hmac" 2>/dev/null | cut -c1-64 || true)"
 
 # 3 valores diferentes
 rodar "outra
@@ -158,14 +164,14 @@ check "modo de teste recusa a config real" '[ "$rc" = 2 ] && grep -q "modo de te
 rodar "" --listar
 check "--listar mostra os rótulos" 'grep -q "dshow " $W/saida.txt && grep -q "display-solutions" $W/saida.txt'
 # 16 B2 (Codex DSHOW-111): identidade presa ao rótulo; troca cruzada recusada
-check "identidade gravada (sha256, 0600) e sem o CNPJ em claro" '[ "$(stat -c %a $DIRK/dshow.id)" = 600 ] && grep -qE "^[0-9a-f]{64}$" $DIRK/dshow.id && ! grep -rq 12345678000199 $DIRK'
-check "identidade = sha256 dos dígitos do CNPJ" '[ "$(cat $DIRK/dshow.id)" = "$(printf %s 12345678000199 | sha256sum | cut -c1-64)" ]'
+check "identidade gravada (0600) e sem o CNPJ em claro" '[ "$(stat -c %a $DIRK/dshow.id)" = 600 ] && grep -qE "^[0-9a-f]{64}$" $DIRK/dshow.id && ! grep -rq 12345678000199 $DIRK'
+check "C: identidade = HMAC-SHA256(segredo, dígitos), NÃO o sha256 simples" '[ "$(cat $DIRK/dshow.id)" = "$(hm 12345678000199)" ] && [ "$(cat $DIRK/dshow.id)" != "$(printf %s 12345678000199 | sha256sum | cut -c1-64)" ]'
 rodar "dshow
 s
 $K4
 $K4
 " --executar
-check "TROCA CRUZADA: chave válida de outra empresa no rótulo dshow → recusada" 'grep -q "OUTRA conta/empresa" $W/saida.txt && [ "$(cat $DIRK/dshow.key)" = "$K1" ] && [ "$(cat $DIRK/dshow.id)" = "$(printf %s 12345678000199 | sha256sum | cut -c1-64)" ]'
+check "TROCA CRUZADA: chave válida de outra empresa no rótulo dshow → recusada" 'grep -q "OUTRA conta/empresa" $W/saida.txt && [ "$(cat $DIRK/dshow.key)" = "$K1" ] && [ "$(cat $DIRK/dshow.id)" = "$(hm 12345678000199)" ]'
 check "troca cruzada: nem o nome da outra empresa é confirmado" '! grep -q "É a conta da empresa" $W/saida.txt'
 rodar "copia-da-dshow
 $K3
@@ -183,8 +189,30 @@ $K4
 s
 n
 " --executar
-check "a outra empresa entra no SEU rótulo, com a sua identidade" '[ "$(cat $DIRK/outra-empresa.id)" = "$(printf %s 98765432000111 | sha256sum | cut -c1-64)" ]'
+check "a outra empresa entra no SEU rótulo, com a sua identidade" '[ "$(cat $DIRK/outra-empresa.id)" = "$(hm 98765432000111)" ]'
 check "nenhum CPF/CNPJ em nenhuma saída" '! grep -qE "12345678000199|11122233344|98765432000111" $W/todas-saidas.txt'
+# 17 Codex DSHOW-112 C — DECISIVO: a resposta bruta (com CPF/CNPJ) NUNCA foi para arquivo
+check "C DECISIVO: o curl nunca recebeu arquivo de saída (só --output -)" '[ ! -e $W/saida-em-arquivo.log ] && grep -q -- "--output -" $W/argv.log'
+check "C DECISIVO: nenhum arquivo do teste contém CPF/CNPJ (fora do curl falso)" '! grep -rlE --exclude-dir=bin "12345678000199|11122233344|98765432000111" $W'
+check "C: o segredo é o MESMO em todas as execuções (nunca regravado)" '[ "$(sha256sum $DIRK/.identidade.hmac | cut -c1-64)" = "$SEG_SHA" ]'
+check "C: o segredo nunca aparece em saída" '! grep -qF "$(cat $DIRK/.identidade.hmac)" $W/todas-saidas.txt'
+chmod 0644 "$DIRK/.identidade.hmac"
+rodar "nova
+$K2
+$K2
+" --executar
+check "C: segredo com permissão errada → recusa antes de pedir chave" 'grep -q "segredo da identidade fora do padrão" $W/saida.txt && [ ! -e $DIRK/nova.key ]'
+chmod 0600 "$DIRK/.identidade.hmac"
+# 18 P2 (DSHOW-111): CH/CH2 EXPORTADAS por quem roda não levam a chave digitada ao ambiente do curl
+n0="$(ncurl)"
+export CH='herdada' CH2='herdada'
+rodar "herdou
+$K5
+$K5
+" --executar
+unset CH CH2
+check "P2: chave digitada não vai ao ambiente do curl mesmo com CH exportada" '[ "$(ncurl)" -gt "$n0" ] && [ ! -e $W/ambiente.log ]'
+
 # 15 GLOBAL: nenhuma chave em nenhuma saída nem em argv do curl
 vazou=0
 for k in "$K1" "$K2" "$K3" "$K401" "$K429" "$KH" "$K4" "$K5"; do
