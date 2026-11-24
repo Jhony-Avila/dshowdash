@@ -204,11 +204,12 @@ function CartaoNumero({ titulo, icone, estado, carregando, valor, linha, rodape,
   );
 }
 /** Linha do cartão pelo estado EFETIVO (coerencia.ts): zero não confirmado, desatualizado, soma parcial. */
-function linhaEstado(e: Efetivo, normal: ReactNode): ReactNode {
+function linhaEstado(e: Efetivo, normal: ReactNode, valor: number | null = 0): ReactNode {
   // no cartão, só o motivo (cabe numa linha em 1440); o horário do último sucesso fica no gráfico e na linha de fontes
   if (e.estado === 'desatualizado' && e.zeroNaoConfirmado) return <span title={e.quando ? `Último sucesso ${fmtQuando(e.quando)}` : undefined}>{e.motivo}</span>;
   if (e.estado === 'desatualizado') return <>Último valor válido preservado{e.quando ? ` · ${fmtQuando(e.quando)}` : ''}</>;
-  if (e.estado === 'parcial' && e.semValor !== null) return <>{normal}<span className="gv2-aviso-linha" data-gv2-soma-parcial>Soma dos valores informados · {textoSemValor(e.semValor)}</span></>;
+  // todos sem valor (valor null): não há soma — "Nenhum valor informado"; alguns sem valor: soma dos informados
+  if (e.estado === 'parcial' && e.semValor !== null) return <>{normal}<span className="gv2-aviso-linha" data-gv2-soma-parcial>{valor === null ? 'Nenhum valor informado' : 'Soma dos valores informados'} · {textoSemValor(e.semValor)}</span></>;
   if (e.estado === 'parcial') return <>{normal}<span className="gv2-aviso-linha">{e.motivo || 'Leitura incompleta.'}</span></>;
   return normal;
 }
@@ -243,11 +244,11 @@ function BlocoResultado({ b, fl }: { b: ReturnType<typeof useBloco<Resumo>>; fl:
           rodape="Bling · não é recebimento" link={{ rotulo: 'Ver pedidos', rota: '#/panel-bling' }} />
         <CartaoNumero data="ganhos" titulo="Negócios ganhos" icone={<TrendingUp size={18} />} estado={est(eg)} carregando={car || !!eg?.conferindo}
           valor={valorDe(eg, g?.valor)} problema={porBloco(g)}
-          linha={g && eg && linhaEstado(eg, <>{plural(g.quantidade, 'negócio ganho', 'negócios ganhos')} · no período</>)}
+          linha={g && eg && linhaEstado(eg, <>{plural(g.quantidade, 'negócio ganho', 'negócios ganhos')} · no período</>, g.valor)}
           rodape="Pipedrive · data do ganho" link={{ rotulo: 'Ver negócios', rota: '#/panel-pipedrive' }} />
         <CartaoNumero data="funil" titulo="Funil aberto agora" icone={<Layers size={18} />} estado={est(eu)} carregando={car || !!eu?.conferindo}
           valor={valorDe(eu, f?.valor)} problema={porBloco(f)}
-          linha={f && eu && linhaEstado(eu, <>{plural(f.quantidade, 'negócio aberto', 'negócios abertos')}</>)}
+          linha={f && eu && linhaEstado(eu, <>{plural(f.quantidade, 'negócio aberto', 'negócios abertos')}</>, f.valor)}
           rodape="Pipedrive · funil atual" link={{ rotulo: 'Abrir funil', rota: '#/panel-pipedrive' }} />
       </div>
     </section>

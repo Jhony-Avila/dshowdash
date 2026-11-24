@@ -28,6 +28,7 @@ function resumo(periodo, m) {
     negocios_ganhos: { ...base, estado: periodo === 'ontem' ? 'zero' : 'ok', quantidade: periodo === 'ontem' ? 0 : 9, valor: periodo === 'ontem' ? 0 : 351000, sem_valor: periodo === 'ontem' ? 0 : 1 },
     funil_aberto: { ...base, estado: 'ok', quantidade: 86, valor: 4830000, sem_valor: 5 },
   };
+  if (m.ganhosSemValor) r.negocios_ganhos = { ...r.negocios_ganhos, estado: 'parcial', quantidade: 3, valor: null, sem_valor: 3, motivo: '3 negócios sem valor ficaram fora da soma.' };
   if (m.estados) {   // prancha 02_GERAL_ESTADOS: zero real · desatualizado · aguardando
     r.pedidos_bling = { ...r.pedidos_bling, estado: 'zero', quantidade: 0, valor: 0, por_dia: por_dia.map((d) => ({ ...d, quantidade: 0, valor: 0 })) };
     r.negocios_ganhos = { ...r.negocios_ganhos, estado: 'desatualizado', ultimo_sucesso: new Date(Date.now() - 26 * 3600e3).toISOString() };
@@ -54,7 +55,7 @@ function fontes(m) {
   return f;
 }
 function simulador() {
-  const m = { atraso: 0, falhaResumo: false, falhaPrio: false, estados: false, semPendencias: false, prioNula: false, pipeVelho: false, calls: {}, ultimaLista: null };
+  const m = { atraso: 0, falhaResumo: false, falhaPrio: false, estados: false, semPendencias: false, prioNula: false, pipeVelho: false, ganhosSemValor: false, calls: {}, ultimaLista: null };
   m.rotear = async (ctx) => {
     await ctx.route('**/api/geral/v2/**', async (r) => {
       const u = new URL(r.request().url()); const rota = u.pathname.replace('/api/geral/v2', '').replace(/\.php$/, ''); m.calls[rota] = (m.calls[rota] || 0) + 1;
@@ -229,6 +230,12 @@ function simulador() {
     const c = await pg.$$eval('.gv2 [data-gv2-cartao]', (xs) => xs.map((x) => [x.dataset.gv2Cartao, x.dataset.gv2Estado, x.querySelector('.gv2-num-valor')?.textContent]));
     afirma('COERÊNCIA: ganhos e funil com o Pipedrive desatualizado → "Desatualizado" com o último valor válido (não "ok")', c[1][1] === 'desatualizado' && /351\.000/.test(c[1][2]) && c[2][1] === 'desatualizado', JSON.stringify(c));
     await cap(pg, '3c-pipedrive-desatualizado');
+    await ctx.close(); }
+
+  // ── (3d) TODOS sem valor (serviço da ACIMA_ESQUERDA: valor null + parcial): "—" e "Nenhum valor informado", nunca R$ 0 nem "soma" ──
+  { const m = simulador(); m.ganhosSemValor = true; const { ctx, pg } = await nova(m); await abrir(pg);
+    const g = await pg.$eval('[data-gv2-cartao="ganhos"]', (x) => [x.dataset.gv2Estado, x.querySelector('.gv2-selo')?.textContent, x.querySelector('.gv2-num-valor')?.textContent, x.querySelector('[data-gv2-soma-parcial]')?.textContent]);
+    afirma('todos sem valor: "Dados parciais", valor "—" e "Nenhum valor informado · 3 negócios sem valor" (sem "soma", nunca R$ 0)', g[0] === 'parcial' && g[1] === 'Dados parciais' && g[2] === '—' && /^Nenhum valor informado · 3 negócios sem valor$/.test(g[3]), JSON.stringify(g));
     await ctx.close(); }
 
   // ── (3b) CONTRAPROVA: quantidade desconhecida (null) com estado "ok" NUNCA some nem vira "Sem pendências" ──
