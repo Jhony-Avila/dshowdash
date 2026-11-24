@@ -950,9 +950,24 @@ final class BlingSyncService
         $d['sales_order_id'] = $this->repo->idPorBlingId('bling_sales_orders', $accountId, $pedidoBling);
         $d['financial_category_id'] = $this->repo->idPorBlingId('bling_financial_categories', $accountId, $catBling);
         $d['payment_method_id'] = $this->repo->idPorBlingId('bling_payment_methods', $accountId, $formaBling);
+        $d['data_vencimento'] = $this->vencimentoConhecido($accountId, 'bling_accounts_receivable', $d, 'conta a receber');   // ANTES da situação (vencido?)
         $d['situacao'] = BlingVersionAdapter::situacaoTitulo($situacaoBling, $d['data_vencimento'],
                                                              $d['valor'], $d['valor_recebido']);
         return $this->repo->upsert('bling_accounts_receivable', $accountId, $d);
+    }
+
+    /**
+     * "ausência ≠ zero" (24/11, Jhony): vencimento que não veio (ou ilegível) NUNCA vira "hoje". Título já gravado → repõe o vencimento conhecido
+     * (data_vencimento é NOT NULL e o upsert é INSERT … ON DUPLICATE, por isso repor e não omitir); título NOVO sem vencimento → erro registrado
+     * pelo laço da sincronização (SAVEPOINT; o watermark não avança).
+     */
+    private function vencimentoConhecido(int $accountId, string $tabela, array $d, string $tipo): string
+    {
+        if ($d['data_vencimento'] !== null) { return (string) $d['data_vencimento']; }
+        if (!in_array($tabela, ['bling_accounts_receivable', 'bling_accounts_payable'], true)) { throw new InvalidArgumentException('tabela inesperada'); }
+        $conhecido = $this->repo->consultar("SELECT data_vencimento FROM `$tabela` WHERE account_id = ? AND bling_id = ?", [$accountId, $d['bling_id']]);
+        if ($conhecido === []) { throw new UnexpectedValueException("$tipo nova sem vencimento legível — não gravada (nunca \"hoje\" no lugar)"); }
+        return (string) $conhecido[0]['data_vencimento'];
     }
 
     private function gravarPagar(int $accountId, array $bruto): string
@@ -967,6 +982,8 @@ final class BlingSyncService
         $d['supplier_id'] = $this->repo->idPorBlingId('bling_suppliers', $accountId, $fornBling);
         $d['purchase_order_id'] = $this->repo->idPorBlingId('bling_purchase_orders', $accountId, $pedidoBling);
         $d['financial_category_id'] = $this->repo->idPorBlingId('bling_financial_categories', $accountId, $catBling);
+        $d['data_vencimento'] = $this->vencimentoConhecido($accountId, 'bling_accounts_payable', $d, 'conta a pagar');   // ANTES da situação (vencido?)
+        if (array_key_exists('competencia', $d) && $d['competencia'] === null) { unset($d['competencia']); }   // sem data na resposta: mantém a conhecida
         $d['situacao'] = BlingVersionAdapter::situacaoTitulo($situacaoBling, $d['data_vencimento'],
                                                              $d['valor'], $d['valor_pago']);
         return $this->repo->upsert('bling_accounts_payable', $accountId, $d);

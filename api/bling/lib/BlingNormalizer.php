@@ -323,7 +323,8 @@ final class BlingNormalizer
             'categoria_bling_id' => self::texto($p, 'categoria.id'),
             'forma_bling_id'     => self::texto($p, 'formaPagamento.id', 'portador.id'),
             'data_emissao'    => self::data($p, 'dataEmissao'),
-            'data_vencimento' => self::data($p, 'vencimento', 'dataVencimento') ?? date('Y-m-d'),
+            // 24/11 (Jhony): vencimento ausente/ilegível = null, NUNCA "hoje" (o título apareceria "vencendo hoje"); quem grava repõe o conhecido ou recusa
+            'data_vencimento' => self::data($p, 'vencimento', 'dataVencimento'),
             'valor'         => $valor,
             // ⚠️ QUITADO TEM SALDO ZERO — testar `> 0` inverte o significado.
             // A versão anterior fazia `numero(valorPago, saldo) > 0 ? valor - saldo : valorPago`.
@@ -406,7 +407,8 @@ final class BlingNormalizer
         $r = self::contaReceber($p);
         $r['fornecedor_bling_id'] = self::texto($p, 'contato.id', 'fornecedor.id');
         $r['valor_pago'] = $r['valor_recebido'];
-        $r['competencia'] = substr((string) ($r['data_emissao'] ?? $r['data_vencimento']), 0, 7);
+        $base = $r['data_emissao'] ?? $r['data_vencimento'];
+        $r['competencia'] = $base === null ? null : substr((string) $base, 0, 7);   // sem data = null (antes: '' ou, com o vencimento "hoje", o mês atual)
         $r['descricao'] = self::texto($p, 'historico', 'descricao');
         unset($r['valor_recebido'], $r['contato_bling_id']);
         return $r;

@@ -390,6 +390,28 @@ try {
     ok('erro em poucos registros (situação atencao): cobertura PARCIAL e estado parcial (não "completa"); último sucesso = o job', $rr['situacao'] === 'atencao'
         && $dr['cobertura'] === 'parcial' && $dr['estado'] === 'parcial' && $dr['ultimo_sucesso'] !== null, json_encode([$rr['situacao'] ?? null, $dr]));
 
+    echo "== 4d. vencimento ausente em contas a receber/pagar nunca vira \"hoje\" (pedido do Jhony, 24/11)\n";
+    $tit = static fn(string $t, string $b, string $c) => v($pdo, "SELECT `$c` FROM `$t` WHERE bling_id = ?", [$b]);
+    $REC = new BlingResposta(200, ['data' => [['id' => 700001, 'valor' => 100, 'vencimento' => '2026-10-10', 'situacao' => 1, 'contato' => ['id' => 1]]]]);
+    $sync4->sincronizar($conta, 'receber', 'incremental', 'v1');
+    $sit0 = $tit('bling_accounts_receivable', '700001', 'situacao');
+    $REC = new BlingResposta(200, ['data' => [['id' => 700001, 'valor' => 100, 'situacao' => 1, 'contato' => ['id' => 1], 'historico' => 'sem vencimento'],
+                                              ['id' => 700002, 'valor' => 50, 'situacao' => 1]]]);   // 700002 é NOVO e sem vencimento
+    $rv = $sync4->sincronizar($conta, 'receber', 'incremental', 'v2');
+    ok('receber: título existente sem vencimento na resposta → vencimento 2026-10-10 mantido (antes: "hoje")', $tit('bling_accounts_receivable', '700001', 'data_vencimento') === '2026-10-10',
+        (string) $tit('bling_accounts_receivable', '700001', 'data_vencimento'));
+    ok('receber: a situação continua calculada sobre o vencimento conhecido (não vira "vence hoje")', $tit('bling_accounts_receivable', '700001', 'situacao') === $sit0, (string) $sit0);
+    ok('receber: título NOVO sem vencimento não é gravado — erro registrado', $tit('bling_accounts_receivable', '700002', 'id') === false && $rv['erros'] === 1, json_encode($rv));
+    $PAG = new BlingResposta(200, ['data' => [['id' => 710001, 'valor' => 80, 'vencimento' => '2026-10-15', 'situacao' => 1, 'contato' => ['id' => 2]]]]);
+    $api->responder('contas/pagar', static function () use (&$PAG) { return $PAG; });
+    $sync4->sincronizar($conta, 'pagar', 'carga_inicial', 'v3');
+    ok('pagar: pré — vencimento e competência gravados', $tit('bling_accounts_payable', '710001', 'data_vencimento') === '2026-10-15' && $tit('bling_accounts_payable', '710001', 'competencia') === '2026-10');
+    $PAG = new BlingResposta(200, ['data' => [['id' => 710001, 'valor' => 80, 'situacao' => 1, 'contato' => ['id' => 2]], ['id' => 710002, 'valor' => 9, 'situacao' => 1]]]);
+    $rp = $sync4->sincronizar($conta, 'pagar', 'incremental', 'v4');
+    ok('pagar: sem vencimento → vencimento e competência MANTIDOS (antes: hoje e o mês atual)', $tit('bling_accounts_payable', '710001', 'data_vencimento') === '2026-10-15'
+        && $tit('bling_accounts_payable', '710001', 'competencia') === '2026-10', json_encode([$tit('bling_accounts_payable', '710001', 'data_vencimento'), $tit('bling_accounts_payable', '710001', 'competencia')]));
+    ok('pagar: título NOVO sem vencimento não é gravado — erro registrado', $tit('bling_accounts_payable', '710002', 'id') === false && $rp['erros'] === 1, json_encode($rp));
+
     echo "== 5. o provedor de DEMONSTRAÇÃO (mock) não muda: números como antes\n";
     [$rc5, $d, $txt] = $endpoint('OverviewController', 'overview', [], 'mock');
     $kk = $d['kpis'] ?? [];
