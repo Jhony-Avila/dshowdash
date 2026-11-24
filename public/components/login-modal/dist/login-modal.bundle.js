@@ -1503,7 +1503,7 @@ const rs = () => {
 function O(t, e) {
   e || (e = {});
   const i = e.video || {};
-  this.video = t, this.config = e, this.logger = e.logger || null, this.state = f.IDLE, this.playPromise = null, this.retryCount = 0, this.maxRetries = i.maxRetries || 3, this.liteMode = i.liteMode || !1, this.cleanupOnClose = i.cleanupOnClose !== !1, this.listeners = /* @__PURE__ */ new Map(), this.lazyLoad = i.lazyLoad !== !1, this.preloadOnMount = i.preloadOnMount || !1, this._videoSrc = i.src || "/assets/videos/video_background_site_web.mp4", this._srcLoaded = !1, this._intersectionObserver = null, this._metrics = { mounts: 0, loads: 0, plays: 0, pauses: 0, errors: 0, retries: 0, cleanups: 0, lazyLoads: 0 }, z("info", "VideoManager inicializado", { liteMode: this.liteMode, lazyLoad: this.lazyLoad, state: this.state });
+  this.video = t, this.config = e, this.logger = e.logger || null, this.state = f.IDLE, this.playPromise = null, this.retryCount = 0, this.maxRetries = i.maxRetries || 3, this.liteMode = i.liteMode || !1, this.cleanupOnClose = i.cleanupOnClose !== !1, this.listeners = /* @__PURE__ */ new Map(), this.lazyLoad = i.lazyLoad !== !1, this.preloadOnMount = i.preloadOnMount || !1, this._videoSrc = i.src || "", this._srcLoaded = !1, this._intersectionObserver = null, this._metrics = { mounts: 0, loads: 0, plays: 0, pauses: 0, errors: 0, retries: 0, cleanups: 0, lazyLoads: 0 }, z("info", "VideoManager inicializado", { liteMode: this.liteMode, lazyLoad: this.lazyLoad, state: this.state });
 }
 O.prototype.mount = function() {
   return this._metrics.mounts++, this.video ? this.liteMode ? (z("info", "Lite mode ativo - vídeo desabilitado"), this._emit("video:lite_mode"), !1) : (this.video.muted = !0, this.video.playsInline = !0, this.video.loop = !0, this.lazyLoad && !this.preloadOnMount ? (this._setState(f.PENDING), this._setupIntersectionObserver(), z("info", "Video em modo lazy - aguardando trigger"), !0) : (this._loadVideoSrc(), z("info", "Video montado com preload"), !0)) : (this._setState(f.ERROR, { reason: "no_video_element" }), this._emit("video:error:missing_element"), !1);
@@ -1793,7 +1793,7 @@ class hs {
   initCoreManagers() {
     const e = this.modal.video, i = this.modal.config;
     let o = this.modal.logger;
-    this.modal.errorHandler = new ss({ logger: o, security: i.security, debug: !!(i.debug && i.debug.enabled) }), this.modal.videoManager = new O(e, { video: i.video, logger: o }), this._initialized.managers = !0, o && o.info && o.info("Core Managers inicializados");
+    this.modal.errorHandler = new ss({ logger: o, security: i.security, debug: !!(i.debug && i.debug.enabled) }), this.modal.videoManager = e && !(i.video && i.video.enabled === !1) ? new O(e, { video: i.video, logger: o }) : null, this._initialized.managers = !0, o && o.info && o.info("Core Managers inicializados");
   }
   loadCSS() {
     if (!us) return;
@@ -2880,7 +2880,7 @@ function Ws() {
 function Qs(t = {}) {
   var e, i, o, s, n, r, l, d;
   Ws();
-  const c = ((e = t.video) == null ? void 0 : e.src) || t.videoSrc || "/assets/videos/video_background_site_web.mp4", u = t.idPrefix || "login", h = ((i = t.ui) == null ? void 0 : i.showRememberMe) !== !1, p = ((o = t.ui) == null ? void 0 : o.showForgotPassword) !== !1, I = ((s = t.ui) == null ? void 0 : s.forgotPasswordUrl) || "#forgot-password", L = ((n = t.security) == null ? void 0 : n.honeypot) !== !1, A = ((r = t.i18n) == null ? void 0 : r.enabled) !== !1, v = ((l = t.avatar) == null ? void 0 : l.enabled) !== !1, E = ((d = t.video) == null ? void 0 : d.lazyLoad) !== !1;
+  const c = ((e = t.video) == null ? void 0 : e.src) || t.videoSrc || "", u = t.idPrefix || "login", h = ((i = t.ui) == null ? void 0 : i.showRememberMe) !== !1, p = ((o = t.ui) == null ? void 0 : o.showForgotPassword) !== !1, I = ((s = t.ui) == null ? void 0 : s.forgotPasswordUrl) || "#forgot-password", L = ((n = t.security) == null ? void 0 : n.honeypot) !== !1, A = ((r = t.i18n) == null ? void 0 : r.enabled) !== !1, v = ((l = t.avatar) == null ? void 0 : l.enabled) !== !1, E = ((d = t.video) == null ? void 0 : d.lazyLoad) !== !1;
   return `
     <div
       id="${u}-modal"
@@ -2890,21 +2890,6 @@ function Qs(t = {}) {
 
       <div class="login-backdrop lm-backdrop" data-backdrop></div>
 
-      <video
-        id="${u}-video"
-        class="login-video lm-video"
-        autoplay
-        loop
-        muted
-        playsinline
-        ${E ? 'preload="none"' : 'preload="metadata"'}
-        ${E ? "" : `src="${c}"`}
-        loading="lazy"
-        aria-hidden="true"
-        data-testid="login-video"
-        data-video-src="${c}">
-        ${E ? "" : `<source src="${c}" type="video/mp4">`}
-      </video>
 
       <div class="login-container-wrapper lm-wrapper">
         ${A ? '<div class="lm-language-container" data-language-container></div>' : ""}
@@ -2913,8 +2898,8 @@ function Qs(t = {}) {
           <div class="login-container-inner lm-inner">
 
             <div class="login-brand lm-brand" aria-hidden="true">
-              <img src="/assets/icons/logo-horizontal.png" alt="DSHOW DASH" class="lm-logo" loading="lazy" decoding="async" width="120" height="40">
-              <h2 id="${u}-title" class="visually-hidden lm-visually-hidden">Login DSHOW DASH</h2>
+              <img src="/assets/brand/dshow-logo-branco.svg" alt="DShow" class="lm-logo dsd-marca-logo" loading="lazy" decoding="async" width="120" height="41">
+              <h2 id="${u}-title" class="visually-hidden lm-visually-hidden">Login DShow</h2>
             </div>
 
             <form

@@ -26,7 +26,7 @@ const Ze = {
   timeouts: { global: 3e4, auth: 1e4, components: 1e4, video: 5e3, hide: 300 },
   retries: { componentsMax: 3, authMax: 2, backoffMs: 5e3 },
   degraded: { allowDegraded: !0, degradedOnVideoFail: !0, degradedOnAuthTimeout: !0, degradedOnComponentsTimeout: !0, minProgressForDegraded: 50 },
-  video: { enabled: !0, required: !1, preload: "metadata", autoplay: !0, loop: !0, muted: !0 },
+  video: { enabled: !1, required: !1, preload: "metadata", autoplay: !0, loop: !0, muted: !0 },
   progress: { pollInterval: 200, debounceMs: 32, hits100Threshold: 3, smoothing: !0 },
   ui: { showLogo: !0, showProgress: !0, showPercentage: !0, showText: !0, animations: !0, respectReducedMotion: !0 },
   force: { enableOnGlobalTimeout: !0, minProgressForForce: 30 },
@@ -1098,13 +1098,13 @@ function ws() {
   Cs.init();
 }
 function Rs() {
-  return ws(), '<div id="loading-screen" role="status" aria-live="polite" aria-label="Carregando" aria-busy="true"><video id="loading-video" autoplay loop muted playsinline preload="metadata"><source src="/assets/videos/video_background_site_web.mp4" type="video/mp4">Seu navegador não suporta vídeo HTML5.</video><div class="loading-logo-container"><img src="/assets/icons/logo-square.png" alt="DshowDash Logo" class="loading-logo" width="180" height="168" decoding="async" fetchpriority="high"></div><div class="loading-text">Carregando</div><div class="loading-progress-wrapper"><div class="loading-progress"><div class="loading-progress-bar" id="loading-progress-bar"></div></div><div class="loading-percentage">0%</div></div></div>';
+  return ws(), '<div id="loading-screen" role="status" aria-live="polite" aria-label="Carregando" aria-busy="true"><div class="loading-logo-container dsd-marca-area"><img src="/assets/brand/dshow-logo-branco.svg" alt="DShow" class="loading-logo dsd-marca-logo" width="240" height="81" decoding="async" fetchpriority="high"></div><div class="loading-text">Carregando</div><div class="loading-progress-wrapper"><div class="loading-progress"><div class="loading-progress-bar" id="loading-progress-bar"></div></div><div class="loading-percentage">0%</div></div></div>';
 }
 const Ps = "preloader.template-aaa";
 x({ moduleId: Ps });
 function Ge(e = {}) {
-  const { showVideo: t = !0, showLogo: o = !0, showProgress: s = !0, showPercentage: r = !0, showText: n = !0, videoSrc: i = "/assets/videos/video_background_site_web.mp4", logoSrc: a = "/assets/icons/logo-square.png", logoAlt: h = "DshowDash Logo", text: v = "Carregando", customClass: B = "" } = e;
-  return `<div class="preloader-container ${B}" data-preloader-container>${t ? `<video data-preloader-video class="preloader-video" autoplay loop muted playsinline preload="metadata"><source src="${i}" type="video/mp4"></video>` : ""}${o ? `<div class="preloader-logo-container" data-preloader-logo><img src="${a}" alt="${h}" class="preloader-logo" width="180" height="168" decoding="async" fetchpriority="high"></div>` : ""}${n ? `<div class="preloader-text" data-preloader-text>${v}</div>` : ""}${s ? `<div class="preloader-progress-wrapper" data-preloader-progress-wrapper><div class="preloader-progress"><div class="preloader-progress-bar" data-preloader-progress-bar></div></div>${r ? '<div class="preloader-percentage" data-preloader-percentage>0%</div>' : ""}</div>` : ""}</div>`;
+  const { showVideo: t = !0, showLogo: o = !0, showProgress: s = !0, showPercentage: r = !0, showText: n = !0, videoSrc: i = "", logoSrc: a = "/assets/brand/dshow-logo-branco.svg", logoAlt: h = "DShow", text: v = "Carregando", customClass: B = "" } = e;
+  return `<div class="preloader-container ${B}" data-preloader-container>${t && i ? `<video data-preloader-video class="preloader-video" autoplay loop muted playsinline preload="metadata"><source src="${i}" type="video/mp4"></video>` : ""}${o ? `<div class="preloader-logo-container dsd-marca-area" data-preloader-logo><img src="${a}" alt="${h}" class="preloader-logo dsd-marca-logo" width="240" height="81" decoding="async" fetchpriority="high"></div>` : ""}${n ? `<div class="preloader-text" data-preloader-text>${v}</div>` : ""}${s ? `<div class="preloader-progress-wrapper" data-preloader-progress-wrapper><div class="preloader-progress"><div class="preloader-progress-bar" data-preloader-progress-bar></div></div>${r ? '<div class="preloader-percentage" data-preloader-percentage>0%</div>' : ""}</div>` : ""}</div>`;
 }
 function Ls(e = {}) {
   return Ge({ showVideo: !1, showText: !1, showPercentage: !1, customClass: "preloader--minimal", ...e });
@@ -1178,7 +1178,7 @@ function Hs(e) {
   if (!$e) return null;
   Be.fallbacksInjected++, Be.lastFallbackAt = Date.now();
   const t = document.createElement("div");
-  return t.id = "loading-screen", t.setAttribute("role", "status"), t.setAttribute("aria-live", "polite"), t.setAttribute("aria-label", "Carregando"), t.setAttribute("aria-busy", "true"), t.setAttribute("data-injected-by", "preloader"), t.setAttribute("data-module-id", te), t.className = "visible", t.innerHTML = '<div class="loading-logo-container"><img src="/assets/icons/logo-square.png" alt="DshowDash Logo" class="loading-logo" width="180" height="168"></div><div class="loading-text">Carregando</div><div class="loading-progress-wrapper"><div class="loading-progress"><div class="loading-progress-bar" id="loading-progress-bar"></div></div><div class="loading-percentage">0%</div></div>', document.body.insertBefore(t, document.body.firstChild), typeof e == "function" && e("fallback-screen:injected"), Gs("info", "Fallback screen injetado"), t;
+  return t.id = "loading-screen", t.setAttribute("role", "status"), t.setAttribute("aria-live", "polite"), t.setAttribute("aria-label", "Carregando"), t.setAttribute("aria-busy", "true"), t.setAttribute("data-injected-by", "preloader"), t.setAttribute("data-module-id", te), t.className = "visible", t.innerHTML = '<div class="loading-logo-container dsd-marca-area"><img src="/assets/brand/dshow-logo-branco.svg" alt="DShow" class="loading-logo dsd-marca-logo" width="240" height="81"></div><div class="loading-text">Carregando</div><div class="loading-progress-wrapper"><div class="loading-progress"><div class="loading-progress-bar" id="loading-progress-bar"></div></div><div class="loading-percentage">0%</div></div>', document.body.insertBefore(t, document.body.firstChild), typeof e == "function" && e("fallback-screen:injected"), Gs("info", "Fallback screen injetado"), t;
 }
 function js() {
   return Te;
