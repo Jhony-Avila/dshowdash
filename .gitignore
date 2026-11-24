@@ -2325,3 +2325,4 @@ dist/
 !/db/equipamentos/
 !/db/equipamentos/**
 !/scripts/bling-itens-ausentes-teste.php
+!/scripts/bling-ausencia-teste.php
