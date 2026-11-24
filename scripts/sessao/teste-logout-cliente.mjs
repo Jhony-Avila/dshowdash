@@ -1,5 +1,6 @@
 // DSHOW-110 — o cliente ÚNICO de logout (public/core/auth/logout-client.js, o .js servido) com fetch FALSO, sem rede e sem navegador.
 // + a ordem do "Sair" do menu (user-data.ts): o servidor confirma ANTES de avisar os outros e de ir para /login.
+// + (24/11) o erro ao sair é VISÍVEL na tela e continua anunciado ao leitor de tela.
 // Uso: node scripts/sessao/teste-logout-cliente.mjs [raiz]
 import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
@@ -72,5 +73,50 @@ for (const arq of ['public/components/session-manager/core/auth.js', 'public/com
   const ck = corpo('checkSession'); const a = ck.indexOf('if (!result.ok) {'), b = ck.indexOf('return { ok: false, error: result.error }', a);
   const ramo = a > 0 && b > a ? ck.slice(a, b) : null;   // do teste de erro até o return do ramo de erro
   afirma(`${nome}: check indisponível não limpa identidade, tokens nem cookie`, ramo !== null && !/sessionStore\.clear|TokenManager\.clearAll|clearInvalidSessionCookie/.test(ramo), ramo ? ramo.replace(/\s+/g, ' ').slice(0, 160) : 'sem o ramo de erro');
+}
+// Decisão do Jhony (24/11): "Erro ao sair. Tente novamente." aparece NA TELA (não só no anunciador sr-only) e o anúncio continua.
+// (a) o aviso visível (ui/aviso-erro.js, o .js servido) com um DOM falso mínimo; (b) o .catch do handleLogout (.ts e .js) chama os DOIS;
+// (c) o bundle do cabeçalho versionado já leva o aviso (bundle velho = reprova).
+const MSG = 'Erro ao sair. Tente novamente.';
+function domFalso() {
+  const mk = (doc, tag) => { const el = { tagName: tag.toUpperCase(), ownerDocument: doc, children: [], parent: null, attrs: {}, style: { cssText: '' }, className: '', textContent: '', ouvintes: {},
+    setAttribute(k, v) { this.attrs[k] = String(v); }, getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; },
+    addEventListener(t, f) { (this.ouvintes[t] ||= []).push(f); }, appendChild(c) { c.parent = this; this.children.push(c); return c; },
+    remove() { if (this.parent) { this.parent.children = this.parent.children.filter((x) => x !== this); this.parent = null; } },
+    todos() { return this.children.flatMap((c) => [c, ...c.todos()]); },
+    querySelector(sel) { return this.querySelectorAll(sel)[0] || null; },
+    querySelectorAll(sel) { return this.todos().filter((e) => sel === '.user-menu-trigger' ? e.className === 'user-menu-trigger' : sel === '[data-aviso-erro="user-menu"]' ? e.attrs['data-aviso-erro'] === 'user-menu' : false); },
+    getBoundingClientRect() { return this.className === 'user-menu-trigger' ? { top: 10, bottom: 50, left: 1000, right: 1200, width: 200, height: 40 } : { top: 0, bottom: 0, left: 0, right: 0, width: 0, height: 0 }; } };
+    return el; };
+  const doc = { defaultView: { innerWidth: 1440 }, createElement: (t) => mk(doc, t) };
+  const raiz = mk(doc, 'div'); raiz.className = 'user-menu-component'; const gat = mk(doc, 'button'); gat.className = 'user-menu-trigger'; raiz.appendChild(gat);
+  return raiz;
+}
+const css = (el) => Object.fromEntries(el.style.cssText.split(';').filter(Boolean).map((d) => { const i = d.indexOf(':'); return [d.slice(0, i).trim(), d.slice(i + 1).trim()]; }));
+const visivelFalso = (el) => { const c = css(el); return !!el.parent && el.textContent === MSG && c.position === 'fixed' && c.display !== 'none' && c.visibility !== 'hidden' && !/clip/.test(el.style.cssText) && !/(^|\s)sr-only(\s|$)/.test(el.className) && !('width' in c && parseFloat(c.width) <= 2); };
+{
+  const aviso = await import(pathToFileURL(path.join(RAIZ, 'public/components/header/components/user-menu/ui/aviso-erro.js')).href);
+  const raiz = domFalso(); const el = aviso.mostrarAvisoErro(raiz, MSG, 0); const c = el ? css(el) : {};
+  afirma('aviso de erro: aparece na tela (fixo, sem sr-only/clip, com o texto) dentro do componente', !!el && visivelFalso(el) && raiz.querySelectorAll(aviso.SELETOR_AVISO).length === 1, el ? el.style.cssText : 'nulo');
+  afirma('aviso de erro: logo abaixo do botão do usuário (top = base do botão + 8; right alinhado)', c.top === '58px' && c.right === '240px', JSON.stringify(c));
+  afirma('aviso de erro: aria-hidden (o leitor de tela já recebe pelo anunciador; sem leitura dupla)', !!el && el.getAttribute('aria-hidden') === 'true');
+  aviso.mostrarAvisoErro(raiz, MSG, 0);
+  afirma('aviso de erro: um segundo erro não empilha (um aviso só)', raiz.querySelectorAll(aviso.SELETOR_AVISO).length === 1);
+  aviso.esconderAvisoErro(raiz);
+  afirma('aviso de erro: nova tentativa de sair esconde o aviso anterior', raiz.querySelectorAll(aviso.SELETOR_AVISO).length === 0);
+  const e2 = aviso.mostrarAvisoErro(raiz, MSG, 0); e2.ouvintes.click.forEach((f) => f());
+  afirma('aviso de erro: clique fecha', raiz.querySelectorAll(aviso.SELETOR_AVISO).length === 0);
+  afirma('aviso de erro: sem elemento do componente → não quebra', aviso.mostrarAvisoErro(null, MSG) === null);
+}
+for (const arq of ['public/components/header/components/user-menu/core/user-data.ts', 'public/components/header/components/user-menu/core/user-data.js']) {
+  const s = readFileSync(path.join(RAIZ, arq), 'utf8'); const f = s.slice(s.indexOf('function handleLogout'), s.indexOf('function healthCheck'));
+  const ct = f.slice(f.indexOf('.catch('));
+  const msgOk = new RegExp(`MSG_ERRO_SAIR = ["']${MSG.replace(/\./g, '\\.')}["']`).test(s);
+  afirma(`${path.basename(arq)}: no erro, ANUNCIA (leitor de tela) e MOSTRA na tela a mesma mensagem`, msgOk && f.indexOf('.catch(') > 0 && /_announce\(MSG_ERRO_SAIR\)/.test(ct) && /mostrarAvisoErro\(component\.element, MSG_ERRO_SAIR\)/.test(ct), ct.replace(/\s+/g, ' ').slice(0, 200));
+  afirma(`${path.basename(arq)}: ao tentar sair de novo, esconde o aviso anterior antes de chamar o servidor`, f.indexOf('esconderAvisoErro(component.element)') > 0 && f.indexOf('esconderAvisoErro(component.element)') < f.indexOf('api.logout()'));
+}
+{
+  const b = readFileSync(path.join(RAIZ, 'public/components/header/components/dist/header-components.bundle.js'), 'utf8');
+  afirma('header-components.bundle.js: leva o aviso visível (bundle recompilado depois da mudança)', b.includes('data-aviso-erro') && b.includes('user-menu-aviso-erro') && b.includes(MSG));
 }
 console.log(`LOGOUT CLIENTE: ${ok} ok, ${falhas} falhas`); process.exit(falhas ? 1 : 0);

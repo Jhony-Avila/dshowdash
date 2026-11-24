@@ -9,6 +9,7 @@
 //   Formatters from ../utils/formatters.js
 //   emitUIAction from ./actions.js
 //   getPort, getHardNavService from ./ports.js
+//   mostrarAvisoErro, esconderAvisoErro from ../ui/aviso-erro.js
 //   UI_EVENTS from /core/runtime/events/catalog/ui.events.js
 //   COMPONENT_EVENTS from /core/runtime/events/catalog/component.events.js
 //
@@ -39,6 +40,7 @@ import { StateValidators } from '../state/validators.js';
 import { Formatters } from '../utils/formatters.js';
 import { emitUIAction } from './actions.js';
 import { getPort, getHardNavService } from './ports.js';
+import { mostrarAvisoErro, esconderAvisoErro } from '../ui/aviso-erro.js';
 import { UI_EVENTS } from '/core/runtime/events/catalog/ui.events.js';
 import { COMPONENT_EVENTS } from '/core/runtime/events/catalog/component.events.js';
 
@@ -175,11 +177,14 @@ export function clearUser(component: Record<string,unknown>) {
 }
 
 // ── Handle Logout ───────────────────────────────────────────
+export const MSG_ERRO_SAIR = 'Erro ao sair. Tente novamente.';
 export function handleLogout(component: Record<string,unknown>) {
   if (component.isDestroyed) return Promise.resolve();
 
   // @ts-expect-error TS migration - TS2349
   component._announce('Saindo da conta...');
+  // @ts-expect-error TS migration - TS2345
+  esconderAvisoErro(component.element);
 
   // DSHOW-110: encerra NO SERVIDOR primeiro e espera a confirmação. Antes, a ação 'logout' saía antes da chamada; o roteador navegava
   // para /login em 100 ms e o navegador abortava o POST /api/auth/logout.php (a sessão continuava viva no servidor).
@@ -201,8 +206,11 @@ export function handleLogout(component: Record<string,unknown>) {
   }).catch((error: unknown) => {
     // @ts-expect-error TS migration - TS2349
     component._log('error', 'Erro logout:', error);
+    // Decisão do Jhony (24/11): a mensagem aparece NA TELA (aviso abaixo do botão do usuário) e continua anunciada ao leitor de tela.
     // @ts-expect-error TS migration - TS2349
-    component._announce('Erro ao sair. Tente novamente.');
+    component._announce(MSG_ERRO_SAIR);
+    // @ts-expect-error TS migration - TS2345
+    mostrarAvisoErro(component.element, MSG_ERRO_SAIR);
   });
 }
 
