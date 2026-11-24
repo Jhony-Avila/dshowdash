@@ -591,7 +591,15 @@ final class BlingSyncService
         $d['sales_channel_id'] = $this->repo->idPorBlingId('bling_sales_channels', $accountId, $canalBling);
         // DSHOW-106 (2): guarda o identificador EXTERNO da loja (coluna criada pela migração 20261123; sem ela, segue sem gravar)
         if ($this->repo->temColuna('bling_sales_orders', 'loja_bling_id')) {
-            $d['loja_bling_id'] = $canalBling;
+            // revisão da ACIMA_ESQUERDA (achado 1, 24/11): a MESMA guarda do situacao_bling_id — loja.id ausente, 0 ou ilegível na resposta
+            // NUNCA apaga a loja já conhecida (antes: o upsert gravava NULL ou "0" por cima do que a releitura preencheu com COALESCE)
+            $loja = ($canalBling !== null && preg_match('/^[1-9][0-9]{0,19}$/', (string) $canalBling)) ? (string) $canalBling : null;
+            if ($loja === null) {
+                $conhecida = $this->repo->consultar('SELECT loja_bling_id FROM bling_sales_orders WHERE account_id = ? AND bling_id = ?',
+                    [$accountId, $d['bling_id']]);
+                $loja = ($conhecida[0]['loja_bling_id'] ?? null) !== null ? (string) $conhecida[0]['loja_bling_id'] : null;
+            }
+            $d['loja_bling_id'] = $loja;
         }
         // PORTÃO BLING SITUAÇÃO: sem a coluna (antes da migração 20261123-situacao), simplesmente não grava; id ausente na resposta
         // nunca apaga um id já conhecido.
@@ -1035,6 +1043,29 @@ final class BlingSyncService
         return ['situacao' => $concluida ? ($c['erros'] > 0 ? 'concluida_com_erros' : 'concluida')
                                          : ($parou ? ($c['erros'] > 0 ? 'interrompida_com_erros' : 'interrompida') : (string) ($r['estado'] ?? 'parcial')),
                 'paginas' => $paginas, 'pagina_inicial' => $paginaInicial] + $c;
+    }
+
+    /**
+     * Revisão da ACIMA_ESQUERDA (achado 4, 24/11): escolhe a conta da releitura SÓ LENDO o banco (nada é gravado, nada vai ao Bling).
+     * --conta=N precisa ser uma conta ATIVA e CONECTADA; sem --conta, exatamente 1 ativa; modos que chamam o Bling exigem token guardado.
+     * @return array{conta:int}|array{erro:string}
+     */
+    public function contaParaReleitura(?int $pedida, bool $precisaToken): array
+    {
+        $ativas = $this->repo->contasAtivas();
+        if ($pedida !== null && !in_array($pedida, $ativas, true)) {
+            return ['erro' => "a conta $pedida não é uma conta Bling ativa e conectada (ativas: " . ($ativas !== [] ? implode(',', $ativas) : 'nenhuma') . ')'];
+        }
+        $contas = $pedida !== null ? [$pedida] : $ativas;
+        if (count($contas) !== 1) { return ['erro' => 'esperava exatamente 1 conta Bling ativa (achei ' . count($contas) . '); use --conta=<id>']; }
+        if ($precisaToken) {
+            try { $tok = $this->repo->tokens($contas[0]); } catch (Throwable $e) { $tok = false; }
+            // BlingCrypto::decifrar devolve null (não lança) para blob ilegível: sem access E sem refresh legíveis não há como falar com o Bling
+            if (is_array($tok) && ($tok['access_token'] ?? null) === null && ($tok['refresh_token'] ?? null) === null) { $tok = false; }
+            if ($tok === null) { return ['erro' => "a conta {$contas[0]} não tem token guardado — reconecte a conta no painel do Bling"]; }
+            if ($tok === false) { return ['erro' => "o token guardado da conta {$contas[0]} está ilegível — reconecte a conta no painel do Bling"]; }
+        }
+        return ['conta' => $contas[0]];
     }
 
     public const RECURSO_REPROCESSO = 'releitura_situacao_pedidos';
