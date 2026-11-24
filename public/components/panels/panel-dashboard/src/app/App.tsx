@@ -576,9 +576,13 @@ function Shell({ config }: { config: ShellConfig }) {
   );
 }
 
+/** Estrutura antiga "Principal": fora da P10 (não é usada; exportada só para a reversão ser uma linha). */
+export { Shell as ShellPrincipalAntigo };
+
 export function App({ config }: { config: ShellConfig }) {
-  // Geral V2 · Lançamento (23/11/2026): a GERAL (botão da sidebar) vira a V2 dos mockups aprovados; a página inicial imersiva
-  // (config.home) continua a mesma. O shell do Dash não muda — isto é só o miolo.
-  if (config.home !== true) return <div className="ger-tela-toda" data-imersivo="0" data-densidade="conforto" data-geral-v2="1"><GeralV2 /></div>;
-  return <Shell config={config} />;
+  // Retorno do agente de mockup (24/11/2026): a estrutura antiga "Principal" (clima, indicadores de módulos) NÃO publica.
+  // A P10 é a Geral V2 com os estados — na Geral (botão da sidebar) E na página inicial (config.home). O shell do Dash não muda.
+  // O componente antigo continua no código (sem uso; o build o descarta), para a reversão ser trocar esta linha.
+  void config;
+  return <div className="ger-tela-toda" data-imersivo="0" data-densidade="conforto" data-geral-v2="1"><GeralV2 /></div>;
 }

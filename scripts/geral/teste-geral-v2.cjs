@@ -44,7 +44,7 @@ function listaItens(id, total) {
 }
 function fontes(m) {
   const f = [
-    { fonte: 'pipedrive', estado: 'conectada', ultimo_sucesso: agoraIso(), motivo: null },
+    { fonte: 'pipedrive', estado: m.pipeVelho ? 'desatualizada' : 'conectada', ultimo_sucesso: m.pipeVelho ? new Date(Date.now() - 30 * 3600e3).toISOString() : agoraIso(), motivo: m.pipeVelho ? 'Última sincronização há mais de um dia.' : null },
     { fonte: 'bling', estado: m.estados ? 'desatualizada' : 'conectada', ultimo_sucesso: m.estados ? new Date(Date.now() - 26 * 3600e3).toISOString() : agoraIso(), motivo: m.estados ? 'Última sincronização há mais de um dia.' : null },
     { fonte: 'calendar', estado: 'conectada', ultimo_sucesso: agoraIso(), motivo: null },
     { fonte: 'asaas', estado: 'aguardando', ultimo_sucesso: null, motivo: 'Asaas em auditoria; faltam as chaves.' },
@@ -54,7 +54,7 @@ function fontes(m) {
   return f;
 }
 function simulador() {
-  const m = { atraso: 0, falhaResumo: false, falhaPrio: false, estados: false, semPendencias: false, prioNula: false, calls: {}, ultimaLista: null };
+  const m = { atraso: 0, falhaResumo: false, falhaPrio: false, estados: false, semPendencias: false, prioNula: false, pipeVelho: false, calls: {}, ultimaLista: null };
   m.rotear = async (ctx) => {
     await ctx.route('**/api/geral/v2/**', async (r) => {
       const u = new URL(r.request().url()); const rota = u.pathname.replace('/api/geral/v2', '').replace(/\.php$/, ''); m.calls[rota] = (m.calls[rota] || 0) + 1;
@@ -83,7 +83,7 @@ function simulador() {
           itens: todos.slice((pag - 1) * pp, pag * pp).map((i) => ({ ...i, valor: i.valor === null ? null : i.valor.toFixed(2) })) }));
       }
       if (rota === '/agenda') return r.fulfill(env({ estado: 'ok', ultimo_sucesso: agoraIso(), url_agenda: '#/panel-google-calendar', itens: [
-        { inicio: new Date(Date.now() + 2 * 3600e3).toISOString(), fim: null, titulo: 'Revisão de proposta de painel', duracao_min: 45, url_evento: 'https://calendar.exemplo.invalid/e1', conflito: true },
+        { inicio: new Date(Date.now() + 2 * 3600e3).toISOString(), fim: null, titulo: 'Revisão de proposta com Eduardo Martins', duracao_min: 45, url_evento: 'https://calendar.exemplo.invalid/e1', conflito: true },
         { inicio: new Date(Date.now() + 2.25 * 3600e3).toISOString(), fim: null, titulo: 'Alinhamento comercial', duracao_min: 30, url_evento: 'https://calendar.exemplo.invalid/e2', conflito: true },
         { inicio: new Date(Date.now() + 4 * 3600e3).toISOString(), fim: null, titulo: 'Briefing semanal de mercado LED', duracao_min: 30, url_evento: null, conflito: false }] }));
       if (rota === '/fontes') return r.fulfill(env(fontes(m)));
@@ -129,8 +129,23 @@ function simulador() {
     afirma('prioridades por GRAVIDADE (vencida → sem próxima → conflito), no máximo 3, textos com negócios DISTINTOS', JSON.stringify(pr.map((p) => p[0])) === '["atividade_vencida","sem_proxima_atividade","conflito_agenda"]'
       && /6 negócios abertos com atividade vencida/.test(pr[0][1]) && /120 negociações sem próxima atividade/.test(pr[1][1]) && /1 compromisso com horários conflitantes/.test(pr[2][1]) && /3 ações/.test(await txt(pg, '[data-gv2-bloco="prioridades"]')), JSON.stringify(pr));
     const c = await pg.$$eval('.gv2 [data-gv2-cartao]', (xs) => xs.map((x) => [x.dataset.gv2Cartao, x.querySelector('.gv2-num-valor')?.textContent, x.querySelector('.gv2-num-linha')?.textContent]));
-    afirma('3 cartões SEPARADOS (nunca somados): Pedidos R$ 284.900 / 17 pedidos + nota de cancelados · Ganhos R$ 351.000 / 9 · Funil R$ 4.830.000 / 86 · 5 sem valor',
-      /284\.900/.test(c[0][1]) && /17 pedidos/.test(c[0][2]) && /canceladas/.test(c[0][2]) && /351\.000/.test(c[1][1]) && /9 negócios ganhos/.test(c[1][2]) && /4\.830\.000/.test(c[2][1]) && /86 negócios abertos · 5 sem valor/.test(c[2][2]), JSON.stringify(c));
+    afirma('3 cartões SEPARADOS (nunca somados): Pedidos R$ 284.900 / 17 pedidos + nota de cancelados · Ganhos R$ 351.000 / 9 · Funil R$ 4.830.000 / 86',
+      /284\.900/.test(c[0][1]) && /17 pedidos/.test(c[0][2]) && /canceladas/.test(c[0][2]) && /351\.000/.test(c[1][1]) && /9 negócios ganhos/.test(c[1][2]) && /4\.830\.000/.test(c[2][1]) && /86 negócios abertos/.test(c[2][2]), JSON.stringify(c));
+    // SOMA PARCIAL (retorno do mockup, 24/11): tão explícita quanto os outros estados
+    const sp = await pg.$$eval('.gv2 [data-gv2-cartao]', (xs) => xs.map((x) => [x.dataset.gv2Cartao, x.dataset.gv2Estado, x.querySelector('.gv2-selo')?.textContent, x.querySelector('[data-gv2-soma-parcial]')?.textContent || '']));
+    afirma('SOMA PARCIAL: Ganhos e Funil com "Dados parciais" escrito + "Soma dos valores informados · X negócios sem valor"; Pedidos sem esse aviso',
+      sp[1][1] === 'parcial' && sp[1][2] === 'Dados parciais' && /Soma dos valores informados · 1 negócio sem valor/.test(sp[1][3])
+      && sp[2][1] === 'parcial' && sp[2][2] === 'Dados parciais' && /Soma dos valores informados · 5 negócios sem valor/.test(sp[2][3]) && sp[0][3] === '', JSON.stringify(sp));
+    // 1440 (retorno do mockup): nomes de fonte e de agenda COMPLETOS; só os secundários encurtados; cartões sem crescer
+    const rod = await pg.$$eval('.gv2 [data-gv2-cartao] .gv2-num-rodape .gv2-fraco', (xs) => xs.map((x) => [x.textContent, x.scrollWidth <= x.clientWidth + 1]));
+    afirma('rodapés curtos e INTEIROS: "Bling · não é recebimento" · "Pipedrive · data do ganho" · "Pipedrive · funil atual"',
+      JSON.stringify(rod.map((r) => r[0])) === '["Bling · não é recebimento","Pipedrive · data do ganho","Pipedrive · funil atual"]' && rod.every((r) => r[1]), JSON.stringify(rod));
+    const tit = await pg.$$eval('.gv2-evento-txt strong', (xs) => xs.map((x) => [x.textContent, x.scrollWidth <= x.clientWidth + 1]));
+    afirma('agenda: títulos dos compromissos inteiros (com o nome do consultor), sem reticências', tit.length === 3 && tit.every((t) => t[1]) && /Eduardo Martins/.test(tit[0][0]), JSON.stringify(tit));
+    const fon = await pg.$$eval('[data-gv2-fonte] strong', (xs) => xs.map((x) => x.textContent));
+    afirma('linha de fontes com o nome completo "Google Calendar"', fon.includes('Google Calendar') && !fon.includes('Calendar'), JSON.stringify(fon));
+    const alts = await pg.$$eval('.gv2 [data-gv2-cartao]', (xs) => xs.map((x) => Math.round(x.getBoundingClientRect().height)));
+    afirma('os 3 cartões com a MESMA altura (o aviso de soma parcial não aumenta o cartão)', Math.max(...alts) - Math.min(...alts) <= 1, JSON.stringify(alts));
     const g = await txt(pg, '[data-gv2-bloco="grafico"]'); const barras = await pg.$$eval('.gv2-barra', (xs) => xs.length);
     afirma('gráfico: 7 barras (dias completos) e "soma igual ao cartão acima"', barras === 7 && /Valor total: R\$\s?284\.900 · soma igual ao cartão acima/.test(g), `${barras} · ${g.slice(-120)}`);
     const svg = await pg.$eval('.gv2-barras', (x) => ({ w: Math.round(x.getBoundingClientRect().width), a: Number(x.getAttribute('width')), fs: Math.round(x.querySelector('text').getBoundingClientRect().height) }));
@@ -189,16 +204,31 @@ function simulador() {
   // ── (3) ESTADOS: zero real · desatualizado · aguardando · sem pendências ──
   { const m = simulador(); m.estados = true; m.semPendencias = true; const { ctx, pg } = await nova(m); await abrir(pg);
     const e = await pg.$$eval('.gv2 [data-gv2-cartao]', (xs) => xs.map((x) => [x.dataset.gv2Estado, x.querySelector('.gv2-selo')?.textContent, x.querySelector('.gv2-num-valor')?.textContent, x.querySelector('.gv2-num-linha')?.textContent]));
-    afirma('ZERO REAL: "Zero real" escrito e R$ 0 só porque a consulta completa confirmou', e[0][0] === 'zero' && e[0][1] === 'Zero real' && /R\$\s?0/.test(e[0][2]), JSON.stringify(e[0]));
+    afirma('COERÊNCIA: zero com o Bling DESATUALIZADO não é "Zero real" → "Desatualizado", "—" e "Zero não confirmado · Bling desatualizado"', e[0][0] === 'desatualizado' && e[0][1] === 'Desatualizado' && e[0][2] === '—' && /Zero não confirmado · Bling desatualizado/.test(e[0][3]), JSON.stringify(e[0]));
     afirma('DESATUALIZADO: último valor válido preservado com o horário', e[1][0] === 'desatualizado' && e[1][1] === 'Desatualizado' && /351\.000/.test(e[1][2]) && /Último valor válido preservado/.test(e[1][3]), JSON.stringify(e[1]));
     afirma('AGUARDANDO CONEXÃO: "—" e "nenhum número assumido" (nunca zero)', e[2][0] === 'aguardando' && e[2][1] === 'Aguardando conexão' && e[2][2] === '—' && /nenhum número assumido/.test(e[2][3]), JSON.stringify(e[2]));
-    afirma('gráfico com ZERO confirmado: frase "Zero pedidos lançados no período" (sem grade vazia)', !!(await pg.$('[data-gv2-zero]')) && (await pg.$$('.gv2-barras')).length === 0);
+    afirma('gráfico: zero NÃO confirmado escrito ("Nenhum zero assumido"), sem "Zero pedidos lançados" e sem barras', !!(await pg.$('[data-gv2-zero-nao-confirmado]')) && !(await pg.$('[data-gv2-zero]')) && (await pg.$$('.gv2-barras')).length === 0);
+    const gr = await txt(pg, '[data-gv2-bloco="grafico"]');
+    afirma('gráfico: sem o selo "0 pedidos" quando o zero não foi confirmado, e "Desatualizado" escrito uma vez só', !/0 pedidos/.test(gr) && (gr.match(/Desatualizado/g) || []).length === 1, gr.slice(0, 200));
+    const ln = await pg.$eval('[data-gv2-cartao="pedidos"] .gv2-num-linha', (x) => Math.round(x.getBoundingClientRect().height / parseFloat(getComputedStyle(x).lineHeight || '18')));
+    afirma('cartão do Bling: o aviso do zero não confirmado cabe numa linha', ln <= 1, String(ln));
     const sp = await txt(pg, '[data-gv2-bloco="prioridades"]'); const alt = await pg.$eval('[data-gv2-bloco="prioridades"]', (x) => x.getBoundingClientRect().height);
     afirma('SEM PENDÊNCIAS: bloco compacto de uma linha', /Sem pendências/.test(sp) && alt < 90, `${alt} · ${sp}`);
-    afirma('fonte desatualizada escrita na linha de fontes (Bling "Desatualizado")', /Bling\s*Desatualizado/.test(await txt(pg, '[data-gv2-bloco="fontes"]')));
+    const fl = await txt(pg, '[data-gv2-bloco="fontes"]');
+    afirma('fonte desatualizada escrita na linha de fontes (Bling "Desatualizado")', /Bling\s*Desatualizado/.test(fl), fl);
+    afirma('COERÊNCIA: com "Negócios ganhos" desatualizado, o Pipedrive NÃO diz "Atualizado" → "Desatualizado · Negócios ganhos"', /Pipedrive\s*Desatualizado · Negócios ganhos/.test(fl) && !/Pipedrive\s*Atualizado/.test(fl), fl);
     await cap(pg, '3-estados');
     await pg.click('[data-gv2-bloco="fontes"] .gv2-link'); await pg.waitForTimeout(300);
     afirma('"Detalhes" das fontes mostra o motivo de cada uma (ex.: Asaas em auditoria)', /Asaas em auditoria/.test(await txt(pg, '.gv2-fontes-det')));
+    await ctx.close(); }
+
+  // ── (3c) ZERO com o Pipedrive DESATUALIZADO: prioridades não viram "Sem pendências" ──
+  { const m = simulador(); m.semPendencias = true; m.pipeVelho = true; const { ctx, pg } = await nova(m); await abrir(pg);
+    const t = await txt(pg, '[data-gv2-bloco="prioridades"]');
+    afirma('COERÊNCIA: prioridades "zero" com o Pipedrive desatualizado → "Não foi possível confirmar" + "Desatualizado", nunca "Sem pendências"', /Não foi possível confirmar: negócios com atividade vencida/.test(t) && /Desatualizado/.test(t) && !/Sem pendências/.test(t), t.slice(0, 260));
+    const c = await pg.$$eval('.gv2 [data-gv2-cartao]', (xs) => xs.map((x) => [x.dataset.gv2Cartao, x.dataset.gv2Estado, x.querySelector('.gv2-num-valor')?.textContent]));
+    afirma('COERÊNCIA: ganhos e funil com o Pipedrive desatualizado → "Desatualizado" com o último valor válido (não "ok")', c[1][1] === 'desatualizado' && /351\.000/.test(c[1][2]) && c[2][1] === 'desatualizado', JSON.stringify(c));
+    await cap(pg, '3c-pipedrive-desatualizado');
     await ctx.close(); }
 
   // ── (3b) CONTRAPROVA: quantidade desconhecida (null) com estado "ok" NUNCA some nem vira "Sem pendências" ──
@@ -229,6 +259,13 @@ function simulador() {
     m.falhaResumo = true; m.atraso = 0; await pg.click('.gv2-periodo:has-text("Mês até ontem")'); await pg.waitForTimeout(1200);
     afirma('falha depois de um sucesso: aviso "a atualização falhou" e os cartões mantêm a última leitura válida', /A atualização falhou/.test(await txt(pg, '[data-gv2-bloco="resultado"]')) && /284\.900/.test(await txt(pg, '[data-gv2-cartao="pedidos"]')));
     await fechar(ctx, pg, 'video-3-com-problema-tentar-de-novo'); }
+
+  // ── (4b) PÁGINA INICIAL: a estrutura antiga "Principal" não publica — o início também é a Geral V2 ──
+  { const m = simulador(); const { ctx, pg } = await nova(m); await pg.goto(`${B}/`, { waitUntil: 'networkidle', timeout: 60000 });
+    const v2 = await pg.waitForSelector('[data-geral-v2="1"] .gv2', { timeout: 30000 }).then(() => true).catch(() => false);
+    const antigo = await pg.evaluate(() => !!document.querySelector('.ger-hero, [data-ger-sec="clima"], .react-grid-layout'));
+    afirma('página inicial = Geral V2 (sem "Principal": clima, saudação e grade de módulos)', v2 && !antigo, JSON.stringify({ v2, antigo }));
+    await ctx.close(); }
 
   // ── (5) REDUZIR MOVIMENTO ──
   { const m = simulador(); m.atraso = 2500; const { ctx, pg } = await nova(m, { reduzir: true }); await abrir(pg, false);

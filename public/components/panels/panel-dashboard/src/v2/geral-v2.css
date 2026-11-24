@@ -194,3 +194,10 @@
 [data-geral-react-root] .gv2-link svg, [data-geral-react-root] .gv2-btn svg { flex: none; }
 /* o quadro "Com problema" não estica para ocupar o bloco (em coluna ele crescia até o fim do gráfico) */
 [data-geral-react-root] .gv2-grafico .gv2-problema, [data-geral-react-root] .gv2-agenda .gv2-problema, [data-geral-react-root] .gv2-prioridades .gv2-problema, [data-geral-react-root] .gv2-num .gv2-problema { flex: 0 0 auto; }
+
+/* 1440 (retorno do mockup, 24/11): títulos de compromisso e nomes de fonte inteiros, sem aumentar os cartões —
+   o botão "Abrir evento" vira só o ícone (nome acessível no aria-label) quando o miolo é estreito. */
+@media (max-width: 1800px) {
+  .gv2-btn--evento { padding-left: 8px; padding-right: 8px; }
+  .gv2-btn--evento .gv2-btn-rotulo { display: none; }
+}

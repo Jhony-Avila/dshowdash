@@ -6,7 +6,12 @@ export type EstadoBloco = 'ok' | 'zero' | 'parcial' | 'desatualizado' | 'aguarda
 export type PeriodoV2 = 'ontem' | '7d' | 'mes';
 
 export interface Periodo { id: PeriodoV2; de: string; ate: string; rotulo: string }
-interface Base { estado: EstadoBloco; ultimo_sucesso: string | null; motivo: string | null }
+/**
+ * Estado POR INDICADOR (retorno do mockup, 24/11; contrato proposto à ACIMA_ESQUERDA no PARA-STATUS-CIMA):
+ * `fonte` e `consulta_completa` são aditivos e opcionais. Sem eles, a tela deriva a fonte pelo indicador e só aceita
+ * "zero" com a fonte em dia no fontes.php (ver v2/coerencia.ts).
+ */
+interface Base { estado: EstadoBloco; ultimo_sucesso: string | null; motivo: string | null; fonte?: IdFonte; consulta_completa?: boolean; fonte_atualizada_em?: string | null; valor_em?: string | null }
 export interface PedidosBling extends Base { quantidade: number | null; valor: number | null; por_dia: { dia: string; quantidade: number | null; valor: number | null }[]; inclui_canceladas: boolean }
 export interface NegociosGanhos extends Base { quantidade: number | null; valor: number | null; sem_valor: number | null }
 export interface FunilAberto extends Base { quantidade: number | null; valor: number | null; sem_valor: number | null }
@@ -26,7 +31,7 @@ export interface Compromisso { inicio: string; fim: string | null; titulo: strin
 export interface Agenda extends Base { itens: Compromisso[]; url_agenda: string | null }
 
 export type IdFonte = 'pipedrive' | 'bling' | 'calendar' | 'asaas' | 'mercadolivre' | 'lojaintegrada';
-export interface Fonte { fonte: IdFonte; estado: 'conectada' | 'desatualizada' | 'problema' | 'aguardando'; ultimo_sucesso: string | null; motivo: string | null }
+export interface Fonte { fonte: IdFonte; estado: 'conectada' | 'desatualizada' | 'problema' | 'aguardando'; ultimo_sucesso: string | null; motivo: string | null; indicadores?: { id: string; estado: EstadoBloco }[] }
 
 export class ErroV2 extends Error { constructor(public http: number, msg: string) { super(msg); } get semAcesso() { return this.http === 401 || this.http === 403; } }
 
