@@ -854,18 +854,20 @@ final class ResourceController
         $linhas = [];
         foreach ($p->colecao('categorias') as $c) {
             $daCategoria = array_values(array_filter($produtos, static fn($x) => $x['categoria'] === $c['id']));
-            $receita = array_sum(array_column($daCategoria, 'receita'));
+            $receita = BlingProviderBase::somaConhecida($daCategoria, 'receita');   // Codex DSHOW-114: null = desconhecido
             $estoque = array_sum(array_column($daCategoria, 'estoque_total'));
             $margens = array_column($daCategoria, 'margem_pct');
+            $margemDesc = in_array(null, $margens, true);
 
             $linhas[] = [
                 'id'       => $c['id'],
                 'nome'     => $c['nome'],
                 'produtos' => count($daCategoria),
                 'ativos'   => count(array_filter($daCategoria, static fn($x) => $x['ativo'])),
-                'receita'  => round($receita, 2),
+                'receita'  => $receita === null ? null : round($receita, 2),
                 'estoque'  => $estoque,
-                'margem_media' => count($margens) > 0 ? round(array_sum($margens) / count($margens), 1) : 0.0,
+                // margem de produto sem custo = null: a média não pode contar null como 0 %; categoria sem produto = indefinida
+                'margem_media' => ($margemDesc || count($margens) === 0) ? null : round(array_sum($margens) / count($margens), 1),
                 'qualidade_media' => count($daCategoria) > 0
                     ? (int) round(array_sum(array_column($daCategoria, 'qualidade_score')) / count($daCategoria)) : 0,
             ];
@@ -960,7 +962,7 @@ final class ResourceController
                 'cobertura_dias' => $e['cobertura_dias'],
                 'consumo_90d'=> $e['consumo_90d'],
                 'divergencia'=> $e['divergencia'],
-                'valor'      => round(max(0, $e['fisico']) * $prod['custo'], 2),
+                'valor'      => $prod['custo'] === null ? null : round(max(0, $e['fisico']) * $prod['custo'], 2),   // custo desconhecido = valor desconhecido
                 'margem_pct' => $prod['margem_pct'],
                 'ultima_movimentacao' => $e['ultima_movimentacao'],
                 'status'     => $e['status'],
@@ -1003,6 +1005,7 @@ final class ResourceController
             'critico'         => ['chave' => $s, 'rotulo' => 'Crítico',         'cor' => 'aviso'],
             'baixa_cobertura' => ['chave' => $s, 'rotulo' => 'Cobertura baixa', 'cor' => 'aviso'],
             'parado'          => ['chave' => $s, 'rotulo' => 'Parado',          'cor' => 'neutro'],
+            'consumo_desconhecido' => ['chave' => $s, 'rotulo' => 'Consumo não lido', 'cor' => 'neutro'],   // Codex DSHOW-114
             default           => ['chave' => $s, 'rotulo' => 'Normal',          'cor' => 'sucesso'],
         };
     }
@@ -1302,9 +1305,9 @@ final class ResourceController
             }
             $porProduto[$e['produto']]['disponivel'] += $e['disponivel'];
             $porProduto[$e['produto']]['minimo']     += $e['minimo'];
-            $porProduto[$e['produto']]['consumo_dia'] = max(
-                $porProduto[$e['produto']]['consumo_dia'], $e['consumo_dia']
-            );
+            // Codex DSHOW-114: consumo desconhecido em qualquer depósito = consumo do produto desconhecido (nunca max(0, null) = 0)
+            $atual = $porProduto[$e['produto']]['consumo_dia'];
+            $porProduto[$e['produto']]['consumo_dia'] = ($atual === null || $e['consumo_dia'] === null) ? null : max($atual, $e['consumo_dia']);
             $porProduto[$e['produto']]['depositos'][] = $depositos[$e['deposito']]['nome'] ?? $e['deposito'];
         }
 
@@ -1319,13 +1322,16 @@ final class ResourceController
             $leadTime = $fo['prazo_entrega_dias'] ?? 21;
             $transito = $emTransito[$pid] ?? 0;
             $posicao = $d['disponivel'] + $transito;
-            $cobertura = $d['consumo_dia'] > 0 ? $posicao / $d['consumo_dia'] : null;
+            $consumoDesc = $d['consumo_dia'] === null;
+            $cobertura = (!$consumoDesc && $d['consumo_dia'] > 0) ? $posicao / $d['consumo_dia'] : null;
 
             // Alvo: cobrir o lead time + 15 dias de seguranca, respeitando o minimo.
-            $alvo = $d['consumo_dia'] > 0
+            $alvo = (!$consumoDesc && $d['consumo_dia'] > 0)
                 ? (int) ceil($d['consumo_dia'] * ($leadTime + 15))
                 : $d['minimo'];
-            $sugerida = max(0, $alvo - $posicao);
+            // Codex DSHOW-114: sem o consumo a quantidade é desconhecida (o mínimo sozinho subestima); o motivo por FATO (negativo, sem posição,
+            // abaixo do mínimo) continua valendo
+            $sugerida = $consumoDesc ? null : max(0, $alvo - $posicao);
 
             [$motivo, $urgencia] = match (true) {
                 $d['disponivel'] < 0 => ['Saldo negativo em estoque', 'critica'],
@@ -1338,7 +1344,7 @@ final class ResourceController
                 default              => ['', ''],
             };
 
-            if ($motivo === '' || $sugerida <= 0) {
+            if ($motivo === '' || ($sugerida !== null && $sugerida <= 0)) {
                 continue;
             }
 
@@ -1350,12 +1356,12 @@ final class ResourceController
                 'em_transito' => $transito,
                 'posicao'     => $posicao,
                 'minimo'      => $d['minimo'],
-                'consumo_dia' => round($d['consumo_dia'], 2),
+                'consumo_dia' => $consumoDesc ? null : round($d['consumo_dia'], 2),
                 'cobertura_dias' => $cobertura === null ? null : round($cobertura, 1),
                 'lead_time'   => $leadTime,
                 'quantidade_sugerida' => $sugerida,
                 'custo_unitario' => $prod['custo'],
-                'custo_estimado' => round($sugerida * $prod['custo'], 2),
+                'custo_estimado' => ($sugerida === null || $prod['custo'] === null) ? null : round($sugerida * $prod['custo'], 2),
                 'fornecedor'  => $fo['nome'] ?? '—',
                 'motivo'      => $motivo,
                 'urgencia'    => $urgencia,
@@ -1364,7 +1370,7 @@ final class ResourceController
                     'rotulo'=> ucfirst($urgencia),
                     'cor'   => $urgencia === 'critica' ? 'erro' : ($urgencia === 'alta' ? 'aviso' : 'info'),
                 ],
-                'cobertura_prevista' => $d['consumo_dia'] > 0
+                'cobertura_prevista' => (!$consumoDesc && $d['consumo_dia'] > 0)
                     ? round(($posicao + $sugerida) / $d['consumo_dia'], 1) : null,
             ];
         }

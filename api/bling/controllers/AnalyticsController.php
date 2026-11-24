@@ -316,7 +316,14 @@ final class AnalyticsController
         }
 
         $porProduto = [];
-        foreach ($p->colecao('estoque') as $e) {
+        $estoqueM = $p->colecao('estoque');
+        // Codex DSHOW-114: giro (consumo) ou receita desconhecidos = matriz indisponível — nada de mediana sobre zeros
+        if (in_array(null, array_column($estoqueM, 'giro_anual'), true) || in_array(null, array_column($produtos, 'receita'), true)) {
+            ApiResponse::success(['itens' => [], 'cortes' => ['giro' => null, 'margem_pct' => null, 'metodo' => 'mediana'], 'quadrantes' => [],
+                'indisponivel' => 'itens_desconhecidos'], bling_meta(['filtros' => $f]));
+            return;
+        }
+        foreach ($estoqueM as $e) {
             if (!isset($porProduto[$e['produto']])) {
                 $porProduto[$e['produto']] = ['giro' => 0.0, 'disponivel' => 0, 'valor' => 0.0];
             }
@@ -620,7 +627,8 @@ final class AnalyticsController
             $receitaAfetada = 0.0;
             foreach ($produtos as $prod) {
                 if (in_array($criterio, $prod['qualidade_pendencias'], true)) {
-                    $receitaAfetada += $prod['receita'];
+                    // Codex DSHOW-114: receita desconhecida = impacto desconhecido (null pegajoso), nunca soma parcial
+                    $receitaAfetada = ($receitaAfetada === null || $prod['receita'] === null) ? null : $receitaAfetada + $prod['receita'];
                 }
             }
             $pendencias[] = [
@@ -628,7 +636,7 @@ final class AnalyticsController
                 'rotulo' => $rotulos[$criterio] ?? $criterio,
                 'produtos' => $qtd,
                 'participacao' => $total > 0 ? round(($qtd / $total) * 100, 1) : 0.0,
-                'receita_afetada' => round($receitaAfetada, 2),
+                'receita_afetada' => $receitaAfetada === null ? null : round($receitaAfetada, 2),
                 'prioridade' => $receitaAfetada > 0 ? 'alta' : ($qtd > $total * 0.2 ? 'media' : 'baixa'),
                 'acao' => 'Completar o campo no cadastro do produto.',
             ];

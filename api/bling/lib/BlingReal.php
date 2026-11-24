@@ -335,8 +335,23 @@ final class BlingReal extends BlingProviderBase
         ], $r);
     }
 
+    /**
+     * Codex DSHOW-114: a cobertura de ITENS do conjunto de pedidos que um agregado soma é completa? (todo pedido válido do conjunto com itens lidos
+     * do detalhe). Incompleta = o agregado é DESCONHECIDO (null) — nunca zero nem soma parcial como total. Sem a coluna itens_lidos_em = incompleta.
+     * Mesmo conjunto das subconsultas abaixo: pedidos fora de rascunho/cancelado (e, com $desde, a partir dessa data).
+     */
+    private function itensCompletos(?string $desde = null): bool
+    {
+        if (!$this->repo->temColuna('bling_sales_orders', 'itens_lidos_em')) { return false; }
+        $r = $this->repo->consultar("SELECT COUNT(*) c FROM bling_sales_orders WHERE account_id = ? AND situacao NOT IN ('rascunho','cancelado')
+                                       AND itens_lidos_em IS NULL" . ($desde !== null ? ' AND data_pedido >= ?' : ''),
+            $desde !== null ? [$this->conta(), $desde] : [$this->conta()]);
+        return (int) ($r[0]['c'] ?? 1) === 0;
+    }
+
     private function produtos(): array
     {
+        $vendasOk = $this->itensCompletos();   // Codex DSHOW-114: vendas por produto só com TODOS os pedidos com itens lidos
         // Derivados (receita, unidades, última venda) vêm agregados na consulta:
         // calcular em PHP sobre milhares de produtos inviabilizaria a tela.
         $r = $this->repo->consultar(
@@ -365,7 +380,7 @@ final class BlingReal extends BlingProviderBase
 
         $canaisPorProduto = [];   // vínculo com canal não existe na v3 por produto
 
-        return array_map(static function ($p) use ($canaisPorProduto) {
+        return array_map(static function ($p) use ($canaisPorProduto, $vendasOk) {
             $preco = (float) ($p['preco_promocional'] ?? 0) ?: (float) $p['preco'];
             $custo = $p['custo'] === null ? null : (float) $p['custo'];   // DSHOW-018: null = desconhecido (não é zero)
             return [
@@ -385,9 +400,10 @@ final class BlingReal extends BlingProviderBase
                 'canais' => $canaisPorProduto[$p['id']] ?? [],
                 // Derivados — mesmos nomes do mock (BlingMock::enriquecerProdutos)
                 'margem_pct' => ($preco > 0 && $custo !== null) ? round((($preco - $custo) / $preco) * 100, 1) : null,   // DSHOW-018: sem custo, margem desconhecida (não 100%)
-                'ultima_venda' => $p['ultima_venda'],
-                'unidades_vendidas' => (int) $p['unidades'],
-                'receita' => round((float) $p['receita'], 2),
+                // Codex DSHOW-114: cobertura de itens incompleta = desconhecido (antes COALESCE(…,0): soma parcial ou 0 apresentados como total)
+                'ultima_venda' => $vendasOk ? $p['ultima_venda'] : null,
+                'unidades_vendidas' => $vendasOk ? (int) $p['unidades'] : null,
+                'receita' => $vendasOk ? round((float) $p['receita'], 2) : null,
                 'estoque_total' => (int) $p['estoque_total'],
                 'qualidade_score' => (int) ($p['qualidade_score'] ?? 0),
                 'qualidade_pendencias' => [],
@@ -398,6 +414,7 @@ final class BlingReal extends BlingProviderBase
     private function estoque(): array
     {
         $corte = gmdate('Y-m-d', strtotime('-90 days'));
+        $consumoOk = $this->itensCompletos($corte);   // Codex DSHOW-114: consumo de 90 dias só com os pedidos desses 90 dias com itens lidos
         $r = $this->repo->consultar(
             "SELECT e.product_id, e.warehouse_id, e.fisico, e.reservado, e.disponivel,
                     e.minimo, e.maximo, e.ultima_movimentacao,
@@ -414,13 +431,13 @@ final class BlingReal extends BlingProviderBase
             [$corte, $this->conta()]
         );
 
-        return array_map(static function ($e) {
-            $consumo90 = (float) $e['consumo_90d'];
-            $consumoDia = $consumo90 / 90;
+        return array_map(static function ($e) use ($consumoOk) {
+            $consumo90 = $consumoOk ? (float) $e['consumo_90d'] : null;   // null = desconhecido (não "parado")
+            $consumoDia = $consumo90 === null ? null : $consumo90 / 90;
             $disponivel = (int) $e['disponivel'];
             $fisico = (int) $e['fisico'];
             $minimo = (int) ($e['minimo'] ?? 0);
-            $cobertura = $consumoDia > 0 ? round($disponivel / $consumoDia, 1) : null;
+            $cobertura = ($consumoDia !== null && $consumoDia > 0) ? round($disponivel / $consumoDia, 1) : null;
 
             // Mesma classificação do mock. Duplicar a REGRA aqui seria o erro:
             // ela é idêntica de propósito e o smoke compara os dois provedores.
@@ -428,6 +445,7 @@ final class BlingReal extends BlingProviderBase
                 $fisico < 0                          => 'negativo',
                 $disponivel <= 0                     => 'zerado',
                 $minimo > 0 && $disponivel < $minimo => 'critico',
+                $consumo90 === null                  => 'consumo_desconhecido',   // nunca "parado"/"normal" sem saber o consumo
                 $cobertura !== null && $cobertura < 15 => 'baixa_cobertura',
                 $consumo90 == 0 && $fisico > 0       => 'parado',
                 default                              => 'normal',
@@ -441,10 +459,10 @@ final class BlingReal extends BlingProviderBase
                 'maximo' => (int) ($e['maximo'] ?? 0), 'divergencia' => 0,
                 'ultima_movimentacao' => $e['ultima_movimentacao']
                     ? substr((string) $e['ultima_movimentacao'], 0, 10) : gmdate('Y-m-d'),
-                'consumo_90d' => (int) $consumo90,
-                'consumo_dia' => round($consumoDia, 3),
+                'consumo_90d' => $consumo90 === null ? null : (int) $consumo90,
+                'consumo_dia' => $consumoDia === null ? null : round($consumoDia, 3),
                 'cobertura_dias' => $cobertura,
-                'giro_anual' => $fisico > 0 ? round(($consumo90 / 90 * 365) / max(1, $fisico), 2) : 0.0,
+                'giro_anual' => $consumo90 === null ? null : ($fisico > 0 ? round(($consumo90 / 90 * 365) / max(1, $fisico), 2) : 0.0),
                 'status' => $status,
             ];
         }, $r);

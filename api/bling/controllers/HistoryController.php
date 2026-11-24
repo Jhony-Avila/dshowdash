@@ -164,6 +164,9 @@ final class HistoryController
                 static fn($e) => $e['deposito'] === $f['deposito']));
         }
 
+        // Codex DSHOW-114: consumo de 90 dias desconhecido (cobertura de itens incompleta) → faixas de cobertura e ruptura projetada INDISPONÍVEIS
+        // (antes: consumo desconhecido virava "parado"/"sem consumo"); o aging não depende do consumo e continua.
+        $consumoDesc = in_array(null, array_column($estoque, 'consumo_90d'), true);
         // ── Cobertura: distribuição em faixas ────────────────────
         $faixas = [
             ['id' => 'ruptura',  'rotulo' => 'Sem cobertura',  'min' => null, 'max' => 0,   'cor' => 'erro'],
@@ -250,10 +253,11 @@ final class HistoryController
         }
 
         foreach ($faixas as &$fx) {
-            $fx['itens'] = $contagem[$fx['id']]['itens'];
-            $fx['valor'] = round($contagem[$fx['id']]['valor'], 2);
+            $fx['itens'] = $consumoDesc ? null : $contagem[$fx['id']]['itens'];
+            $fx['valor'] = $consumoDesc ? null : round($contagem[$fx['id']]['valor'], 2);
         }
         unset($fx);
+        if ($consumoDesc) { $rupturas = []; }
         foreach ($aging as &$a) {
             $a['valor'] = round($a['valor'], 2);
         }
@@ -279,6 +283,8 @@ final class HistoryController
                 || in_array($ped['situacao'], ['rascunho', 'cancelado'], true)) {
                 continue;
             }
+            if (($ped['itens_conhecidos'] ?? true) === false) { $consumo[$ped['data']] = null; }   // Codex DSHOW-114: dia com pedido sem itens = desconhecido
+            if ($consumo[$ped['data']] === null) { continue; }
             foreach ($ped['itens'] as $it) {
                 if ($produtosDoDeposito !== null && !isset($produtosDoDeposito[$it['produto']])) {
                     continue;
@@ -298,6 +304,7 @@ final class HistoryController
             'aging'       => $aging,
             'dispersao'   => $dispersao,
             'consumo'     => $serieConsumo,
+            'indisponivel' => $consumoDesc ? 'itens_desconhecidos' : null,   // Codex DSHOW-114 (aditivo): faixas/rupturas sem base
             'nota_aging'  => 'Aging pela última movimentação registrada. Item parado com '
                            . 'valor alto é capital imobilizado sem giro.',
         ], bling_meta(['filtros' => $f]));

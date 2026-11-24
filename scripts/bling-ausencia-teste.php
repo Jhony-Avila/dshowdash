@@ -461,6 +461,71 @@ try {
     })(), (string) $tit('bling_invoices', '720001', 'valor'));
     ok('nota NOVA com data ilegível: não gravada — erro registrado', $tit('bling_invoices', '720002', 'id') === false && $rn['erros'] === 1, json_encode($rn));
 
+    echo "== 4g. Codex DSHOW-114 (pacote B): agregados por produto e consumo só com cobertura de itens COMPLETA (incompleta = null)\n";
+    $pdo->prepare("INSERT INTO bling_categories (account_id, bling_id, nome) VALUES (?, 'cat-1', 'Categoria sintética')")->execute([$conta]);
+    $cat = (int) $pdo->lastInsertId();
+    foreach (['31' => 'Painel sintético', '32' => 'Cabo sintético'] as $b => $nome) {
+        $pdo->prepare('INSERT INTO bling_products (account_id, bling_id, nome, sku, category_id, is_ativo) VALUES (?, ?, ?, ?, ?, 1)')->execute([$conta, $b, $nome, "SKU-$b", $cat]);
+    }
+    $pdo->prepare("INSERT INTO bling_warehouses (account_id, bling_id, nome) VALUES (?, 'dep-1', 'Depósito sintético')")->execute([$conta]);
+    $dep = (int) $pdo->lastInsertId();
+    $prodId = static fn(string $b) => (string) v($pdo, 'SELECT id FROM bling_products WHERE bling_id = ?', [$b]);
+    $pdo->prepare('INSERT INTO bling_inventory (account_id, product_id, warehouse_id, fisico, reservado, minimo, maximo) VALUES (?, ?, ?, 10, 0, 20, 0), (?, ?, ?, 5, 0, 0, 0)')
+        ->execute([$conta, $prodId('31'), $dep, $conta, $prodId('32'), $dep]);
+    $sync4->gravarPedidoDetalhe($conta, pedido(5, true));   // o 900005 (há 2 dias) com itens dos produtos 31 (2 × 500) e 32 (1 × 234,56)
+    $prodApi = static function (string $b) use ($real, $prodId): ?array { foreach ($real()->colecao('produtos') as $x) { if ($x['id'] === $prodId($b)) { return $x; } } return null; };
+    $estApi = static function (string $b) use ($real, $prodId): ?array { foreach ($real()->colecao('estoque') as $x) { if ($x['produto'] === $prodId($b)) { return $x; } } return null; };
+    $linhaDe = static fn(array $linhas, string $chave, string $val) => array_values(array_filter($linhas, static fn($l) => (string) ($l[$chave] ?? '') === $val))[0] ?? null;
+    $semItens = (int) v($pdo, "SELECT COUNT(*) FROM bling_sales_orders WHERE situacao NOT IN ('rascunho','cancelado') AND itens_lidos_em IS NULL");
+    ok('pré: no período há pedidos COM itens lidos (900005) e SEM itens lidos', $semItens > 0 && v($pdo, "SELECT itens_lidos_em FROM bling_sales_orders WHERE bling_id = '900005'") !== null, "sem itens: $semItens");
+
+    // A) itens conhecidos e desconhecidos no mesmo período → indisponível
+    $p31 = $prodApi('31'); $e31 = $estApi('31'); $e32 = $estApi('32');
+    ok('A) produto: unidades, receita e última venda null (antes: 2 / 1000 — soma parcial apresentada como total)', $p31['unidades_vendidas'] === null
+        && $p31['receita'] === null && $p31['ultima_venda'] === null, json_encode(array_intersect_key($p31, array_flip(['unidades_vendidas', 'receita', 'ultima_venda']))));
+    ok('A) estoque: consumo, consumo/dia, cobertura e giro null; status "consumo_desconhecido" (antes: consumo parcial, giro e "normal"/"parado")', $e31['consumo_90d'] === null
+        && $e31['consumo_dia'] === null && $e31['cobertura_dias'] === null && $e31['giro_anual'] === null && $e32['status'] === 'consumo_desconhecido'
+        && $e31['status'] === 'critico', json_encode([$e31, $e32['status']]));
+    [$rcA, $dA, $txtA] = $endpoint('AnalyticsController', 'matrizEstoque');
+    ok('A) matriz giro × margem: indisponível, sem itens nem cortes', $rcA === 0 && ($dA['indisponivel'] ?? null) === 'itens_desconhecidos' && $dA['itens'] === []
+        && $dA['cortes']['giro'] === null, mb_substr($txtA, 0, 200));
+    [$rcB, $dB, $txtB] = $endpoint('HistoryController', 'analiseEstoque');
+    ok('A) análise de estoque: faixas de cobertura null, sem ruptura projetada, indisponível; consumo diário null no dia sem itens',
+        $rcB === 0 && ($dB['indisponivel'] ?? null) === 'itens_desconhecidos' && array_filter($dB['cobertura'], static fn($x) => $x['itens'] !== null || $x['valor'] !== null) === []
+        && $dB['rupturas'] === [] && in_array(null, array_column($dB['consumo'], 'valor'), true), mb_substr($txtB, 0, 300));
+    $nc = $linhaDe($res('necessidadesCompra')['linhas'], 'id', $prodId('31'));
+    ok('A) necessidade de compra: motivo por FATO (abaixo do mínimo) fica; consumo/dia, quantidade e custo null (antes: o mínimo como se não houvesse consumo)',
+        $nc !== null && $nc['consumo_dia'] === null && $nc['quantidade_sugerida'] === null && $nc['custo_estimado'] === null && $nc['motivo'] !== '', json_encode($nc));
+    $ct = $linhaDe($res('categorias')['linhas'], 'nome', 'Categoria sintética');
+    ok('A) categorias: receita null', $ct !== null && $ct['receita'] === null, json_encode($ct));
+    $mEst = new ReflectionMethod(ResourceController::class, 'estoque'); $mEst->setAccessible(true);
+    $le = $linhaDe($mEst->invoke(null, $real(), $F + ['deposito' => '', 'situacao' => '', 'busca' => ''])['linhas'], 'produto_id', $prodId('32'));
+    ok('A) tabela de estoque: consumo e giro null; status "Consumo não lido"', $le !== null && $le['consumo_90d'] === null && $le['giro_anual'] === null
+        && $le['status_info']['rotulo'] === 'Consumo não lido', json_encode($le));
+    [$rcQ, $dQ, $txtQ] = $endpoint('AnalyticsController', 'qualidade');
+    ok('A) qualidade do cadastro: receita afetada null onde há produto da pendência', $rcQ === 0 && array_filter($dQ['pendencias'] ?? [], static fn($x) => $x['produtos'] > 0 && $x['receita_afetada'] !== null) === [],
+        mb_substr($txtQ, 0, 200));
+
+    // B) cobertura completa SEM vendas → zero legítimo
+    $sitOrig = $pdo->query('SELECT id, situacao FROM bling_sales_orders')->fetchAll();
+    $pdo->exec("UPDATE bling_sales_orders SET situacao = 'cancelado'");
+    $p31 = $prodApi('31'); $e32 = $estApi('32');
+    ok('B) completa sem vendas: unidades 0 e receita 0 (zero legítimo), última venda nenhuma', $p31['unidades_vendidas'] === 0 && $p31['receita'] === 0.0 && $p31['ultima_venda'] === null, json_encode($p31));
+    ok('B) completa sem vendas: consumo 0 e o item com saldo fica "parado" (verdadeiro agora)', $e32['consumo_90d'] === 0 && $e32['status'] === 'parado' && $e32['giro_anual'] === 0.0, json_encode($e32));
+    [$rcA2, $dA2] = $endpoint('AnalyticsController', 'matrizEstoque');
+    ok('B) matriz disponível de novo (sem "indisponivel")', $rcA2 === 0 && ($dA2['indisponivel'] ?? null) === null);
+
+    // C) cobertura completa COM vendas → total certo
+    $pdo->prepare('UPDATE bling_sales_orders SET situacao = ? WHERE bling_id = ?')->execute(['faturado', '900005']);
+    $p31 = $prodApi('31'); $p32 = $prodApi('32'); $e31 = $estApi('31');
+    ok('C) completa com vendas: produto 31 = 2 unidades e R$ 1.000,00; produto 32 = 1 unidade e R$ 234,56', $p31['unidades_vendidas'] === 2 && $p31['receita'] === 1000.0
+        && $p32['unidades_vendidas'] === 1 && $p32['receita'] === 234.56 && $p31['ultima_venda'] !== null, json_encode([$p31['unidades_vendidas'], $p31['receita'], $p32['unidades_vendidas'], $p32['receita']]));
+    ok('C) consumo de 90 dias do produto 31 = 2; cobertura calculada', $e31['consumo_90d'] === 2 && $e31['cobertura_dias'] !== null, json_encode($e31));
+    $ct = $linhaDe($res('categorias')['linhas'], 'nome', 'Categoria sintética');
+    ok('C) categorias: receita 1.234,56', $ct !== null && $ct['receita'] === 1234.56, json_encode($ct));
+    $st = $pdo->prepare('UPDATE bling_sales_orders SET situacao = ? WHERE id = ?');
+    foreach ($sitOrig as $s) { $st->execute([$s['situacao'], $s['id']]); }
+
     echo "== 5. o provedor de DEMONSTRAÇÃO (mock) não muda: números como antes\n";
     [$rc5, $d, $txt] = $endpoint('OverviewController', 'overview', [], 'mock');
     $kk = $d['kpis'] ?? [];
