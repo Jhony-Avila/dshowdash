@@ -622,6 +622,31 @@ try {
     ok('DECISIVO: leitura ok mas ANTERIOR ao fim do período (não o cobre) → fluxo_indisponivel com motivo, nunca zerado', $rcA === 0 && ($dAt['fluxo_indisponivel'] ?? null) === true
         && ($dAt['fluxo_zerado'] ?? null) === false && str_contains((string) ($dAt['motivo_indisponivel'] ?? ''), 'anterior ao fim do período'), mb_substr($txtA, 0, 300));
 
+    echo "== 4i. situação das notas pelos códigos do OpenAPI v3 (mapa antigo trocado: 4 rejeitada virava autorizada; 5 autorizada virava cancelada)\n";
+    $codN = []; foreach ([1, 2, 3, 4, 5, 6, 8, 9, 10] as $c) { $codN[$c] = BlingVersionAdapter::situacaoNota((string) $c); }
+    ok('mapa: 1 pendente · 2 cancelada · 3 processando · 4 rejeitada · 5 autorizada · 6 autorizada · 8/10 processando · 9 rejeitada', $codN === [1 => 'pendente',
+        2 => 'cancelada', 3 => 'processando', 4 => 'rejeitada', 5 => 'autorizada', 6 => 'autorizada', 8 => 'processando', 9 => 'rejeitada', 10 => 'processando'], json_encode($codN));
+    ok('7 (Registrada) e 11 (Bloqueada): nem autorizada nem cancelada (padrão até o tratamento próprio do DSHOW-116)',
+        !in_array(BlingVersionAdapter::situacaoNota('7'), ['autorizada', 'cancelada'], true) && !in_array(BlingVersionAdapter::situacaoNota('11'), ['autorizada', 'cancelada'], true));
+    $NFE = new BlingResposta(200, ['data' => [['id' => 730005, 'numero' => '305', 'serie' => '1', 'dataEmissao' => '2026-09-06', 'situacao' => 5, 'tipo' => 1],
+                                              ['id' => 730004, 'numero' => '304', 'serie' => '1', 'dataEmissao' => '2026-09-06', 'situacao' => 4, 'tipo' => 1]]]);
+    $sync4->sincronizar($conta, 'notas', 'incremental', 'n4i');
+    ok('sincronização: código 5 gravado como autorizada e 4 como rejeitada', $tit('bling_invoices', '730005', 'situacao') === 'autorizada'
+        && $tit('bling_invoices', '730004', 'situacao') === 'rejeitada', json_encode([$tit('bling_invoices', '730005', 'situacao'), $tit('bling_invoices', '730004', 'situacao')]));
+    // notas gravadas com o mapa ANTIGO (como estão hoje na produção): situação errada + código cru guardado
+    $insN = $pdo->prepare('INSERT INTO bling_invoices (account_id, bling_id, numero, data_emissao, situacao, situacao_bling, tipo) VALUES (?, ?, ?, ?, ?, ?, ?)');
+    foreach ([['731005', 'cancelada', '5'], ['731004', 'autorizada', '4'], ['731002', 'processando', '2'], ['731099', 'autorizada', 'autorizada'], ['731098', 'pendente', null]] as [$b, $s, $c]) {
+        $insN->execute([$conta, $b, $b, '2026-09-07', $s, $c, 'saida']);
+    }
+    $sitLida = static function (string $b) use ($real, $pdo): ?string { $id = (string) v($pdo, 'SELECT id FROM bling_invoices WHERE bling_id = ?', [$b]);
+        foreach ($real()->colecao('notas') as $x) { if ($x['id'] === $id) { return $x['situacao']; } } return null; };
+    $lidas = ['731005' => $sitLida('731005'), '731004' => $sitLida('731004'), '731002' => $sitLida('731002'), '731099' => $sitLida('731099'), '731098' => $sitLida('731098')];
+    ok('DECISIVO: gravadas com o mapa antigo aparecem certas na leitura — 5 autorizada (gravada "cancelada"), 4 rejeitada (gravada "autorizada"), 2 cancelada',
+        $lidas['731005'] === 'autorizada' && $lidas['731004'] === 'rejeitada' && $lidas['731002'] === 'cancelada', json_encode($lidas));
+    ok('código não numérico ou ausente: vale a situação gravada (nada inventado)', $lidas['731099'] === 'autorizada' && $lidas['731098'] === 'pendente', json_encode($lidas));
+    ok('nada reescrito no banco (só a leitura muda)', $tit('bling_invoices', '731005', 'situacao') === 'cancelada' && $tit('bling_invoices', '731004', 'situacao') === 'autorizada');
+    $pdo->exec("DELETE FROM bling_invoices WHERE bling_id IN ('730005','730004','731005','731004','731002','731099','731098')");
+
     echo "== 5. o provedor de DEMONSTRAÇÃO (mock) não muda: números como antes\n";
     [$rc5, $d, $txt] = $endpoint('OverviewController', 'overview', [], 'mock');
     $kk = $d['kpis'] ?? [];

@@ -61,14 +61,21 @@ final class BlingVersionAdapter
         'cancelado' => 'cancelado',
     ];
 
+    // OpenAPI v3 oficial (openapi-Dfpp2fup.json, NotasFiscaisDadosBaseDTO.situacao, conferido 24/11): 1 Pendente · 2 Cancelada · 3 Aguardando recibo ·
+    // 4 Rejeitada · 5 Autorizada · 6 Emitida DANFE · 7 Registrada · 8 Aguardando protocolo · 9 Denegada · 10 Consulta situação · 11 Bloqueada.
+    // ANTES (bug): 2 = processando, 3 = rejeitada, 4 = AUTORIZADA, 5 = CANCELADA, 6 = inutilizada — nota rejeitada aparecia autorizada e nota
+    // autorizada aparecia cancelada. 7 e 11: sem sentido documentado → não mapeados aqui (padrão "pendente": nem autorizada nem cancelada);
+    // tratamento próprio ("situação não mapeada", contada à parte) no DSHOW-116, decisão do Jhony 24/11.
     private const NOTA = [
         '1'  => 'pendente',
-        '2'  => 'processando',
-        '3'  => 'rejeitada',
-        '4'  => 'autorizada',
-        '5'  => 'cancelada',
-        '6'  => 'inutilizada',
-        '7'  => 'processando',
+        '2'  => 'cancelada',
+        '3'  => 'processando',   // aguardando recibo da SEFAZ
+        '4'  => 'rejeitada',
+        '5'  => 'autorizada',
+        '6'  => 'autorizada',    // emitida DANFE = autorizada e impressa
+        '8'  => 'processando',   // aguardando protocolo
+        '9'  => 'rejeitada',     // denegada
+        '10' => 'processando',   // consulta situação
         'pendente'    => 'pendente',
         'emitida'     => 'autorizada',
         'autorizada'  => 'autorizada',

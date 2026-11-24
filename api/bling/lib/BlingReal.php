@@ -549,11 +549,17 @@ final class BlingReal extends BlingProviderBase
         }, $pedidos);
     }
 
+    /** Situação da nota na leitura: código numérico do Bling → mapa atual (corrige as gravadas com o mapa antigo); senão a gravada. */
+    public static function situacaoNotaLida(string $gravada, ?string $codigoBling): string
+    {
+        return ($codigoBling !== null && preg_match('/^[0-9]{1,3}\z/', trim($codigoBling))) ? BlingVersionAdapter::situacaoNota(trim($codigoBling)) : $gravada;
+    }
+
     private function notas(): array
     {
         $r = $this->repo->consultar(
             'SELECT id, bling_id, numero, serie, chave, sales_order_id, contact_id,
-                    data_emissao, valor, situacao, finalidade, tipo,
+                    data_emissao, valor, situacao, situacao_bling, finalidade, tipo,
                     erro_codigo, erro_mensagem, tentativas, url_danfe, url_xml
                FROM bling_invoices WHERE account_id = ? AND deletado_em IS NULL',
             [$this->conta()]
@@ -567,7 +573,10 @@ final class BlingReal extends BlingProviderBase
             'conta' => 'conta-padrao',
             'emissao' => (string) $n['data_emissao'],
             'valor' => (float) $n['valor'],
-            'situacao' => $n['situacao'],
+            // 24/11 (mapa da situação corrigido pelo OpenAPI v3): as notas gravadas com o mapa ANTIGO guardam o código cru em situacao_bling →
+            // a situação é refeita pelo mapa atual na leitura (sem migração de dados; a listagem não regrava nota que não mudou). Código não numérico
+            // ou ausente: vale a situação gravada.
+            'situacao' => self::situacaoNotaLida($n['situacao'], $n['situacao_bling'] ?? null),
             'finalidade' => $n['finalidade'] ?? 'normal',
             'tipo' => $n['tipo'],
             'erro' => $n['erro_codigo'] === null ? null
