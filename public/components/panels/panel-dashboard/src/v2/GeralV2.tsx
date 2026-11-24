@@ -142,7 +142,7 @@ function BlocoPrioridades({ b, aoAbrir }: { b: ReturnType<typeof useBloco<Priori
             <li key={p.id} className={`gv2-prio gv2-prio--${COR_GRAVIDADE[p.gravidade]} ger-entra`} style={{ ['--ger-ordem' as string]: k }} data-gv2-prio={p.id}>
               <span className="gv2-prio-barra" aria-hidden />
               <div className="gv2-prio-txt">
-                <strong>{ok ? t.titulo : `Não foi possível contar: ${p.id === 'conflito_agenda' ? 'conflitos na agenda' : p.id === 'atividade_vencida' ? 'negócios com atividade vencida' : 'negociações sem próxima atividade'}`}</strong>
+                <strong>{ok ? t.titulo : `${p.estado === 'aguardando' ? 'Aguardando conexão' : 'Não foi possível contar'}: ${p.id === 'conflito_agenda' ? 'conflitos na agenda' : p.id === 'atividade_vencida' ? 'negócios com atividade vencida' : 'negociações sem próxima atividade'}`}</strong>
                 <span className="gv2-fraco">{ok ? t.sub : (p.motivo || 'Fonte indisponível agora.')}</span>
               </div>
               <span className="gv2-prio-meio">{ok ? t.meio : <SeloEstado estado={p.estado === 'ok' || p.estado === 'zero' ? 'parcial' : p.estado} />}</span>
@@ -258,7 +258,10 @@ function Barras({ p }: { p: PedidosBling }) {
 }
 function BlocoPedidosGrafico({ b }: { b: ReturnType<typeof useBloco<Resumo>> }) {
   const p = b.dados?.pedidos_bling; const car = b.carregando && !b.dados;
-  const soma = p ? p.por_dia.reduce((s, d) => (d.valor === null || s === null ? null : s + d.valor), 0 as number | null) : null;
+  // soma dos dias COM dado (dia sem dado = null fica de fora e é contado à parte; ACIMA_DIREITA: "no desatualizado, 2 + 1 + 1 = 4 = cartão")
+  const comDado = p ? p.por_dia.filter((d) => d.valor !== null) : [];
+  const semDado = p ? p.por_dia.length - comDado.length : 0;
+  const soma = comDado.length ? comDado.reduce((s, d) => s + (d.valor as number), 0) : null;
   const confere = p && soma !== null && p.valor !== null && Math.abs(soma - p.valor) < 0.5;
   return (
     <section className="gv2-cartao gv2-grafico" data-gv2-bloco="grafico" data-gv2-estado={car ? 'carregando' : p?.estado ?? 'erro'}>
@@ -276,7 +279,8 @@ function BlocoPedidosGrafico({ b }: { b: ReturnType<typeof useBloco<Resumo>> }) 
           <>
             <Barras p={p} />
             <p className="gv2-fraco gv2-grafico-rodape">
-              Valor total: <strong>{fmtMoeda(p.valor)}</strong>{confere ? ' · soma igual ao cartão acima' : ' · ⚠ a soma dos dias não confere com o cartão'}
+              Valor total: <strong>{fmtMoeda(p.valor)}</strong>{confere ? (semDado ? ' · soma dos dias com dado igual ao cartão' : ' · soma igual ao cartão acima') : ' · ⚠ a soma dos dias não confere com o cartão'}
+              {semDado > 0 && ` · ${semDado} ${semDado === 1 ? 'dia' : 'dias'} sem dado`}
               {p.inclui_canceladas && ' · inclui vendas canceladas depois do lançamento'}
             </p>
           </>

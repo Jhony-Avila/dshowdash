@@ -17,7 +17,8 @@ export interface Prioridade extends Base { id: IdPrioridade; quantidade: number 
 export interface Prioridades { gerado_em: string | null; itens: Prioridade[] }
 
 export interface ItemLista { deal_id: number; titulo: string; organizacao: string | null; responsavel: string | null; etapa: string | null; prazo: string | null; valor: number | null; url_pipedrive: string | null }
-export interface Lista { id: IdPrioridade; total: number; pagina: number; por_pagina: number; criterios: { texto: string }; responsaveis: { id: number; nome: string }[]; itens: ItemLista[] }
+/** total/responsaveis podem vir null quando a fonte não respondeu (aditivos do serviço 24e70e69: estado, motivo, paginas, ultimo_sucesso) */
+export interface Lista { id: IdPrioridade; total: number | null; pagina: number; por_pagina: number; paginas?: number | null; estado?: EstadoBloco; motivo?: string | null; ultimo_sucesso?: string | null; criterios: { texto: string }; responsaveis: { id: number; nome: string }[] | null; itens: ItemLista[] }
 export type OrdemLista = 'prazo' | 'valor' | 'responsavel';
 export interface FiltrosLista { pagina: number; ordem: OrdemLista; dir: 'asc' | 'desc'; responsavel: number | null }
 

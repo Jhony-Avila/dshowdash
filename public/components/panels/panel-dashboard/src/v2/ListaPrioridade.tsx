@@ -30,7 +30,8 @@ export function ListaPrioridade({ id, quantidadeGeral, aoVoltar }: { id: IdPrior
   useEffect(() => gravarFiltros(id, f), [id, f]);
   const b = useBloco((s) => lerLista(id, f, s), [id, f.pagina, f.ordem, f.dir, f.responsavel]);
   const l: Lista | null = b.dados; const car = b.carregando && !l;
-  const paginas = l ? Math.max(1, Math.ceil(l.total / l.por_pagina)) : 1;
+  const paginas = l && l.total !== null ? Math.max(1, Math.ceil(l.total / l.por_pagina)) : 1;
+  const semFonte = !!l && (l.total === null || l.estado === 'aguardando' || l.estado === 'erro');   // a fonte não respondeu: estado, nunca tabela vazia nem "0" 
   const ordenacao: Ordenacao = { chave: f.ordem, direcao: f.dir };
   const aoOrdenar = (o: Ordenacao | null) => { if (!o) return; const ordem = o.chave as OrdemLista; setF((x) => ({ ...x, ordem, dir: o.direcao, pagina: 1 })); };
   const hoje = hojeIso();
@@ -50,8 +51,8 @@ export function ListaPrioridade({ id, quantidadeGeral, aoVoltar }: { id: IdPrior
         : <span className="gv2-fraco">Sem link</span>) },
   ];
 
-  const respNome = f.responsavel === null ? 'Todos' : l?.responsaveis.find((r) => r.id === f.responsavel)?.nome ?? `#${f.responsavel}`;
-  const conferencia = l && f.responsavel === null && quantidadeGeral !== null;
+  const respNome = f.responsavel === null ? 'Todos' : l?.responsaveis?.find((r) => r.id === f.responsavel)?.nome ?? `#${f.responsavel}`;
+  const conferencia = l && !semFonte && f.responsavel === null && quantidadeGeral !== null;
   return (
     <div className="gv2-lista" data-gv2-lista={id}>
       <nav className="gv2-trilha" aria-label="Você está em">
@@ -71,7 +72,7 @@ export function ListaPrioridade({ id, quantidadeGeral, aoVoltar }: { id: IdPrior
           </select>
         </label>
         <span className="gv2-chip">Ordenação: {ROTULO_ORDEM[f.ordem][f.dir === 'asc' ? 0 : 1]}</span>
-        <strong className="gv2-dir" data-gv2-total>{car ? 'Carregando…' : l ? `${fmtN(l.total)} ${l.total === 1 ? 'negócio encontrado' : 'negócios encontrados'}` : '—'}</strong>
+        <strong className="gv2-dir" data-gv2-total>{car ? 'Carregando…' : l && !semFonte ? `${fmtN(l.total)} ${l.total === 1 ? 'negócio encontrado' : 'negócios encontrados'}` : '—'}</strong>
       </div>
 
       {car ? (
@@ -82,18 +83,24 @@ export function ListaPrioridade({ id, quantidadeGeral, aoVoltar }: { id: IdPrior
       ) : (
         <>
           {b.erro && <Problema motivo="A atualização da lista falhou; abaixo, a última leitura válida." quando={b.okEm} onTentar={b.recarregar} tentando={b.atualizando} />}
-          {l.total === 0 ? <p className="gv2-cartao gv2-vazio" data-gv2-estado="zero">Nenhum negócio nesta condição agora{f.responsavel !== null ? ` para ${respNome}` : ''}.</p> : (
+          {semFonte ? (
+            <div className="gv2-cartao" data-gv2-estado={l.estado === 'aguardando' ? 'aguardando' : 'problema'}>
+              {l.estado === 'aguardando'
+                ? <p className="gv2-vazio">Aguardando conexão · {l.motivo || 'A fonte ainda não está conectada.'} Nenhum número assumido.</p>
+                : <Problema motivo={l.motivo || 'Não foi possível ler esta lista agora.'} quando={l.ultimo_sucesso ?? null} onTentar={b.recarregar} tentando={b.atualizando} />}
+            </div>
+          ) : l.total === 0 ? <p className="gv2-cartao gv2-vazio" data-gv2-estado="zero">Nenhum negócio nesta condição agora{f.responsavel !== null ? ` para ${respNome}` : ''}.</p> : (
             <div data-bl-root className="gv2-tabela-raiz gv2-cartao">
               <TabelaDados colunas={colunas} linhas={l.itens} chaveLinha={(i) => i.deal_id} ordenacao={ordenacao} aoOrdenar={aoOrdenar}
                 rolagem="container" legenda={`${TITULO[id]} — página ${l.pagina} de ${paginas}`} className="gv2-tabela" />
             </div>
           )}
           <div className="gv2-lista-rodape">
-            <span className="gv2-fraco" data-gv2-conferencia>
+            {!semFonte && <span className="gv2-fraco" data-gv2-conferencia>
               {l.itens.length} {l.itens.length === 1 ? 'registro exibido' : 'registros exibidos'}
               {paginas > 1 ? ` (página ${l.pagina} de ${paginas})` : ''} · total {fmtN(l.total)} {l.total === 1 ? 'negócio distinto' : 'negócios distintos'}
               {conferencia && (l.total === quantidadeGeral ? ' = número da prioridade na Geral' : ` · ⚠ a Geral mostrava ${fmtN(quantidadeGeral)}; a situação mudou desde então`)}
-            </span>
+            </span>}
             {paginas > 1 && (
               <span className="gv2-paginas">
                 <button type="button" className="gv2-btn gv2-btn--mini" disabled={l.pagina <= 1} onClick={() => setF((x) => ({ ...x, pagina: x.pagina - 1 }))}><ChevronLeft size={13} aria-hidden /> Anterior</button>
