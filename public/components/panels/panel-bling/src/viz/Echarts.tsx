@@ -591,7 +591,7 @@ export function opcaoFaixas(
       data: [...faixas].reverse().map(f => {
         const v = metrica === 'valor' ? f.valor : f.itens;
         return desconhecido(v)
-          ? { value: 0, desconhecido: true, itemStyle: { opacity: 0 }, label: { formatter: '— desconhecido' } }
+          ? { value: 0, desconhecido: true, itemStyle: { color: 'transparent' }, label: { show: true, formatter: '— desconhecido', color: t.texto2 } }
           : { value: v, itemStyle: { color: cor(f.cor) } };
       }),
     }],
