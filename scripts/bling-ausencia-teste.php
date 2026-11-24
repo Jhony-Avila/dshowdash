@@ -412,6 +412,18 @@ try {
         && $tit('bling_accounts_payable', '710001', 'competencia') === '2026-10', json_encode([$tit('bling_accounts_payable', '710001', 'data_vencimento'), $tit('bling_accounts_payable', '710001', 'competencia')]));
     ok('pagar: título NOVO sem vencimento não é gravado — erro registrado', $tit('bling_accounts_payable', '710002', 'id') === false && $rp['erros'] === 1, json_encode($rp));
 
+    echo "== 4e. nota fiscal sem data de emissão nunca vira \"emitida hoje\" (pedido do Jhony, 24/11)\n";
+    $NFE = new BlingResposta(200, ['data' => [['id' => 720001, 'numero' => '101', 'serie' => '1', 'dataEmissao' => '2026-09-05', 'valorNota' => 150, 'situacao' => 5, 'tipo' => 1]]]);
+    $api->responder('nfe', static function () use (&$NFE) { return $NFE; });
+    $sync4->sincronizar($conta, 'notas', 'carga_inicial', 'n1');
+    ok('nota: pré — emissão 2026-09-05 gravada', $tit('bling_invoices', '720001', 'data_emissao') === '2026-09-05', (string) $tit('bling_invoices', '720001', 'data_emissao'));
+    $NFE = new BlingResposta(200, ['data' => [['id' => 720001, 'numero' => '101', 'serie' => '1', 'valorNota' => 151, 'situacao' => 5, 'tipo' => 1],
+                                              ['id' => 720002, 'numero' => '102', 'serie' => '1', 'dataEmissao' => 'ilegível', 'valorNota' => 9, 'situacao' => 5, 'tipo' => 1]]]);
+    $rn = $sync4->sincronizar($conta, 'notas', 'incremental', 'n2');
+    ok('nota existente sem data de emissão: data 2026-09-05 MANTIDA (antes: "hoje"); o resto (valor) atualiza', $tit('bling_invoices', '720001', 'data_emissao') === '2026-09-05'
+        && (float) $tit('bling_invoices', '720001', 'valor') === 151.0, json_encode([$tit('bling_invoices', '720001', 'data_emissao'), $tit('bling_invoices', '720001', 'valor')]));
+    ok('nota NOVA com data ilegível: não gravada — erro registrado', $tit('bling_invoices', '720002', 'id') === false && $rn['erros'] === 1, json_encode($rn));
+
     echo "== 5. o provedor de DEMONSTRAÇÃO (mock) não muda: números como antes\n";
     [$rc5, $d, $txt] = $endpoint('OverviewController', 'overview', [], 'mock');
     $kk = $d['kpis'] ?? [];

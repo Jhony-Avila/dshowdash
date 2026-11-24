@@ -919,6 +919,7 @@ final class BlingSyncService
         $d['sales_order_id'] = $this->repo->idPorBlingId('bling_sales_orders', $accountId, $pedidoBling);
         $d['contact_id'] = $this->repo->idPorBlingId('bling_contacts', $accountId, $contatoBling);
         $d['situacao'] = BlingVersionAdapter::situacaoNota($situacaoBling);
+        $d['data_emissao'] = $this->dataConhecida($accountId, 'bling_invoices', 'data_emissao', $d, 'nota nova sem data de emissão legível');   // nunca "hoje"
 
         $r = $this->repo->upsert('bling_invoices', $accountId, $d);
 
@@ -963,11 +964,18 @@ final class BlingSyncService
      */
     private function vencimentoConhecido(int $accountId, string $tabela, array $d, string $tipo): string
     {
-        if ($d['data_vencimento'] !== null) { return (string) $d['data_vencimento']; }
-        if (!in_array($tabela, ['bling_accounts_receivable', 'bling_accounts_payable'], true)) { throw new InvalidArgumentException('tabela inesperada'); }
-        $conhecido = $this->repo->consultar("SELECT data_vencimento FROM `$tabela` WHERE account_id = ? AND bling_id = ?", [$accountId, $d['bling_id']]);
-        if ($conhecido === []) { throw new UnexpectedValueException("$tipo nova sem vencimento legível — não gravada (nunca \"hoje\" no lugar)"); }
-        return (string) $conhecido[0]['data_vencimento'];
+        return $this->dataConhecida($accountId, $tabela, 'data_vencimento', $d, $tipo . ' nova sem vencimento legível');
+    }
+
+    /** Data obrigatória (NOT NULL) que não veio na resposta: repõe a gravada; registro NOVO sem ela = erro. Lista FECHADA de tabela.coluna. */
+    private function dataConhecida(int $accountId, string $tabela, string $coluna, array $d, string $erroNovo): string
+    {
+        if ($d[$coluna] !== null) { return (string) $d[$coluna]; }
+        $permitidas = ['bling_accounts_receivable.data_vencimento', 'bling_accounts_payable.data_vencimento', 'bling_invoices.data_emissao'];
+        if (!in_array("$tabela.$coluna", $permitidas, true)) { throw new InvalidArgumentException('tabela/coluna inesperada'); }
+        $conhecido = $this->repo->consultar("SELECT `$coluna` FROM `$tabela` WHERE account_id = ? AND bling_id = ?", [$accountId, $d['bling_id']]);
+        if ($conhecido === []) { throw new UnexpectedValueException($erroNovo . ' — não gravada (nunca "hoje" no lugar)'); }
+        return (string) $conhecido[0][$coluna];
     }
 
     private function gravarPagar(int $accountId, array $bruto): string

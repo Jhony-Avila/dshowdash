@@ -299,7 +299,8 @@ final class BlingNormalizer
             'chave'     => preg_replace('/\D/', '', (string) (self::texto($p, 'chaveAcesso', 'chave') ?? '')) ?: null,
             'pedido_bling_id' => self::texto($p, 'pedido.id', 'idPedido'),
             'contato_bling_id'=> self::texto($p, 'contato.id'),
-            'data_emissao' => self::data($p, 'dataEmissao', 'data') ?? date('Y-m-d'),
+            // 24/11 (Jhony): emissão ausente/ilegível = null, NUNCA "hoje" (a nota apareceria "emitida hoje"); quem grava repõe a conhecida ou recusa
+            'data_emissao' => self::data($p, 'dataEmissao', 'data'),
             'valor'     => self::numero($p, 'valorNota', 'total'),
             'situacao_bling' => self::texto($p, 'situacao'),
             'finalidade'=> self::texto($p, 'finalidade'),
