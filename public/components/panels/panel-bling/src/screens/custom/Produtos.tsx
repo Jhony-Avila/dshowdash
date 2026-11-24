@@ -358,7 +358,10 @@ export function Estoque({ filtros, aoMudarFiltros, larguraPainel }: PropsTela) {
           </div>
           <div className="bl-cartao" style={{ padding: '12px 14px', minWidth: 0 }}>
             <div className="bl-titulo-secao">Aging — tempo sem movimentação</div>
-            {analise.dados ? (
+            {analise.dados && (analise.dados.aging ?? []).every((a: any) => desconhecido(a.valor)) ? (
+              <EstadoVazio titulo="Valor por tempo sem movimentação indisponível"
+                descricao="O custo dos produtos não é conhecido: o valor em estoque não é calculado (não é zero)." />
+            ) : analise.dados ? (
               <>
                 <Grafico altura={210}
                   opcao={opcaoFaixas(t, analise.dados.aging.map((a: any) => ({
@@ -473,7 +476,7 @@ export function Depositos({ filtros, aoMudarFiltros, larguraPainel }: PropsTela)
 
       <GradeKpis kpis={[
         k('depositos', 'Depósitos', carga.meta?.total ?? 0, 'inteiro'),
-        k('valor', 'Valor total', totais.valor ?? 0, 'moeda'),
+        k('valor', 'Valor total', numOuNulo(totais.valor), 'moeda'),   // valor a custo pode ser desconhecido (9dcd79b6)
         k('disponivel', 'Disponível', totais.disponivel ?? 0, 'inteiro'),
         k('negativos', 'Saldos negativos', totais.negativos ?? 0, 'inteiro',
           (totais.negativos ?? 0) > 0 ? 'critico' : 'ok'),
