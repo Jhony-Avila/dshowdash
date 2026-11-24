@@ -61,6 +61,7 @@ final class HistoryController
         $prod = $produtos[$produtoId];
 
         // Unidades e receita por dia, a partir dos pedidos reais.
+        $itensDesconhecidos = false;
         $porDia = [];
         $cursor = strtotime($f['de']);
         $fim = strtotime($f['ate']);
@@ -73,6 +74,10 @@ final class HistoryController
                 continue;
             }
             if (in_array($ped['situacao'], ['rascunho', 'cancelado'], true)) {
+                continue;
+            }
+            if (($ped['itens_conhecidos'] ?? true) === false) {   // "ausência ≠ zero": um pedido sem itens lidos torna a série desconhecida
+                $itensDesconhecidos = true;
                 continue;
             }
             foreach ($ped['itens'] as $it) {
@@ -92,8 +97,8 @@ final class HistoryController
         foreach ($porDia as $data => $d) {
             $pontos[] = [
                 'data'      => $data,
-                'unidades'  => $d['unidades'],
-                'receita'   => round($d['receita'], 2),
+                'unidades'  => $itensDesconhecidos ? null : $d['unidades'],           // null = itens dos pedidos não lidos (não é "0 vendido")
+                'receita'   => $itensDesconhecidos ? null : round($d['receita'], 2),
                 // Preço e custo vigentes, repetidos — declarados como tal.
                 'preco'     => $precoVigente,
                 'custo'     => $prod['custo'],
@@ -120,6 +125,7 @@ final class HistoryController
                 'ultima_venda' => $prod['ultima_venda'],
             ],
             'pontos' => $pontos,
+            'indisponivel' => $itensDesconhecidos ? 'itens_desconhecidos' : null,
             'estoque_por_deposito' => $estoquePorDeposito,
             'origem' => [
                 'unidades' => 'real — pedidos do período',
@@ -445,8 +451,22 @@ final class HistoryController
             $dim = 'produto';
         }
 
-        $linhas = BlingProvider::atual()->rentabilidade($dim, $f);
+        $prov = BlingProvider::atual();
+        $linhas = $prov->rentabilidade($dim, $f);
         $itens = array_values(array_filter($linhas, static fn($l) => $l['receita'] != 0));
+        // "ausência ≠ zero": sem margem conhecida em TODAS as linhas não há mediana nem quadrante (antes: margem com custo 0 = tudo "alta margem")
+        $indisponivel = $prov->rentabilidadeIndisponivel($dim, $f)
+            ?? (array_filter($itens, static fn($l) => $l['margem_pct'] === null) !== [] ? 'custo_desconhecido' : null);
+        if ($indisponivel !== null) {
+            ApiResponse::success([
+                'dimensao'   => $dim,
+                'itens'      => array_map(static fn($i) => $i + ['quadrante' => null], $itens),
+                'indisponivel' => $indisponivel,
+                'cortes'     => ['receita' => null, 'margem_pct' => null, 'metodo' => 'mediana'],
+                'quadrantes' => [],
+                'dimensoes_disponiveis' => ['produto', 'cliente', 'canal', 'categoria', 'vendedor'],
+            ], bling_meta(['filtros' => $f]));
+        }
 
         $mediana = static function (array $v): float {
             if ($v === []) {
@@ -485,13 +505,15 @@ final class HistoryController
             $doQ = array_values(array_filter($itens, static fn($i) => $i['quadrante'] === $q['id']));
             $q['itens']   = count($doQ);
             $q['receita'] = round(array_sum(array_column($doQ, 'receita')), 2);
-            $q['lucro']   = round(array_sum(array_column($doQ, 'lucro')), 2);
+            $l = BlingProviderBase::somaConhecida($doQ, 'lucro');   // nunca array_sum de lucro (null viraria 0)
+            $q['lucro']   = $l === null ? null : round($l, 2);
         }
         unset($q);
 
         ApiResponse::success([
             'dimensao'   => $dim,
             'itens'      => $itens,
+            'indisponivel' => null,
             'cortes'     => ['receita' => round($corteVolume, 2),
                              'margem_pct' => round($corteMargem, 1), 'metodo' => 'mediana'],
             'quadrantes' => $quadrantes,

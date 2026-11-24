@@ -51,6 +51,7 @@ final class AnalyticsController
         ApiResponse::success([
             'dimensao' => $dim, 'metrica' => $met,
             'itens'    => $r['itens'], 'total' => $r['total'],
+            'indisponivel' => $r['indisponivel'] ?? null,   // "ausência ≠ zero": 'itens_desconhecidos' | 'custo_desconhecido' | null
             'classes'  => array_values($classes),
             'dimensoes_disponiveis' => $dimsOk,
             'metricas_disponiveis'  => $metsOk,
@@ -67,14 +68,17 @@ final class AnalyticsController
             $dim = 'canal';
         }
 
-        $linhas = BlingProvider::atual()->rentabilidade($dim, $f);
+        $prov = BlingProvider::atual();
+        $linhas = $prov->rentabilidade($dim, $f);
+        $indisponivel = $prov->rentabilidadeIndisponivel($dim, $f);
 
-        // Waterfall consolidado: receita -> deducoes -> lucro.
-        $soma = static fn(string $c) => round(array_sum(array_column($linhas, $c)), 2);
+        // Waterfall consolidado: receita -> deducoes -> lucro. "ausência ≠ zero": custo/lucro desconhecidos = null (array_sum faria 0).
+        $soma = static function (string $c) use ($linhas): ?float { $s = BlingProviderBase::somaConhecida($linhas, $c); return $s === null ? null : round($s, 2); };
+        $neg = static fn(?float $v): ?float => $v === null ? null : -$v;
         $waterfall = [
             ['id' => 'receita',  'rotulo' => 'Receita bruta', 'valor' => $soma('receita') + $soma('desconto'), 'tipo' => 'inicial'],
             ['id' => 'desconto', 'rotulo' => 'Descontos',     'valor' => -$soma('desconto'), 'tipo' => 'reducao'],
-            ['id' => 'custo',    'rotulo' => 'Custo',         'valor' => -$soma('custo'),    'tipo' => 'reducao'],
+            ['id' => 'custo',    'rotulo' => 'Custo',         'valor' => $neg($soma('custo')), 'tipo' => 'reducao'],
             ['id' => 'comissao', 'rotulo' => 'Comissões',     'valor' => -$soma('comissao'), 'tipo' => 'reducao'],
             ['id' => 'taxas',    'rotulo' => 'Taxas',         'valor' => -$soma('taxas'),    'tipo' => 'reducao'],
             ['id' => 'impostos', 'rotulo' => 'Impostos (est.)','valor' => -$soma('impostos'),'tipo' => 'reducao'],
@@ -85,8 +89,9 @@ final class AnalyticsController
         ApiResponse::success([
             'dimensao'  => $dim,
             'itens'     => $linhas,
+            'indisponivel' => $indisponivel ?? ($soma('custo') === null ? 'custo_desconhecido' : null),
             'waterfall' => $waterfall,
-            'prejuizo'  => array_values(array_filter($linhas, static fn($l) => $l['prejuizo'])),
+            'prejuizo'  => array_values(array_filter($linhas, static fn($l) => $l['prejuizo'] === true)),
             'dimensoes_disponiveis' => $dimsOk,
             'nota' => 'Impostos e taxas são estimativas. Não substituem apuração contábil.',
         ], bling_meta(['filtros' => $f]));
@@ -254,18 +259,26 @@ final class AnalyticsController
             $add($l['rotulo'], 'Receita', $l['receita']);
         }
 
-        $soma = static fn(string $c) => round(array_sum(array_column($linhas, $c)), 2);
-        $add('Receita', 'Custo do produto', $soma('custo'));
+        $soma = static function (string $c) use ($linhas): ?float { $s = BlingProviderBase::somaConhecida($linhas, $c); return $s === null ? null : round($s, 2); };
+        $custo = $soma('custo'); $lucro = $soma('lucro');
         $add('Receita', 'Impostos (est.)',  $soma('impostos'));
         $add('Receita', 'Taxas',            $soma('taxas'));
         $add('Receita', 'Comissões',        $soma('comissao'));
         $add('Receita', 'Frete',            $soma('frete'));
-        $add('Receita', 'Margem',           max(0, $soma('lucro')));
+        if ($custo !== null && $lucro !== null) {
+            $add('Receita', 'Custo do produto', $custo);
+            $add('Receita', 'Margem',           max(0, $lucro));
+        } else {
+            // "ausência ≠ zero": sem custo conhecido, custo e margem NÃO são separados — o resto da receita vai para um nó só, rotulado.
+            $resto = (float) $soma('receita') - (float) $soma('impostos') - (float) $soma('taxas') - (float) $soma('comissao') - (float) $soma('frete');
+            $add('Receita', 'Custo e margem (não informados)', round($resto, 2));
+        }
 
         ApiResponse::success([
             'nos' => array_values(array_map(static fn($n) => ['id' => $n, 'nome' => $n], array_keys($nos))),
             'links' => array_values($links),
-            'prejuizo_total' => $soma('lucro') < 0 ? abs($soma('lucro')) : 0.0,
+            'indisponivel' => $custo === null ? 'custo_desconhecido' : null,
+            'prejuizo_total' => $lucro === null ? null : ($lucro < 0 ? abs($lucro) : 0.0),
             'nota' => 'Impostos e taxas são estimativas.',
         ], bling_meta(['filtros' => $f]));
     }

@@ -352,8 +352,9 @@ final class ResourceController
                 'canal'       => $canais[$ped['canal']]['nome'] ?? $ped['canal'],
                 'canal_id'    => $ped['canal'],
                 'loja'        => $canais[$ped['canal']]['tipo'] ?? '—',
-                'itens'       => $ped['qtd_itens'],
+                'itens'       => $ped['qtd_itens'],          // null = desconhecido ("ausência ≠ zero"; a tela mostra "—")
                 'subtotal'    => $ped['subtotal'],
+                'itens_conhecidos' => $ped['itens_conhecidos'] ?? true,
                 'desconto'    => $ped['desconto'],
                 'frete'       => $ped['frete'],
                 'total'       => $ped['total'],
@@ -423,11 +424,16 @@ final class ResourceController
             $a = &$acum[$chave];
             $a['pedidos']++;
             $a['receita'] += $ped['total'];
-            $a['custo']   += $ped['custo'];
+            // null pegajoso: um pedido com custo/itens desconhecidos torna a linha desconhecida (nunca soma parcial)
+            $a['custo']   = ($a['custo'] === null || $ped['custo'] === null) ? null : $a['custo'] + $ped['custo'];
             $a['desconto']+= $ped['desconto'];
             $a['frete']   += $ped['frete'];
-            foreach ($ped['itens'] as $it) {
-                $a['unidades'] += $it['quantidade'];
+            if (($ped['itens_conhecidos'] ?? true) === false) {
+                $a['unidades'] = null;
+            } elseif ($a['unidades'] !== null) {
+                foreach ($ped['itens'] as $it) {
+                    $a['unidades'] += $it['quantidade'];
+                }
             }
             unset($a);
         }
@@ -435,10 +441,10 @@ final class ResourceController
         $linhas = array_values($acum);
         foreach ($linhas as &$l) {
             foreach (['receita', 'custo', 'desconto', 'frete'] as $c) {
-                $l[$c] = round($l[$c], 2);
+                $l[$c] = $l[$c] === null ? null : round($l[$c], 2);
             }
             $l['ticket_medio'] = $l['pedidos'] > 0 ? round($l['receita'] / $l['pedidos'], 2) : 0.0;
-            $l['margem_pct']   = $l['receita'] > 0 ? round((($l['receita'] - $l['custo']) / $l['receita']) * 100, 1) : 0.0;
+            $l['margem_pct']   = BlingProviderBase::margemPct((float) $l['receita'], $l['custo']);   // null sem custo conhecido
         }
         unset($l);
         usort($linhas, static fn($a, $b) => strcmp($b['data'], $a['data']));
@@ -480,7 +486,7 @@ final class ResourceController
             $cancelados = count($doCanal) - count($validos);
 
             $receita = array_sum(array_column($validos, 'total'));
-            $custo   = array_sum(array_column($validos, 'custo'));
+            $custo   = BlingProviderBase::somaConhecida($validos, 'custo');   // null = desconhecido (array_sum trataria null como 0)
             $nfErro = 0;
             foreach ($validos as $ped) {
                 if (isset($notas[$ped['id']]) && $notas[$ped['id']]['situacao'] === 'rejeitada') {
@@ -496,7 +502,7 @@ final class ResourceController
                 'pedidos'     => count($validos),
                 'faturamento' => round($receita, 2),
                 'ticket_medio'=> count($validos) > 0 ? round($receita / count($validos), 2) : 0.0,
-                'margem_pct'  => $receita > 0 ? round((($receita - $custo) / $receita) * 100, 1) : 0.0,
+                'margem_pct'  => BlingProviderBase::margemPct((float) $receita, $custo),
                 'cancelamentos' => $cancelados,
                 'taxa_cancelamento' => count($doCanal) > 0 ? round(($cancelados / count($doCanal)) * 100, 1) : 0.0,
                 'notas_erro'  => $nfErro,
@@ -543,7 +549,7 @@ final class ResourceController
         foreach ($p->colecao('vendedores') as $v) {
             $meus = array_values(array_filter($pedidos, static fn($x) => $x['vendedor'] === $v['id']));
             $receita = array_sum(array_column($meus, 'total'));
-            $custo   = array_sum(array_column($meus, 'custo'));
+            $custo   = BlingProviderBase::somaConhecida($meus, 'custo');   // null = desconhecido
             // Meta proporcional ao periodo analisado, nao a meta mensal cheia.
             $meses = max(1, (strtotime($f['ate']) - strtotime($f['de'])) / 86400 / 30.44);
             $meta = $v['meta_mensal'] * $meses;
@@ -554,7 +560,7 @@ final class ResourceController
                 'pedidos'   => count($meus),
                 'faturamento' => round($receita, 2),
                 'ticket_medio'=> count($meus) > 0 ? round($receita / count($meus), 2) : 0.0,
-                'margem_pct'=> $receita > 0 ? round((($receita - $custo) / $receita) * 100, 1) : 0.0,
+                'margem_pct'=> BlingProviderBase::margemPct((float) $receita, $custo),
                 'comissao_pct' => $v['comissao_pct'],
                 'comissao_valor' => round($receita * $v['comissao_pct'] / 100, 2),
                 'meta'      => round($meta, 2),
@@ -1091,7 +1097,8 @@ final class ResourceController
                 'itens'       => $oc['qtd_itens'],
                 'qtd_total'   => $oc['qtd_total'],
                 'qtd_recebida'=> $oc['qtd_recebida'],
-                'pendente'    => $oc['qtd_total'] - $oc['qtd_recebida'],
+                'pendente'    => ($oc['qtd_total'] === null || $oc['qtd_recebida'] === null) ? null : $oc['qtd_total'] - $oc['qtd_recebida'],   // null = desconhecido
+                'itens_conhecidos' => $oc['itens_conhecidos'] ?? true,
                 'valor'       => $oc['valor'],
                 'comprador'   => $oc['comprador'],
                 'divergencia' => $oc['divergencia'],
@@ -1219,6 +1226,7 @@ final class ResourceController
                 continue;
             }
             $atraso = (int) ((strtotime($oc['recebimento']) - strtotime($oc['previsao'])) / 86400);
+            $conf = ($oc['qtd_total'] === null || $oc['qtd_recebida'] === null) ? 'desconhecida' : ($oc['qtd_recebida'] >= $oc['qtd_total'] ? 'completa' : 'parcial');
             $linhas[] = [
                 'id'         => 'rec-' . $oc['id'],
                 'pedido'     => $oc['numero'],
@@ -1229,14 +1237,15 @@ final class ResourceController
                 'no_prazo'   => $atraso <= 0,
                 'qtd_pedida' => $oc['qtd_total'],
                 'qtd_recebida' => $oc['qtd_recebida'],
-                'conferencia'=> $oc['qtd_recebida'] >= $oc['qtd_total'] ? 'completa' : 'parcial',
+                // "ausência ≠ zero": sem a quantidade pedida conhecida não há conferência (antes: 0 ≥ 0 = "completa")
+                'conferencia'=> $conf,
                 'divergencia'=> $oc['divergencia'],
                 'valor'      => $oc['valor'],
-                'situacao_info' => [
-                    'chave' => $oc['qtd_recebida'] >= $oc['qtd_total'] ? 'completa' : 'parcial',
-                    'rotulo'=> $oc['qtd_recebida'] >= $oc['qtd_total'] ? 'Completa' : 'Parcial',
-                    'cor'   => $oc['qtd_recebida'] >= $oc['qtd_total'] ? 'sucesso' : 'aviso',
-                ],
+                'situacao_info' => match ($conf) {
+                    'completa'    => ['chave' => 'completa', 'rotulo' => 'Completa', 'cor' => 'sucesso'],
+                    'parcial'     => ['chave' => 'parcial', 'rotulo' => 'Parcial', 'cor' => 'aviso'],
+                    default       => ['chave' => 'desconhecida', 'rotulo' => 'Sem itens lidos', 'cor' => 'neutro'],
+                },
             ];
         }
         usort($linhas, static fn($a, $b) => strcmp($b['recebimento'], $a['recebimento']));

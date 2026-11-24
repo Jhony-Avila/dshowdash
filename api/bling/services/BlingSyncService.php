@@ -575,6 +575,18 @@ final class BlingSyncService
         $situacaoBling = $d['situacao_bling'];
         unset($d['itens'], $d['contato_bling_id'], $d['canal_bling_id']);
 
+        // "ausência ≠ zero" (achados 2 e 3 da ACIMA_ESQUERDA): campo que NÃO veio na resposta não entra no upsert (que só grava as chaves
+        // enviadas) → o valor conhecido fica. A listagem do Bling não traz desconto, transporte nem vendedor (só o detalhe).
+        foreach (['desconto', 'frete', 'vendedor', 'forma_pagamento'] as $k) {
+            if (array_key_exists($k, $d) && $d[$k] === null) { unset($d[$k]); }
+        }
+        // data_pedido é NOT NULL sem default e o upsert é INSERT … ON DUPLICATE KEY UPDATE (o MySQL valida o INSERT antes): sem data na resposta,
+        // REPÕE a data conhecida; pedido novo sem data = erro registrado (nunca "hoje" no lugar)
+        if ($d['data_pedido'] === null) {
+            $conhecida = $this->repo->consultar('SELECT data_pedido FROM bling_sales_orders WHERE account_id = ? AND bling_id = ?', [$accountId, $d['bling_id']]);
+            if ($conhecida === []) { throw new UnexpectedValueException('pedido novo sem data legível — não gravado (nunca "hoje" no lugar)'); }
+            $d['data_pedido'] = (string) $conhecida[0]['data_pedido'];
+        }
         $d['contact_id'] = $this->repo->idPorBlingId('bling_contacts', $accountId, $contatoBling);
         $d['sales_channel_id'] = $this->repo->idPorBlingId('bling_sales_channels', $accountId, $canalBling);
         // DSHOW-106 (2): guarda o identificador EXTERNO da loja (coluna criada pela migração 20261123; sem ela, segue sem gravar)
@@ -606,6 +618,11 @@ final class BlingSyncService
         // total do cabeçalho não é recalculado a partir de uma soma vazia. Ausência de itens = "não informado", nunca "zero itens".
         // Codex DSHOW-112: "campo ausente" ≠ "lista vazia" (aceite próprio). Ausente → nada muda; vazia confirmada → zero itens.
         $temItens = $estadoItens === 'com_itens';
+        // "ausência ≠ zero" (24/11, opção B): o carimbo só existe quando os itens vieram de coleção COMPLETA; sem ele, subtotal/custo/qtd são
+        // desconhecidos para quem lê (BlingReal devolve null). Sem a coluna (antes da migração 20261124) nada muda na gravação.
+        if (($temItens || $estadoItens === 'vazia') && $this->repo->temColuna('bling_sales_orders', 'itens_lidos_em')) {
+            $d['itens_lidos_em'] = gmdate('Y-m-d H:i:s');
+        }
         if ($estadoItens === 'vazia') {
             $d['subtotal'] = 0.0; $d['custo_total'] = 0.0; $d['qtd_itens'] = 0;    // o Bling CONFIRMOU: pedido sem itens
             if ($d['total'] <= 0) { unset($d['total']); }
@@ -620,7 +637,11 @@ final class BlingSyncService
             $d['custo_total'] = round($custo, 2);
             $d['qtd_itens'] = count($itens);
             if ($d['total'] <= 0) {
-                $d['total'] = round($subtotal - $d['desconto'] + $d['frete'], 2);
+                if (array_key_exists('desconto', $d) && array_key_exists('frete', $d)) {
+                    $d['total'] = round($subtotal - $d['desconto'] + $d['frete'], 2);
+                } else {
+                    unset($d['total']);   // sem desconto/frete conhecidos não se deriva o total (mantém o gravado)
+                }
             }
         } else {
             unset($d['subtotal'], $d['custo_total'], $d['qtd_itens']);
@@ -641,7 +662,8 @@ final class BlingSyncService
         // DSHOW-106: com a coluna loja_bling_id criada, o hash muda uma vez → a releitura grava a loja também nos pedidos antigos
         $d['payload_hash'] = md5($d['payload_hash'] . '|canal=' . ($d['sales_channel_id'] ?? '') . '|contato=' . ($d['contact_id'] ?? '')
             . (array_key_exists('loja_bling_id', $d) ? '|loja=' . ($d['loja_bling_id'] ?? '') : '')
-            . (array_key_exists('situacao_bling_id', $d) ? '|sitid=' . ($d['situacao_bling_id'] ?? '') : ''));   // muda 1x após a migração → a releitura grava
+            . (array_key_exists('situacao_bling_id', $d) ? '|sitid=' . ($d['situacao_bling_id'] ?? '') : '')   // muda 1x após a migração → a releitura grava
+            . (array_key_exists('itens_lidos_em', $d) ? '|itens=completos' : ''));   // "ausência ≠ zero": só o detalhe muda o hash (nada de regravação em massa)
         $r = $this->repo->upsert('bling_sales_orders', $accountId, $d);
         $pedidoId = $this->repo->idPorBlingId('bling_sales_orders', $accountId, $d['bling_id']);
 
@@ -842,11 +864,21 @@ final class BlingSyncService
         $d['supplier_id'] = $this->repo->idPorBlingId('bling_suppliers', $accountId, $fornBling);
         $d['situacao'] = BlingVersionAdapter::situacaoCompra($situacaoBling);
         $substitui = $estadoItens === 'com_itens' || $estadoItens === 'vazia';
+        if ($substitui && $this->repo->temColuna('bling_purchase_orders', 'itens_lidos_em')) {
+            $d['itens_lidos_em'] = gmdate('Y-m-d H:i:s');   // "ausência ≠ zero": só coleção completa torna qtd_itens/qtd_total conhecidos
+            $d['payload_hash'] = md5($d['payload_hash'] . '|itens=completos');   // senão um hash igual pularia o UPDATE e o carimbo não entraria
+        }
         if ($substitui) {
             $d['qtd_itens'] = count($itens);
             $d['qtd_total'] = array_sum(array_column($itens, 'quantidade'));
         }
-        $d['qtd_recebida'] = 0;
+        // achado 2: nada no Bling informa a quantidade recebida — o 0 fixo virava "Recebido 0 / parcial". Não grava (a leitura devolve null).
+        if (array_key_exists('valor', $d) && $d['valor'] === null) { unset($d['valor']); }   // ausência nunca sobrescreve o conhecido
+        if ($d['data_emissao'] === null) {   // NOT NULL sem default: repõe a conhecida; compra nova sem data = erro (nunca "hoje")
+            $conhecida = $this->repo->consultar('SELECT data_emissao FROM bling_purchase_orders WHERE account_id = ? AND bling_id = ?', [$accountId, $d['bling_id']]);
+            if ($conhecida === []) { throw new UnexpectedValueException('compra nova sem data legível — não gravada (nunca "hoje" no lugar)'); }
+            $d['data_emissao'] = (string) $conhecida[0]['data_emissao'];
+        }
 
         $r = $this->repo->upsert('bling_purchase_orders', $accountId, $d);
         $compraId = $this->repo->idPorBlingId('bling_purchase_orders', $accountId, $d['bling_id']);

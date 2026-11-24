@@ -224,7 +224,8 @@ final class BlingNormalizer
         return [
             'bling_id'    => self::exigir(self::texto($p, 'id'), 'id', 'pedido'),
             'numero'      => self::texto($p, 'numero', 'numeroPedidoLoja'),
-            'data_pedido' => self::data($p, 'data', 'dataSaida') ?? date('Y-m-d'),
+            // revisão da ACIMA_ESQUERDA (achado 3): data ausente/ilegível = null, NUNCA "hoje" (quem grava mantém a conhecida ou recusa)
+            'data_pedido' => self::data($p, 'data', 'dataSaida'),
             'situacao_bling' => self::texto($p, 'situacao.valor', 'situacao.id', 'situacao'),
             // PORTÃO BLING SITUAÇÃO (23/11/2026): o ID real da situação (o `situacao.valor` acima não distingue situação — todos os
             // pedidos desde 04/2025 vieram 0). Só o id, sem fallback: ausente = null (nunca o `valor` no lugar do id).
@@ -233,8 +234,9 @@ final class BlingNormalizer
             'canal_bling_id'    => self::texto($p, 'loja.id', 'canal.id'),
             'vendedor'    => self::texto($p, 'vendedor.nome', 'vendedor.id'),
             'forma_pagamento' => self::texto($p, 'formaPagamento.nome', 'formaPagamento.id'),
-            'desconto'    => self::numero($p, 'desconto.valor', 'desconto'),
-            'frete'       => self::numero($p, 'transporte.frete', 'frete'),
+            // achado 2: ausente = null (a LISTAGEM do Bling não traz desconto nem transporte — só o detalhe); quem grava não sobrescreve o conhecido
+            'desconto'    => self::numeroOpcional($p, 'desconto.valor', 'desconto'),
+            'frete'       => self::numeroOpcional($p, 'transporte.frete', 'frete'),
             'total'       => self::numero($p, 'total', 'totalProdutos'),
             'itens'       => self::itensPedido($p),
             'criado_externo_em'     => self::dataHoraUtc($p, 'dataCriacao', 'data'),
@@ -279,9 +281,9 @@ final class BlingNormalizer
             'numero'     => self::texto($p, 'numero'),
             'fornecedor_bling_id' => self::texto($p, 'fornecedor.id', 'contato.id'),
             'situacao_bling' => self::texto($p, 'situacao.valor', 'situacao'),
-            'data_emissao'  => self::data($p, 'data') ?? date('Y-m-d'),
+            'data_emissao'  => self::data($p, 'data'),                    // achado 3: null, nunca "hoje"
             'data_previsao' => self::data($p, 'dataPrevista', 'previsaoEntrega'),
-            'valor'      => self::numero($p, 'total'),
+            'valor'      => self::numeroOpcional($p, 'total'),               // achado 2: ausente = null (não sobrescreve o conhecido)
             'comprador'  => self::texto($p, 'comprador.nome', 'comprador'),
             'itens'      => self::itensPedido($p),
             'payload_hash' => self::hash($p),

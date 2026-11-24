@@ -439,10 +439,12 @@ final class BlingReal extends BlingProviderBase
 
     private function pedidos(): array
     {
+        // "ausência ≠ zero" (24/11, opção B): sem a coluna da migração 20261124, nenhum pedido tem itens conhecidos.
+        $lidos = $this->repo->temColuna('bling_sales_orders', 'itens_lidos_em') ? 'itens_lidos_em' : 'NULL AS itens_lidos_em';
         $pedidos = $this->repo->consultar(
             'SELECT id, bling_id, numero, data_pedido, situacao, contact_id, sales_channel_id,
                     vendedor, forma_pagamento, subtotal, desconto, frete, total, custo_total,
-                    qtd_itens, atualizado_externo_em
+                    qtd_itens, ' . $lidos . ', atualizado_externo_em
                FROM bling_sales_orders
               WHERE account_id = ? AND deletado_em IS NULL',
             [$this->conta()]
@@ -469,7 +471,8 @@ final class BlingReal extends BlingProviderBase
                 'quantidade' => (int) $i['quantidade'],
                 'unitario' => (float) $i['valor_unitario'],
                 'total' => (float) $i['valor_total'],
-                'custo_unitario' => (float) $i['custo_unitario'],
+                // o item do pedido do Bling NÃO tem custo (VendasItemDTO, OpenAPI oficial): o 0 gravado é ausência, não custo zero
+                'custo_unitario' => null,
             ];
         }
 
@@ -483,6 +486,7 @@ final class BlingReal extends BlingProviderBase
         }
 
         return array_map(static function ($p) use ($porPedido, $vendedores, $formas) {
+            $conhecidos = $p['itens_lidos_em'] !== null;   // itens lidos de coleção COMPLETA (detalhe)
             return [
                 'id' => (string) $p['id'], 'numero' => (string) ($p['numero'] ?? $p['id']),
                 'bling_id' => (int) $p['bling_id'],
@@ -493,12 +497,13 @@ final class BlingReal extends BlingProviderBase
                 'canal' => (string) ($p['sales_channel_id'] ?? ''),
                 'conta' => 'conta-padrao',
                 'itens' => $porPedido[(int) $p['id']] ?? [],
-                'qtd_itens' => (int) $p['qtd_itens'],
-                'subtotal' => (float) $p['subtotal'],
+                'itens_conhecidos' => $conhecidos,
+                'qtd_itens' => $conhecidos ? (int) $p['qtd_itens'] : null,      // null = desconhecido (os zeros antigos não são lidos)
+                'subtotal' => $conhecidos ? (float) $p['subtotal'] : null,
                 'desconto' => (float) $p['desconto'],
                 'frete' => (float) $p['frete'],
                 'total' => (float) $p['total'],
-                'custo' => (float) $p['custo_total'],
+                'custo' => null,   // o pedido do Bling não traz custo (nem a listagem nem o detalhe): desconhecido → sem margem
                 'forma_pagamento' => $formas[$p['forma_pagamento'] ?? ''] ?? '',
                 'atualizado_em' => $p['atualizado_externo_em']
                     ? gmdate('c', strtotime($p['atualizado_externo_em'] . ' UTC'))
@@ -627,7 +632,8 @@ final class BlingReal extends BlingProviderBase
     {
         $compras = $this->repo->consultar(
             'SELECT id, bling_id, numero, supplier_id, situacao, data_emissao, data_previsao,
-                    data_recebimento, valor, qtd_itens, qtd_total, qtd_recebida, comprador,
+                    data_recebimento, valor, qtd_itens, qtd_total, qtd_recebida, comprador, '
+                    . ($this->repo->temColuna('bling_purchase_orders', 'itens_lidos_em') ? 'itens_lidos_em' : 'NULL AS itens_lidos_em') . ',
                     tem_divergencia, atualizado_externo_em
                FROM bling_purchase_orders WHERE account_id = ? AND deletado_em IS NULL',
             [$this->conta()]
@@ -664,9 +670,10 @@ final class BlingReal extends BlingProviderBase
             'previsao' => (string) ($c['data_previsao'] ?? $c['data_emissao']),
             'recebimento' => $c['data_recebimento'],
             'itens' => $porCompra[(int) $c['id']] ?? [],
-            'qtd_itens' => (int) $c['qtd_itens'],
-            'qtd_total' => (int) $c['qtd_total'],
-            'qtd_recebida' => (int) $c['qtd_recebida'],
+            'itens_conhecidos' => $c['itens_lidos_em'] !== null,
+            'qtd_itens' => $c['itens_lidos_em'] !== null ? (int) $c['qtd_itens'] : null,   // null = desconhecido
+            'qtd_total' => $c['itens_lidos_em'] !== null ? (int) $c['qtd_total'] : null,
+            'qtd_recebida' => null,   // nada no Bling informa o recebido: o 0 da coluna é ausência (achado 2 da ACIMA_ESQUERDA)
             'valor' => (float) $c['valor'],
             'situacao' => $c['situacao'],
             'comprador' => $c['comprador'] ?? '',
