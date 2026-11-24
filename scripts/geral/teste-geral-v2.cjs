@@ -28,6 +28,7 @@ function resumo(periodo, m) {
     negocios_ganhos: { ...base, estado: periodo === 'ontem' ? 'zero' : 'ok', quantidade: periodo === 'ontem' ? 0 : 9, valor: periodo === 'ontem' ? 0 : 351000, sem_valor: periodo === 'ontem' ? 0 : 1 },
     funil_aberto: { ...base, estado: 'ok', quantidade: 86, valor: 4830000, sem_valor: 5 },
   };
+  if (m.semCanal) r.pedidos_bling = { ...r.pedidos_bling, estado: 'parcial', lacunas: ['sem_canal'], consulta_completa: true, motivo: '1 pedido ainda sem identificação de canal' };
   if (m.ganhosSemValor) r.negocios_ganhos = { ...r.negocios_ganhos, estado: 'parcial', quantidade: 3, valor: null, sem_valor: 3, motivo: '3 negócios sem valor ficaram fora da soma.' };
   if (m.estados) {   // prancha 02_GERAL_ESTADOS: zero real · desatualizado · aguardando
     r.pedidos_bling = { ...r.pedidos_bling, estado: 'zero', quantidade: 0, valor: 0, por_dia: por_dia.map((d) => ({ ...d, quantidade: 0, valor: 0 })) };
@@ -55,7 +56,7 @@ function fontes(m) {
   return f;
 }
 function simulador() {
-  const m = { atraso: 0, falhaResumo: false, falhaPrio: false, estados: false, semPendencias: false, prioNula: false, pipeVelho: false, ganhosSemValor: false, calls: {}, ultimaLista: null };
+  const m = { atraso: 0, falhaResumo: false, falhaPrio: false, estados: false, semPendencias: false, prioNula: false, pipeVelho: false, ganhosSemValor: false, semCanal: false, calls: {}, ultimaLista: null };
   m.rotear = async (ctx) => {
     await ctx.route('**/api/geral/v2/**', async (r) => {
       const u = new URL(r.request().url()); const rota = u.pathname.replace('/api/geral/v2', '').replace(/\.php$/, ''); m.calls[rota] = (m.calls[rota] || 0) + 1;
@@ -239,6 +240,12 @@ function simulador() {
     const g = await pg.$eval('[data-gv2-cartao="ganhos"]', (x) => [x.dataset.gv2Estado, x.querySelector('.gv2-selo')?.textContent, x.querySelector('.gv2-num-valor')?.textContent, x.querySelector('[data-gv2-soma-parcial]')?.textContent]);
     afirma('todos sem valor: "Dados parciais", valor "—" e "Nenhum valor informado · 3 negócios sem valor" (sem "soma", nunca R$ 0)', g[0] === 'parcial' && g[1] === 'Dados parciais' && g[2] === '—' && /^Nenhum valor informado · 3 negócios sem valor$/.test(g[3]), JSON.stringify(g));
     await ctx.close(); }
+
+  // ── (3e) PEDIDO SEM CANAL (decisão do Jhony, 24/11): "Dados parciais" + "1 pedido ainda sem identificação de canal", total mantido ──
+  { const m = simulador(); m.semCanal = true; const { ctx, pg } = await nova(m); await abrir(pg);
+    const p = await pg.$eval('[data-gv2-cartao="pedidos"]', (x) => [x.dataset.gv2Estado, x.querySelector('.gv2-selo')?.textContent, x.querySelector('.gv2-num-valor')?.textContent, x.querySelector('.gv2-num-linha')?.textContent]);
+    afirma('pedido sem canal: "Dados parciais", total mantido (R$ 284.900) e "1 pedido ainda sem identificação de canal"', p[0] === 'parcial' && p[1] === 'Dados parciais' && /284\.900/.test(p[2]) && /1 pedido ainda sem identificação de canal/.test(p[3]), JSON.stringify(p));
+    await cap(pg, '3e-pedido-sem-canal'); await ctx.close(); }
 
   // ── (3b) CONTRAPROVA: quantidade desconhecida (null) com estado "ok" NUNCA some nem vira "Sem pendências" ──
   { const m = simulador(); m.semPendencias = true; m.prioNula = true; const { ctx, pg } = await nova(m); await abrir(pg);
