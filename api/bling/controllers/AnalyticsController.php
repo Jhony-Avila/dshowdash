@@ -259,8 +259,9 @@ final class AnalyticsController
 
         $nos = [];
         $links = [];
-        $add = static function (string $de, string $para, float $valor) use (&$links, &$nos): void {
-            if ($valor <= 0) {
+        // revisão da ACIMA_ESQUERDA (achado 2): aceita null (= desconhecido, não desenha o nó) em vez de quebrar com erro de tipo
+        $add = static function (string $de, string $para, ?float $valor) use (&$links, &$nos): void {
+            if ($valor === null || $valor <= 0) {
                 return;
             }
             $nos[$de] = true;
@@ -284,8 +285,10 @@ final class AnalyticsController
             $add('Receita', 'Margem',           max(0, $lucro));
         } else {
             // "ausência ≠ zero": sem custo conhecido, custo e margem NÃO são separados — o resto da receita vai para um nó só, rotulado.
-            $resto = (float) $soma('receita') - (float) $soma('impostos') - (float) $soma('taxas') - (float) $soma('comissao') - (float) $soma('frete');
-            $add('Receita', 'Custo e margem (não informados)', round($resto, 2));
+            $partes = [$soma('receita'), $soma('impostos'), $soma('taxas'), $soma('comissao'), $soma('frete')];
+            // nunca (float) null → 0: com qualquer parte desconhecida o resto também é desconhecido (o nó não é desenhado)
+            $resto = in_array(null, $partes, true) ? null : $partes[0] - $partes[1] - $partes[2] - $partes[3] - $partes[4];
+            $add('Receita', 'Custo e margem (não informados)', $resto === null ? null : round($resto, 2));
         }
 
         ApiResponse::success([

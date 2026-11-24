@@ -89,8 +89,8 @@ abstract class BlingProviderBase
     /** Margem % sobre a receita; null sem custo conhecido. */
     public static function margemPct(float $receita, ?float $custo): ?float
     {
-        if ($custo === null) { return null; }
-        return $receita > 0 ? round((($receita - $custo) / $receita) * 100, 1) : 0.0;
+        if ($custo === null || $receita <= 0) { return null; }   // achado 3 da ACIMA_ESQUERDA: margem sobre receita zero é indefinida, não 0 %
+        return round((($receita - $custo) / $receita) * 100, 1);
     }
 
     /** Todos os pedidos do conjunto têm os itens conhecidos? (sem isso, qualquer soma por item é parcial) */
@@ -188,7 +188,7 @@ abstract class BlingProviderBase
         $clientesDistintos = count(array_unique(array_column($noPer, 'cliente')));
         $ticket = count($noPer) > 0 ? $fatBruto / count($noPer) : null;      // sem pedido = ticket indefinido (null), não R$ 0
         $ticketAnt = count($noAnt) > 0 ? $fatAnt / count($noAnt) : null;
-        $margem = ($custo === null || $fatLiquido === null) ? null : ($fatLiquido > 0 ? (($fatLiquido - $custo) / $fatLiquido) * 100 : 0.0);
+        $margem = ($custo === null || $fatLiquido === null || $fatLiquido <= 0) ? null : (($fatLiquido - $custo) / $fatLiquido) * 100;   // sem receita = indefinida
 
         return $this->aplicarDisponibilidadeReceber([
             $this->kpi('faturamento_bruto', 'Faturamento bruto', $fatBruto, 'moeda',
@@ -974,7 +974,7 @@ abstract class BlingProviderBase
             foreach (['receita', 'desconto', 'frete', 'comissao', 'impostos', 'taxas', 'custo', 'lucro'] as $c) {
                 $l[$c] = $l[$c] === null ? null : round($l[$c], 2);
             }
-            $l['margem_pct'] = ($l['lucro'] === null || $l['receita'] === null) ? null : ($l['receita'] > 0 ? round(($l['lucro'] / $l['receita']) * 100, 1) : 0.0);
+            $l['margem_pct'] = ($l['lucro'] === null || $l['receita'] === null || $l['receita'] <= 0) ? null : round(($l['lucro'] / $l['receita']) * 100, 1);
             $l['prejuizo'] = $l['lucro'] === null ? null : $l['lucro'] < 0;   // null = não se sabe (não é "sem prejuízo")
         }
         unset($l);

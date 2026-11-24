@@ -274,6 +274,8 @@ try {
     ok('recebimento: conferencia_info igual ao selo (a grade da CIMA lê <coluna>_info)', ($lr['conferencia_info'] ?? null) === ['chave' => 'desconhecida', 'rotulo' => 'Sem itens lidos', 'cor' => 'neutro'], json_encode($lr['conferencia_info'] ?? null));
     $lcSem = array_values(array_filter($res('canais')['linhas'], static fn($l) => $l['pedidos'] === 0))[0] ?? null;
     ok('canal SEM pedido: ticket médio = null (indefinido), não R$ 0', $lcSem !== null && $lcSem['ticket_medio'] === null, json_encode($lcSem));
+    ok('margem sobre receita ZERO = null (indefinida), nunca 0 % (revisão da ACIMA_ESQUERDA, achado 3)', BlingProviderBase::margemPct(0.0, 10.0) === null
+        && BlingProviderBase::margemPct(100.0, 40.0) === 60.0 && BlingProviderBase::margemPct(100.0, null) === null);
     // exportação CSV (servidor): null = célula VAZIA, nunca 0 — nas linhas e no TOTAL
     $csvCmd = 'PROVEDOR=real BLING_TESTE_CNF=' . escapeshellarg($cnf) . ' BLING_TESTE_DB=' . escapeshellarg($db) . ' ' . escapeshellarg(PHP_BINARY) . ' '
             . escapeshellarg("$TMP/endpoint.php") . ' ' . escapeshellarg($raiz) . ' ExportCsv x ' . escapeshellarg(json_encode(['periodo' => '30d', 'formato' => 'csv']))
@@ -452,6 +454,11 @@ try {
     $rn = $sync4->sincronizar($conta, 'notas', 'incremental', 'n2');
     ok('nota existente sem data de emissão: data 2026-09-05 MANTIDA (antes: "hoje"); o resto (valor) atualiza', $tit('bling_invoices', '720001', 'data_emissao') === '2026-09-05'
         && (float) $tit('bling_invoices', '720001', 'valor') === 151.0, json_encode([$tit('bling_invoices', '720001', 'data_emissao'), $tit('bling_invoices', '720001', 'valor')]));
+    ok('nota: valor conhecido 151 NÃO é zerado por uma listagem sem valorNota (OpenAPI: a listagem não traz o valor)', (function () use ($sync4, $conta, &$NFE, $tit) {
+        $NFE = new BlingResposta(200, ['data' => [['id' => 720001, 'numero' => '101', 'serie' => '1', 'dataEmissao' => '2026-09-05', 'situacao' => 5, 'tipo' => 1]]]);
+        $sync4->sincronizar($conta, 'notas', 'incremental', 'n3');
+        return (float) $tit('bling_invoices', '720001', 'valor') === 151.0;
+    })(), (string) $tit('bling_invoices', '720001', 'valor'));
     ok('nota NOVA com data ilegível: não gravada — erro registrado', $tit('bling_invoices', '720002', 'id') === false && $rn['erros'] === 1, json_encode($rn));
 
     echo "== 5. o provedor de DEMONSTRAÇÃO (mock) não muda: números como antes\n";
@@ -459,6 +466,10 @@ try {
     $kk = $d['kpis'] ?? [];
     $mg = is_array($kk) ? (array_values(array_filter($kk, static fn($x) => is_array($x) && ($x['id'] ?? '') === 'margem_estimada'))[0] ?? null) : null;
     ok('mock: margem estimada é número (custo conhecido no mock)', $mg !== null && is_numeric($mg['valor']), mb_substr($txt, 0, 160));
+    [$rcM, $dM, $txtM] = $endpoint('AnalyticsController', 'fluxoFinanceiro', [], 'mock');
+    $nosM = array_column($dM['nos'] ?? [], 'id');
+    ok('mock: fluxo financeiro com custo conhecido separa "Custo do produto" e "Margem" (o $add ?float não mudou o caminho normal)', $rcM === 0
+        && in_array('Custo do produto', $nosM, true) && array_key_exists('indisponivel', $dM ?? []) && $dM['indisponivel'] === null, json_encode($nosM));
 
     echo "== 6. varredura: nenhum array_sum de custo/lucro de pedido sobrou nos controladores e no provedor\n";
     $fontes = '';

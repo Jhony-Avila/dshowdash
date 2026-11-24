@@ -920,6 +920,7 @@ final class BlingSyncService
         $d['contact_id'] = $this->repo->idPorBlingId('bling_contacts', $accountId, $contatoBling);
         $d['situacao'] = BlingVersionAdapter::situacaoNota($situacaoBling);
         $d['data_emissao'] = $this->dataConhecida($accountId, 'bling_invoices', 'data_emissao', $d, 'nota nova sem data de emissão legível');   // nunca "hoje"
+        if ($d['valor'] === null) { unset($d['valor']); }   // a listagem não traz o valor da nota: ausência NUNCA sobrescreve o valor conhecido com 0
 
         $r = $this->repo->upsert('bling_invoices', $accountId, $d);
 

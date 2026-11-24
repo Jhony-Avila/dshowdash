@@ -301,7 +301,8 @@ final class BlingNormalizer
             'contato_bling_id'=> self::texto($p, 'contato.id'),
             // 24/11 (Jhony): emissão ausente/ilegível = null, NUNCA "hoje" (a nota apareceria "emitida hoje"); quem grava repõe a conhecida ou recusa
             'data_emissao' => self::data($p, 'dataEmissao', 'data'),
-            'valor'     => self::numero($p, 'valorNota', 'total'),
+            // OpenAPI oficial (24/11): a LISTAGEM GET /nfe (NotasFiscaisDadosBaseDTO) NÃO traz valorNota (só o detalhe) → ausente = null, nunca 0
+            'valor'     => self::numeroOpcional($p, 'valorNota', 'total'),
             'situacao_bling' => self::texto($p, 'situacao'),
             'finalidade'=> self::texto($p, 'finalidade'),
             'tipo'      => ((int) (self::campo($p, 'tipo') ?? 1)) === 0 ? 'entrada' : 'saida',

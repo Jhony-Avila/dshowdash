@@ -5,6 +5,7 @@
 -- itens → todos ficaram 0 desde a 1ª carga. Em vez de reescrever essas colunas e os dados (opção A, rejeitada), uma coluna NOVA diz se os itens
 -- foram lidos de uma fonte COMPLETA (o detalhe do pedido). NULL = nunca lidos → os zeros antigos deixam de ser lidos. Nenhuma linha é alterada.
 -- PRÉ-CHECAGEM (o portão para se divergir):
+--   SELECT VERSION();   -- ≥ 8.0.29 (ADD COLUMN … AFTER com ALGORITHM=INSTANT; abaixo disso o ALTER falha SEM alterar nada — revisão da ACIMA_ESQUERDA, achado 6)
 --   SELECT COUNT(*) FROM BLING.bling_sales_order_items;                     -- esperado 0 (se > 0: esses pedidos também passam a "—" até o detalhe)
 --   SHOW CREATE TABLE BLING.bling_sales_orders;  SHOW CREATE TABLE BLING.bling_purchase_orders;   -- conferir as colunas e que itens_lidos_em NÃO existe
 --   SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='BLING' AND COLUMN_NAME='itens_lidos_em'
