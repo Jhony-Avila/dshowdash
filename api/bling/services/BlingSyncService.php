@@ -842,12 +842,12 @@ final class BlingSyncService
      */
     public function releituraPedidos(int $accountId, Closure $parar, Closure $dormir, int $pausaMs = 1500, int $maxPaginas = 500): array
     {
-        if (!$this->repo->temColuna('bling_sales_orders', 'situacao_bling_id')) {
+        if (!$this->repo->temColuna('bling_sales_orders', 'situacao_bling_id') || !$this->repo->temColuna('bling_sales_orders', 'loja_bling_id')) {
             return ['situacao' => 'sem_coluna', 'paginas' => 0, 'consultados' => 0, 'criados' => 0, 'atualizados' => 0, 'ignorados' => 0, 'erros' => 0, 'pagina_inicial' => 0];
         }
         $est = $this->repo->estadoSync($accountId, self::RECURSO_RELEITURA);
         $paginaInicial = ($est && $est['situacao'] === 'parcial') ? max(1, (int) $est['pagina_atual']) : 1;
-        $c = ['consultados' => 0, 'criados' => 0, 'atualizados' => 0, 'ignorados' => 0, 'erros' => 0];
+        $c = ['consultados' => 0, 'criados' => 0, 'atualizados' => 0, 'ignorados' => 0, 'ausentes' => 0, 'erros' => 0];
         $paginas = 0; $parou = false;
         $cliente = $this->auth->cliente($accountId);
         $this->repo->salvarEstadoSync($accountId, self::RECURSO_RELEITURA, ['estrategia' => 'carga_inicial', 'situacao' => 'parcial',
@@ -861,8 +861,9 @@ final class BlingSyncService
                         $c['consultados']++;
                         $this->repo->pdo()->exec('SAVEPOINT bling_item');
                         try {
-                            $res = $this->gravarPedido($accountId, $bruto);
-                            $c[match ($res) { 'criado' => 'criados', 'atualizado' => 'atualizados', default => 'ignorados' }]++;
+                            // Codex DSHOW-111 (A2): a releitura NUNCA passa pela gravação completa (que apagaria itens e recalcularia valores).
+                            $res = $this->gravarSituacaoLoja($accountId, $bruto);
+                            $c[match ($res) { 'atualizado' => 'atualizados', 'ausente' => 'ausentes', default => 'ignorados' }]++;
                             $this->repo->pdo()->exec('RELEASE SAVEPOINT bling_item');
                         } catch (Throwable $e) {
                             $this->repo->pdo()->exec('ROLLBACK TO SAVEPOINT bling_item');
@@ -892,6 +893,30 @@ final class BlingSyncService
             'watermark' => $concluida ? gmdate('Y-m-d H:i:s') : null]);
         return ['situacao' => $concluida ? 'concluida' : ($parou ? 'interrompida' : (string) ($r['estado'] ?? 'parcial')),
                 'paginas' => $paginas, 'pagina_inicial' => $paginaInicial] + $c;
+    }
+
+    /**
+     * Codex DSHOW-111 (A2): caminho EXCLUSIVO da releitura. Lê do item da LISTAGEM só `id`, `situacao.id` e `loja.id` e faz UM UPDATE
+     * nas duas colunas — nunca toca em itens, quantidades, valores, desconto, frete, totais, custo, hash, contato, canal, situação interna
+     * ou histórico. Pedido que não existe na base NÃO é criado (conta como 'ausente'; a sincronização normal é quem cria pedidos).
+     * Valor ausente na resposta nunca apaga o conhecido (COALESCE).
+     * @return 'atualizado'|'ignorado'|'ausente'
+     */
+    private function gravarSituacaoLoja(int $accountId, array $bruto): string
+    {
+        $blingId = isset($bruto['id']) && (is_int($bruto['id']) || (is_string($bruto['id']) && ctype_digit($bruto['id']))) ? (string) $bruto['id'] : null;
+        if ($blingId === null) { throw new InvalidArgumentException('pedido sem id na listagem'); }
+        $sit = $bruto['situacao']['id'] ?? null;
+        $sit = (is_int($sit) || (is_string($sit) && ctype_digit($sit))) ? (string) $sit : null;
+        $loja = $bruto['loja']['id'] ?? null;
+        $loja = (is_int($loja) || (is_string($loja) && ctype_digit($loja))) ? (string) $loja : null;
+        $existe = $this->repo->consultar('SELECT situacao_bling_id, loja_bling_id FROM bling_sales_orders WHERE account_id = ? AND bling_id = ?', [$accountId, $blingId]);
+        if ($existe === []) { return 'ausente'; }
+        $novoSit = $sit ?? $existe[0]['situacao_bling_id']; $novaLoja = $loja ?? $existe[0]['loja_bling_id'];
+        if ((string) $novoSit === (string) $existe[0]['situacao_bling_id'] && (string) $novaLoja === (string) $existe[0]['loja_bling_id']) { return 'ignorado'; }
+        $this->repo->pdo()->prepare('UPDATE bling_sales_orders SET situacao_bling_id = COALESCE(?, situacao_bling_id), loja_bling_id = COALESCE(?, loja_bling_id)
+                                      WHERE account_id = ? AND bling_id = ?')->execute([$sit, $loja, $accountId, $blingId]);
+        return 'atualizado';
     }
 
     /**
