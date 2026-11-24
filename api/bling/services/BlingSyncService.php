@@ -435,8 +435,8 @@ final class BlingSyncService
             'fornecedores' => $this->repo->upsert('bling_suppliers', $accountId, BlingNormalizer::fornecedor($bruto)),
             'produtos'     => $this->gravarProduto($accountId, $bruto),
             'estoque'      => $this->gravarEstoque($accountId, $bruto),
-            'pedidos'      => $this->gravarPedido($accountId, $bruto),
-            'compras'      => $this->gravarCompra($accountId, $bruto),
+            'pedidos'      => $this->gravarPedido($accountId, $bruto, self::ORIGEM_LISTAGEM),   // a sincronização (e a fila/webhook) lê a LISTAGEM
+            'compras'      => $this->gravarCompra($accountId, $bruto, self::ORIGEM_LISTAGEM),
             'notas'        => $this->gravarNota($accountId, $bruto),
             'receber'      => $this->gravarReceber($accountId, $bruto),
             'pagar'        => $this->gravarPagar($accountId, $bruto),
@@ -562,8 +562,12 @@ final class BlingSyncService
         return 'atualizado';
     }
 
-    private function gravarPedido(int $accountId, array $bruto): string
+    private function gravarPedido(int $accountId, array $bruto, string $origem): string
     {
+        // Codex DSHOW-113 (2): classificar ANTES de qualquer escrita — lista inválida rejeita o pedido inteiro (o SAVEPOINT do laço devolve o
+        // estado anterior e o erro vai para bling_sync_errors; o watermark não avança → o incremental relê).
+        $estadoItens = self::classificarItens($bruto, $origem);
+        if ($estadoItens === 'invalida') { throw new UnexpectedValueException('itens do pedido inválidos ou incoerentes com o cabeçalho — substituição rejeitada, pedido não gravado'); }
         $d = BlingNormalizer::pedidoVenda($bruto);
         $itens = $d['itens'];
         $contatoBling = $d['contato_bling_id'];
@@ -601,7 +605,6 @@ final class BlingSyncService
         // item gravado nem se zera subtotal/custo/qtd_itens: essas colunas ficam fora do UPDATE (o upsert só grava as chaves enviadas) e o
         // total do cabeçalho não é recalculado a partir de uma soma vazia. Ausência de itens = "não informado", nunca "zero itens".
         // Codex DSHOW-112: "campo ausente" ≠ "lista vazia" (aceite próprio). Ausente → nada muda; vazia confirmada → zero itens.
-        $estadoItens = self::estadoItens($bruto, $itens);
         $temItens = $estadoItens === 'com_itens';
         if ($estadoItens === 'vazia') {
             $d['subtotal'] = 0.0; $d['custo_total'] = 0.0; $d['qtd_itens'] = 0;    // o Bling CONFIRMOU: pedido sem itens
@@ -651,7 +654,7 @@ final class BlingSyncService
                      VALUES (?, ?, ?, ?, ?, UTC_TIMESTAMP())'
                 )->execute([$accountId, $pedidoId, $situacaoAntes, $d['situacao'], 'sync']);
             }
-            if ($estadoItens !== 'ausente') {   // itens AUSENTES na resposta: os gravados ficam como estão (nenhum DELETE)
+            if ($estadoItens === 'com_itens' || $estadoItens === 'vazia') {   // só coleção COMPLETA substitui; ausente/preservar = nenhum DELETE
                 $this->gravarItens($accountId, $pedidoId, $itens, $estadoItens === 'vazia');
             }
             $this->gravarEnvio($accountId, $pedidoId, $bruto, $d);
@@ -724,21 +727,82 @@ final class BlingSyncService
      * simples e não deixa item fantasma de uma versão anterior do pedido.
      * Lista vazia = resposta SEM itens (a listagem não os traz): nada é apagado (23/11 noite).
      */
+    public const ORIGEM_LISTAGEM = 'listagem';
+    public const ORIGEM_DETALHE = 'detalhe';
+
     /**
-     * Codex DSHOW-112 — estado dos itens na RESPOSTA do Bling:
-     *  'ausente'   = o campo não veio (a LISTAGEM do Bling não traz itens), veio nulo, veio com elementos mas nenhum item legível,
-     *                ou veio `[]` contradizendo o cabeçalho (totalProdutos > 0): os itens gravados NÃO são tocados.
-     *  'vazia'     = `itens: []` explícito e coerente com o cabeçalho: o pedido CONFIRMADAMENTE não tem itens (zera e remove os antigos).
-     *  'com_itens' = lista com itens legíveis: apaga e regrava (regra antiga para resposta completa).
+     * Codex DSHOW-113 (2) — classificador CONSERVADOR de completude dos itens (substitui o estadoItens do DSHOW-112).
+     * Contrato (OpenAPI oficial do Bling v3, conferido em 24/11/2026): a LISTAGEM (`GET pedidos/vendas`, `VendasDadosBaseDTO`) NUNCA traz itens;
+     * só o DETALHE (`GET pedidos/vendas/{id}`, `VendasDadosDTO`) traz a coleção `itens` COMPLETA. Por isso só a origem 'detalhe' prova completude.
+     *  'ausente'   = o campo não veio → preserva.
+     *  'preservar' = veio, mas não há contrato de coleção completa (qualquer coisa vinda da listagem; null; `[]` sem prova) → preserva.
+     *                A ausência de totalProdutos não prova nada.
+     *  'invalida'  = DETALHE com lista que não é lista, com algum item inválido (parcialmente inválida) ou `[]` contradizendo totalProdutos > 0
+     *                → rejeita a substituição (o pedido não é gravado; erro registrado).
+     *  'com_itens' = DETALHE com lista completa e TODOS os itens válidos → atualiza (apaga e regrava).
+     *  'vazia'     = DETALHE com `[]` E totalProdutos presente e = 0 (o contrato justifica) → esvazia.
+     * @return 'ausente'|'preservar'|'invalida'|'com_itens'|'vazia'
      */
-    private static function estadoItens(array $bruto, array $itensNormalizados): string
+    public static function classificarItens(array $bruto, string $origem): string
     {
-        $lista = array_key_exists('itens', $bruto) ? $bruto['itens'] : ($bruto['items'] ?? null);
-        if (!is_array($lista)) { return 'ausente'; }
-        if ($itensNormalizados !== []) { return 'com_itens'; }
-        if ($lista !== []) { return 'ausente'; }
-        $tp = $bruto['totalProdutos'] ?? null;
-        return is_numeric($tp) && (float) $tp > 0 ? 'ausente' : 'vazia';
+        if ($origem !== self::ORIGEM_LISTAGEM && $origem !== self::ORIGEM_DETALHE) { throw new InvalidArgumentException('origem de itens desconhecida'); }
+        $chave = array_key_exists('itens', $bruto) ? 'itens' : (array_key_exists('items', $bruto) ? 'items' : null);
+        if ($chave === null) { return 'ausente'; }
+        if ($origem !== self::ORIGEM_DETALHE) { return 'preservar'; }      // sem contrato de coleção completa, nada substitui
+        $lista = $bruto[$chave];
+        if ($lista === null) { return 'preservar'; }
+        if (!is_array($lista) || !array_is_list($lista)) { return 'invalida'; }
+        if ($lista === []) {
+            $tp = $bruto['totalProdutos'] ?? null;
+            if (!self::numeroValido($tp)) { return 'preservar'; }            // sem total de produtos, [] não prova "zero itens"
+            return (float) $tp == 0.0 ? 'vazia' : 'invalida';               // [] com totalProdutos > 0: contradição
+        }
+        foreach ($lista as $i) {
+            if (!self::itemValido($i)) { return 'invalida'; }                // parcialmente inválida = nenhuma substituição
+        }
+        return 'com_itens';
+    }
+
+    private static function numeroValido(mixed $v): bool
+    {
+        return is_int($v) || (is_float($v) && is_finite($v)) || (is_string($v) && is_numeric(trim($v)));
+    }
+
+    /** Item legível do detalhe: quantidade > 0, valor unitário ≥ 0 e alguma identificação (produto.id, código ou descrição). */
+    private static function itemValido(mixed $i): bool
+    {
+        if (!is_array($i)) { return false; }
+        $q = $i['quantidade'] ?? null;
+        if (!self::numeroValido($q) || (float) $q <= 0) { return false; }
+        $u = $i['valor'] ?? $i['valorUnitario'] ?? $i['preco'] ?? null;
+        if (!self::numeroValido($u) || (float) $u < 0) { return false; }
+        $pid = $i['produto']['id'] ?? $i['idProduto'] ?? null;
+        $temId = (is_int($pid) && $pid > 0) || (is_string($pid) && ctype_digit($pid) && $pid !== '0');
+        $texto = static fn($x) => is_string($x) && trim($x) !== '';
+        return $temId || $texto($i['codigo'] ?? null) || $texto($i['descricao'] ?? null);
+    }
+
+    /**
+     * Grava UM pedido vindo do DETALHE (`GET pedidos/vendas/{id}`) — o único contrato que prova coleção de itens completa.
+     * Transação própria: lista inválida/incoerente → nada gravado, erro em bling_sync_errors (recurso 'pedidos', código DETALHE) e exceção.
+     * Nenhum caminho de produção chama isto hoje (a sincronização lê a listagem); é o ponto de entrada do contrato completo.
+     * @return 'criado'|'atualizado'|'ignorado'
+     */
+    public function gravarPedidoDetalhe(int $accountId, array $detalhe): string
+    {
+        $pdo = $this->repo->pdo();
+        $pdo->beginTransaction();
+        try {
+            $r = $this->gravarPedido($accountId, $detalhe, self::ORIGEM_DETALHE);
+            $pdo->commit();
+            return $r;
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) { $pdo->rollBack(); }
+            $id = $detalhe['id'] ?? null;
+            $this->repo->registrarErroSync($accountId, 'pedidos', (is_int($id) || (is_string($id) && ctype_digit($id))) ? (string) $id : null,
+                'DETALHE', $e->getMessage(), null, 1, 'detalhe');
+            throw $e;
+        }
     }
 
     private function gravarItens(int $accountId, int $pedidoId, array $itens, bool $vaziaConfirmada = false): void
@@ -765,8 +829,10 @@ final class BlingSyncService
         }
     }
 
-    private function gravarCompra(int $accountId, array $bruto): string
+    private function gravarCompra(int $accountId, array $bruto, string $origem): string
     {
+        $estadoItens = self::classificarItens($bruto, $origem);   // mesma regra conservadora dos pedidos de venda (Codex DSHOW-113)
+        if ($estadoItens === 'invalida') { throw new UnexpectedValueException('itens da compra inválidos ou incoerentes — substituição rejeitada, compra não gravada'); }
         $d = BlingNormalizer::pedidoCompra($bruto);
         $itens = $d['itens'];
         $fornBling = $d['fornecedor_bling_id'];
@@ -775,8 +841,8 @@ final class BlingSyncService
 
         $d['supplier_id'] = $this->repo->idPorBlingId('bling_suppliers', $accountId, $fornBling);
         $d['situacao'] = BlingVersionAdapter::situacaoCompra($situacaoBling);
-        $estadoItens = self::estadoItens($bruto, $itens);   // mesma regra dos pedidos de venda (Codex DSHOW-112)
-        if ($estadoItens !== 'ausente') {
+        $substitui = $estadoItens === 'com_itens' || $estadoItens === 'vazia';
+        if ($substitui) {
             $d['qtd_itens'] = count($itens);
             $d['qtd_total'] = array_sum(array_column($itens, 'quantidade'));
         }
@@ -785,7 +851,7 @@ final class BlingSyncService
         $r = $this->repo->upsert('bling_purchase_orders', $accountId, $d);
         $compraId = $this->repo->idPorBlingId('bling_purchase_orders', $accountId, $d['bling_id']);
 
-        if ($compraId !== null && $estadoItens !== 'ausente') {
+        if ($compraId !== null && $substitui) {
             $this->repo->pdo()->prepare('DELETE FROM bling_purchase_order_items WHERE purchase_order_id = ?')
                 ->execute([$compraId]);
             $st = $this->repo->pdo()->prepare(
