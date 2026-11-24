@@ -404,6 +404,43 @@ try {
     ok('4) no script a conta é conferida ANTES da trava e de apagar o marcador antigo (zero efeitos), com rc 2', $pConta !== false && $pTrava !== false && $pMarca !== false
         && $pConta < $pTrava && $pConta < $pMarca && (bool) preg_match('/if \(isset\(\$escolha\[\'erro\'\]\)\) \{[^}]*exit\(2\);/', $src));
     ok('4) todas as chamadas ao Bling no script passam pelo envoltório (sem stack trace)', substr_count($src, '$comBling(static fn() => $sync->') === 3);
+
+    echo "== 12. Codex DSHOW-114 (P6.1) · loja.id ausente, ilegível, 0 e \"0\" NUNCA trocam a loja conhecida; id positivo válido atualiza — geral e seletivo\n";
+    $pdo->exec("DELETE FROM bling_oauth_tokens WHERE account_id = $conta");   // a seção 11 deixou os tokens SINTÉTICOS ilegíveis: repõe os do começo
+    foreach ($tok as $t) { $cols = array_keys($t); $pdo->prepare('INSERT INTO bling_oauth_tokens (`' . implode('`,`', $cols) . '`) VALUES (' . implode(',', array_fill(0, count($cols), '?')) . ')')->execute(array_values($t)); }
+    $variantes = ['ausente' => null, 'ilegivel' => ['id' => 'abc'], 'zero-numerico' => ['id' => 0], 'zero-texto' => ['id' => '0'], 'valida' => ['id' => 205777]];
+    $GLOBALS['PEDIDOS'] = pedidosFalsos(250, static fn(int $i) => 15);
+    $alvosG = []; $k = 0;
+    foreach ($variantes as $nome => $loja) {   // modo GERAL: pedidos 900031..900035 com situação 22 (para haver o que gravar)
+        $i = 31 + $k++; $alvosG[$nome] = (string) (900000 + $i);
+        $GLOBALS['PEDIDOS'][$i - 1]['situacao'] = ['id' => 22, 'valor' => 0];
+        if ($loja === null) { unset($GLOBALS['PEDIDOS'][$i - 1]['loja']); } else { $GLOBALS['PEDIDOS'][$i - 1]['loja'] = $loja; }
+    }
+    $lojaG = []; foreach ($alvosG as $nome => $b) { $lojaG[$nome] = $lojaAntes($b); }
+    $api->responder('pedidos/vendas', static fn($m, $url) => $paginaDe($GLOBALS['PEDIDOS'], $url));
+    $pdo->exec("DELETE FROM bling_sync_state WHERE account_id = $conta AND recurso = '" . BlingSyncService::RECURSO_RELEITURA . "'");   // releitura nova do zero
+    $r12 = $sync->releituraPedidos($conta, static fn() => false, static fn(int $ms) => null, 1500);
+    ok('geral: releitura concluída', $r12['situacao'] === 'concluida', json_encode($r12));
+    foreach (['ausente', 'ilegivel', 'zero-numerico', 'zero-texto'] as $nome) {
+        ok("geral, loja $nome: loja conhecida PRESERVADA (situação 22 gravada)", $lojaAntes($alvosG[$nome]) === $lojaG[$nome] && $lojaG[$nome] !== ''
+            && $sitDe($alvosG[$nome]) === '22', $alvosG[$nome] . ': ' . $lojaG[$nome] . ' → ' . $lojaAntes($alvosG[$nome]));
+    }
+    ok('geral, loja válida 205777: atualiza', $lojaAntes($alvosG['valida']) === '205777');
+    $alvosS = []; $k = 0;
+    foreach ($variantes as $nome => $loja) {   // modo SELETIVO (--pedidos): 900041..900045
+        $b = (string) (900041 + $k++); $alvosS[$nome] = $b;
+        $dado = ['id' => (int) $b, 'situacao' => ['id' => 23, 'valor' => 0]] + ($loja === null ? [] : ['loja' => $loja]);
+        $DET[$b] = new BlingResposta(200, ['data' => $dado]);
+    }
+    $lojaS = []; foreach ($alvosS as $nome => $b) { $lojaS[$nome] = $lojaAntes($b); }
+    $r12s = $sync4->releituraPedidosIds($conta, array_values($alvosS), static fn() => false, static fn(int $ms) => null, 1500);
+    ok('seletivo: concluída, 5 atualizados (situação 23)', $r12s['situacao'] === 'concluida' && $r12s['atualizados'] === 5, json_encode($r12s));
+    foreach (['ausente', 'ilegivel', 'zero-numerico', 'zero-texto'] as $nome) {
+        ok("seletivo, loja $nome: loja conhecida PRESERVADA", $lojaAntes($alvosS[$nome]) === $lojaS[$nome] && $lojaS[$nome] !== '' && $sitDe($alvosS[$nome]) === '23',
+            $alvosS[$nome] . ': ' . $lojaS[$nome] . ' → ' . $lojaAntes($alvosS[$nome]));
+    }
+    ok('seletivo, loja válida 205777: atualiza', $lojaAntes($alvosS['valida']) === '205777');
+    ok('nenhuma loja "0" gravada em lugar nenhum', n($pdo, "SELECT COUNT(*) FROM bling_sales_orders WHERE loja_bling_id = '0'") === 0);
 } catch (Throwable $e) {
     $falhas++; echo 'FALHA exceção: ', get_class($e), ': ', $e->getMessage(), ' @', basename($e->getFile()), ':', $e->getLine(), "\n";
 } finally {
