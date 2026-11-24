@@ -475,8 +475,9 @@ final class GeralV2
         $f = $this->fonte('bling');
         $dias = [];
         for ($d = $de; $d <= $ate; $d = $d->modify('+1 day')) $dias[$d->format('Y-m-d')] = ['dia' => $d->format('Y-m-d'), 'quantidade' => null, 'valor' => null];
-        $out = ['quantidade' => null, 'valor' => null, 'por_dia' => array_values($dias), 'inclui_cancelados' => null, 'inclui_teste_ml' => null, 'atualizado_em' => $f['atualizado_em']];
-        if ($this->semNumero($f)) return $out + ['estado' => $f['estado']];
+        $out = ['quantidade' => null, 'valor' => null, 'por_dia' => array_values($dias), 'inclui_cancelados' => null, 'inclui_teste_ml' => null, 'sem_canal' => null,
+                'atualizado_em' => $f['atualizado_em']];
+        if ($this->semNumero($f)) return $out + ['estado' => $f['estado'], 'lacunas' => []];
         try {
             $p = $this->p; $b = $this->bling;
             $where = ["o.deletado_em IS NULL", "o.data_pedido >= :de", "o.data_pedido <= :ate"];
@@ -512,13 +513,27 @@ final class GeralV2
             };
             $out['inclui_cancelados'] = !$temSit || $semId('situacao_bling_id');
             $out['inclui_teste_ml'] = !$temLoja || $semId('loja_bling_id');
+            // Decisão do Jhony (24/11): pedido SEM canal identificado → lacuna "sem_canal" ("Dados parciais · N pedido(s) ainda sem identificação de canal").
+            // Sem a coluna loja_bling_id (antes da migração do portão BLING LOJA), nenhum pedido tem canal identificado.
+            if ($temLoja) {
+                $st = $b->prepare("SELECT COUNT(*) FROM `{$p}bling_sales_orders` o WHERE $w AND (o.loja_bling_id IS NULL OR o.loja_bling_id IN ('', '0'))");
+                $st->execute($par);
+                $out['sem_canal'] = (int) $st->fetchColumn();
+            } else {
+                $out['sem_canal'] = $n;
+            }
             $out['quantidade'] = $n; $out['valor'] = $v; $out['por_dia'] = array_values($dias);
         } catch (Throwable $e) {
             error_log('[geral-v2] pedidos: ' . get_class($e));
             $out['por_dia'] = array_map(fn($d) => ['dia' => $d['dia'], 'quantidade' => null, 'valor' => null], array_values($dias));
-            return array_merge($out, ['quantidade' => null, 'valor' => null, 'inclui_cancelados' => null, 'inclui_teste_ml' => null, 'estado' => 'indisponivel']);
+            return array_merge($out, ['quantidade' => null, 'valor' => null, 'inclui_cancelados' => null, 'inclui_teste_ml' => null, 'sem_canal' => null,
+                                      'estado' => 'indisponivel', 'lacunas' => []]);
         }
-        return $out + ['estado' => $this->estadoCartao($f, $out['quantidade'])];
+        $lacunas = $this->lacunasFonte($f);
+        if ($out['sem_canal'] > 0) $lacunas[] = 'sem_canal';
+        $estado = $this->estadoCartao($f, $out['quantidade']);
+        if ($lacunas !== [] && in_array($estado, ['ok', 'zero_confirmado'], true)) $estado = 'parcial';
+        return $out + ['estado' => $estado, 'lacunas' => $lacunas];
     }
 
     // ─────────────────────────────────────────── listas ───────────────────────────────────────────

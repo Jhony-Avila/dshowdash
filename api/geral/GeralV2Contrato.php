@@ -52,9 +52,9 @@ final class GeralV2Contrato
             'periodo' => ['id' => $periodo, 'de' => $r['periodo']['de'], 'ate' => $r['periodo']['ate'], 'rotulo' => $this->rotuloPeriodo($periodo, $r['periodo']['de'], $r['periodo']['ate'])],
             'pedidos_bling' => [
                 'estado' => self::ESTADO[$p['estado']], 'quantidade' => $p['quantidade'], 'valor' => $p['valor'], 'por_dia' => $p['por_dia'],
-                'inclui_canceladas' => $p['inclui_cancelados'], 'inclui_teste_ml' => $p['inclui_teste_ml'],
-                'ultimo_sucesso' => $p['atualizado_em'], 'motivo' => $this->motivo('bling', $p['estado'], $fb),
-            ] + $this->meta('bling', $p['estado'], $p['quantidade'] !== null, $this->lacunasFonte($fb)),
+                'inclui_canceladas' => $p['inclui_cancelados'], 'inclui_teste_ml' => $p['inclui_teste_ml'], 'sem_canal' => $p['sem_canal'],
+                'ultimo_sucesso' => $p['atualizado_em'], 'motivo' => $this->motivo('bling', $p['estado'], $fb, $this->lacunaCanal($p)),
+            ] + $this->meta('bling', $p['estado'], $p['quantidade'] !== null, $p['lacunas']),
             'negocios_ganhos' => [
                 'estado' => self::ESTADO[$w['estado']], 'quantidade' => $w['quantidade'], 'valor' => $w['valor'], 'sem_valor' => $w['sem_valor'],
                 'fora_brl' => $w['fora_brl'], 'ultimo_sucesso' => $w['atualizado_em'], 'motivo' => $this->motivo('pipedrive_negocios', $w['estado'], $fp, $this->lacunaDado($w)),
@@ -163,6 +163,13 @@ final class GeralV2Contrato
     private function lacunasFonte(array $f): array
     {
         return $f['estado'] === 'parcial' ? ['sync_incompleta'] : [];
+    }
+
+    /** Lacuna do DADO nos pedidos (decisão do Jhony, 24/11): "1 pedido ainda sem identificação de canal", como na prancha. */
+    private function lacunaCanal(array $p): ?string
+    {
+        $n = (int) ($p['sem_canal'] ?? 0);
+        return $n > 0 ? $n . ($n === 1 ? ' pedido ainda sem identificação de canal' : ' pedidos ainda sem identificação de canal') : null;
     }
 
     /** Texto da lacuna do DADO em ganhos/funil (a fonte em si está bem): "3 negócios sem valor" — a tela compõe "Dados parciais · Soma dos valores informados · …". */

@@ -450,7 +450,22 @@ $pb = $K()->resumo('7d')['pedidos_bling'];
 check('G2 · ESCOPO AUSENTE sem nenhuma leitura completa → erro e números null (nunca 0)', $pb['estado'] === 'erro' && $pb['quantidade'] === null && $pb['valor'] === null, json_encode($pb));
 check('G2 · coerência com escopo ausente', ($e = $coerente($K())) === '', $e);
 $pdo->exec("UPDATE `{$P}bling_sync_state` SET situacao='ok'"); $pdo->exec("DELETE FROM `{$P}bling_sync_jobs`"); $pdo->exec("DELETE FROM `{$P}bling_sync_errors`");   // tabelas do próprio teste
-check('G2 · Bling de volta ao normal', $K()->resumo('7d')['pedidos_bling']['estado'] === 'ok');
+$pb = $K()->resumo('7d')['pedidos_bling'];
+check('G2 · Bling de volta ao normal: só a lacuna do pedido SEM canal (22/11) → parcial "1 pedido ainda sem identificação de canal"', $pb['estado'] === 'parcial'
+    && $pb['lacunas'] === ['sem_canal'] && $pb['sem_canal'] === 1 && $pb['motivo'] === '1 pedido ainda sem identificação de canal' && $pb['consulta_completa'] === true, json_encode($pb));
+// SEM CANAL (decisão do Jhony, 24/11): "Dados parciais" quando há pedido sem canal identificado
+$cOk = $Kag('2026-11-20 10:00')->resumo('ontem')['pedidos_bling'];   // 19/11: 1 pedido com loja 556
+check('CANAL · todos os pedidos com canal → ok, sem_canal 0, sem lacuna', $cOk['estado'] === 'ok' && $cOk['sem_canal'] === 0 && $cOk['lacunas'] === [], json_encode($cOk));
+$pdo->exec("UPDATE `{$P}bling_sales_orders` SET loja_bling_id='0' WHERE data_pedido='2026-11-19'");
+$c0 = $Kag('2026-11-20 10:00')->resumo('ontem')['pedidos_bling'];
+check('CANAL · loja "0" antiga conta como sem canal → parcial, número mantido', $c0['estado'] === 'parcial' && $c0['sem_canal'] === 1 && $c0['quantidade'] === 1 && $c0['valor'] === '638341.09', json_encode($c0));
+$pdo->exec("UPDATE `{$P}bling_sales_orders` SET loja_bling_id='556' WHERE data_pedido='2026-11-19'");
+$pdo->exec("ALTER TABLE `{$P}bling_sales_orders` RENAME COLUMN loja_bling_id TO loja_bling_id_x");   // tabela do próprio teste: como a produção antes da migração BLING LOJA
+$cs = $K()->resumo('7d')['pedidos_bling'];
+check('CANAL · sem a coluna da loja: nenhum pedido tem canal identificado → sem_canal = quantidade, parcial', $cs['sem_canal'] === $cs['quantidade'] && $cs['quantidade'] > 0 && $cs['estado'] === 'parcial', json_encode([$cs['sem_canal'], $cs['quantidade'], $cs['estado']]));
+$pdo->exec("ALTER TABLE `{$P}bling_sales_orders` RENAME COLUMN loja_bling_id_x TO loja_bling_id");
+$cz = $Kag('2026-11-03 10:00')->resumo('ontem')['pedidos_bling'];
+check('CANAL · 0 pedidos com a fonte em dia continua zero (sem_canal 0)', $cz['estado'] === 'zero' && $cz['sem_canal'] === 0, json_encode($cz));
 // G3 · fonte POR INDICADOR: atividades atrasadas não derrubam ganhos e funil
 $pdo->exec("UPDATE `{$P}pipe_sync_runs` SET finished_at='2026-11-23 07:00:00' WHERE entity='activities'");
 $c = $K()->resumo('7d'); $pi = array_column($K()->prioridades()['itens'], null, 'id'); $fp = array_column($K()->fontes(), null, 'fonte')['pipedrive'];
