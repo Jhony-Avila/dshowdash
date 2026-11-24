@@ -90,6 +90,23 @@ final class AsaasValor
         return $c === null ? null : self::deCentavos($c);
     }
 
+    /**
+     * Codex DSHOW-113 (3): campo monetário OPCIONAL. Quatro casos, separados:
+     *   ausente (chave não veio)   → null (não informado);
+     *   null explícito             → null (o Asaas disse "sem valor");
+     *   decimal válido (≤ 2 casas) → '1234.56' exato;
+     *   presente e INVÁLIDO (19.999, '', 'abc', 1e3, true, [], float…) → AsaasErro('valor_invalido:<origem>.<campo>'): a rodada inteira
+     *   é recusada; NUNCA vira null em silêncio nem é trocado por outro valor (ex.: o bruto no lugar do líquido).
+     * O erro só leva a origem e o NOME do campo (nunca o valor, o id ou o cliente).
+     */
+    public static function opcional(array $obj, string $campo, string $origem): ?string
+    {
+        if (!array_key_exists($campo, $obj) || $obj[$campo] === null) return null;
+        $v = self::dinheiro($obj[$campo]);
+        if ($v === null) throw new AsaasErro('valor_invalido:' . $origem . '.' . $campo, 200);
+        return $v;
+    }
+
     public static function data(mixed $v): ?string { return is_string($v) && preg_match('/^\d{4}-\d{2}-\d{2}/', $v) ? substr($v, 0, 10) : null; }
     public static function id(mixed $v): ?string { return is_string($v) && preg_match('/^[A-Za-z0-9_-]{1,40}$/', $v) ? $v : null; }
     public static function curto(mixed $v, int $n): ?string { return is_string($v) && $v !== '' ? mb_substr($v, 0, $n) : null; }
@@ -131,7 +148,7 @@ final class AsaasRepositorio
                 $id = AsaasValor::id($c['id'] ?? null); $valor = AsaasValor::dinheiro($c['value'] ?? null);
                 $status = is_string($c['status'] ?? null) && preg_match('/^[A-Z_]{3,40}$/', $c['status']) ? $c['status'] : null;
                 if ($id === null || $valor === null || $status === null) throw new AsaasErro('resposta_invalida', 200);
-                $st->execute([$conta, $ger, $id, $status, AsaasValor::curto($c['billingType'] ?? null, 24), $valor, AsaasValor::dinheiro($c['netValue'] ?? null),
+                $st->execute([$conta, $ger, $id, $status, AsaasValor::curto($c['billingType'] ?? null, 24), $valor, AsaasValor::opcional($c, 'netValue', 'cobranca'),
                     AsaasValor::data($c['dueDate'] ?? null), AsaasValor::data($c['dateCreated'] ?? null), AsaasValor::data($c['paymentDate'] ?? ($c['clientPaymentDate'] ?? null)),
                     AsaasValor::data($c['creditDate'] ?? null), AsaasValor::id($c['customer'] ?? null), ($c['deleted'] ?? false) === true ? 1 : 0, $exec, $agora]);
                 $n++;
@@ -152,7 +169,7 @@ final class AsaasRepositorio
             foreach ($itens as $t) {
                 $id = AsaasValor::id($t['id'] ?? null); $valor = AsaasValor::dinheiro($t['value'] ?? null);
                 if ($id === null || $valor === null) throw new AsaasErro('resposta_invalida', 200);
-                $st->execute([$conta, $id, AsaasValor::curto($t['type'] ?? null, 60), $valor, AsaasValor::dinheiro($t['balance'] ?? null), AsaasValor::data($t['date'] ?? null),
+                $st->execute([$conta, $id, AsaasValor::curto($t['type'] ?? null, 60), $valor, AsaasValor::opcional($t, 'balance', 'extrato'), AsaasValor::data($t['date'] ?? null),
                     AsaasValor::id($t['paymentId'] ?? null), $exec, $agora]);
                 $n++;
             }
@@ -168,7 +185,7 @@ final class AsaasRepositorio
         if ($q === null || $v === null) throw new AsaasErro('resposta_invalida', 200);
         $this->q("INSERT INTO `{p}asaas_estatisticas` (`conta`,`geracao`,`chave`,`quantidade`,`valor`,`valor_liquido`,`consultado_em`) VALUES (?,?,?,?,?,?,?)
                   ON DUPLICATE KEY UPDATE `quantidade`=VALUES(`quantidade`),`valor`=VALUES(`valor`),`valor_liquido`=VALUES(`valor_liquido`),`consultado_em`=VALUES(`consultado_em`)",
-                 [$conta, $ger, $chave, $q, $v, AsaasValor::dinheiro($d['netValue'] ?? null), $agora]);
+                 [$conta, $ger, $chave, $q, $v, AsaasValor::opcional($d, 'netValue', 'estatistica'), $agora]);
     }
 
     /** B1: FIM do ciclo, numa transação — o que não veio fica presente=0 na geração desta rodada; troca a geração ativa com saldo e horário */

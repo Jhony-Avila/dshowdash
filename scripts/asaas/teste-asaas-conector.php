@@ -53,6 +53,18 @@ foreach ([['1000.5', 100050], ['199.99', 19999], ['0.1', 10], ['12345678.9', 123
 }
 check('soma de 0.1 três vezes em centavos = 0.30 exato', AsaasValor::deCentavos(AsaasValor::centavosDe('0.1') * 3) === '0.30');
 check('dinheiro() devolve o decimal montado dos centavos', AsaasValor::dinheiro('1000.5') === '1000.50' && AsaasValor::dinheiro('0.07') === '0.07' && AsaasValor::dinheiro(1000.5) === null);
+// Codex DSHOW-113 (3): campo monetário OPCIONAL — ausente / null explícito / decimal válido / presente e inválido
+foreach ([['cobranca', 'netValue'], ['extrato', 'balance'], ['estatistica', 'netValue']] as [$o, $f]) {
+    check("113: $o.$f ausente → null", AsaasValor::opcional(['x' => '1.00'], $f, $o) === null);
+    check("113: $o.$f null explícito → null", AsaasValor::opcional([$f => null], $f, $o) === null);
+    check("113: $o.$f decimal válido → exato", AsaasValor::opcional([$f => '990.25'], $f, $o) === '990.25' && AsaasValor::opcional([$f => '0'], $f, $o) === '0.00');
+    foreach (['19.999', '', 'abc', '1e3', true, false, [], 19.99, ['1.00']] as $inv) {
+        check("113: $o.$f presente e inválido " . json_encode($inv) . " → erro valor_invalido:$o.$f (nunca null)",
+            erroDe(fn() => AsaasValor::opcional([$f => $inv], $f, $o)) === "valor_invalido:$o.$f");
+    }
+}
+$e113 = null; try { AsaasValor::opcional(['netValue' => '19.999'], 'netValue', 'cobranca'); } catch (AsaasErro $x) { $e113 = $x; }
+check('113: a mensagem do erro não leva o valor', $e113 !== null && !str_contains($e113->getMessage(), '19.999') && strlen($e113->codigo) <= 40);
 check('url cobranças', AsaasRotas::url($BASE, 'cobrancas', ['limit' => 100, 'offset' => 0]) === "$BASE/payments?limit=100&offset=0");
 check('url estatísticas', AsaasRotas::url($BASE, 'estatisticas_cobrancas', ['status' => 'PENDING']) === "$BASE/finance/payment/statistics?status=PENDING");
 check('url extrato', str_starts_with(AsaasRotas::url($BASE, 'extrato', ['startDate' => '2026-10-01', 'finishDate' => '2026-11-01']), "$BASE/financialTransactions?"));
@@ -379,6 +391,48 @@ if ($pdo !== null) {
     $rB2 = $sync->sincronizar('conta-a', $agora->modify('+6 hours 50 minutes'));
     check('B: cobrança com 3 casas → rodada recusada, nenhuma linha dela gravada', $rB2['erro'] === 'resposta_invalida'
         && (int) $n("SELECT COUNT(*) FROM `{$P}asaas_cobrancas` WHERE payment_id='pay_tres_casas'") === 0);
+
+    // ===== Codex DSHOW-113 (3) CONTRAPROVA: cobrança RECEBIDA, bruto válido e netValue 19.999 → rodada rejeitada, nada substituído =====
+    $estado['A']['nov'] = array_values(array_filter($estado['A']['nov'], fn($c) => $c['id'] !== 'pay_tres_casas'));
+    $okAntes = $sync->sincronizar('conta-a', $agora->modify('+7 hours'));                       // um retrato bom, recente, como referência
+    $t113 = $agora->modify('+7 hours 5 minutes');
+    $conta113 = fn() => $pdo->query("SELECT CONCAT_WS('|',geracao_ativa,execucao_ativa,ultima_sync_ok,saldo,saldo_em) FROM `{$P}asaas_contas` WHERE conta='conta-a'")->fetchColumn();
+    $antes113 = $conta113();
+    $painel113 = array_column((new AsaasResumo($pdo, $P))->montar(['conta-a'], $t113)['contas'], null, 'conta')['conta-a'];
+    $apiA->rotas['/finance/balance'] = fn() => json200(['balance' => 77777.77]);               // saldo NOVO lido na rodada que vai falhar
+    $estado['A']['nov'][] = ['object' => 'payment', 'id' => 'pay_liq_tres_casas', 'dateCreated' => '2026-11-22', 'value' => 20.00, 'netValue' => 19.999,
+                             'billingType' => 'PIX', 'status' => 'RECEIVED', 'paymentDate' => '2026-11-22', 'deleted' => false];
+    $logs113 = "$TMP/erros113.log"; touch($logs113); $logAnt = ini_set('error_log', $logs113);
+    $r113 = $sync->sincronizar('conta-a', $t113);
+    ini_set('error_log', (string) $logAnt);
+    $log113 = (string) file_get_contents($logs113); unlink($logs113);
+    check('113 CONTRAPROVA: base é um retrato bom', $okAntes['resultado'] === 'ok', json_encode($okAntes));
+    check('113 CONTRAPROVA: sincronização REJEITADA com erro identificável valor_invalido:cobranca.netValue', $r113['resultado'] === 'erro' && $r113['erro'] === 'valor_invalido:cobranca.netValue', json_encode($r113));
+    check('113 CONTRAPROVA: geração, execução ativa, saldo anterior e horário do último sucesso PRESERVADOS', $conta113() === $antes113, json_encode([$conta113(), $antes113]));
+    check('113 CONTRAPROVA: saldo novo da rodada rejeitada (77777.77) não entrou', (int) $n("SELECT COUNT(*) FROM `{$P}asaas_contas` WHERE saldo=77777.77") === 0);
+    check('113 CONTRAPROVA: a cobrança nunca foi gravada (nem com bruto no líquido, nem com líquido NULL)', (int) $n("SELECT COUNT(*) FROM `{$P}asaas_cobrancas` WHERE payment_id='pay_liq_tres_casas'") === 0);
+    $pos113 = array_column((new AsaasResumo($pdo, $P))->montar(['conta-a'], $t113)['contas'], null, 'conta')['conta-a'];
+    check('113 CONTRAPROVA: nenhum retrato parcial — o painel mostra os MESMOS valores e horário de antes', $pos113['valores'] === $painel113['valores'] && $pos113['atualizado_em'] === $painel113['atualizado_em'], json_encode([$pos113['valores'], $painel113['valores']]));
+    check('113 CONTRAPROVA: o painel avisa a falha pelo código (sem valor)', str_contains((string) $pos113['aviso'], 'ultima_tentativa_falhou:valor_invalido:cobranca.netValue'));
+    $reg113 = (string) $n("SELECT CONCAT(c.estado,'|',c.erro_codigo,'|',e.resultado,'|',e.erro_codigo) FROM `{$P}asaas_contas` c JOIN `{$P}asaas_execucoes` e ON e.conta=c.conta WHERE c.conta='conta-a' ORDER BY e.id DESC LIMIT 1");
+    check('113 CONTRAPROVA: estado e execução registram o erro', $reg113 === 'erro|valor_invalido:cobranca.netValue|erro|valor_invalido:cobranca.netValue', $reg113);
+    check('113 CONTRAPROVA: erro sem dado sensível (nem valor, nem id, nem cliente, nem chave) no retorno, no banco e no log',
+        !preg_match('/19\.999|pay_liq|cus_|\$aact_/', json_encode($r113) . $reg113 . (string) $pos113['aviso'] . $log113));
+    // os outros campos monetários opcionais, de ponta a ponta: estatística netValue e extrato balance inválidos também recusam a rodada
+    $estado['A']['nov'] = array_values(array_filter($estado['A']['nov'], fn($c) => $c['id'] !== 'pay_liq_tres_casas'));
+    $statsOrig = $apiA->rotas['/finance/payment/statistics'];
+    $apiA->rotas['/finance/payment/statistics'] = fn($p, $q) => json200(['quantity' => 1, 'value' => 300.0, 'netValue' => 0.105]);
+    $rE = $sync->sincronizar('conta-a', $agora->modify('+7 hours 10 minutes'));
+    check('113: estatística com netValue inválido → rejeitada, retrato preservado', $rE['erro'] === 'valor_invalido:estatistica.netValue' && $conta113() === $antes113, json_encode($rE));
+    $apiA->rotas['/finance/payment/statistics'] = $statsOrig;
+    $extOrig = $apiA->rotas['/financialTransactions'];
+    $apiA->rotas['/financialTransactions'] = fn($p, $q) => pagina([['object' => 'financialTransaction', 'id' => 'ftr_113', 'value' => 1.00, 'balance' => 'abc', 'type' => 'X', 'date' => '2026-11-22']], $q);
+    $rX = $sync->sincronizar('conta-a', $agora->modify('+7 hours 15 minutes'));
+    check('113: extrato com balance inválido → rejeitada, retrato preservado, linha não gravada', $rX['erro'] === 'valor_invalido:extrato.balance' && $conta113() === $antes113
+        && (int) $n("SELECT COUNT(*) FROM `{$P}asaas_extrato` WHERE transacao_id='ftr_113'") === 0, json_encode($rX));
+    $apiA->rotas['/financialTransactions'] = $extOrig;
+    $rOk = $sync->sincronizar('conta-a', $agora->modify('+7 hours 20 minutes'));
+    check('113: com os campos válidos de novo, a rodada seguinte volta a dar ok', $rOk['resultado'] === 'ok', json_encode($rOk));
 }
 
 // ================= H. CONFERÊNCIA (portão de ativação): os 11 rótulos, total e detalhe por empresa =================

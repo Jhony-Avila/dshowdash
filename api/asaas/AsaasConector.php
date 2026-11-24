@@ -18,7 +18,7 @@ declare(strict_types=1);
 final class AsaasErro extends RuntimeException
 {
     /** @param string $codigo  rota_recusada|parametro_recusado|chave_ausente|chave_invalida|chave_recusada|acesso_negado|limite|indisponivel|resposta_invalida|
-     *                       sem_identidade|conta_divergente */
+     *                       sem_identidade|conta_divergente|valor_invalido:<origem>.<campo> (DSHOW-113: dinheiro presente e inválido; só o nome do campo) */
     public function __construct(public readonly string $codigo, public readonly int $http = 0)
     {
         parent::__construct('asaas: ' . $codigo . ($http > 0 ? " (HTTP $http)" : ''));
