@@ -148,9 +148,10 @@ abstract class BlingProviderBase
         $fatBruto  = array_sum(array_column($noPer, 'total'));
         $fatAnt    = array_sum(array_column($noAnt, 'total'));
         $custo     = self::somaConhecida($noPer, 'custo');   // null = custo desconhecido (sem margem)
-        $desconto  = array_sum(array_column($noPer, 'desconto'));
-        $frete     = array_sum(array_column($noPer, 'frete'));
-        $fatLiquido= $fatBruto - $frete;
+        $desconto  = self::somaConhecida($noPer, 'desconto');   // null = detalhe não lido (opção A do Jhony)
+        $frete     = self::somaConhecida($noPer, 'frete');
+        $fatLiquido= $frete === null ? null : $fatBruto - $frete;
+        $freteAnt  = self::somaConhecida($noAnt, 'frete');
 
         $faturados = array_values(array_filter($noPer, static fn($p) =>
             in_array($p['situacao'], ['faturado', 'nota_emitida', 'separacao', 'enviado', 'entregue'], true)));
@@ -187,13 +188,14 @@ abstract class BlingProviderBase
         $clientesDistintos = count(array_unique(array_column($noPer, 'cliente')));
         $ticket = count($noPer) > 0 ? $fatBruto / count($noPer) : 0.0;
         $ticketAnt = count($noAnt) > 0 ? $fatAnt / count($noAnt) : 0.0;
-        $margem = $custo === null ? null : ($fatLiquido > 0 ? (($fatLiquido - $custo) / $fatLiquido) * 100 : 0.0);
+        $margem = ($custo === null || $fatLiquido === null) ? null : ($fatLiquido > 0 ? (($fatLiquido - $custo) / $fatLiquido) * 100 : 0.0);
 
         return $this->aplicarDisponibilidadeReceber([
             $this->kpi('faturamento_bruto', 'Faturamento bruto', $fatBruto, 'moeda',
                 $this->variacao($fatBruto, $fatAnt), $this->serieDiaria($noPer, 'data', 'total', $f), 'pedidos-venda'),
-            $this->kpi('faturamento_liquido', 'Faturamento líquido', $fatLiquido, 'moeda',
-                $this->variacao($fatLiquido, $fatAnt - array_sum(array_column($noAnt, 'frete'))), null, 'vendas'),
+            self::seDesconhecido($this->kpi('faturamento_liquido', 'Faturamento líquido', $fatLiquido, 'moeda',
+                ($fatLiquido === null || $freteAnt === null) ? null : $this->variacao($fatLiquido, $fatAnt - $freteAnt), null, 'vendas'),
+                'o frete dos pedidos só vem no detalhe do Bling, que ainda não foi lido'),
             $this->kpi('pedidos', 'Pedidos de venda', count($noPer), 'inteiro',
                 $this->variacao(count($noPer), count($noAnt)), $this->serieDiaria($noPer, 'data', null, $f), 'pedidos-venda'),
             $this->kpi('pedidos_faturados', 'Pedidos faturados', count($faturados), 'inteiro', null, null, 'pedidos-venda'),
@@ -872,7 +874,8 @@ abstract class BlingProviderBase
     public function rentabilidadeIndisponivel(string $dimensao, array $f): ?string
     {
         $pedidos = $this->pedidosValidos($this->noPeriodo($this->colecao('pedidos'), 'data', $f));
-        if (in_array($dimensao, ['produto', 'sku', 'categoria'], true) && !self::itensConhecidos($pedidos)) { return 'itens_desconhecidos'; }
+        // desconto e frete (e os itens) só vêm no DETALHE: sem ele em todos os pedidos não há receita líquida → indisponível em QUALQUER dimensão
+        if (!self::itensConhecidos($pedidos)) { return 'itens_desconhecidos'; }
         return null;
     }
 
@@ -931,15 +934,15 @@ abstract class BlingProviderBase
                 };
 
                 $proporcao = $p['subtotal'] > 0 ? $receitaBruta / $p['subtotal'] : 1.0;
-                $desconto  = $p['desconto'] * $proporcao;
-                $frete     = $p['frete'] * $proporcao;
+                $desconto  = $p['desconto'] === null ? null : $p['desconto'] * $proporcao;   // null = desconhecido (defesa; o início já recusa)
+                $frete     = $p['frete'] === null ? null : $p['frete'] * $proporcao;
                 $custo     = $it !== null ? self::custoItem($it) : ($p['custo'] === null ? null : (float) $p['custo']);   // null = desconhecido
-                $receita   = $receitaBruta - $desconto;
-                $comissao  = $receita * $comissaoPct;
-                $taxaValor = $receita * $taxa;
+                $receita   = $desconto === null ? null : $receitaBruta - $desconto;
+                $comissao  = $receita === null ? null : $receita * $comissaoPct;
+                $taxaValor = $receita === null ? null : $receita * $taxa;
                 // Estimativa de imposto — declarada como estimativa em toda a UI (§26.2).
-                $imposto   = $receita * 0.115;
-                $lucro     = $custo === null ? null : $receita - $custo - $comissao - $taxaValor - $imposto - $frete;
+                $imposto   = $receita === null ? null : $receita * 0.115;
+                $lucro     = ($custo === null || $receita === null || $frete === null) ? null : $receita - $custo - $comissao - $taxaValor - $imposto - $frete;
 
                 if (!isset($acum[$chave])) {
                     $acum[$chave] = [
@@ -949,12 +952,13 @@ abstract class BlingProviderBase
                     ];
                 }
                 $a = &$acum[$chave];
-                $a['receita']  += $receita;
-                $a['desconto'] += $desconto;
-                $a['frete']    += $frete;
-                $a['comissao'] += $comissao;
-                $a['impostos'] += $imposto;
-                $a['taxas']    += $taxaValor;
+                $soma = static fn($x, $y) => ($x === null || $y === null) ? null : $x + $y;   // null pegajoso
+                $a['receita']  = $soma($a['receita'], $receita);
+                $a['desconto'] = $soma($a['desconto'], $desconto);
+                $a['frete']    = $soma($a['frete'], $frete);
+                $a['comissao'] = $soma($a['comissao'], $comissao);
+                $a['impostos'] = $soma($a['impostos'], $imposto);
+                $a['taxas']    = $soma($a['taxas'], $taxaValor);
                 $a['custo']    = ($a['custo'] === null || $custo === null) ? null : $a['custo'] + $custo;   // null pegajoso
                 $a['lucro']    = ($a['lucro'] === null || $lucro === null) ? null : $a['lucro'] + $lucro;
                 $a['pedidos']  += $it === null ? 1 : 0;
@@ -968,7 +972,7 @@ abstract class BlingProviderBase
             foreach (['receita', 'desconto', 'frete', 'comissao', 'impostos', 'taxas', 'custo', 'lucro'] as $c) {
                 $l[$c] = $l[$c] === null ? null : round($l[$c], 2);
             }
-            $l['margem_pct'] = $l['lucro'] === null ? null : ($l['receita'] > 0 ? round(($l['lucro'] / $l['receita']) * 100, 1) : 0.0);
+            $l['margem_pct'] = ($l['lucro'] === null || $l['receita'] === null) ? null : ($l['receita'] > 0 ? round(($l['lucro'] / $l['receita']) * 100, 1) : 0.0);
             $l['prejuizo'] = $l['lucro'] === null ? null : $l['lucro'] < 0;   // null = não se sabe (não é "sem prejuízo")
         }
         unset($l);

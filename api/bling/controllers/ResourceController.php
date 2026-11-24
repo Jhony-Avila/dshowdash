@@ -426,8 +426,8 @@ final class ResourceController
             $a['receita'] += $ped['total'];
             // null pegajoso: um pedido com custo/itens desconhecidos torna a linha desconhecida (nunca soma parcial)
             $a['custo']   = ($a['custo'] === null || $ped['custo'] === null) ? null : $a['custo'] + $ped['custo'];
-            $a['desconto']+= $ped['desconto'];
-            $a['frete']   += $ped['frete'];
+            $a['desconto'] = ($a['desconto'] === null || $ped['desconto'] === null) ? null : $a['desconto'] + $ped['desconto'];   // null pegajoso
+            $a['frete']    = ($a['frete'] === null || $ped['frete'] === null) ? null : $a['frete'] + $ped['frete'];
             if (($ped['itens_conhecidos'] ?? true) === false) {
                 $a['unidades'] = null;
             } elseif ($a['unidades'] !== null) {
@@ -606,7 +606,7 @@ final class ResourceController
             if ($v === null) {
                 continue;
             }
-            $base = $ped['total'] - $ped['frete'];
+            $base = $ped['frete'] === null ? null : $ped['total'] - $ped['frete'];   // frete desconhecido (detalhe não lido) = base e comissão desconhecidas
             // Comissao so e devida quando o titulo foi efetivamente recebido.
             $devida = in_array($ped['situacao'], ['entregue', 'enviado'], true);
 
@@ -616,9 +616,9 @@ final class ResourceController
                 'data'      => $ped['data'],
                 'vendedor'  => $v['nome'],
                 'cliente'   => $clientes[$ped['cliente']]['nome'] ?? '—',
-                'base'      => round($base, 2),
+                'base'      => $base === null ? null : round($base, 2),
                 'percentual'=> $v['comissao_pct'],
-                'valor'     => round($base * $v['comissao_pct'] / 100, 2),
+                'valor'     => $base === null ? null : round($base * $v['comissao_pct'] / 100, 2),
                 'situacao'  => $devida ? 'devida' : 'provisionada',
                 'situacao_info' => [
                     'chave' => $devida ? 'devida' : 'provisionada',

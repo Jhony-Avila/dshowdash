@@ -194,14 +194,17 @@ try {
     $p1 = $pedidoApi('900001');
     ok('DECISIVO API: subtotal, itens e custo = null (não 0); itens_conhecidos = false', $p1['subtotal'] === null && $p1['qtd_itens'] === null
         && $p1['custo'] === null && $p1['itens_conhecidos'] === false, json_encode(array_intersect_key($p1, array_flip(['subtotal', 'qtd_itens', 'custo', 'itens_conhecidos']))));
-    ok('o que é conhecido continua número (total, desconto, frete)', $p1['total'] === 1280.06 && $p1['desconto'] === 10.0 && $p1['frete'] === 55.5);
+    ok('o total continua número; desconto e frete = null (só vêm no detalhe — opção A do Jhony)', $p1['total'] === 1280.06 && $p1['desconto'] === null && $p1['frete'] === null,
+        json_encode(array_intersect_key($p1, array_flip(['total', 'desconto', 'frete']))));
     $c1 = array_values($real()->colecao('compras'))[0];
     ok('compra: qtd_itens e qtd_total = null', $c1['qtd_itens'] === null && $c1['qtd_total'] === null && $c1['itens_conhecidos'] === false, json_encode($c1));
     $k = $real()->kpis($F);
     ok('KPI margem estimada = null com disponibilidade "indisponivel" (antes: margem com custo 0 ≈ 95 %)', $kpi($k, 'margem_estimada')['valor'] === null
         && $kpi($k, 'margem_estimada')['disponibilidade']['estado'] === 'indisponivel', json_encode($kpi($k, 'margem_estimada')));
     ok('KPI produtos vendidos = null (não 0)', $kpi($k, 'produtos_vendidos')['valor'] === null && isset($kpi($k, 'produtos_vendidos')['disponibilidade']));
-    ok('KPI faturamento continua número', is_float($kpi($k, 'faturamento_bruto')['valor']) && $kpi($k, 'faturamento_bruto')['valor'] > 0);
+    ok('KPI faturamento BRUTO continua número', is_float($kpi($k, 'faturamento_bruto')['valor']) && $kpi($k, 'faturamento_bruto')['valor'] > 0);
+    ok('KPI faturamento LÍQUIDO = null com disponibilidade (frete só no detalhe)', $kpi($k, 'faturamento_liquido')['valor'] === null
+        && $kpi($k, 'faturamento_liquido')['variacao'] === null && ($kpi($k, 'faturamento_liquido')['disponibilidade']['estado'] ?? '') === 'indisponivel', json_encode($kpi($k, 'faturamento_liquido')));
     $ev = $real()->evolucao($F); $serie = static fn(string $id) => array_values(array_filter($ev['series'], static fn($s) => $s['id'] === $id))[0]['pontos'];
     $diaVenda = gmdate('Y-m-d', strtotime('-2 days'));
     $pm = array_values(array_filter($serie('margem'), static fn($x) => $x['data'] === $diaVenda))[0];
@@ -214,26 +217,24 @@ try {
     ok('curva por canal, faturamento → disponível', !isset($cf['indisponivel']) && $cf['total'] === 2560.12, json_encode($cf['total']));
     $cp = $real()->curvaAbc('produtos', 'faturamento', $F);
     ok('curva por PRODUTO sem itens lidos → indisponível itens_desconhecidos (não "nada vendido")', $cp['indisponivel'] === 'itens_desconhecidos' && $cp['total'] === null);
-    $rc = $real()->rentabilidade('canal', $F);
-    ok('rentabilidade por canal: receita número; custo, lucro, margem e prejuízo = null', $rc !== [] && is_float($rc[0]['receita'])
-        && $rc[0]['custo'] === null && $rc[0]['lucro'] === null && $rc[0]['margem_pct'] === null && $rc[0]['prejuizo'] === null, json_encode($rc[0]));
-    ok('rentabilidade por produto sem itens lidos: indisponível, lista vazia', $real()->rentabilidadeIndisponivel('produto', $F) === 'itens_desconhecidos' && $real()->rentabilidade('produto', $F) === []);
+    ok('rentabilidade (qualquer dimensão) sem detalhe lido: indisponível itens_desconhecidos, sem linhas (a receita líquida depende do desconto)',
+        $real()->rentabilidadeIndisponivel('canal', $F) === 'itens_desconhecidos' && $real()->rentabilidade('canal', $F) === []
+        && $real()->rentabilidadeIndisponivel('produto', $F) === 'itens_desconhecidos' && $real()->rentabilidade('produto', $F) === []);
 
     echo "== 2. endpoints (subprocesso com o _init.php real): nenhum zero inventado, nenhum erro de tipo\n";
     [$rc2, $d, $txt] = $endpoint('AnalyticsController', 'rentabilidade', ['dimensao' => 'canal']);
     $wf = array_column($d['waterfall'] ?? [], 'valor', 'id');
-    ok('/profitability: waterfall custo e lucro = null; receita número; indisponivel custo_desconhecido', $rc2 === 0 && $wf['custo'] === null && $wf['lucro'] === null
-        && is_numeric($wf['receita']) && $d['indisponivel'] === 'custo_desconhecido' && $d['prejuizo'] === [], mb_substr($txt, 0, 200));
+    ok('/profitability sem detalhe: TODO o waterfall null (nada de soma de nada = 0); indisponivel itens_desconhecidos', $rc2 === 0 && $wf !== []
+        && array_filter($wf, static fn($v) => $v !== null) === [] && $d['indisponivel'] === 'itens_desconhecidos' && $d['itens'] === [], json_encode($wf));
     [$rc2, $d, $txt] = $endpoint('AnalyticsController', 'fluxoFinanceiro');
     $nos = array_column($d['nos'] ?? [], 'id');
-    ok('fluxo financeiro: sem custo, custo e margem NÃO aparecem separados; nó "não informados"; prejuízo null; sem erro de tipo', $rc2 === 0
-        && !in_array('Custo do produto', $nos, true) && !in_array('Margem', $nos, true) && in_array('Custo e margem (não informados)', $nos, true)
-        && $d['prejuizo_total'] === null && $d['indisponivel'] === 'custo_desconhecido', mb_substr($txt, 0, 200));
+    ok('fluxo financeiro sem detalhe: sem nós (nunca "nada entrou"), indisponivel itens_desconhecidos, prejuízo null', $rc2 === 0 && $nos === []
+        && ($d['links'] ?? null) === [] && $d['prejuizo_total'] === null && $d['indisponivel'] === 'itens_desconhecidos', mb_substr($txt, 0, 200));
     [$rc2, $d, $txt] = $endpoint('AnalyticsController', 'abc', ['dimensao' => 'canais', 'metrica' => 'margem']);
     ok('/abc (canais, margem): indisponivel custo_desconhecido', $rc2 === 0 && $d['indisponivel'] === 'custo_desconhecido' && $d['itens'] === [], mb_substr($txt, 0, 200));
     [$rc2, $d, $txt] = $endpoint('HistoryController', 'margemVolume', ['dimensao' => 'canal']);
-    ok('margem × volume: sem margem conhecida não há mediana nem quadrante (antes: tudo "alta margem")', $rc2 === 0 && $d['indisponivel'] === 'custo_desconhecido'
-        && $d['quadrantes'] === [] && $d['cortes']['margem_pct'] === null && array_key_exists('quadrante', $d['itens'][0] ?? []) && $d['itens'][0]['quadrante'] === null,
+    ok('margem × volume sem detalhe: sem mediana nem quadrante (antes: tudo "alta margem")', $rc2 === 0 && $d['indisponivel'] === 'itens_desconhecidos'
+        && $d['quadrantes'] === [] && $d['cortes']['margem_pct'] === null && $d['itens'] === [],
         json_encode(['rc' => $rc2, 'ind' => $d['indisponivel'] ?? '?', 'cortes' => $d['cortes'] ?? '?', 'q' => $d['quadrantes'] ?? '?', 'q0' => $d['itens'][0]['quadrante'] ?? 'ausente']));
     [$rc2, $d, $txt] = $endpoint('HistoryController', 'margemVolume', ['dimensao' => 'produto']);
     ok('margem × volume por produto sem itens lidos: indisponivel itens_desconhecidos', $rc2 === 0 && $d['indisponivel'] === 'itens_desconhecidos', mb_substr($txt, 0, 200));
@@ -288,6 +289,22 @@ try {
     $k = $real()->kpis($F);
     ok('KPI produtos vendidos: todos os pedidos com itens lidos → número (3 + 0 + 3 = 6)', $kpi($k, 'produtos_vendidos')['valor'] === 6.0, json_encode($kpi($k, 'produtos_vendidos')['valor']));
     ok('KPI margem: continua null (custo nunca conhecido nos pedidos do Bling)', $kpi($k, 'margem_estimada')['valor'] === null);
+    // estado 2: detalhe lido em todos (itens, desconto e frete conhecidos), custo continua desconhecido
+    $k2 = $real()->kpis($F);
+    ok('estado 2: KPI faturamento líquido vira número (frete conhecido)', is_float($kpi($k2, 'faturamento_liquido')['valor']), json_encode($kpi($k2, 'faturamento_liquido')['valor']));
+    $rc = $real()->rentabilidade('canal', $F);
+    ok('estado 2: rentabilidade por canal — receita, desconto e frete números; custo, lucro, margem e prejuízo = null', $rc !== [] && is_float($rc[0]['receita'])
+        && is_float($rc[0]['desconto']) && $rc[0]['custo'] === null && $rc[0]['lucro'] === null && $rc[0]['margem_pct'] === null && $rc[0]['prejuizo'] === null, json_encode($rc[0]));
+    [$rcE, $dE, $txtE] = $endpoint('AnalyticsController', 'rentabilidade', ['dimensao' => 'canal']);
+    $wf2 = array_column($dE['waterfall'] ?? [], 'valor', 'id');
+    ok('estado 2: waterfall — receita/descontos/frete números; custo e lucro null; indisponivel custo_desconhecido', $rcE === 0 && is_numeric($wf2['receita'])
+        && is_numeric($wf2['desconto']) && is_numeric($wf2['frete']) && $wf2['custo'] === null && $wf2['lucro'] === null && $dE['indisponivel'] === 'custo_desconhecido', json_encode($wf2));
+    [$rcE, $dE, $txtE] = $endpoint('AnalyticsController', 'fluxoFinanceiro');
+    $nos2 = array_column($dE['nos'] ?? [], 'id');
+    ok('estado 2: fluxo — custo e margem NÃO separados; nó "não informados"; prejuízo null', $rcE === 0 && !in_array('Custo do produto', $nos2, true)
+        && !in_array('Margem', $nos2, true) && in_array('Custo e margem (não informados)', $nos2, true) && $dE['prejuizo_total'] === null && $dE['indisponivel'] === 'custo_desconhecido', json_encode($nos2));
+    [$rcE, $dE, $txtE] = $endpoint('HistoryController', 'margemVolume', ['dimensao' => 'canal']);
+    ok('estado 2: margem × volume — custo_desconhecido, sem quadrantes', $rcE === 0 && $dE['indisponivel'] === 'custo_desconhecido' && $dE['quadrantes'] === []);
     $cp = $real()->curvaAbc('produtos', 'faturamento', $F);
     ok('curva por produto com todos os itens lidos → disponível', !isset($cp['indisponivel']) && $cp['total'] > 0 && $cp['itens'] !== [], json_encode($cp));
     ok('curva por produto, margem → custo_desconhecido', $real()->curvaAbc('produtos', 'margem', $F)['indisponivel'] === 'custo_desconhecido');

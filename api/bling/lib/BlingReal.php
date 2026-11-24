@@ -500,8 +500,9 @@ final class BlingReal extends BlingProviderBase
                 'itens_conhecidos' => $conhecidos,
                 'qtd_itens' => $conhecidos ? (int) $p['qtd_itens'] : null,      // null = desconhecido (os zeros antigos não são lidos)
                 'subtotal' => $conhecidos ? (float) $p['subtotal'] : null,
-                'desconto' => (float) $p['desconto'],
-                'frete' => (float) $p['frete'],
+                // opção A do Jhony (24/11): desconto e frete só vêm no DETALHE (a listagem não os traz) → desconhecidos até o detalhe ser lido
+                'desconto' => $conhecidos ? (float) $p['desconto'] : null,
+                'frete' => $conhecidos ? (float) $p['frete'] : null,
                 'total' => (float) $p['total'],
                 'custo' => null,   // o pedido do Bling não traz custo (nem a listagem nem o detalhe): desconhecido → sem margem
                 'forma_pagamento' => $formas[$p['forma_pagamento'] ?? ''] ?? '',

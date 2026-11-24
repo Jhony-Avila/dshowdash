@@ -71,19 +71,24 @@ final class AnalyticsController
         $prov = BlingProvider::atual();
         $linhas = $prov->rentabilidade($dim, $f);
         $indisponivel = $prov->rentabilidadeIndisponivel($dim, $f);
+        $ok = $indisponivel === null;   // indisponível = nenhuma linha → nenhuma soma (que daria 0)
 
         // Waterfall consolidado: receita -> deducoes -> lucro. "ausência ≠ zero": custo/lucro desconhecidos = null (array_sum faria 0).
-        $soma = static function (string $c) use ($linhas): ?float { $s = BlingProviderBase::somaConhecida($linhas, $c); return $s === null ? null : round($s, 2); };
-        $neg = static fn(?float $v): ?float => $v === null ? null : -$v;
+        $soma = static function (string $c) use ($linhas, $ok): ?float {
+            if (!$ok) { return null; }   // sem linhas por indisponibilidade: soma de nada NÃO é 0
+            $s = BlingProviderBase::somaConhecida($linhas, $c); return $s === null ? null : round($s, 2);
+        };
+        $neg = static fn(?float $v): ?float => $v === null ? null : -$v;   // nunca -null (o PHP daria 0)
+        $mais = static fn(?float $x, ?float $y): ?float => ($x === null || $y === null) ? null : round($x + $y, 2);
         $waterfall = [
-            ['id' => 'receita',  'rotulo' => 'Receita bruta', 'valor' => $soma('receita') + $soma('desconto'), 'tipo' => 'inicial'],
-            ['id' => 'desconto', 'rotulo' => 'Descontos',     'valor' => -$soma('desconto'), 'tipo' => 'reducao'],
-            ['id' => 'custo',    'rotulo' => 'Custo',         'valor' => $neg($soma('custo')), 'tipo' => 'reducao'],
-            ['id' => 'comissao', 'rotulo' => 'Comissões',     'valor' => -$soma('comissao'), 'tipo' => 'reducao'],
-            ['id' => 'taxas',    'rotulo' => 'Taxas',         'valor' => -$soma('taxas'),    'tipo' => 'reducao'],
-            ['id' => 'impostos', 'rotulo' => 'Impostos (est.)','valor' => -$soma('impostos'),'tipo' => 'reducao'],
-            ['id' => 'frete',    'rotulo' => 'Frete',         'valor' => -$soma('frete'),    'tipo' => 'reducao'],
-            ['id' => 'lucro',    'rotulo' => 'Lucro',         'valor' => $soma('lucro'),     'tipo' => 'final'],
+            ['id' => 'receita',  'rotulo' => 'Receita bruta', 'valor' => $mais($soma('receita'), $soma('desconto')), 'tipo' => 'inicial'],
+            ['id' => 'desconto', 'rotulo' => 'Descontos',     'valor' => $neg($soma('desconto')), 'tipo' => 'reducao'],
+            ['id' => 'custo',    'rotulo' => 'Custo',         'valor' => $neg($soma('custo')),    'tipo' => 'reducao'],
+            ['id' => 'comissao', 'rotulo' => 'Comissões',     'valor' => $neg($soma('comissao')), 'tipo' => 'reducao'],
+            ['id' => 'taxas',    'rotulo' => 'Taxas',         'valor' => $neg($soma('taxas')),    'tipo' => 'reducao'],
+            ['id' => 'impostos', 'rotulo' => 'Impostos (est.)','valor' => $neg($soma('impostos')),'tipo' => 'reducao'],
+            ['id' => 'frete',    'rotulo' => 'Frete',         'valor' => $neg($soma('frete')),    'tipo' => 'reducao'],
+            ['id' => 'lucro',    'rotulo' => 'Lucro',         'valor' => $soma('lucro'),          'tipo' => 'final'],
         ];
 
         ApiResponse::success([
@@ -242,6 +247,11 @@ final class AnalyticsController
         $f = bling_filtros();
         $p = BlingProvider::atual();
         $linhas = $p->rentabilidade('canal', $f);
+        $ind = $p->rentabilidadeIndisponivel('canal', $f);
+        if ($ind !== null) {   // "ausência ≠ zero": sem receita líquida conhecida não há fluxo (antes: nós vazios = "nada entrou")
+            ApiResponse::success(['nos' => [], 'links' => [], 'indisponivel' => $ind, 'prejuizo_total' => null,
+                'nota' => 'Impostos e taxas são estimativas.'], bling_meta(['filtros' => $f]));
+        }
 
         $nos = [];
         $links = [];
