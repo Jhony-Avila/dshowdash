@@ -11,7 +11,7 @@ export interface Periodo { id: PeriodoV2; de: string; ate: string; rotulo: strin
  * `fonte` e `consulta_completa` são aditivos e opcionais. Sem eles, a tela deriva a fonte pelo indicador e só aceita
  * "zero" com a fonte em dia no fontes.php (ver v2/coerencia.ts).
  */
-interface Base { estado: EstadoBloco; ultimo_sucesso: string | null; motivo: string | null; fonte?: IdFonte; consulta_completa?: boolean; fonte_atualizada_em?: string | null; valor_em?: string | null }
+interface Base { estado: EstadoBloco; ultimo_sucesso: string | null; motivo: string | null; lacunas?: string[]; fonte?: IdFonte; consulta_completa?: boolean; fonte_atualizada_em?: string | null; valor_em?: string | null }
 export interface PedidosBling extends Base { quantidade: number | null; valor: number | null; por_dia: { dia: string; quantidade: number | null; valor: number | null }[]; inclui_canceladas: boolean }
 export interface NegociosGanhos extends Base { quantidade: number | null; valor: number | null; sem_valor: number | null }
 export interface FunilAberto extends Base { quantidade: number | null; valor: number | null; sem_valor: number | null }
@@ -23,7 +23,8 @@ export interface Prioridades { gerado_em: string | null; itens: Prioridade[] }
 
 export interface ItemLista { deal_id: number; titulo: string; organizacao: string | null; responsavel: string | null; etapa: string | null; prazo: string | null; valor: number | null; url_pipedrive: string | null }
 /** total/responsaveis podem vir null quando a fonte não respondeu (aditivos do serviço 24e70e69: estado, motivo, paginas, ultimo_sucesso) */
-export interface Lista { id: IdPrioridade; total: number | null; pagina: number; por_pagina: number; paginas?: number | null; estado?: EstadoBloco; motivo?: string | null; ultimo_sucesso?: string | null; criterios: { texto: string }; responsaveis: { id: number; nome: string }[] | null; itens: ItemLista[] }
+/** total_sem_filtro (= número do cartão, mesmo com filtro de responsável) e sem_responsavel: aditivos do serviço 2a035013 (ACIMA_ESQUERDA) */
+export interface Lista { id: IdPrioridade; total: number | null; total_sem_filtro?: number | null; sem_responsavel?: number | null; pagina: number; por_pagina: number; paginas?: number | null; estado?: EstadoBloco; motivo?: string | null; ultimo_sucesso?: string | null; criterios: { texto: string }; responsaveis: { id: number; nome: string }[] | null; itens: ItemLista[] }
 export type OrdemLista = 'prazo' | 'valor' | 'responsavel';
 export interface FiltrosLista { pagina: number; ordem: OrdemLista; dir: 'asc' | 'desc'; responsavel: number | null }
 

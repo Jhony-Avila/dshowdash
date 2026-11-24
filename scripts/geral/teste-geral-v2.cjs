@@ -75,11 +75,11 @@ function simulador() {
       if (rota === '/prioridades/lista') {
         const id = u.searchParams.get('id'); const pag = Number(u.searchParams.get('pagina')); const pp = Number(u.searchParams.get('por_pagina')); const resp = u.searchParams.get('responsavel');
         m.ultimaLista = Object.fromEntries(u.searchParams);
-        let todos = listaItens(id, id === 'atividade_vencida' ? 6 : 120);
+        let todos = listaItens(id, id === 'atividade_vencida' ? 6 : 120); const semFiltro = todos.length;
         if (resp) todos = todos.filter((i) => i.responsavel === RESP.find((x) => String(x.id) === resp)?.nome);
         const ordem = u.searchParams.get('ordem'), dir = u.searchParams.get('dir') === 'desc' ? -1 : 1;
         todos.sort((a, b) => (ordem === 'valor' ? ((a.valor ?? -1) - (b.valor ?? -1)) : String(a[ordem] ?? '').localeCompare(String(b[ordem] ?? ''))) * dir || a.deal_id - b.deal_id);
-        return r.fulfill(env({ id, total: todos.length, pagina: pag, por_pagina: pp, responsaveis: RESP,
+        return r.fulfill(env({ id, total: todos.length, total_sem_filtro: semFiltro, sem_responsavel: id === 'atividade_vencida' ? 1 : 0, pagina: pag, por_pagina: pp, responsaveis: RESP,
           criterios: { texto: id === 'atividade_vencida' ? `atividade vencida até ${diaBr(0).split('-').reverse().join('/')} · negócio aberto` : 'sem atividade futura · fechamento até hoje + 7 dias (inclui vencidos) · aberto' },
           itens: todos.slice((pag - 1) * pp, pag * pp).map((i) => ({ ...i, valor: i.valor === null ? null : i.valor.toFixed(2) })) }));
       }
@@ -180,6 +180,7 @@ function simulador() {
     const linhas = await pg.$$eval('.gv2-tabela-raiz tbody tr', (xs) => xs.map((x) => Math.round(x.getBoundingClientRect().height)));
     const tot = await txt(pg, '[data-gv2-total]'); const rod = await txt(pg, '[data-gv2-conferencia]');
     afirma('clicar "Ver 6 negócios" → lista com EXATAMENTE 6 negócios, "6 negócios encontrados" e "= número da prioridade na Geral"', linhas.length === 6 && /6 negócios encontrados/.test(tot) && /= número da prioridade na Geral/.test(rod), JSON.stringify({ n: linhas.length, tot, rod }));
+    afirma('lista sem filtro mostra quantos negócios estão sem responsável ("1 sem responsável")', /1 sem responsável/.test(rod), rod);
     afirma('linhas de 36 px, numa linha só (TabelaDados da casa)', linhas.every((h) => h === 36 || h === 37), JSON.stringify(linhas));
     const umaLinha = await pg.$$eval('.gv2-tabela-raiz tbody td', (xs) => xs.every((td) => getComputedStyle(td).whiteSpace === 'nowrap'));
     afirma('células com reticências (uma linha, sem quebra)', umaLinha);
@@ -189,6 +190,7 @@ function simulador() {
     await cap(pg, '2-lista');
     await pg.selectOption('.gv2-filtros select', '11'); await pg.waitForTimeout(900);
     afirma('filtro de responsável vai ao serviço (responsavel=11) e o total é o real do filtro', m.ultimaLista?.responsavel === '11' && /3 negócios encontrados/.test(await txt(pg, '[data-gv2-total]')), JSON.stringify(m.ultimaLista));
+    afirma('com filtro, a conferência usa total_sem_filtro: "sem filtro: 6 = número da prioridade na Geral"', /sem filtro: 6 = número da prioridade na Geral/.test(await txt(pg, '[data-gv2-conferencia]')), await txt(pg, '[data-gv2-conferencia]'));
     await pg.click('.gv2-trilha .gv2-link:has-text("Geral")'); await pg.waitForSelector('.gv2[data-gv2-vista="geral"]'); await pg.waitForTimeout(500);
     await pg.click('[data-gv2-prio="atividade_vencida"] .gv2-link'); await pg.waitForSelector('[data-gv2-lista="atividade_vencida"] tbody tr', { timeout: 15000 }); await pg.waitForTimeout(500);
     afirma('voltar à Geral e abrir de novo: o filtro de responsável foi PRESERVADO', (await pg.$eval('.gv2-filtros select', (x) => x.value)) === '11' && m.ultimaLista?.responsavel === '11');

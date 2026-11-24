@@ -26,7 +26,7 @@ export const NOME_FONTE: Record<IdFonte, string> = {
 
 export interface IndicadorBruto {
   estado: EstadoBloco; ultimo_sucesso: string | null; motivo: string | null;
-  fonte?: IdFonte; consulta_completa?: boolean; sem_valor?: number | null;
+  fonte?: IdFonte; consulta_completa?: boolean; sem_valor?: number | null; lacunas?: string[];
 }
 /** 'carregando' = o fontes.php ainda não respondeu (não rebaixa nada); null = não respondeu (não dá para confirmar zero). */
 export type FontesLidas = Fonte[] | null | 'carregando';
@@ -81,7 +81,8 @@ export function efetivo(id: IdIndicador, ind: IndicadorBruto, fontes: FontesLida
     return { ...base, estado: 'desatualizado', motivo: `${nome} desatualizado`, quando: f!.ultimo_sucesso ?? ind.ultimo_sucesso };
   }
   const sv = typeof ind.sem_valor === 'number' && ind.sem_valor > 0 ? ind.sem_valor : null;
-  if (sv !== null) return { ...base, estado: 'parcial', semValor: sv };
+  // 2a035013: `parcial` + `lacunas`; o texto "X negócios sem valor" só quando a lacuna é de valor (as outras usam o `motivo`)
+  if (sv !== null && (!ind.lacunas || ind.lacunas.includes('sem_valor'))) return { ...base, estado: 'parcial', semValor: sv };
   return base;
 }
 

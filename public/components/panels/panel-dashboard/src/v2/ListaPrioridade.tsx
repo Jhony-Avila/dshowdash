@@ -52,7 +52,9 @@ export function ListaPrioridade({ id, quantidadeGeral, aoVoltar }: { id: IdPrior
   ];
 
   const respNome = f.responsavel === null ? 'Todos' : l?.responsaveis?.find((r) => r.id === f.responsavel)?.nome ?? `#${f.responsavel}`;
-  const conferencia = l && !semFonte && f.responsavel === null && quantidadeGeral !== null;
+  // o número da Geral confere com o total SEM filtro (o serviço 2a035013 manda total_sem_filtro, mesmo com responsável escolhido)
+  const totalSemFiltro = l ? (l.total_sem_filtro !== undefined ? l.total_sem_filtro : f.responsavel === null ? l.total : null) : null;
+  const conferencia = l && !semFonte && totalSemFiltro !== null && quantidadeGeral !== null;
   return (
     <div className="gv2-lista" data-gv2-lista={id}>
       <nav className="gv2-trilha" aria-label="Você está em">
@@ -99,7 +101,8 @@ export function ListaPrioridade({ id, quantidadeGeral, aoVoltar }: { id: IdPrior
             {!semFonte && <span className="gv2-fraco" data-gv2-conferencia>
               {l.itens.length} {l.itens.length === 1 ? 'registro exibido' : 'registros exibidos'}
               {paginas > 1 ? ` (página ${l.pagina} de ${paginas})` : ''} · total {fmtN(l.total)} {l.total === 1 ? 'negócio distinto' : 'negócios distintos'}
-              {conferencia && (l.total === quantidadeGeral ? ' = número da prioridade na Geral' : ` · ⚠ a Geral mostrava ${fmtN(quantidadeGeral)}; a situação mudou desde então`)}
+              {conferencia && (totalSemFiltro === quantidadeGeral ? (f.responsavel === null ? ' = número da prioridade na Geral' : ` · sem filtro: ${fmtN(totalSemFiltro)} = número da prioridade na Geral`) : ` · ⚠ a Geral mostrava ${fmtN(quantidadeGeral)}; a situação mudou desde então`)}
+              {typeof l.sem_responsavel === 'number' && l.sem_responsavel > 0 && f.responsavel === null && <span data-gv2-sem-responsavel>{` · ${fmtN(l.sem_responsavel)} sem responsável`}</span>}
             </span>}
             {paginas > 1 && (
               <span className="gv2-paginas">
