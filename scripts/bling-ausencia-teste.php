@@ -367,6 +367,29 @@ try {
     $r10 = $sync4->sincronizar($conta, 'compras', 'incremental', 'd5');
     ok('compra NOVA sem data: não gravada, erro registrado', $col('bling_purchase_orders', '800010', 'id') === false && $r10['erros'] === 1, json_encode($r10));
 
+    echo "== 4c. selo de disponibilidade (aprovado 24/11): ESCOPO AUSENTE não é cobertura completa; último sucesso nunca é uma tentativa\n";
+    $REC = new BlingResposta(403, ['error' => ['type' => 'insufficient_scope', 'message' => 'insufficient_scope', 'description' => 'sintético']]);
+    $api->responder('contas/receber', static function () use (&$REC) { return $REC; });
+    $sync4->sincronizar($conta, 'receber', 'carga_inicial', 'e1');
+    $dr = $real()->disponibilidade('receber');
+    ok('escopo ausente (403 insufficient_scope, nada lido): estado indisponivel, cobertura NENHUMA, sem "último sucesso" (antes: completa + hora da tentativa)',
+        $dr['estado'] === 'indisponivel' && $dr['cobertura'] === 'nenhuma' && $dr['ultimo_sucesso'] === null && str_contains($dr['motivo'], 'escopo'), json_encode($dr));
+    $kr = $kpi($real()->kpis($F), 'contas_receber');
+    ok('KPI contas a receber com escopo ausente: valor null (não 0)', $kr['valor'] === null && ($kr['disponibilidade']['estado'] ?? '') === 'indisponivel', json_encode($kr));
+    $titulos = [];
+    for ($i = 1; $i <= 12; $i++) { $titulos[] = ['id' => 600000 + $i, 'valor' => 100, 'vencimento' => '2026-12-01', 'situacao' => 1, 'contato' => ['id' => 1]]; }
+    $REC = new BlingResposta(200, ['data' => $titulos]);
+    $repo4->liberarEscopoAusente($conta);                                   // = a reautorização da conta (concluirConexao)
+    $sync4->sincronizar($conta, 'receber', 'incremental', 'e2');
+    $dr = $real()->disponibilidade('receber');
+    ok('depois de reautorizar e ler tudo: ok, cobertura completa, último sucesso = o job concluído', $dr['estado'] === 'ok' && $dr['cobertura'] === 'completa' && $dr['ultimo_sucesso'] !== null, json_encode($dr));
+    $titulos[] = ['valor' => 100, 'vencimento' => '2026-12-01'];             // 1 título sem id em 13 (< 10 %) → 'atencao' por erro de registro
+    $REC = new BlingResposta(200, ['data' => $titulos]);
+    $rr = $sync4->sincronizar($conta, 'receber', 'incremental', 'e3');
+    $dr = $real()->disponibilidade('receber');
+    ok('erro em poucos registros (situação atencao): cobertura PARCIAL e estado parcial (não "completa"); último sucesso = o job', $rr['situacao'] === 'atencao'
+        && $dr['cobertura'] === 'parcial' && $dr['estado'] === 'parcial' && $dr['ultimo_sucesso'] !== null, json_encode([$rr['situacao'] ?? null, $dr]));
+
     echo "== 5. o provedor de DEMONSTRAÇÃO (mock) não muda: números como antes\n";
     [$rc5, $d, $txt] = $endpoint('OverviewController', 'overview', [], 'mock');
     $kk = $d['kpis'] ?? [];

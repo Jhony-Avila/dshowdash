@@ -58,8 +58,8 @@ final class BlingReal extends BlingProviderBase
     public function disponibilidade(string $recurso): array
     {
         // DSHOW-012 complemento (Codex DSHOW-016, 18/11): por recurso — fonte desativada, última tentativa, último sucesso
-        // e cobertura (completa/parcial). bling_sync_state guarda só a ÚLTIMA execução e a situação dela: "último sucesso"
-        // é conhecido quando a última execução foi ok/atencao; senão fica null (coluna própria = migração futura).
+        // e cobertura (completa/parcial/nenhuma). bling_sync_state guarda só a ÚLTIMA execução e a situação dela: "último sucesso"
+        // vem do último job concluído, ou da última execução quando ela foi 'ok'; senão fica null (coluna própria = migração futura).
         if (!class_exists('BlingSyncService', false)) require_once __DIR__ . '/../services/BlingSyncService.php';
         $conta = $this->conta();
         $motivo = BlingSyncService::desativado($conta, $recurso);
@@ -68,14 +68,31 @@ final class BlingReal extends BlingProviderBase
         $iso = static fn($v) => $v === null ? null : gmdate('c', strtotime($v . ' UTC'));
         // 23/11: o último sucesso vem do último job CONCLUÍDO do recurso — uma falha depois dele não o apaga do painel
         $okJob = $this->repo->valor("SELECT MAX(terminado_em) FROM bling_sync_jobs WHERE account_id = ? AND recurso = ? AND situacao = 'concluido'", [$conta, $recurso]);
+        // 24/11 (aprovado pelo Jhony, pacote B): 'atencao' tem DOIS sentidos e nenhum é "cobertura completa":
+        //  · ESCOPO AUSENTE (403 insufficient_scope): NADA foi lido — o job MAIS RECENTE do recurso foi 'cancelado' e o erro mais recente é ESCOPO_AUSENTE;
+        //  · erro em < 10 % dos registros numa coleta concluída (job 'concluido'): leitura PARCIAL (o watermark parou; a próxima rodada relê).
+        // Sem comparar horários: bling_sync_errors.ocorrido_em é o relógio LOCAL do MySQL e terminado_em é UTC (comparar erraria por horas).
+        // "Último sucesso" só de job CONCLUÍDO ou de situação 'ok' — nunca a hora de uma tentativa.
+        $escopo = false;
+        if ($sit === 'atencao') {
+            $job = $this->repo->valor('SELECT situacao FROM bling_sync_jobs WHERE account_id = ? AND recurso = ? ORDER BY id DESC LIMIT 1', [$conta, $recurso]);
+            $erro = $this->repo->valor('SELECT codigo FROM bling_sync_errors WHERE account_id = ? AND recurso = ? ORDER BY id DESC LIMIT 1', [$conta, $recurso]);
+            $escopo = $job === 'cancelado' && $erro === BlingSyncService::ESCOPO_AUSENTE;
+        }
         $base = ['fonte_desativada' => $motivo !== null, 'ultima_tentativa' => $iso($ult),
-                 'ultimo_sucesso' => $okJob ? $iso($okJob) : (in_array($sit, ['ok', 'atencao'], true) ? $iso($ult) : null),
-                 'cobertura' => in_array($sit, ['ok', 'atencao'], true) ? 'completa' : ($sit === null || $sit === 'nunca_executado' ? 'nenhuma' : 'parcial')];
+                 'ultimo_sucesso' => $okJob ? $iso($okJob) : ($sit === 'ok' ? $iso($ult) : null),
+                 'cobertura' => $sit === 'ok' ? 'completa' : ($sit === null || $sit === 'nunca_executado' || $escopo ? 'nenhuma' : 'parcial')];
         if ($motivo !== null) {
             return ['estado' => 'indisponivel', 'motivo' => 'sincronização de ' . $recurso . ' desativada para esta conta', 'fonte' => stripos($motivo, 'asaas') !== false ? 'Asaas' : $motivo] + $base;
         }
+        if ($escopo) {
+            return ['estado' => 'indisponivel', 'motivo' => 'o acesso ao Bling não inclui ' . $recurso . ' (escopo ausente) — reautorize a conta com esse escopo', 'fonte' => 'Bling'] + $base;
+        }
         if ($ult === null || $sit === 'nunca_executado') return ['estado' => 'sem_dados', 'motivo' => 'recurso ainda não sincronizado'] + $base;
-        if ($base['cobertura'] === 'parcial') return ['estado' => 'parcial', 'motivo' => 'última coleta ' . $sit . '; dados podem estar incompletos'] + $base;
+        if ($base['cobertura'] === 'parcial') {
+            return ['estado' => 'parcial', 'motivo' => $sit === 'atencao' ? 'a última coleta leu tudo, mas alguns registros não foram gravados; a próxima rodada relê'
+                                                                          : 'última coleta ' . $sit . '; dados podem estar incompletos'] + $base;
+        }
         return ['estado' => 'ok'] + $base;
     }
 
