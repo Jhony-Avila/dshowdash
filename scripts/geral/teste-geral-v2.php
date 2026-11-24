@@ -75,8 +75,20 @@ $ins = function (string $t, array $l) use ($pdo, $P): void {
     $st = $pdo->prepare("INSERT INTO `{$P}$t` (`" . implode('`,`', $c) . '`) VALUES (' . implode(',', array_fill(0, count($c), '?')) . ')');
     $st->execute(array_values($l));
 };
+/** provedor de agenda falso (o GcalDb real tem a mesma forma): conflitos vêm de $cf(de, ate); eventos de $EVENTOS */
+$EVENTOS = [];
+$provDe = function (?Closure $cf) use (&$EVENTOS): ?Closure {
+    if ($cf === null) return null;
+    return function () use ($cf, &$EVENTOS): object {
+        return new class ($cf, $EVENTOS) {
+            public function __construct(private Closure $cf, private array $ev) {}
+            public function conflitos(array $f): array { return ($this->cf)($f['de'], $f['ate']); }
+            public function eventos(array $f): array { return $this->ev; }
+        };
+    };
+};
 $sv = fn(?PDO $pipe = null, ?PDO $gcal = null, ?PDO $bling = null, ?Closure $cf = null, ?DateTimeImmutable $ag = null, bool $semPdo = false)
-    => new GeralV2($semPdo ? $pipe : ($pipe ?? $pdo), $semPdo ? $gcal : ($gcal ?? $pdo), $semPdo ? $bling : ($bling ?? $pdo), 75, $ag ?? $AGORA, $cf, $P);
+    => new GeralV2($semPdo ? $pipe : ($pipe ?? $pdo), $semPdo ? $gcal : ($gcal ?? $pdo), $semPdo ? $bling : ($bling ?? $pdo), 75, $ag ?? $AGORA, $provDe($cf), $P);
 $prio = fn(array $r, string $id) => array_values(array_filter($r['prioridades'], fn($x) => $x['id'] === $id))[0];
 
 // ---------- dados sintéticos ----------
@@ -129,19 +141,19 @@ $p1 = $prio($r, 'atividade_vencida');
 check('P1: 3 negócios distintos (1, 2 pela hora já vencida, 10), nunca atividades', $p1['total'] === 3, json_encode($p1));
 check('P1: mais antiga 15/10 (negócio 10)', $p1['mais_antiga'] === '2026-10-15', json_encode($p1));
 check('P1: estado ok com a fonte em dia', $p1['estado'] === 'ok');
-$p2 = $prio($r, 'sem_atividade_fechamento_7d');
+$p2 = $prio($r, 'sem_proxima_atividade');
 check('P2: negócios 8, 10 e 12 (limite +7 inclusive, vencido entra, sem data não é futura)', $p2['total'] === 3, json_encode($p2));
 check('P2: mais antiga = fechamento 01/10', $p2['mais_antiga'] === '2026-10-01');
 check('ganhos 7d: 2 / 300.35 pela data do ganho em Brasília', $r['ganhos']['quantidade'] === 2 && $r['ganhos']['valor'] === '300.35', json_encode($r['ganhos']));
 $o = $sv()->resumo('ontem'); $m = $sv()->resumo('mes');
 check('ganhos ontem: 1 / 200.25 · mês (01–22/11, inclui 15/11 23:59 BR): 5 / 2349.35', $o['ganhos']['quantidade'] === 1 && $o['ganhos']['valor'] === '200.25' && $m['ganhos']['quantidade'] === 5 && $m['ganhos']['valor'] === '2349.35',
     json_encode([$o['ganhos'], $m['ganhos']]));
-check('prioridades não mudam com o período', $prio($o, 'atividade_vencida')['total'] === $p1['total'] && $prio($m, 'sem_atividade_fechamento_7d')['total'] === $p2['total']);
+check('prioridades não mudam com o período', $prio($o, 'atividade_vencida')['total'] === $p1['total'] && $prio($m, 'sem_proxima_atividade')['total'] === $p2['total']);
 $abertos = (int) $pdo->query("SELECT COUNT(*) FROM `{$P}pipe_deals` WHERE is_deleted=0 AND status='open'")->fetchColumn();
 check('funil: abertos, valor e 1 sem valor', $r['funil']['quantidade'] === $abertos && $r['funil']['sem_valor'] === 1 && $r['funil']['valor'] === number_format(($abertos - 1) * 1000, 2, '.', ''), json_encode($r['funil']));
 
 // ---------- listas reproduzem a contagem ----------
-foreach (['atividade_vencida', 'sem_atividade_fechamento_7d'] as $id) {
+foreach (['atividade_vencida', 'sem_proxima_atividade'] as $id) {
     $l = $sv()->lista($id);
     check("lista $id: total = cartão e itens = total", $l['total'] === $prio($r, $id)['total'] && count($l['itens']) === $l['total'], json_encode([$l['total'], count($l['itens'])]));
 }
@@ -150,7 +162,7 @@ check('lista P1: mais antiga primeiro; referência = atividade vencida mais anti
 check('lista: nomes de organização, responsável, etapa e funil', $l['itens'][0]['organizacao'] === 'Cliente Fictício SA' && $l['itens'][0]['responsavel'] === 'Ana Vendas' && $l['itens'][0]['etapa'] === 'Proposta' && $l['itens'][0]['funil'] === 'Comercial');
 check('lista: link do Pipedrive pelo domínio da conta', $l['itens'][0]['link'] === 'https://dshow.pipedrive.com/deal/10');
 check('lista: valor exato em texto', $l['itens'][0]['valor'] === '1000.00');
-$l2 = $sv()->lista('sem_atividade_fechamento_7d');
+$l2 = $sv()->lista('sem_proxima_atividade');
 $porId = array_column($l2['itens'], null, 'negocio_id');
 check('lista P2: fechamento futuro tem dias negativos; sem valor = null', $porId[8]['dias'] === -7 && $porId[12]['valor'] === null && $porId[10]['dias'] === 53, json_encode([$porId[8]['dias'], $porId[10]['dias']]));
 // paginação: +60 negócios com atividade vencida → 63, páginas de 50 sem repetição
@@ -165,7 +177,7 @@ check('paginação: ordem estável pela referência', $refs === $ord);
 $f = $sv()->lista('atividade_vencida', 1, 901);
 $n901 = (int) $pdo->query("SELECT COUNT(DISTINCT d.id) FROM `{$P}pipe_deals` d JOIN `{$P}pipe_activities` a ON a.deal_pd_id=d.pipedrive_id WHERE d.owner_id=901 AND d.status='open' AND d.is_deleted=0 AND a.done=0 AND a.is_deleted=0 AND a.due_date < '2026-11-23'")->fetchColumn();
 check('filtro por responsável: total do filtro e total_sem_filtro = cartão', $f['total'] === $n901 && $f['total_sem_filtro'] === 63 && count(array_filter($f['itens'], fn($x) => $x['responsavel_id'] !== 901)) === 0, json_encode([$f['total'], $n901]));
-$v = $sv()->lista('atividade_vencida', 1, null, 'valor');
+$v = $sv()->lista('atividade_vencida', 1, null, 'valor', 'desc');
 check('ordem por valor: mesmo total', $v['total'] === 63);
 check('prioridade/ordem inválidas recusadas', (function () use ($sv) { try { $sv()->lista('x'); return false; } catch (GeralV2Erro) {} try { $sv()->lista('atividade_vencida', 1, null, 'x'); return false; } catch (GeralV2Erro) { return true; } })());
 $pdo->exec("UPDATE `{$P}pipe_accounts` SET company_domain='evil.com/x'");
@@ -241,9 +253,9 @@ $r = $sv(cf: $cf)->resumo('7d');
 check('Pipedrive sem conta conectada → aguardando_conexao e TODOS os números do Pipedrive null', $nulos($r) && $r['funil']['estado'] === 'aguardando_conexao' && $prio($r, 'atividade_vencida')['estado'] === 'aguardando_conexao');
 check('lista com Pipedrive aguardando → total null, sem itens', ($x = $sv()->lista('atividade_vencida'))['total'] === null && $x['itens'] === [] && $x['estado'] === 'aguardando_conexao');
 $pdo->exec("UPDATE `{$P}pipe_accounts` SET status='connected'");
-$r = (new GeralV2(null, $pdo, $pdo, 75, $AGORA, $cf, $P))->resumo('7d');
+$r = (new GeralV2(null, $pdo, $pdo, 75, $AGORA, $provDe($cf), $P))->resumo('7d');
 check('banco do Pipedrive fora → indisponivel, números null; Bling e agenda seguem', $nulos($r) && $r['ganhos']['estado'] === 'indisponivel' && $r['pedidos']['quantidade'] === 4 && $prio($r, 'conflito_agenda')['total'] === 1);
-$r = (new GeralV2($pdo, $pdo, null, 75, $AGORA, $cf, $P))->resumo('7d');
+$r = (new GeralV2($pdo, $pdo, null, 75, $AGORA, $provDe($cf), $P))->resumo('7d');
 check('banco do Bling fora → pedidos null em todos os dias (nunca 0)', $r['pedidos']['quantidade'] === null && $r['pedidos']['valor'] === null && $r['pedidos']['estado'] === 'indisponivel'
     && count(array_filter($r['pedidos']['por_dia'], fn($d) => $d['quantidade'] !== null || $d['valor'] !== null)) === 0);
 $pdo->exec("UPDATE `{$P}bling_accounts` SET estado_conexao='nao_configurado'");
@@ -269,7 +281,7 @@ check('zero confirmado: ontem (02/11) sem ganhos com a fonte em dia → 0, "0.00
 $pdo->exec("RENAME TABLE `{$P}pipe_activities` TO `{$P}pipe_activities_x`");
 $r = $sv(cf: $cf)->resumo('7d');
 check('erro na leitura das atividades → P1 e P2 indisponíveis com total null; funil e ganhos seguem', $prio($r, 'atividade_vencida')['total'] === null && $prio($r, 'atividade_vencida')['estado'] === 'indisponivel'
-    && $prio($r, 'sem_atividade_fechamento_7d')['total'] === null && $r['funil']['quantidade'] !== null && $r['ganhos']['quantidade'] === 2);
+    && $prio($r, 'sem_proxima_atividade')['total'] === null && $r['funil']['quantidade'] !== null && $r['ganhos']['quantidade'] === 2);
 $pdo->exec("RENAME TABLE `{$P}pipe_activities_x` TO `{$P}pipe_activities`");
 $pdo->exec("RENAME TABLE `{$P}bling_sales_orders` TO `{$P}bling_sales_orders_x`");
 $r = $sv(cf: $cf)->resumo('7d');
@@ -283,11 +295,89 @@ check('ganho em USD: conta na quantidade, fica fora do valor e o cartão vira pa
 check('período inválido recusado', (function () use ($sv) { try { $sv()->resumo('ano'); return false; } catch (GeralV2Erro) { return true; } })());
 check('prefixo inválido recusado', (function () use ($pdo) { try { new GeralV2($pdo, $pdo, $pdo, 75, null, null, 'x; DROP'); return false; } catch (InvalidArgumentException) { return true; } })());
 
+// ---------- CONTRATO DA TELA (proposta da CIMA, 23/11 ~21:30) ----------
+require_once dirname($argv[1] ?? "$RAIZ/api/geral/GeralV2.php") . '/GeralV2Contrato.php';
+$EVENTOS = [
+    ['id' => 'e1', 'calendar_id' => 'a@exemplo.test', 'summary' => 'Reunião A', 'start' => '2026-11-23T14:00:00-03:00', 'end' => '2026-11-23T15:00:00-03:00', 'status' => 'confirmed'],
+    ['id' => 'e0', 'calendar_id' => 'a@exemplo.test', 'summary' => 'Café (já passou)', 'start' => '2026-11-23T08:00:00-03:00', 'end' => '2026-11-23T09:00:00-03:00', 'status' => 'confirmed'],
+    ['id' => 'e2', 'calendar_id' => 'b@exemplo.test', 'summary' => 'Reunião B', 'start' => '2026-11-23T14:30:00-03:00', 'end' => '2026-11-23T15:30:00-03:00', 'status' => 'confirmed'],
+    ['id' => 'e3', 'calendar_id' => 'a@exemplo.test', 'summary' => 'Cancelada', 'start' => '2026-11-23T16:00:00-03:00', 'end' => '2026-11-23T17:00:00-03:00', 'status' => 'cancelled'],
+    ['id' => 'e4', 'calendar_id' => 'a@exemplo.test', 'summary' => 'Agora', 'start' => '2026-11-23T09:30:00-03:00', 'end' => '2026-11-23T10:30:00-03:00', 'status' => 'confirmed'],
+];
+$conf2 = [['tipo' => 'sobreposicao', 'severidade' => 'alta', 'mensagem' => 'x', 'event_ids' => ['e1', 'e2'], 'eventos' => $conf[0]['eventos']]];
+$cf2 = fn(string $de, string $ate): array => $conf2;
+$K = fn(?Closure $cf = null) => new GeralV2Contrato($sv(cf: $cf ?? $cf2));
+$E = ['ok', 'zero', 'parcial', 'desatualizado', 'aguardando', 'erro'];
+$c = $K()->resumo('7d');
+check('contrato · resumo: chaves da tela', array_keys($c) === ['gerado_em', 'periodo', 'pedidos_bling', 'negocios_ganhos', 'funil_aberto'], implode(',', array_keys($c)));
+check('contrato · período com rótulo "16 a 22/11/2026 · 7 dias completos"', $c['periodo'] === ['id' => '7d', 'de' => '2026-11-16', 'ate' => '2026-11-22', 'rotulo' => '16 a 22/11/2026 · 7 dias completos'], json_encode($c['periodo']));
+check('contrato · rótulos ontem e mês', $K()->resumo('ontem')['periodo']['rotulo'] === '22/11/2026 · ontem' && $K()->resumo('mes')['periodo']['rotulo'] === '01 a 22/11/2026 · mês até ontem');
+check('contrato · rótulo cruzando meses', (new GeralV2Contrato($sv(ag: new DateTimeImmutable('2026-12-03 10:00', $BR))))->resumo('7d')['periodo']['rotulo'] === '26/11 a 02/12/2026 · 7 dias completos');
+foreach (['pedidos_bling', 'negocios_ganhos', 'funil_aberto'] as $b)
+    check("contrato · $b: estado do enum + ultimo_sucesso + motivo", in_array($c[$b]['estado'], $E, true) && array_key_exists('ultimo_sucesso', $c[$b]) && array_key_exists('motivo', $c[$b]));
+$somaQ = array_sum(array_column($c['pedidos_bling']['por_dia'], 'quantidade'));
+$somaV = array_sum(array_map(fn($d) => (int) round(((float) $d['valor']) * 100), $c['pedidos_bling']['por_dia']));
+check('contrato · por_dia soma EXATAMENTE quantidade e valor', $somaQ === $c['pedidos_bling']['quantidade'] && $somaV === (int) round(((float) $c['pedidos_bling']['valor']) * 100));
+check('contrato · inclui_canceladas presente', is_bool($c['pedidos_bling']['inclui_canceladas']));
+check('contrato · ganhos com moeda estrangeira: parcial + motivo em português', $c['negocios_ganhos']['estado'] === 'parcial' && $c['negocios_ganhos']['motivo'] === '1 negócio em outra moeda ficou fora do valor.' && $c['negocios_ganhos']['sem_valor'] === 0, json_encode($c['negocios_ganhos']));
+check('contrato · funil: sem_valor e valor em texto', $c['funil_aberto']['sem_valor'] === 1 && is_string($c['funil_aberto']['valor']));
+$pr = $K()->prioridades();
+$pi = array_column($pr['itens'], null, 'id');
+check('contrato · prioridades: os 3 ids da CIMA, gravidade 1/2/3', array_keys($pi) === ['atividade_vencida', 'sem_proxima_atividade', 'conflito_agenda'] && $pi['atividade_vencida']['gravidade'] === 1 && $pi['conflito_agenda']['gravidade'] === 3);
+check('contrato · P1: quantidade, desde, responsáveis e detalhe', $pi['atividade_vencida']['quantidade'] === 63 && $pi['atividade_vencida']['desde'] === '2026-10-15'
+    && $pi['atividade_vencida']['responsaveis'] === 2 && $pi['atividade_vencida']['detalhe'] === 'Pipedrive · 63 negócios distintos', json_encode($pi['atividade_vencida']));
+check('contrato · P3: "Google Agenda · 1 conflito hoje"', $pi['conflito_agenda']['detalhe'] === 'Google Agenda · 1 conflito hoje' && $pi['conflito_agenda']['estado'] === 'ok');
+foreach (['atividade_vencida', 'sem_proxima_atividade'] as $id) {
+    $L = $K()->lista($id, 1, 50, 'prazo', 'asc', null);
+    check("contrato · ACEITE da CIMA ($id): total da lista = quantidade da prioridade", $L['total'] === $pi[$id]['quantidade'], json_encode([$L['total'], $pi[$id]['quantidade']]));
+}
+$L = $K()->lista('atividade_vencida', 1, 50, 'prazo', 'asc', null);
+check('contrato · linha: deal_id, titulo, organizacao, responsavel, etapa, prazo, valor, url_pipedrive', array_keys($L['itens'][0]) === ['deal_id', 'titulo', 'organizacao', 'responsavel', 'etapa', 'prazo', 'valor', 'url_pipedrive']
+    && $L['itens'][0]['url_pipedrive'] === 'https://dshow.pipedrive.com/deal/10');
+check('contrato · critério em texto e responsáveis do conjunto', $L['criterios']['texto'] === 'atividade vencida até 23/11/2026 · aberto · todos os responsáveis' && count($L['responsaveis']) === 2 && $L['responsaveis'][0]['nome'] === 'Ana Vendas');
+$Lr = $K()->lista('atividade_vencida', 1, 50, 'prazo', 'asc', 901);
+check('contrato · filtro por responsável no critério', $Lr['criterios']['texto'] === 'atividade vencida até 23/11/2026 · aberto · Beto Vendas' && $Lr['total'] === 30, json_encode([$Lr['criterios'], $Lr['total']]));
+$Ld = $K()->lista('atividade_vencida', 1, 50, 'prazo', 'desc', null);
+check('contrato · dir=desc: prazo mais recente primeiro, mesmo total', $Ld['total'] === 63 && $Ld['itens'][0]['prazo'] >= $Ld['itens'][49]['prazo'] && $Ld['itens'][0]['prazo'] === '2026-11-23' && $Ld['itens'][0]['deal_id'] === 2);   // negócio 2: atividade com hora vencida hoje
+$Lp = $K()->lista('atividade_vencida', 3, 20, 'responsavel', 'asc', null);
+check('contrato · por_pagina=20: página 3 tem 20, 4 páginas', count($Lp['itens']) === 20 && $Lp['paginas'] === 4 && $Lp['por_pagina'] === 20);
+$L2 = $K()->lista('sem_proxima_atividade', 1, 50, 'prazo', 'asc', null);
+check('contrato · P2: critério com o limite de +7 e "inclui vencidos"', $L2['criterios']['texto'] === 'sem atividade futura · fechamento previsto até 30/11/2026 (inclui vencidos) · aberto · todos os responsáveis');
+$ag = $K()->agenda();
+check('contrato · agenda: só os próximos de hoje (sem o que já passou, sem cancelada), em ordem, com conflito marcado', array_column($ag['itens'], 'titulo') === ['Agora', 'Reunião A', 'Reunião B']
+    && $ag['itens'][1]['conflito'] === true && $ag['itens'][0]['conflito'] === false && $ag['itens'][0]['duracao_min'] === 60 && $ag['url_agenda'] === '#/panel-google-calendar', json_encode($ag['itens']));
+$agN = (new GeralV2Contrato(new GeralV2($pdo, $pdo, $pdo, 75, $AGORA, null, $P)))->agenda();
+check('contrato · agenda sem provedor: erro e itens null (nunca lista vazia)', $agN['estado'] === 'erro' && $agN['itens'] === null && is_string($agN['motivo']));
+$fo = array_column($K()->fontes(), null, 'fonte');
+check('contrato · fontes: as 6 da tela, com estados do enum', array_keys($fo) === ['pipedrive', 'bling', 'calendar', 'asaas', 'mercadolivre', 'lojaintegrada']
+    && $fo['pipedrive']['estado'] === 'conectada' && $fo['asaas']['estado'] === 'aguardando' && $fo['asaas']['ultimo_sucesso'] === null);
+// estados e motivos
+$pdo->exec("UPDATE `{$P}pipe_accounts` SET status='invalid'");
+$c = $K()->resumo('7d'); $pr = array_column($K()->prioridades()['itens'], null, 'id');
+check('contrato · Pipedrive sem conta: "aguardando", números null, motivo', $c['funil_aberto']['estado'] === 'aguardando' && $c['funil_aberto']['quantidade'] === null && $c['funil_aberto']['motivo'] === 'Pipedrive sem conta conectada.'
+    && $pr['atividade_vencida']['quantidade'] === null && $pr['atividade_vencida']['detalhe'] === 'Pipedrive');
+check('contrato · fonte pipedrive "aguardando"', array_column($K()->fontes(), null, 'fonte')['pipedrive']['estado'] === 'aguardando');
+$pdo->exec("UPDATE `{$P}pipe_accounts` SET status='connected'");
+$pdo->exec("UPDATE `{$P}bling_sync_state` SET ultima_execucao_em='2026-11-23 08:00:00'");
+$c = $K()->resumo('7d');
+check('contrato · Bling velho: "desatualizado" + "Última atualização do Bling às 05:00."', $c['pedidos_bling']['estado'] === 'desatualizado' && $c['pedidos_bling']['motivo'] === 'Última atualização do Bling às 05:00.', json_encode([$c['pedidos_bling']['estado'], $c['pedidos_bling']['motivo']]));
+check('contrato · fonte bling "desatualizada"', array_column($K()->fontes(), null, 'fonte')['bling']['estado'] === 'desatualizada');
+$pdo->exec("UPDATE `{$P}bling_sync_state` SET ultima_execucao_em='2026-11-23 12:40:00'");
+$pdo->exec("UPDATE `{$P}gcal_sync_state` SET last_sync_at='2026-11-23 08:00:00' WHERE calendar_id='b@exemplo.test'");
+check('contrato · agenda parcial: "1 de 2 agendas com atualização atrasada."', $K()->agenda()['motivo'] === '1 de 2 agendas com atualização atrasada.');
+$pdo->exec("UPDATE `{$P}gcal_sync_state` SET last_sync_at='2026-11-23 12:50:00'");
+$c = (new GeralV2Contrato(new GeralV2($pdo, $pdo, null, 75, $AGORA, $provDe($cf2), $P)))->resumo('7d');
+check('contrato · Bling fora: "erro", números null, motivo sem detalhe técnico', $c['pedidos_bling']['estado'] === 'erro' && $c['pedidos_bling']['quantidade'] === null && $c['pedidos_bling']['motivo'] === 'Não foi possível ler o Bling agora.');
+$pr = array_column((new GeralV2Contrato($sv(cf: fn() => [])))->prioridades()['itens'], null, 'id');
+check('contrato · zero confirmado: "zero", quantidade 0, motivo null', $pr['conflito_agenda']['estado'] === 'zero' && $pr['conflito_agenda']['quantidade'] === 0 && $pr['conflito_agenda']['motivo'] === null);
+$srcK = (string) file_get_contents(dirname($argv[1] ?? "$RAIZ/api/geral/GeralV2.php") . '/GeralV2Contrato.php');
+check('contrato · camada da tela sem SQL nenhum', preg_match('/\b(SELECT|INSERT|UPDATE|DELETE|prepare|query)\b/', $srcK) === 0);
+
 // ---------- só leitura: nenhuma escrita do serviço ----------
 $antes = $pdo->query("SELECT SUM(t.n) FROM (SELECT COUNT(*) n FROM `{$P}pipe_deals` UNION ALL SELECT COUNT(*) FROM `{$P}bling_sales_orders` UNION ALL SELECT COUNT(*) FROM `{$P}gcal_sync_state`) t")->fetchColumn();
 $src = (string) file_get_contents($argv[1] ?? "$RAIZ/api/geral/GeralV2.php");
 check('serviço sem INSERT/UPDATE/DELETE/REPLACE/ALTER/DROP', preg_match('/\b(INSERT|UPDATE|DELETE|REPLACE|ALTER|DROP|TRUNCATE)\b/', $src) === 0);
-$sv(cf: $cf)->resumo('mes'); $sv(cf: $cf)->lista('sem_atividade_fechamento_7d');
+$sv(cf: $cf)->resumo('mes'); $sv(cf: $cf)->lista('sem_proxima_atividade');
 check('nada mudou nas tabelas', $antes === $pdo->query("SELECT SUM(t.n) FROM (SELECT COUNT(*) n FROM `{$P}pipe_deals` UNION ALL SELECT COUNT(*) FROM `{$P}bling_sales_orders` UNION ALL SELECT COUNT(*) FROM `{$P}gcal_sync_state`) t")->fetchColumn());
 
 echo 'teste-geral-v2: ', $ok, ' ok, ', count($falhas), " falha(s)\n";

@@ -7,7 +7,7 @@
  *  - Períodos: Ontem · Últimos 7 dias · Mês até ontem. Só dias COMPLETOS; o dia é o de Brasília (corte 00:00 −03:00).
  *  - Prioridades = situação de AGORA (não mudam com o período), contadas por NEGÓCIO distinto, nunca por atividade:
  *      1. atividade_vencida            — negócio aberto com ao menos uma atividade não concluída e vencida;
- *      2. sem_atividade_fechamento_7d  — negócio aberto, SEM atividade futura, com fechamento previsto até hoje + 7 (inclui os já vencidos);
+ *      2. sem_proxima_atividade  — negócio aberto, SEM atividade futura, com fechamento previsto até hoje + 7 (inclui os já vencidos);
  *      3. conflito_agenda              — conflitos de hoje na agenda do usuário logado (mesma regra da central de conflitos do Calendar).
  *  - Cada prioridade tem uma lista que reproduz EXATAMENTE a contagem (mesma consulta), 50 por página, total real.
  *  - Ganhos pela data do GANHO; funil = abertos agora (quantidade, valor, quantos sem valor); pedidos do Bling pela data do pedido,
@@ -29,7 +29,7 @@ final class GeralV2
     public const FUSO = 'America/Sao_Paulo';
     public const POR_PAGINA = 50;
     public const PERIODOS = ['ontem' => 'Ontem', '7d' => 'Últimos 7 dias', 'mes' => 'Mês até ontem'];
-    public const PRIORIDADES = ['atividade_vencida', 'sem_atividade_fechamento_7d', 'conflito_agenda'];
+    public const PRIORIDADES = ['atividade_vencida', 'sem_proxima_atividade', 'conflito_agenda'];
     /** a fonte é "desatualizada" quando o último sucesso passa destes minutos (sync de 15 min nas três) */
     public const VELHA_MIN = ['pipedrive' => 120, 'google_calendar' => 120, 'bling' => 180];
     public const LOJA_TESTE = 'Teste - Mercado Livre';
@@ -44,8 +44,8 @@ final class GeralV2
      * @param ?PDO     $pipe       PIPE_DSHOW (null = conexão falhou)
      * @param ?PDO     $gcal       GCAL_DSHOW
      * @param ?PDO     $bling      BLING
-     * @param ?Closure $conflitos  fn(string $de, string $ate): array (dias 'Y-m-d' de Brasília) — conflitos da agenda do usuário (regra da central do Calendar);
-     *                             null = provedor do Calendar indisponível
+     * @param ?Closure $agenda     fn(): ?object — provedor do Calendar do usuário (GcalDb), com conflitos(array $f) e eventos(array $f);
+     *                             a MESMA regra da central de conflitos do Calendar. null / devolve null = provedor indisponível
      * @param string   $p          prefixo das tabelas (só nos testes; produção = '')
      */
     public function __construct(
@@ -54,7 +54,7 @@ final class GeralV2
         private ?PDO $bling,
         private int $usuario,
         ?DateTimeImmutable $agora = null,
-        private ?Closure $conflitos = null,
+        private ?Closure $agenda = null,
         private string $p = '',
     ) {
         if ($p !== '' && preg_match('/^[a-z0-9_]{1,24}$/', $p) !== 1) throw new InvalidArgumentException('prefixo inválido');
@@ -73,13 +73,31 @@ final class GeralV2
             'gerado_em'   => $this->agora->format(DATE_ATOM),
             'fuso'        => self::FUSO,
             'periodo'     => ['chave' => $periodo, 'rotulo' => self::PERIODOS[$periodo], 'de' => $de->format('Y-m-d'), 'ate' => $ate->format('Y-m-d')],
-            'prioridades' => [$this->prioridadePipe('atividade_vencida'), $this->prioridadePipe('sem_atividade_fechamento_7d'), $this->prioridadeAgenda()],
+            'prioridades' => $this->prioridades(),
             'ganhos'      => $this->ganhos($de, $ate),
             'funil'       => $this->funil(),
             'pedidos'     => $this->pedidos($de, $ate),
             'fontes'      => [$this->fonte('pipedrive'), $this->fonte('google_calendar'), $this->fonte('bling')],
         ];
     }
+
+    /** As 3 prioridades (situação de AGORA; não dependem do período). */
+    public function prioridades(): array
+    {
+        return [$this->prioridadePipe('atividade_vencida'), $this->prioridadePipe('sem_proxima_atividade'), $this->prioridadeAgenda()];
+    }
+
+    /** Só os números do período (sem prioridades nem fontes) — o que o endpoint de resumo da tela pede. */
+    public function numeros(string $periodo): array
+    {
+        if (!isset(self::PERIODOS[$periodo])) throw new GeralV2Erro('periodo_invalido');
+        [$de, $ate] = $this->periodo($periodo);
+        return ['gerado_em' => $this->agora->format(DATE_ATOM),
+                'periodo' => ['chave' => $periodo, 'rotulo' => self::PERIODOS[$periodo], 'de' => $de->format('Y-m-d'), 'ate' => $ate->format('Y-m-d')],
+                'ganhos' => $this->ganhos($de, $ate), 'funil' => $this->funil(), 'pedidos' => $this->pedidos($de, $ate)];
+    }
+
+    public function agora(): DateTimeImmutable { return $this->agora; }
 
     /** @return array{0: DateTimeImmutable, 1: DateTimeImmutable} primeiro e último dia (inclusive), em Brasília */
     public function periodo(string $chave): array
@@ -231,7 +249,7 @@ final class GeralV2
                  . $this->condVencida('a') . " GROUP BY a.deal_pd_id) v ON v.deal_pd_id = d.pipedrive_id WHERE d.is_deleted = 0 AND d.status = 'open'";
             return [$sql, $par, 'v.ref'];
         }
-        if ($id === 'sem_atividade_fechamento_7d') {
+        if ($id === 'sem_proxima_atividade') {
             $sql = "FROM `{$p}pipe_deals` d WHERE d.is_deleted = 0 AND d.status = 'open' AND d.expected_close_date IS NOT NULL AND d.expected_close_date <= :limite7"
                  . " AND NOT EXISTS (SELECT 1 FROM `{$p}pipe_activities` f WHERE f.deal_pd_id = d.pipedrive_id AND " . $this->condFutura('f') . ")";
             return [$sql, $par, 'd.expected_close_date'];
@@ -242,18 +260,19 @@ final class GeralV2
     private function prioridadePipe(string $id): array
     {
         $f = $this->fonte('pipedrive');
-        $out = ['id' => $id, 'total' => null, 'mais_antiga' => null, 'atualizado_em' => $f['atualizado_em']];
+        $out = ['id' => $id, 'total' => null, 'mais_antiga' => null, 'responsaveis' => null, 'atualizado_em' => $f['atualizado_em']];
         if ($this->semNumero($f)) return $out + ['estado' => $f['estado']];
         try {
             [$from, $par, $ref] = $this->basePrioridade($id);
-            $st = $this->pipe->prepare("SELECT COUNT(*) AS n, MIN($ref) AS antiga $from");
+            $st = $this->pipe->prepare("SELECT COUNT(*) AS n, MIN($ref) AS antiga, COUNT(DISTINCT d.owner_id) AS donos $from");
             $st->execute($par);
             $r = $st->fetch(PDO::FETCH_ASSOC);
             $out['total'] = (int) $r['n'];
+            $out['responsaveis'] = (int) $r['donos'];
             $out['mais_antiga'] = $r['antiga'] !== null ? substr((string) $r['antiga'], 0, 10) : null;
         } catch (Throwable $e) {
             error_log('[geral-v2] prioridade ' . $id . ': ' . get_class($e));
-            return $out + ['estado' => 'indisponivel'];
+            return array_merge($out, ['total' => null, 'mais_antiga' => null, 'responsaveis' => null, 'estado' => 'indisponivel']);
         }
         return $out + ['estado' => $this->estadoCartao($f, $out['total'])];
     }
@@ -261,23 +280,25 @@ final class GeralV2
     private function ganhos(DateTimeImmutable $de, DateTimeImmutable $ate): array
     {
         $f = $this->fonte('pipedrive');
-        $out = ['quantidade' => null, 'valor' => null, 'fora_brl' => null, 'atualizado_em' => $f['atualizado_em']];
+        $out = ['quantidade' => null, 'valor' => null, 'sem_valor' => null, 'fora_brl' => null, 'atualizado_em' => $f['atualizado_em']];
         if ($this->semNumero($f)) return $out + ['estado' => $f['estado']];
         try {
             // won_time é UTC: o dia de Brasília [de 00:00, ate+1 00:00) vira o intervalo UTC equivalente
             $ini = $de->setTimezone($this->utc)->format('Y-m-d H:i:s');
             $fim = $ate->modify('+1 day')->setTimezone($this->utc)->format('Y-m-d H:i:s');
             $st = $this->pipe->prepare(
-                "SELECT COUNT(*) AS n, SUM(CASE WHEN currency = 'BRL' THEN value END) AS v, SUM(currency IS NULL OR currency <> 'BRL') AS fora
+                "SELECT COUNT(*) AS n, SUM(CASE WHEN currency = 'BRL' THEN value END) AS v, SUM(value IS NULL OR value = 0) AS sem,
+                        SUM(value IS NOT NULL AND value <> 0 AND (currency IS NULL OR currency <> 'BRL')) AS fora
                    FROM `{$this->p}pipe_deals` WHERE is_deleted = 0 AND status = 'won' AND won_time >= ? AND won_time < ?");
             $st->execute([$ini, $fim]);
             $r = $st->fetch(PDO::FETCH_ASSOC);
             $out['quantidade'] = (int) $r['n'];
+            $out['sem_valor'] = (int) $r['sem'];
             $out['fora_brl'] = (int) $r['fora'];
-            $out['valor'] = $this->dinheiro($r['v'], $out['quantidade']);
+            $out['valor'] = $this->dinheiro($r['v'], $out['quantidade'] - $out['sem_valor'] - $out['fora_brl']);
         } catch (Throwable $e) {
             error_log('[geral-v2] ganhos: ' . get_class($e));
-            return ['quantidade' => null, 'valor' => null, 'fora_brl' => null, 'atualizado_em' => $f['atualizado_em'], 'estado' => 'indisponivel'];
+            return ['quantidade' => null, 'valor' => null, 'sem_valor' => null, 'fora_brl' => null, 'atualizado_em' => $f['atualizado_em'], 'estado' => 'indisponivel'];
         }
         $estado = $this->estadoCartao($f, $out['quantidade']);
         if ($out['fora_brl'] > 0 && in_array($estado, ['ok', 'zero_confirmado'], true)) $estado = 'parcial';   // valor só soma BRL
@@ -316,13 +337,59 @@ final class GeralV2
         return [$d, $d];
     }
 
+    private ?object $provedor = null;
+    private bool $provedorLido = false;
+
+    private function provedorAgenda(): ?object
+    {
+        if (!$this->provedorLido) { $this->provedorLido = true; $this->provedor = $this->agenda !== null ? ($this->agenda)() : null; }
+        return $this->provedor;
+    }
+
     /** @return ?list<array> conflitos de hoje ou null (provedor indisponível) */
     private function conflitosHoje(): ?array
     {
-        if ($this->conflitos === null) return null;
+        $p = $this->provedorAgenda();
+        if ($p === null) return null;
         [$de, $ate] = $this->janelaHoje();
-        $l = ($this->conflitos)($de, $ate);
+        $l = $p->conflitos(['de' => $de, 'ate' => $ate, 'tz' => self::FUSO]);
         return is_array($l) ? array_values($l) : null;
+    }
+
+    /**
+     * Compromissos de HOJE do usuário que ainda não terminaram (próximos), em ordem de início; marca os que estão em conflito.
+     * Cancelados e "dia inteiro" livres (transparentes) ficam de fora. Ausência de provedor = estado indisponível, nunca lista vazia.
+     */
+    public function agendaHoje(int $max = 20): array
+    {
+        $f = $this->fonte('google_calendar');
+        $out = ['itens' => null, 'atualizado_em' => $f['atualizado_em']];
+        if ($this->semNumero($f)) return $out + ['estado' => $f['estado']];
+        try {
+            $p = $this->provedorAgenda();
+            if ($p === null) return $out + ['estado' => 'indisponivel'];
+            [$de, $ate] = $this->janelaHoje();
+            $ev = $p->eventos(['de' => $de, 'ate' => $ate, 'tz' => self::FUSO]);
+            $emConflito = [];
+            foreach ($this->conflitosHoje() ?? [] as $c) foreach (($c['event_ids'] ?? []) as $id) $emConflito[(string) $id] = true;
+            $itens = [];
+            foreach (is_array($ev) ? $ev : [] as $e) {
+                if (($e['status'] ?? '') === 'cancelled') continue;
+                if (!empty($e['all_day']) && ($e['transparency'] ?? '') === 'transparent') continue;
+                $ini = isset($e['start']) ? new DateTimeImmutable((string) $e['start']) : null;
+                $fim = isset($e['end']) ? new DateTimeImmutable((string) $e['end']) : null;
+                if ($ini === null || $fim === null || $fim <= $this->agora) continue;   // já terminou
+                $itens[] = ['inicio' => $ini->setTimezone($this->br)->format(DATE_ATOM), 'fim' => $fim->setTimezone($this->br)->format(DATE_ATOM),
+                    'titulo' => (string) ($e['summary'] ?? '(sem título)'), 'duracao_min' => intdiv($fim->getTimestamp() - $ini->getTimestamp(), 60),
+                    'dia_inteiro' => !empty($e['all_day']), 'conflito' => isset($emConflito[(string) ($e['id'] ?? '')])];
+            }
+            usort($itens, fn($a, $b) => [$a['inicio'], $a['titulo']] <=> [$b['inicio'], $b['titulo']]);
+            $out['itens'] = array_slice($itens, 0, $max);
+        } catch (Throwable $e) {
+            error_log('[geral-v2] agenda: ' . get_class($e));
+            return ['itens' => null, 'atualizado_em' => $f['atualizado_em'], 'estado' => 'indisponivel'];
+        }
+        return $out + ['estado' => $this->estadoCartao($f, count($out['itens']))];
     }
 
     private function prioridadeAgenda(): array
@@ -414,29 +481,42 @@ final class GeralV2
      * Lista de uma prioridade. `total` sai da MESMA consulta do cartão (mesmo FROM/WHERE), então reproduz a contagem exatamente.
      * @param ?int $responsavel filtro por responsável (owner pipedrive id); o total devolvido é o do filtro e `total_sem_filtro` o do cartão
      */
-    public function lista(string $prioridade, int $pagina = 1, ?int $responsavel = null, string $ordem = 'antiga'): array
+    public function lista(string $prioridade, int $pagina = 1, ?int $responsavel = null, string $ordem = 'prazo', string $dir = 'asc', int $porPagina = self::POR_PAGINA): array
     {
         if (!in_array($prioridade, self::PRIORIDADES, true)) throw new GeralV2Erro('prioridade_invalida');
-        if (!in_array($ordem, ['antiga', 'valor'], true)) throw new GeralV2Erro('ordem_invalida');
+        if (!in_array($ordem, ['prazo', 'valor', 'responsavel'], true)) throw new GeralV2Erro('ordem_invalida');
+        if (!in_array($dir, ['asc', 'desc'], true)) throw new GeralV2Erro('dir_invalida');
         $pagina = max(1, $pagina);
-        if ($prioridade === 'conflito_agenda') return $this->listaAgenda($pagina);
+        $porPagina = max(1, min(self::POR_PAGINA, $porPagina));
+        if ($prioridade === 'conflito_agenda') return $this->listaAgenda($pagina, $porPagina);
 
         $f = $this->fonte('pipedrive');
-        $base = ['prioridade' => $prioridade, 'total' => null, 'total_sem_filtro' => null, 'pagina' => $pagina, 'por_pagina' => self::POR_PAGINA,
-                 'paginas' => null, 'atualizado_em' => $f['atualizado_em'], 'itens' => []];
+        $base = ['prioridade' => $prioridade, 'total' => null, 'total_sem_filtro' => null, 'pagina' => $pagina, 'por_pagina' => $porPagina,
+                 'paginas' => null, 'atualizado_em' => $f['atualizado_em'], 'responsaveis' => null, 'itens' => []];
         if ($this->semNumero($f)) return $base + ['estado' => $f['estado']];
         try {
             [$from, $par, $ref] = $this->basePrioridade($prioridade);
             $st = $this->pipe->prepare("SELECT COUNT(*) $from");
             $st->execute($par);
             $base['total_sem_filtro'] = (int) $st->fetchColumn();
+            // responsáveis do conjunto SEM filtro (para o seletor da tela)
+            $st = $this->pipe->prepare("SELECT d.owner_id AS id, (SELECT u.name FROM `{$this->p}pipe_users` u WHERE u.pipedrive_id = d.owner_id LIMIT 1) AS nome, COUNT(*) AS n
+                                        $from AND d.owner_id IS NOT NULL GROUP BY d.owner_id ORDER BY nome IS NULL, nome, d.owner_id");
+            $st->execute($par);
+            $base['responsaveis'] = array_map(fn($x) => ['id' => (int) $x['id'], 'nome' => $x['nome'], 'quantidade' => (int) $x['n']], $st->fetchAll(PDO::FETCH_ASSOC));
             if ($responsavel !== null) { $from .= ' AND d.owner_id = :resp'; $par[':resp'] = $responsavel; }
             $st = $this->pipe->prepare("SELECT COUNT(*) $from");
             $st->execute($par);
             $total = (int) $st->fetchColumn();
             $p = $this->p;
-            $orderBy = $ordem === 'valor' ? "d.value IS NULL, d.value DESC, $ref ASC, d.pipedrive_id ASC" : "$ref ASC, d.pipedrive_id ASC";
-            $off = ($pagina - 1) * self::POR_PAGINA;
+            // nulos sempre no fim (nas duas direções); desempate fixo pelo negócio → paginação estável
+            $D = $dir === 'desc' ? 'DESC' : 'ASC';
+            $orderBy = match ($ordem) {
+                'valor'       => "d.value IS NULL, d.value $D, $ref ASC, d.pipedrive_id ASC",
+                'responsavel' => "responsavel IS NULL, responsavel $D, $ref ASC, d.pipedrive_id ASC",
+                default       => "$ref IS NULL, $ref $D, d.pipedrive_id ASC",
+            };
+            $off = ($pagina - 1) * $porPagina;
             $st = $this->pipe->prepare(
                 "SELECT d.pipedrive_id, d.title, d.value, d.currency, d.expected_close_date, $ref AS ref,
                         (SELECT o.name FROM `{$p}pipe_organizations` o WHERE o.pipedrive_id = d.org_id LIMIT 1) AS organizacao,
@@ -444,7 +524,7 @@ final class GeralV2
                         (SELECT s.name FROM `{$p}pipe_stages` s WHERE s.pipedrive_id = d.stage_id LIMIT 1) AS etapa,
                         (SELECT pl.name FROM `{$p}pipe_pipelines` pl WHERE pl.pipedrive_id = d.pipeline_id LIMIT 1) AS funil,
                         d.owner_id
-                 $from ORDER BY $orderBy LIMIT " . self::POR_PAGINA . " OFFSET $off");
+                 $from ORDER BY $orderBy LIMIT $porPagina OFFSET $off");
             $st->execute($par);
             $dominio = $this->dominioPipedrive();
             $hoje = $this->agora->setTime(0, 0);
@@ -462,19 +542,19 @@ final class GeralV2
                 ];
             }
             $base['total'] = $total;
-            $base['paginas'] = max(1, (int) ceil($total / self::POR_PAGINA));
+            $base['paginas'] = max(1, (int) ceil($total / $porPagina));
         } catch (Throwable $e) {
             error_log('[geral-v2] lista ' . $prioridade . ': ' . get_class($e));
-            return array_merge($base, ['total' => null, 'total_sem_filtro' => null, 'paginas' => null, 'itens' => [], 'estado' => 'indisponivel']);
+            return array_merge($base, ['total' => null, 'total_sem_filtro' => null, 'paginas' => null, 'responsaveis' => null, 'itens' => [], 'estado' => 'indisponivel']);
         }
         return $base + ['estado' => $this->estadoCartao($f, $base['total'])];
     }
 
-    private function listaAgenda(int $pagina): array
+    private function listaAgenda(int $pagina, int $porPagina): array
     {
         $f = $this->fonte('google_calendar');
-        $base = ['prioridade' => 'conflito_agenda', 'total' => null, 'total_sem_filtro' => null, 'pagina' => $pagina, 'por_pagina' => self::POR_PAGINA,
-                 'paginas' => null, 'atualizado_em' => $f['atualizado_em'], 'itens' => []];
+        $base = ['prioridade' => 'conflito_agenda', 'total' => null, 'total_sem_filtro' => null, 'pagina' => $pagina, 'por_pagina' => $porPagina,
+                 'paginas' => null, 'atualizado_em' => $f['atualizado_em'], 'responsaveis' => null, 'itens' => []];
         if ($this->semNumero($f)) return $base + ['estado' => $f['estado']];
         try { $l = $this->conflitosHoje(); } catch (Throwable $e) { error_log('[geral-v2] conflitos: ' . get_class($e)); $l = null; }
         if ($l === null) return $base + ['estado' => 'indisponivel'];
@@ -488,8 +568,8 @@ final class GeralV2
                 'calendario_a' => $a['calendar_id'] ?? null, 'calendario_b' => $b['calendar_id'] ?? null];
         }
         $base['total'] = $base['total_sem_filtro'] = count($itens);
-        $base['paginas'] = max(1, (int) ceil(count($itens) / self::POR_PAGINA));
-        $base['itens'] = array_slice($itens, ($pagina - 1) * self::POR_PAGINA, self::POR_PAGINA);
+        $base['paginas'] = max(1, (int) ceil(count($itens) / $porPagina));
+        $base['itens'] = array_slice($itens, ($pagina - 1) * $porPagina, $porPagina);
         return $base + ['estado' => $this->estadoCartao($f, $base['total'])];
     }
 
