@@ -1122,7 +1122,9 @@ final class BlingSyncService
         $sit = $bruto['situacao']['id'] ?? null;
         $sit = (is_int($sit) || (is_string($sit) && ctype_digit($sit))) ? (string) $sit : null;
         $loja = $bruto['loja']['id'] ?? null;
-        $loja = (is_int($loja) || (is_string($loja) && ctype_digit($loja))) ? (string) $loja : null;
+        // Codex DSHOW-114: a MESMA validação de id positivo da sincronização normal (gravarPedido) — 0, "0", ilegível ou ausente = sem loja informada
+        // (COALESCE mantém a conhecida). Antes `ctype_digit` aceitava "0" e a releitura trocava uma loja válida por 0.
+        $loja = ((is_int($loja) || is_string($loja)) && preg_match('/^[1-9][0-9]{0,19}$/', (string) $loja)) ? (string) $loja : null;
         $existe = $this->repo->consultar('SELECT situacao_bling_id, loja_bling_id FROM bling_sales_orders WHERE account_id = ? AND bling_id = ?', [$accountId, $blingId]);
         if ($existe === []) { return 'ausente'; }
         $novoSit = $sit ?? $existe[0]['situacao_bling_id']; $novaLoja = $loja ?? $existe[0]['loja_bling_id'];
