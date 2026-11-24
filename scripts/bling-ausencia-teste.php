@@ -98,7 +98,7 @@ require_once $raiz . '/api/_helpers/ApiResponse.php';
 foreach (['lib/BlingSituacoes', 'lib/BlingProviderBase', 'lib/BlingMock', 'lib/BlingCrypto', 'lib/BlingTransporte', 'lib/BlingOAuth',
           'lib/BlingVersionAdapter', 'lib/BlingNormalizer', 'repositories/BlingRepository', 'lib/BlingClient', 'lib/BlingReal',
           'services/BlingAuthService', 'services/BlingSyncService', 'lib/BlingProvider', 'controllers/OverviewController',
-          'controllers/ResourceController', 'controllers/AnalyticsController', 'controllers/HistoryController'] as $f) {
+          'controllers/ResourceController', 'controllers/AnalyticsController', 'controllers/HistoryController', 'controllers/ExportController'] as $f) {
     require_once $raiz . '/api/bling/' . $f . '.php';
 }
 preg_match_all('/^function bling_\w+\(.*?^\}/ms', (string) file_get_contents($raiz . '/api/bling/_init.php'), $fn);
@@ -117,6 +117,10 @@ unset($cli);
 $r = new ReflectionProperty(BlingProvider::class, 'instancia');
 $r->setValue(null, getenv('PROVEDOR') === 'mock' ? new BlingMockProvider() : new BlingReal(new BlingRepository($pdo)));
 $_GET = json_decode($getJson, true);
+if ($classe === 'ExportCsv') {   // exportação SEM a auditoria de sessão: o MESMO montarParaExport + o gravador CSV real (privado, encerra com exit)
+    $dados = ResourceController::montarParaExport($arg, (new ReflectionClassConstant(ExportController::class, 'LIMITE'))->getValue());
+    $m = new ReflectionMethod(ExportController::class, 'enviarCsv'); $m->setAccessible(true); $m->invoke(null, $arg, $dados);
+}
 $arg === null ? [$classe, $metodo]() : [$classe, $metodo]($arg);
 PHP);
 $endpoint = static function (string $classe, string $metodo, array $get = [], string $provedor = 'real', ?string $arg = null) use ($raiz, $TMP, $cnf, $db): array {
@@ -179,7 +183,7 @@ try {
     $api->responder('oauth/token', new BlingResposta(200, ['access_token' => 'acesso-sintetico', 'refresh_token' => 'refresh-sintetico', 'expires_in' => 3600, 'token_type' => 'Bearer']));
     $api->responder('pedidos/vendas', static function ($m, $url) use (&$VENDAS, $pagina) { return $pagina($VENDAS, $url); });
     $api->responder('pedidos/compras', static function ($m, $url) use (&$COMPRAS, $pagina) { return $pagina($COMPRAS, $url); });
-    $api->responder('canais-venda', new BlingResposta(200, ['data' => [['id' => 205001, 'descricao' => 'Loja A (teste)'], ['id' => 205002, 'descricao' => 'Loja B (teste)']]]));
+    $api->responder('canais-venda', new BlingResposta(200, ['data' => [['id' => 205001, 'descricao' => 'Loja A (teste)'], ['id' => 205002, 'descricao' => 'Loja B (teste)'], ['id' => 205003, 'descricao' => 'Loja C sem vendas (teste)']]]));
     $repo = new BlingRepository($pdo); $auth = new BlingAuthService($repo, $api);
     $url = $auth->iniciarConexao(75, '#/panel-bling'); parse_str((string) parse_url($url, PHP_URL_QUERY), $q);
     $conta = (int) $auth->concluirConexao('codigo-sintetico', (string) $q['state'], ['nome' => 'Conta de teste', 'cnpj' => '00000000000191'])['account_id'];
@@ -211,6 +215,15 @@ try {
     ok('série de margem: o dia com venda = null (lacuna), não 0 nem ~95 %', $pm['valor'] === null, json_encode($pm));
     $pf = array_values(array_filter($serie('faturamento'), static fn($x) => $x['data'] === $diaVenda))[0];
     ok('série de faturamento do mesmo dia continua número', $pf['valor'] === 2560.12, json_encode($pf));
+    $diaSem = gmdate('Y-m-d', strtotime('-10 days'));
+    $tk = array_values(array_filter($serie('ticket_medio'), static fn($x) => $x['data'] === $diaSem))[0];
+    $mg = array_values(array_filter($serie('margem'), static fn($x) => $x['data'] === $diaSem))[0];
+    $tkv = array_values(array_filter($serie('ticket_medio'), static fn($x) => $x['data'] === $diaVenda))[0];
+    ok('dia SEM venda: ticket e margem = null (indefinidos, lacuna), não 0 (CIMA item D)', $tk['valor'] === null && $mg['valor'] === null, json_encode([$tk, $mg]));
+    ok('dia COM venda: ticket número', $tkv['valor'] === 1280.06, json_encode($tkv));
+    $kVazio = $real()->kpis(['de' => '2025-01-01', 'ate' => '2025-01-31', 'granularidade' => 'dia', 'periodo' => 'custom']);
+    ok('período SEM pedidos: KPI ticket médio = null e variação null (antes: R$ 0)', $kpi($kVazio, 'ticket_medio')['valor'] === null && $kpi($kVazio, 'ticket_medio')['variacao'] === null,
+        json_encode($kpi($kVazio, 'ticket_medio')));
     $cv = $real()->curvaAbc('canais', 'margem', $F);
     ok('curva por canal, métrica margem → indisponível custo_desconhecido (sem itens nem zeros)', $cv['indisponivel'] === 'custo_desconhecido' && $cv['itens'] === [] && $cv['total'] === null);
     $cf = $real()->curvaAbc('canais', 'faturamento', $F);
@@ -232,6 +245,8 @@ try {
         && ($d['links'] ?? null) === [] && $d['prejuizo_total'] === null && $d['indisponivel'] === 'itens_desconhecidos', mb_substr($txt, 0, 200));
     [$rc2, $d, $txt] = $endpoint('AnalyticsController', 'abc', ['dimensao' => 'canais', 'metrica' => 'margem']);
     ok('/abc (canais, margem): indisponivel custo_desconhecido', $rc2 === 0 && $d['indisponivel'] === 'custo_desconhecido' && $d['itens'] === [], mb_substr($txt, 0, 200));
+    ok('/abc indisponível: classes com itens, valor e participação = null (antes: 0 itens / R$ 0 — pedido da CIMA)', count($d['classes'] ?? []) === 3
+        && array_filter($d['classes'], static fn($c) => $c['itens'] !== null || $c['valor'] !== null || $c['participacao'] !== null) === [], json_encode($d['classes'] ?? null));
     [$rc2, $d, $txt] = $endpoint('HistoryController', 'margemVolume', ['dimensao' => 'canal']);
     ok('margem × volume sem detalhe: sem mediana nem quadrante (antes: tudo "alta margem")', $rc2 === 0 && $d['indisponivel'] === 'itens_desconhecidos'
         && $d['quadrantes'] === [] && $d['cortes']['margem_pct'] === null && $d['itens'] === [],
@@ -256,6 +271,21 @@ try {
     $pdo->exec("UPDATE bling_purchase_orders SET data_recebimento = UTC_DATE(), situacao = 'recebido'");
     $lr = $res('recebimentos')['linhas'][0] ?? null;
     ok('recebimento: conferência "desconhecida" (antes: 0 ≥ 0 = "Completa")', $lr !== null && $lr['conferencia'] === 'desconhecida' && $lr['situacao_info']['chave'] === 'desconhecida', json_encode($lr));
+    ok('recebimento: conferencia_info igual ao selo (a grade da CIMA lê <coluna>_info)', ($lr['conferencia_info'] ?? null) === ['chave' => 'desconhecida', 'rotulo' => 'Sem itens lidos', 'cor' => 'neutro'], json_encode($lr['conferencia_info'] ?? null));
+    $lcSem = array_values(array_filter($res('canais')['linhas'], static fn($l) => $l['pedidos'] === 0))[0] ?? null;
+    ok('canal SEM pedido: ticket médio = null (indefinido), não R$ 0', $lcSem !== null && $lcSem['ticket_medio'] === null, json_encode($lcSem));
+    // exportação CSV (servidor): null = célula VAZIA, nunca 0 — nas linhas e no TOTAL
+    $csvCmd = 'PROVEDOR=real BLING_TESTE_CNF=' . escapeshellarg($cnf) . ' BLING_TESTE_DB=' . escapeshellarg($db) . ' ' . escapeshellarg(PHP_BINARY) . ' '
+            . escapeshellarg("$TMP/endpoint.php") . ' ' . escapeshellarg($raiz) . ' ExportCsv x ' . escapeshellarg(json_encode(['periodo' => '30d', 'formato' => 'csv']))
+            . ' sales-orders 2>/dev/null';
+    $csv = []; exec($csvCmd, $csv);
+    $linhasCsv = array_map(static fn($l) => str_getcsv($l, ';', '"', '\\'), array_values(array_filter($csv, static fn($l) => str_contains($l, ';'))));
+    $cab = array_search('Subtotal', $linhasCsv[0] ?? [], true); $cabI = array_search('Itens', $linhasCsv[0] ?? [], true);
+    $tot = array_values(array_filter($linhasCsv, static fn($l) => ($l[0] ?? '') === 'TOTAL'))[0] ?? null;
+    $dados = array_values(array_filter(array_slice($linhasCsv, 1), static fn($l) => ($l[0] ?? '') !== 'TOTAL' && count($l) > 3));
+    ok('exportação CSV: Subtotal e Itens VAZIOS nas linhas e no TOTAL (nunca 0)', $cab !== false && $cabI !== false && $tot !== null && $dados !== []
+        && $tot[$cab] === '' && $tot[$cabI] === '' && array_filter($dados, static fn($l) => ($l[$cab] ?? 'x') !== '' || ($l[$cabI] ?? 'x') !== '') === [],
+        json_encode(['cab' => $linhasCsv[0] ?? null, 'tot' => $tot]));
 
     $exemplos('1-producao-hoje-itens-desconhecidos');
     echo "== 3. com a migração 20261124 (coluna NOVA, só ADD): a listagem continua desconhecida; o DETALHE carimba\n";

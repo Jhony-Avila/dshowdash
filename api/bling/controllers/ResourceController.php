@@ -443,7 +443,7 @@ final class ResourceController
             foreach (['receita', 'custo', 'desconto', 'frete'] as $c) {
                 $l[$c] = $l[$c] === null ? null : round($l[$c], 2);
             }
-            $l['ticket_medio'] = $l['pedidos'] > 0 ? round($l['receita'] / $l['pedidos'], 2) : 0.0;
+            $l['ticket_medio'] = $l['pedidos'] > 0 ? round($l['receita'] / $l['pedidos'], 2) : null;   // sem pedido = indefinido
             $l['margem_pct']   = BlingProviderBase::margemPct((float) $l['receita'], $l['custo']);   // null sem custo conhecido
         }
         unset($l);
@@ -501,7 +501,7 @@ final class ResourceController
                 'integrado'   => $c['integrado'],
                 'pedidos'     => count($validos),
                 'faturamento' => round($receita, 2),
-                'ticket_medio'=> count($validos) > 0 ? round($receita / count($validos), 2) : 0.0,
+                'ticket_medio'=> count($validos) > 0 ? round($receita / count($validos), 2) : null,   // canal sem pedido = indefinido, não R$ 0
                 'margem_pct'  => BlingProviderBase::margemPct((float) $receita, $custo),
                 'cancelamentos' => $cancelados,
                 'taxa_cancelamento' => count($doCanal) > 0 ? round(($cancelados / count($doCanal)) * 100, 1) : 0.0,
@@ -559,7 +559,7 @@ final class ResourceController
                 'nome'      => $v['nome'],
                 'pedidos'   => count($meus),
                 'faturamento' => round($receita, 2),
-                'ticket_medio'=> count($meus) > 0 ? round($receita / count($meus), 2) : 0.0,
+                'ticket_medio'=> count($meus) > 0 ? round($receita / count($meus), 2) : null,   // vendedor sem pedido = indefinido
                 'margem_pct'=> BlingProviderBase::margemPct((float) $receita, $custo),
                 'comissao_pct' => $v['comissao_pct'],
                 'comissao_valor' => round($receita * $v['comissao_pct'] / 100, 2),
@@ -1172,7 +1172,7 @@ final class ResourceController
                 'uf'          => $fo['uf'],
                 'pedidos'     => count($minhas),
                 'total_comprado' => round($totalComprado, 2),
-                'ticket_medio'=> count($minhas) > 0 ? round($totalComprado / count($minhas), 2) : 0.0,
+                'ticket_medio'=> count($minhas) > 0 ? round($totalComprado / count($minhas), 2) : null,   // fornecedor sem compra = indefinido
                 'prazo_contratado' => $fo['prazo_entrega_dias'],
                 'atraso_medio'=> round($atrasoMedio, 1),
                 'pontualidade'=> round($pontualidade, 1),
@@ -1227,6 +1227,11 @@ final class ResourceController
             }
             $atraso = (int) ((strtotime($oc['recebimento']) - strtotime($oc['previsao'])) / 86400);
             $conf = ($oc['qtd_total'] === null || $oc['qtd_recebida'] === null) ? 'desconhecida' : ($oc['qtd_recebida'] >= $oc['qtd_total'] ? 'completa' : 'parcial');
+            $confInfo = match ($conf) {
+                'completa' => ['chave' => 'completa', 'rotulo' => 'Completa', 'cor' => 'sucesso'],
+                'parcial'  => ['chave' => 'parcial', 'rotulo' => 'Parcial', 'cor' => 'aviso'],
+                default    => ['chave' => 'desconhecida', 'rotulo' => 'Sem itens lidos', 'cor' => 'neutro'],
+            };
             $linhas[] = [
                 'id'         => 'rec-' . $oc['id'],
                 'pedido'     => $oc['numero'],
@@ -1241,11 +1246,8 @@ final class ResourceController
                 'conferencia'=> $conf,
                 'divergencia'=> $oc['divergencia'],
                 'valor'      => $oc['valor'],
-                'situacao_info' => match ($conf) {
-                    'completa'    => ['chave' => 'completa', 'rotulo' => 'Completa', 'cor' => 'sucesso'],
-                    'parcial'     => ['chave' => 'parcial', 'rotulo' => 'Parcial', 'cor' => 'aviso'],
-                    default       => ['chave' => 'desconhecida', 'rotulo' => 'Sem itens lidos', 'cor' => 'neutro'],
-                },
+                'situacao_info' => $confInfo,
+                'conferencia_info' => $confInfo,   // pedido da CIMA: a grade lê <coluna>_info
             ];
         }
         usort($linhas, static fn($a, $b) => strcmp($b['recebimento'], $a['recebimento']));

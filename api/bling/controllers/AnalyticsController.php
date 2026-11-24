@@ -43,6 +43,10 @@ final class AnalyticsController
         }
         foreach ($classes as $k => &$c) {
             $c['classe'] = $k;
+            if (isset($r['indisponivel'])) {   // "ausência ≠ zero" (pedido da CIMA): curva indisponível = classes desconhecidas, não 0 itens / R$ 0
+                $c['itens'] = null; $c['valor'] = null; $c['participacao'] = null;
+                continue;
+            }
             $c['valor'] = round($c['valor'], 2);
             $c['participacao'] = $r['total'] > 0 ? round(($c['valor'] / $r['total']) * 100, 1) : 0.0;
         }

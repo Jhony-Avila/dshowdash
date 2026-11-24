@@ -186,8 +186,8 @@ abstract class BlingProviderBase
         $integracoesFalha = count(array_filter($sync, static fn($s) => $s['situacao'] === 'erro'));
 
         $clientesDistintos = count(array_unique(array_column($noPer, 'cliente')));
-        $ticket = count($noPer) > 0 ? $fatBruto / count($noPer) : 0.0;
-        $ticketAnt = count($noAnt) > 0 ? $fatAnt / count($noAnt) : 0.0;
+        $ticket = count($noPer) > 0 ? $fatBruto / count($noPer) : null;      // sem pedido = ticket indefinido (null), não R$ 0
+        $ticketAnt = count($noAnt) > 0 ? $fatAnt / count($noAnt) : null;
         $margem = ($custo === null || $fatLiquido === null) ? null : ($fatLiquido > 0 ? (($fatLiquido - $custo) / $fatLiquido) * 100 : 0.0);
 
         return $this->aplicarDisponibilidadeReceber([
@@ -200,7 +200,7 @@ abstract class BlingProviderBase
                 $this->variacao(count($noPer), count($noAnt)), $this->serieDiaria($noPer, 'data', null, $f), 'pedidos-venda'),
             $this->kpi('pedidos_faturados', 'Pedidos faturados', count($faturados), 'inteiro', null, null, 'pedidos-venda'),
             $this->kpi('ticket_medio', 'Ticket médio', $ticket, 'moeda',
-                $this->variacao($ticket, $ticketAnt), null, 'vendas'),
+                ($ticket === null || $ticketAnt === null) ? null : $this->variacao($ticket, $ticketAnt), null, 'vendas'),
             self::seDesconhecido($this->kpi('produtos_vendidos', 'Produtos vendidos', $unidades, 'inteiro', null, null, 'produtos'),
                 'os itens dos pedidos ainda não foram lidos do Bling'),
             $this->kpi('clientes', 'Clientes', $clientesDistintos, 'inteiro', null, null, 'clientes'),
@@ -389,10 +389,12 @@ abstract class BlingProviderBase
         $margem = [];
         foreach ($faturamento as $i => $ponto) {
             $qtd = $pedidos[$i]['valor'] ?? 0;
-            $ticket[] = ['data' => $ponto['data'], 'valor' => $qtd > 0 ? round($ponto['valor'] / $qtd, 2) : 0.0];
+            // dia sem pedido: ticket médio é INDEFINIDO (null = lacuna), não R$ 0 (pedido da CIMA, item D)
+            $ticket[] = ['data' => $ponto['data'], 'valor' => $qtd > 0 ? round($ponto['valor'] / $qtd, 2) : null];
             $c = array_key_exists($i, $custo) ? $custo[$i]['valor'] : 0.0;   // NÃO usar ??: ele trata null (desconhecido) como ausente → 0
             $margem[] = ['data' => $ponto['data'],   // custo desconhecido no ponto = margem desconhecida (lacuna na série, não zero)
-                'valor' => $c === null ? null : ($ponto['valor'] > 0 ? round((($ponto['valor'] - $c) / $ponto['valor']) * 100, 1) : 0.0)];
+                // dia sem faturamento: margem INDEFINIDA (null), não 0 % (pedido da CIMA, item D)
+                'valor' => ($c === null || $ponto['valor'] <= 0) ? null : round((($ponto['valor'] - $c) / $ponto['valor']) * 100, 1)];
         }
 
         return [
