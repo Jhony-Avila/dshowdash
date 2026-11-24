@@ -284,6 +284,93 @@ try {
     [$rc, $o] = $roda(['--executar', $F, '--pedidos=' . implode(',', range(1, 1001))]); ok('1001 pedidos → rc 2', $rc === 2 && str_contains($o, '1000'), $o);
     [$rc, $o] = $roda(['--executar', $F, '--pedidos=1', '--pedidos=2']);    ok('--pedidos repetido → rc 2', $rc === 2, $o);
     [$rc, $o] = $roda(['--executar', '--pedidos=1']);                       ok('sem a frase → rc 2 (regra antiga continua)', $rc === 2 && str_contains($o, 'confirmo'), $o);
+
+    echo "== 10. Codex DSHOW-113 (1) · argumentos validados ANTES de qualquer efeito; modos mutuamente exclusivos; P2 parada depois de erro\n";
+    // caixa de areia: cópia do script com o marcador de parada e a trava DENTRO dela, sem .env e sem api/ — passar da validação = falha
+    // ruidosa (rc ≠ 2) no 1º efeito (ler o .env); qualquer arquivo novo na caixa = efeito.
+    $CX = trim((string) shell_exec('mktemp -d /srv/dshow-work/bling-args-teste.XXXXXX'));
+    if (!preg_match('#^/srv/dshow-work/bling-args-teste\.[A-Za-z0-9]{6}$#', $CX) || !is_dir($CX)) { throw new RuntimeException('mktemp da caixa de areia falhou'); }
+    try {
+        mkdir("$CX/scripts");
+        $src = (string) file_get_contents($script);
+        $src = str_replace("'/var/lib/bling/releitura-situacao.parar'", var_export("$CX/marcador.parar", true), $src, $n1);
+        $src = str_replace("'/var/lib/bling/releitura-situacao.lock'", var_export("$CX/trava.lock", true), $src, $n2);
+        ok('caixa de areia: marcador e trava redirecionados (1 + 1 troca)', $n1 === 1 && $n2 === 1);
+        file_put_contents("$CX/scripts/bling-releitura-situacao.php", $src);
+        $listar = static fn(): array => array_values(array_diff(scandir($CX), ['.', '..']));
+        $base = $listar();
+        $caixa = static function (array $args) use ($CX): array {
+            $cmd = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg("$CX/scripts/bling-releitura-situacao.php") . ' ' . implode(' ', array_map('escapeshellarg', $args)) . ' 2>&1';
+            $out = []; exec($cmd, $out, $rc); return [$rc, implode("\n", $out)];
+        };
+        $F = '--confirmo=RELER PEDIDOS DO BLING';
+        $mil = implode(',', range(1, 1000)); $milEum = implode(',', range(1, 1001));
+        $ruins = [
+            'parar + pedidos vazio (o caso do Codex)' => ['--parar', '--pedidos='],
+            'parar + pedidos'                         => ['--parar', '--pedidos=900001'],
+            'parar + executar'                        => ['--parar', '--executar', $F],
+            'parar + situacoes'                       => ['--parar', '--situacoes'],
+            'parar + conta'                           => ['--parar', '--conta=1'],
+            'parar com valor'                         => ['--parar=agora'],
+            'parar repetido'                          => ['--parar', '--parar'],
+            'situacoes + executar'                    => ['--situacoes', '--executar', $F],
+            'situacoes + pedidos'                     => ['--situacoes', '--pedidos=1'],
+            'pedidos vazio'                           => ['--executar', $F, '--pedidos='],
+            'pedidos só espaços'                      => ['--executar', $F, '--pedidos=  '],
+            'pedidos sem ='                           => ['--executar', $F, '--pedidos'],
+            'pedidos repetido (opção)'                => ['--executar', $F, '--pedidos=1', '--pedidos=2'],
+            'pedidos com id repetido'                 => ['--executar', $F, '--pedidos=7,7'],
+            'pedidos com item vazio'                  => ['--executar', $F, '--pedidos=1,,2'],
+            'pedidos com SEM-ID'                      => ['--executar', $F, '--pedidos=900001,SEM-ID'],
+            'pedidos com zero à esquerda'             => ['--executar', $F, '--pedidos=0123'],
+            '1001 pedidos'                            => ['--executar', $F, "--pedidos=$milEum"],
+            'pedidos sem executar'                    => ['--pedidos=1'],
+            'executar sem frase'                      => ['--executar', '--pedidos=1'],
+            'frase errada'                            => ['--executar', '--confirmo=sim', '--pedidos=1'],
+            'confirmo sem executar'                   => [$F],
+            'executar repetido'                       => ['--executar', '--executar', $F],
+            'pausa vazia'                             => ['--executar', $F, '--pausa-ms='],
+            'pausa não numérica'                      => ['--executar', $F, '--pausa-ms=1e3'],
+            'pausa abaixo de 500'                     => ['--executar', $F, '--pausa-ms=499'],
+            'pausa sem executar'                      => ['--pausa-ms=1500'],
+            'conta vazia'                             => ['--conta='],
+            'conta zero'                              => ['--conta=0'],
+            'opção desconhecida'                      => ['--tudo'],
+            'argumento solto'                         => ['pedidos'],
+            'forma com espaço (só --x=valor)'         => ['--executar', $F, '--pedidos', '900001'],
+        ];
+        foreach ($ruins as $nome => $args) {
+            [$rc, $o] = $caixa($args);
+            ok("rc 2, zero efeitos: $nome", $rc === 2 && str_contains($o, 'nada feito') && $listar() === $base, "rc=$rc " . mb_substr($o, 0, 140));
+        }
+        [$rc, $o] = $caixa(['--parar', '--pedidos=']);
+        ok('DECISIVO: "--parar --pedidos=" não cria o marcador e sai com 2 (antes: criava e saía com 0)', $rc === 2 && !is_file("$CX/marcador.parar"), "rc=$rc");
+        // válidos: passam da validação e param no 1º efeito da caixa (sem .env) — rc ≠ 2 e sem "nada feito"
+        foreach (['1000 pedidos' => ['--executar', $F, "--pedidos=$mil"], 'releitura inteira' => ['--executar', $F, '--pausa-ms=500', '--conta=1'],
+                  'situacoes + conta' => ['--situacoes', '--conta=1'], 'contagem' => []] as $nome => $args) {
+            [$rc, $o] = $caixa($args);
+            ok("válido passa da validação: $nome", $rc !== 2 && !str_contains($o, 'nada feito'), "rc=$rc " . mb_substr($o, 0, 100));
+        }
+        [$rc, $o] = $caixa(['--parar']);
+        ok('--parar sozinho: rc 0 e cria SÓ o marcador (o portão usa assim)', $rc === 0 && $listar() === (static function (array $x): array { sort($x); return $x; })(array_merge($base, ['marcador.parar'])), "rc=$rc " . json_encode($listar()));
+    } finally {
+        if (preg_match('#^/srv/dshow-work/bling-args-teste\.[A-Za-z0-9]{6}$#', $CX)) { shell_exec('rm -rf -- ' . escapeshellarg($CX)); }
+    }
+
+    // P2 no serviço: erro seguido de parada voluntária = falha, nos dois caminhos
+    $DET['900003'] = new BlingResposta(503, []);
+    $r10 = $sync4->releituraPedidosIds($conta, ['900003', '900001', '900006'], static fn() => true, static fn(int $ms) => null, 1500);
+    ok('P2 --pedidos: erro no 1º e parada → interrompida_com_erros (não "interrompida")', $r10['situacao'] === 'interrompida_com_erros' && $r10['erros'] === 1 && $r10['consultados'] === 1, json_encode($r10));
+    $e10 = $repo->estadoSync($conta, BlingSyncService::RECURSO_REPROCESSO);
+    ok('P2 --pedidos: estado do reprocesso = erro (o portão conta erros por ali)', $e10['situacao'] === 'erro' && (int) $e10['erros'] === 1, json_encode($e10));
+    $r10b = $sync4->releituraPedidosIds($conta, ['900001', '900006'], static fn() => true, static fn(int $ms) => null, 1500);
+    ok('P2 --pedidos: parada SEM erro continua interrompida (sucesso) e estado parcial', $r10b['situacao'] === 'interrompida' && $repo->estadoSync($conta, BlingSyncService::RECURSO_REPROCESSO)['situacao'] === 'parcial', json_encode($r10b));
+    $pdo->exec("DELETE FROM bling_sync_state WHERE account_id = $conta AND recurso = '" . BlingSyncService::RECURSO_RELEITURA . "'");   // releitura nova (tabela do próprio teste)
+    $GLOBALS['PEDIDOS'] = pedidosFalsos(250, static fn(int $i) => 15);
+    $GLOBALS['PEDIDOS'][40] = ['numero' => 'sem-id', 'situacao' => ['id' => 15]];   // erro na 1ª página
+    $r10c = $sync->releituraPedidos($conta, static fn() => true, static fn(int $ms) => null, 1500);
+    ok('P2 releitura inteira: erro na página e parada → interrompida_com_erros', $r10c['situacao'] === 'interrompida_com_erros' && $r10c['erros'] === 1 && $r10c['paginas'] === 1, json_encode($r10c));
+    ok('P2 releitura inteira: checkpoint continua parcial (rodar de novo retoma)', ($e10c = $repo->estadoSync($conta, BlingSyncService::RECURSO_RELEITURA)) && $e10c['situacao'] === 'parcial' && (int) $e10c['pagina_atual'] === 1, json_encode($e10c));
 } catch (Throwable $e) {
     $falhas++; echo 'FALHA exceção: ', get_class($e), ': ', $e->getMessage(), ' @', basename($e->getFile()), ':', $e->getLine(), "\n";
 } finally {

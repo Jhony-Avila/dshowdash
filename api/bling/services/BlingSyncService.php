@@ -932,7 +932,10 @@ final class BlingSyncService
             'watermark' => $concluida ? gmdate('Y-m-d H:i:s') : null]);
         // PARA-STATUS §132 (P2): terminar a passada com erro NÃO é "concluida" — o script sai com rc 1 e não contradiz o fechamento do portão.
         // O checkpoint fica 'ok' (a passada terminou; rodar de novo NÃO retoma, releria tudo) — os afetados vão pelo modo --pedidos.
-        return ['situacao' => $concluida ? ($c['erros'] > 0 ? 'concluida_com_erros' : 'concluida') : ($parou ? 'interrompida' : (string) ($r['estado'] ?? 'parcial')),
+        // Codex DSHOW-113 (P2): parada a pedido DEPOIS de erro nesta execução também não é sucesso → 'interrompida_com_erros' (o script sai com rc 1);
+        // o checkpoint continua 'parcial' (rodar de novo retoma da página gravada) e os erros já estão em bling_sync_errors.
+        return ['situacao' => $concluida ? ($c['erros'] > 0 ? 'concluida_com_erros' : 'concluida')
+                                         : ($parou ? ($c['erros'] > 0 ? 'interrompida_com_erros' : 'interrompida') : (string) ($r['estado'] ?? 'parcial')),
                 'paginas' => $paginas, 'pagina_inicial' => $paginaInicial] + $c;
     }
 
@@ -1001,8 +1004,9 @@ final class BlingSyncService
             $this->repo->salvarEstadoSync($accountId, self::RECURSO_REPROCESSO, ['pagina_atual' => $c['consultados'], 'registros_consultados' => $c['consultados'],
                 'registros_atualizados' => $c['atualizados'], 'registros_ignorados' => $c['ignorados'], 'erros' => $c['erros']]);
         }
-        $situacao = $parou ? 'interrompida' : ($c['erros'] > 0 ? 'concluida_com_erros' : 'concluida');
-        $this->repo->salvarEstadoSync($accountId, self::RECURSO_REPROCESSO, ['situacao' => $situacao === 'concluida' ? 'ok' : ($parou ? 'parcial' : 'erro'),
+        // Codex DSHOW-113 (P2): erro seguido de parada voluntária = 'interrompida_com_erros' (falha), com o estado do reprocesso em 'erro'
+        $situacao = $parou ? ($c['erros'] > 0 ? 'interrompida_com_erros' : 'interrompida') : ($c['erros'] > 0 ? 'concluida_com_erros' : 'concluida');
+        $this->repo->salvarEstadoSync($accountId, self::RECURSO_REPROCESSO, ['situacao' => $situacao === 'concluida' ? 'ok' : ($situacao === 'interrompida' ? 'parcial' : 'erro'),
             'watermark' => $situacao === 'concluida' ? gmdate('Y-m-d H:i:s') : null]);
         return ['situacao' => $situacao, 'afetados_com_erro' => $comErro] + $c;
     }
