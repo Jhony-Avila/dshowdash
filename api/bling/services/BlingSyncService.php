@@ -930,8 +930,81 @@ final class BlingSyncService
         $concluida = !$parou && ($r['estado'] ?? '') === 'concluida';
         $this->repo->salvarEstadoSync($accountId, self::RECURSO_RELEITURA, ['situacao' => $concluida ? 'ok' : 'parcial',
             'watermark' => $concluida ? gmdate('Y-m-d H:i:s') : null]);
-        return ['situacao' => $concluida ? 'concluida' : ($parou ? 'interrompida' : (string) ($r['estado'] ?? 'parcial')),
+        // PARA-STATUS §132 (P2): terminar a passada com erro NÃO é "concluida" — o script sai com rc 1 e não contradiz o fechamento do portão.
+        // O checkpoint fica 'ok' (a passada terminou; rodar de novo NÃO retoma, releria tudo) — os afetados vão pelo modo --pedidos.
+        return ['situacao' => $concluida ? ($c['erros'] > 0 ? 'concluida_com_erros' : 'concluida') : ($parou ? 'interrompida' : (string) ($r['estado'] ?? 'parcial')),
                 'paginas' => $paginas, 'pagina_inicial' => $paginaInicial] + $c;
+    }
+
+    public const RECURSO_REPROCESSO = 'releitura_situacao_pedidos';
+    public const MAX_PEDIDOS_REPROCESSO = 1000;
+
+    /**
+     * Codex DSHOW-112 (4) / PARA-STATUS §132: relê SÓ os pedidos indicados — um GET pedidos/vendas/{id} por pedido, um por vez, com pausa —
+     * e grava pelo MESMO gravarSituacaoLoja da releitura (só situacao_bling_id e loja_bling_id, COALESCE; pedido ausente não é criado).
+     * - NÃO lê nem grava o checkpoint da releitura inteira (RECURSO_RELEITURA): o resultado desta execução fica em RECURSO_REPROCESSO.
+     * - Erros vão para bling_sync_errors com recurso RECURSO_RELEITURA (é por ali que o fechamento do portão lista os afetados).
+     * - Falha fechada: 404, HTTP ≠ 2xx, corpo sem `data` ou `data.id` diferente do pedido pedido = ERRO daquele pedido (nada gravado nele).
+     * @param list<string> $ids  ids do Bling, só dígitos, sem repetição, 1..MAX_PEDIDOS_REPROCESSO
+     * @return array{situacao:string, pedidos:int, consultados:int, atualizados:int, ignorados:int, ausentes:int, erros:int, afetados_com_erro:list<string>}
+     */
+    public function releituraPedidosIds(int $accountId, array $ids, Closure $parar, Closure $dormir, int $pausaMs = 1500): array
+    {
+        $ids = array_values($ids);
+        if ($ids === [] || count($ids) > self::MAX_PEDIDOS_REPROCESSO || count(array_unique($ids)) !== count($ids)) {
+            throw new InvalidArgumentException('lista de pedidos vazia, repetida ou acima de ' . self::MAX_PEDIDOS_REPROCESSO);
+        }
+        foreach ($ids as $id) {
+            if (!is_string($id) || !preg_match('/^[1-9][0-9]{0,19}$/', $id)) { throw new InvalidArgumentException('id de pedido inválido'); }
+        }
+        $c = ['pedidos' => count($ids), 'consultados' => 0, 'atualizados' => 0, 'ignorados' => 0, 'ausentes' => 0, 'erros' => 0];
+        if (!$this->repo->temColuna('bling_sales_orders', 'situacao_bling_id') || !$this->repo->temColuna('bling_sales_orders', 'loja_bling_id')) {
+            return ['situacao' => 'sem_coluna', 'afetados_com_erro' => []] + $c;
+        }
+        $cliente = $this->auth->cliente($accountId);
+        $endpoint = self::RECURSOS['pedidos']['endpoint'];
+        $this->repo->salvarEstadoSync($accountId, self::RECURSO_REPROCESSO, ['estrategia' => 'carga_inicial', 'situacao' => 'parcial', 'pagina_atual' => 0,
+            'registros_consultados' => 0, 'registros_atualizados' => 0, 'registros_ignorados' => 0, 'erros' => 0, 'ultima_execucao_em' => gmdate('Y-m-d H:i:s')]);
+        $comErro = []; $parou = false;
+        foreach ($ids as $i => $id) {
+            if ($i > 0) {
+                if ($parar()) { $parou = true; break; }
+                $dormir($pausaMs);
+            }
+            $c['consultados']++;
+            $erro = null; $http = null;
+            try {
+                $r = $cliente->get($endpoint . '/' . $id);
+                $http = $r->status;
+                $d = is_array($r->corpo) ? ($r->corpo['data'] ?? null) : null;
+                if ($r->status === 404) { $erro = 'pedido não encontrado no Bling (404)'; }
+                elseif (!$r->ok()) { $erro = 'Bling respondeu HTTP ' . $r->status; }
+                elseif (!is_array($d) || (string) ($d['id'] ?? '') !== $id) { $erro = 'resposta sem o pedido pedido (data.id ausente ou diferente)'; }
+                else {
+                    $this->repo->pdo()->beginTransaction();
+                    try {
+                        $res = $this->gravarSituacaoLoja($accountId, $d);
+                        $this->repo->pdo()->commit();
+                        $c[match ($res) { 'atualizado' => 'atualizados', 'ausente' => 'ausentes', default => 'ignorados' }]++;
+                    } catch (Throwable $e) {
+                        if ($this->repo->pdo()->inTransaction()) { $this->repo->pdo()->rollBack(); }
+                        $erro = $e->getMessage();
+                    }
+                }
+            } catch (Throwable $e) {
+                $erro = 'falha ao consultar o Bling: ' . $e->getMessage();
+            }
+            if ($erro !== null) {
+                $c['erros']++; $comErro[] = $id;
+                $this->repo->registrarErroSync($accountId, self::RECURSO_RELEITURA, $id, 'REPROCESSO', $erro, $http, 1, 'releitura-pedidos');
+            }
+            $this->repo->salvarEstadoSync($accountId, self::RECURSO_REPROCESSO, ['pagina_atual' => $c['consultados'], 'registros_consultados' => $c['consultados'],
+                'registros_atualizados' => $c['atualizados'], 'registros_ignorados' => $c['ignorados'], 'erros' => $c['erros']]);
+        }
+        $situacao = $parou ? 'interrompida' : ($c['erros'] > 0 ? 'concluida_com_erros' : 'concluida');
+        $this->repo->salvarEstadoSync($accountId, self::RECURSO_REPROCESSO, ['situacao' => $situacao === 'concluida' ? 'ok' : ($parou ? 'parcial' : 'erro'),
+            'watermark' => $situacao === 'concluida' ? gmdate('Y-m-d H:i:s') : null]);
+        return ['situacao' => $situacao, 'afetados_com_erro' => $comErro] + $c;
     }
 
     /**

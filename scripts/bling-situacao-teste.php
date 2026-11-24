@@ -203,6 +203,87 @@ try {
     $api3->responder('situacoes/modulos', new BlingResposta(200, ['data' => [['id' => 1, 'nome' => 'Compras']]]));
     $sx = (new BlingSyncService($repo, new BlingAuthService($repo, $api3)))->lerSituacoesVendas($conta);
     ok('sem módulo de vendas: devolve a lista para o Jhony, sem chutar', $sx['situacao'] === 'modulo_nao_encontrado' && $sx['modulos'][0]['nome'] === 'Compras');
+
+    echo "== 7. PARA-STATUS §132 · releitura SÓ dos pedidos indicados (--pedidos) — Codex DSHOW-112 condição 4\n";
+    // estado de partida: 250 pedidos com situação 15 e loja; checkpoint da releitura inteira 'ok'. Pedido decisivo 900001 com 2 itens e valores.
+    $ckAntes = $pdo->query("SELECT * FROM bling_sync_state WHERE account_id = $conta AND recurso = '" . BlingSyncService::RECURSO_RELEITURA . "'")->fetch();
+    $retratoAntes7 = $retrato();
+    $lojaAntes = static fn(string $b) => (string) v($pdo, 'SELECT loja_bling_id FROM bling_sales_orders WHERE bling_id = ?', [$b]);
+    $sitDe = static fn(string $b) => (string) v($pdo, 'SELECT situacao_bling_id FROM bling_sales_orders WHERE bling_id = ?', [$b]);
+    $loja900006 = $lojaAntes('900006');
+    $E0 = (int) $pdo->query('SELECT COALESCE(MAX(id),0) FROM bling_sync_errors')->fetchColumn();
+    $DET = [
+        '900001' => new BlingResposta(200, ['data' => ['id' => 900001, 'situacao' => ['id' => 21, 'valor' => 0], 'loja' => ['id' => 205009],
+                     'itens' => [], 'total' => 1, 'frete' => 0]]),                                   // decisivo: o detalhe traz itens/valores diferentes — nada disso pode entrar
+        '900002' => new BlingResposta(404, ['error' => ['type' => 'RESOURCE_NOT_FOUND']]),
+        '900003' => new BlingResposta(200, ['data' => ['id' => 900004, 'situacao' => ['id' => 21], 'loja' => ['id' => 205009]]]),   // resposta de OUTRO pedido
+        '900005' => new BlingResposta(503, []),
+        '900006' => new BlingResposta(200, ['data' => ['id' => '900006', 'situacao' => ['id' => '21', 'valor' => 0]]]),             // sem loja: COALESCE preserva
+        '999998' => new BlingResposta(200, ['data' => ['id' => 999998, 'situacao' => ['id' => 21], 'loja' => ['id' => 205000]]]),   // não existe na base
+    ];
+    $api4 = new BlingTransporteFalso();
+    $api4->responder('pedidos/vendas/', static function ($m, $url) use (&$DET) {
+        $id = (string) preg_replace('/\D.*$/', '', substr((string) strrchr((string) parse_url($url, PHP_URL_PATH), '/'), 1));
+        return $DET[$id] ?? new BlingResposta(404, []);
+    });
+    $api4->responder('pedidos/vendas', new BlingResposta(200, ['data' => []]));   // listagem: NÃO pode ser chamada
+    $sync4 = new BlingSyncService($repo, new BlingAuthService($repo, $api4));
+    $pausas7 = []; $SONOS = [];
+    $lista = ['900001', '900002', '900003', '900005', '900006', '999998'];
+    $r7 = $sync4->releituraPedidosIds($conta, $lista, static fn() => false, static function (int $ms) use (&$pausas7): void { $pausas7[] = $ms; }, 1500);
+    ok('com erro: situação concluida_com_erros (não "concluida")', $r7['situacao'] === 'concluida_com_erros', json_encode($r7));
+    ok('contagens: 6 consultados, 2 atualizados, 1 ausente, 3 erros', $r7['consultados'] === 6 && $r7['atualizados'] === 2 && $r7['ausentes'] === 1 && $r7['erros'] === 3, json_encode($r7));
+    ok('afetados = 404, resposta de outro pedido, 5xx', $r7['afetados_com_erro'] === ['900002', '900003', '900005'], json_encode($r7['afetados_com_erro']));
+    ok('um GET por pedido, pelo id (listagem NUNCA chamada)', $api4->contar('pedidos/vendas?') === 0 && $api4->contar('pedidos/vendas/900001') === 1 && $api4->contar('pedidos/vendas/900006') === 1);
+    ok('pausa de 1500 ms entre pedidos (5 pausas para 6)', $pausas7 === [1500, 1500, 1500, 1500, 1500], json_encode($pausas7));
+    ok('5xx: o cliente tentou de novo com espera antes de desistir', $api4->contar('pedidos/vendas/900005') > 1 && $SONOS !== []);
+    ok('nenhum POST/PUT/DELETE ao Bling', count(array_filter($api4->chamadas, static fn($c) => $c['metodo'] !== 'GET' && !str_contains($c['url'], 'oauth/token'))) === 0);
+    ok('900001: situação 21 e loja 205009 gravadas', $sitDe('900001') === '21' && $lojaAntes('900001') === '205009');
+    ok('900006: situação 21; loja ausente na resposta NÃO apagou a conhecida', $sitDe('900006') === '21' && $lojaAntes('900006') === $loja900006 && $loja900006 !== '');
+    ok('com erro: 900002, 900003 e 900005 intocados (situação 15)', $sitDe('900002') === '15' && $sitDe('900003') === '15' && $sitDe('900005') === '15');
+    ok('resposta de outro pedido não gravou no 900004', $sitDe('900004') === '15');
+    ok('pedido fora da base não foi criado', n($pdo, "SELECT COUNT(*) FROM bling_sales_orders WHERE bling_id = '999998'") === 0);
+    $retratoDepois7 = $retrato();
+    ok('DECISIVO: itens, valores, frete, total, hash e histórico do 900001 intactos', $retratoDepois7 === $retratoAntes7, json_encode(array_diff_assoc((array) $retratoDepois7['pedido'], (array) $retratoAntes7['pedido'])));
+    ok('DECISIVO: checkpoint da releitura inteira NÃO foi tocado', $pdo->query("SELECT * FROM bling_sync_state WHERE account_id = $conta AND recurso = '" . BlingSyncService::RECURSO_RELEITURA . "'")->fetch() === $ckAntes);
+    $errs = $pdo->query("SELECT bling_id FROM bling_sync_errors WHERE recurso = '" . BlingSyncService::RECURSO_RELEITURA . "' AND id > $E0 ORDER BY bling_id")->fetchAll(PDO::FETCH_COLUMN);
+    ok('erros em bling_sync_errors com o recurso da releitura (o portão lista os afetados por ali)', $errs === ['900002', '900003', '900005'], json_encode($errs));
+    $est7 = $repo->estadoSync($conta, BlingSyncService::RECURSO_REPROCESSO);
+    ok('estado próprio do reprocesso: erros = 3, situação erro', $est7 && (int) $est7['erros'] === 3 && $est7['situacao'] === 'erro', json_encode($est7));
+    $DET['900002'] = new BlingResposta(200, ['data' => ['id' => 900002, 'situacao' => ['id' => 21], 'loja' => ['id' => 205002]]]);
+    $r7b = $sync4->releituraPedidosIds($conta, ['900002'], static fn() => false, static fn(int $ms) => null, 1500);
+    ok('2ª rodada só com o afetado corrigido: concluida, 0 erro', $r7b['situacao'] === 'concluida' && $r7b['erros'] === 0 && $sitDe('900002') === '21', json_encode($r7b));
+    $est7b = $repo->estadoSync($conta, BlingSyncService::RECURSO_REPROCESSO);
+    ok('estado do reprocesso volta a ok com erros = 0 (não NULL)', $est7b['situacao'] === 'ok' && $est7b['erros'] !== null && (int) $est7b['erros'] === 0, json_encode($est7b));
+    $r7c = $sync4->releituraPedidosIds($conta, ['900001', '900006'], static fn() => true, static fn(int $ms) => null, 1500);
+    ok('parada a pedido entre pedidos: interrompida depois de 1', $r7c['situacao'] === 'interrompida' && $r7c['consultados'] === 1, json_encode($r7c));
+    foreach ([[], ['SEM-ID'], ['900001', '900001'], ['0123'], [900001], array_map('strval', range(1, 1001))] as $ruim) {
+        $chamou = count($api4->chamadas);
+        try { $sync4->releituraPedidosIds($conta, $ruim, static fn() => false, static fn(int $ms) => null); $rec = false; } catch (InvalidArgumentException $e) { $rec = true; }
+        ok('lista inválida recusada sem chamar o Bling: ' . mb_substr(json_encode($ruim), 0, 30), $rec && count($api4->chamadas) === $chamou);
+    }
+
+    echo "== 8. PARA-STATUS §132 (P2) · releitura inteira que termina COM erro não diz 'concluida'\n";
+    $GLOBALS['PEDIDOS'] = pedidosFalsos(250, static fn(int $i) => 15);
+    $GLOBALS['PEDIDOS'][120] = ['numero' => 'sem-id', 'situacao' => ['id' => 15]];   // item sem id na listagem → erro daquele item
+    $r8 = $sync->releituraPedidos($conta, static fn() => false, static fn(int $ms) => null, 1500);
+    ok('situação concluida_com_erros, 1 erro', $r8['situacao'] === 'concluida_com_erros' && $r8['erros'] === 1, json_encode($r8));
+    ok('checkpoint fica ok (a passada terminou) e o contador de erros = 1', ($e8 = $repo->estadoSync($conta, BlingSyncService::RECURSO_RELEITURA)) && $e8['situacao'] === 'ok' && (int) $e8['erros'] === 1);
+
+    echo "== 9. script: --pedidos validado ANTES de qualquer coisa (rc 2, nada feito)\n";
+    $script = $raiz . '/scripts/bling-releitura-situacao.php';
+    ok("o portão detecta a opção ('pedidos:' no getopt)", str_contains((string) file_get_contents($script), "'pedidos:'"));
+    $roda = static function (array $args): array {
+        $cmd = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($GLOBALS['raiz'] . '/scripts/bling-releitura-situacao.php') . ' ' . implode(' ', array_map('escapeshellarg', $args)) . ' 2>&1';
+        exec($cmd, $out, $rc); return [$rc, implode("\n", $out)];
+    };
+    $F = '--confirmo=RELER PEDIDOS DO BLING';
+    [$rc, $o] = $roda(['--executar', $F, '--pedidos=900001,SEM-ID']);       ok('SEM-ID na lista → rc 2', $rc === 2 && str_contains($o, 'SEM-ID'), $o);
+    [$rc, $o] = $roda(['--pedidos=900001']);                                ok('sem --executar → rc 2', $rc === 2 && str_contains($o, '--executar'), $o);
+    [$rc, $o] = $roda(['--executar', $F, '--pedidos=']);                    ok('lista vazia → rc 2', $rc === 2, $o);
+    [$rc, $o] = $roda(['--executar', $F, '--pedidos=' . implode(',', range(1, 1001))]); ok('1001 pedidos → rc 2', $rc === 2 && str_contains($o, '1000'), $o);
+    [$rc, $o] = $roda(['--executar', $F, '--pedidos=1', '--pedidos=2']);    ok('--pedidos repetido → rc 2', $rc === 2, $o);
+    [$rc, $o] = $roda(['--executar', '--pedidos=1']);                       ok('sem a frase → rc 2 (regra antiga continua)', $rc === 2 && str_contains($o, 'confirmo'), $o);
 } catch (Throwable $e) {
     $falhas++; echo 'FALHA exceção: ', get_class($e), ': ', $e->getMessage(), ' @', basename($e->getFile()), ':', $e->getLine(), "\n";
 } finally {

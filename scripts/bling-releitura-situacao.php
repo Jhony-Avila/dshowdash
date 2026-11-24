@@ -10,7 +10,10 @@ declare(strict_types=1);
 //   sudo -u www-data php scripts/bling-releitura-situacao.php                       # contagem (só banco local; NÃO chama o Bling)
 //   sudo -u www-data php scripts/bling-releitura-situacao.php --situacoes           # lista de situações do módulo de vendas (2 GETs)
 //   sudo -u www-data php scripts/bling-releitura-situacao.php --executar --confirmo="RELER PEDIDOS DO BLING" [--pausa-ms=1500]
+//   sudo -u www-data php scripts/bling-releitura-situacao.php --executar --confirmo="RELER PEDIDOS DO BLING" --pedidos=<id,id,…>
+//        # relê SÓ esses pedidos (GET por id, um por vez, com pausa) — NÃO mexe no checkpoint da releitura inteira (Codex DSHOW-112, condição 4)
 //   sudo -u www-data php scripts/bling-releitura-situacao.php --parar               # pede parada; a página em curso termina e grava
+// Saída: rc 0 = concluída (ou parada a pedido); rc 1 = erro OU concluída COM erros (PARA-STATUS §132); rc 2 = uso errado, nada feito.
 // Saída: [OK]/[ERRO] e contagens; nunca token, chave ou dado pessoal.
 
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
@@ -18,7 +21,7 @@ $raiz = dirname(__DIR__);
 const FRASE = 'RELER PEDIDOS DO BLING';
 const ARQ_PARAR = '/var/lib/bling/releitura-situacao.parar';
 
-$opt = getopt('', ['situacoes', 'executar', 'confirmo:', 'parar', 'pausa-ms:', 'conta:']);
+$opt = getopt('', ['situacoes', 'executar', 'confirmo:', 'parar', 'pausa-ms:', 'conta:', 'pedidos:']);
 if (isset($opt['parar'])) {
     if (@touch(ARQ_PARAR) === false) { fwrite(STDERR, "[ERRO] não consegui criar " . ARQ_PARAR . "\n"); exit(1); }
     echo "[OK] parada pedida — a releitura termina a página em curso, grava o progresso e sai (rodar de novo retoma)\n"; exit(0);
@@ -28,6 +31,25 @@ if (isset($opt['executar']) && ($opt['confirmo'] ?? '') !== FRASE) {
 }
 $pausa = isset($opt['pausa-ms']) ? (int) $opt['pausa-ms'] : 1500;
 if ($pausa < 500 || $pausa > 60000) { fwrite(STDERR, "[ERRO] --pausa-ms entre 500 e 60000\n"); exit(2); }
+// --pedidos: lista validada ANTES de tudo (falha fechada: um item inválido = nada feito). 'SEM-ID' (erro de pedido sem id na listagem) não se relê por id.
+$pedidos = null;
+// o getopt do PHP DESCARTA "--pedidos=" vazio — sem esta guarda, uma lista vazia viraria a releitura INTEIRA (o que o Codex vetou)
+foreach (array_slice($argv, 1) as $arg) {
+    if (str_starts_with((string) $arg, '--pedidos') && !isset($opt['pedidos'])) { fwrite(STDERR, "[ERRO] --pedidos sem lista (vazio) — nada feito; NÃO se relê tudo no lugar\n"); exit(2); }
+}
+if (isset($opt['pedidos'])) {
+    if (is_array($opt['pedidos'])) { fwrite(STDERR, "[ERRO] --pedidos só uma vez — nada feito\n"); exit(2); }
+    if (!isset($opt['executar'])) { fwrite(STDERR, "[ERRO] --pedidos exige --executar --confirmo=\"" . FRASE . "\" — nada feito\n"); exit(2); }
+    $brutos = array_map('trim', explode(',', (string) $opt['pedidos']));
+    $invalidos = array_values(array_filter($brutos, static fn(string $x): bool => !preg_match('/^[1-9][0-9]{0,19}$/', $x)));
+    if ($invalidos !== []) {
+        fwrite(STDERR, '[ERRO] --pedidos com ' . count($invalidos) . ' item(ns) inválido(s) (ex.: ' . implode(', ', array_map(static fn($x) => $x === '' ? '(vazio)' : mb_substr($x, 0, 20), array_slice($invalidos, 0, 5)))
+            . ") — só ids numéricos do Bling; 'SEM-ID' não se relê por id. Nada feito\n");
+        exit(2);
+    }
+    $pedidos = array_values(array_unique($brutos));
+    if (count($pedidos) > 1000) { fwrite(STDERR, "[ERRO] --pedidos acima de 1000 — nada feito\n"); exit(2); }   // = BlingSyncService::MAX_PEDIDOS_REPROCESSO
+}
 
 foreach (file($raiz . '/.env') as $linha) {
     $linha = trim($linha);
@@ -70,12 +92,27 @@ if ($trava === false || !flock($trava, LOCK_EX | LOCK_NB)) { fwrite(STDERR, "[ER
 if (is_file(ARQ_PARAR)) { @unlink(ARQ_PARAR); }   // pedido de parada ANTIGO não vale para esta execução
 
 $t0 = microtime(true);
+if ($pedidos !== null) {
+    echo "== releitura SÓ dos pedidos indicados (" . count($pedidos) . ") — o checkpoint da releitura inteira não é tocado\n";
+    $r = $sync->releituraPedidosIds($conta, $pedidos, static fn(): bool => is_file(ARQ_PARAR), static function (int $ms): void { usleep($ms * 1000); }, $pausa);
+    $mostrar($r + ['segundos' => round(microtime(true) - $t0, 1)]);
+    echo "== contagem depois\n"; $mostrar($sync->contagemSituacao($conta));
+    if (is_file(ARQ_PARAR)) { @unlink(ARQ_PARAR); }
+    echo match ($r['situacao']) {
+        'concluida' => "[OK] {$r['consultados']} pedido(s) relido(s), 0 erro(s)\n",
+        'interrompida' => "[OK] parada a pedido depois de {$r['consultados']} de {$r['pedidos']} pedido(s) — rode de novo só com os que faltam\n",
+        'concluida_com_erros' => "[ERRO] {$r['erros']} pedido(s) com erro: " . implode(',', $r['afetados_com_erro']) . " — nada foi gravado neles\n",
+        default => "[ERRO] releitura por pedido não rodou ({$r['situacao']})\n",
+    };
+    exit($r['situacao'] === 'concluida' || $r['situacao'] === 'interrompida' ? 0 : 1);
+}
 $r = $sync->releituraPedidos($conta, static fn(): bool => is_file(ARQ_PARAR), static function (int $ms): void { usleep($ms * 1000); }, $pausa);
 echo "== releitura\n"; $mostrar($r + ['segundos' => round(microtime(true) - $t0, 1)]);
 echo "== contagem depois\n"; $mostrar($sync->contagemSituacao($conta));
 if (is_file(ARQ_PARAR)) { @unlink(ARQ_PARAR); }
 echo match ($r['situacao']) {
     'concluida' => "[OK] releitura concluída\n",
+    'concluida_com_erros' => "[ERRO] a releitura passou por todas as páginas, mas com {$r['erros']} erro(s) — NÃO está concluída; reprocesse só os afetados (--pedidos)\n",
     'interrompida' => "[OK] parada a pedido na página {$r['pagina_inicial']}+{$r['paginas']} — rodar de novo retoma\n",
     default => "[ERRO] releitura não concluiu ({$r['situacao']}) — o progresso ficou gravado; rodar de novo retoma\n",
 };
