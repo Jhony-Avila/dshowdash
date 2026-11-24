@@ -2324,3 +2324,4 @@ dist/
 !/db/
 !/db/equipamentos/
 !/db/equipamentos/**
+!/scripts/bling-itens-ausentes-teste.php

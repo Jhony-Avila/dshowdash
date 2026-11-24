@@ -597,17 +597,28 @@ final class BlingSyncService
 
         // Subtotal e custo saem dos ITENS, não do cabeçalho: o Bling nem sempre
         // manda os dois, e a coerência com o grid depende de bater com a soma.
-        $subtotal = 0.0;
-        $custo = 0.0;
-        foreach ($itens as $i) {
-            $subtotal += $i['valor_total'];
-            $custo += $i['custo_unitario'] * $i['quantidade'];
-        }
-        $d['subtotal'] = round($subtotal, 2);
-        $d['custo_total'] = round($custo, 2);
-        $d['qtd_itens'] = count($itens);
-        if ($d['total'] <= 0) {
-            $d['total'] = round($subtotal - $d['desconto'] + $d['frete'], 2);
+        // RESPOSTA SEM ITENS (23/11 noite, risco da 711fcedc:700): a listagem do Bling não traz itens. Sem itens na resposta, NÃO se apaga
+        // item gravado nem se zera subtotal/custo/qtd_itens: essas colunas ficam fora do UPDATE (o upsert só grava as chaves enviadas) e o
+        // total do cabeçalho não é recalculado a partir de uma soma vazia. Ausência de itens = "não informado", nunca "zero itens".
+        $temItens = $itens !== [];
+        if ($temItens) {
+            $subtotal = 0.0;
+            $custo = 0.0;
+            foreach ($itens as $i) {
+                $subtotal += $i['valor_total'];
+                $custo += $i['custo_unitario'] * $i['quantidade'];
+            }
+            $d['subtotal'] = round($subtotal, 2);
+            $d['custo_total'] = round($custo, 2);
+            $d['qtd_itens'] = count($itens);
+            if ($d['total'] <= 0) {
+                $d['total'] = round($subtotal - $d['desconto'] + $d['frete'], 2);
+            }
+        } else {
+            unset($d['subtotal'], $d['custo_total'], $d['qtd_itens']);
+            if ($d['total'] <= 0) {
+                unset($d['total']);   // cabeçalho sem total e sem itens: mantém o total já gravado (pedido novo fica com o padrão da tabela)
+            }
         }
 
         // Situação mudou? Registra na timeline (§21.1) antes de sobrescrever.
@@ -635,7 +646,9 @@ final class BlingSyncService
                      VALUES (?, ?, ?, ?, ?, UTC_TIMESTAMP())'
                 )->execute([$accountId, $pedidoId, $situacaoAntes, $d['situacao'], 'sync']);
             }
-            $this->gravarItens($accountId, $pedidoId, $itens);
+            if ($temItens) {   // sem itens na resposta: os itens gravados ficam como estão (nenhum DELETE)
+                $this->gravarItens($accountId, $pedidoId, $itens);
+            }
             $this->gravarEnvio($accountId, $pedidoId, $bruto, $d);
         }
 
@@ -699,20 +712,21 @@ final class BlingSyncService
     }
 
     /**
-     * Itens: apaga e regrava.
+     * Itens: apaga e regrava — SÓ com uma lista NÃO VAZIA de itens na resposta.
      *
      * Merge item a item exigiria id estável do item, que nem todo endpoint do
      * Bling devolve. Apagar e regravar dentro da transação do pedido é mais
      * simples e não deixa item fantasma de uma versão anterior do pedido.
+     * Lista vazia = resposta SEM itens (a listagem não os traz): nada é apagado (23/11 noite).
      */
     private function gravarItens(int $accountId, int $pedidoId, array $itens): void
     {
+        if ($itens === []) {
+            return;   // nunca apaga sem ter o que gravar no lugar
+        }
         $this->repo->pdo()->prepare('DELETE FROM bling_sales_order_items WHERE sales_order_id = ?')
             ->execute([$pedidoId]);
 
-        if ($itens === []) {
-            return;
-        }
         $st = $this->repo->pdo()->prepare(
             'INSERT INTO bling_sales_order_items
                (account_id, sales_order_id, product_id, bling_id, sku, descricao,
@@ -739,14 +753,17 @@ final class BlingSyncService
 
         $d['supplier_id'] = $this->repo->idPorBlingId('bling_suppliers', $accountId, $fornBling);
         $d['situacao'] = BlingVersionAdapter::situacaoCompra($situacaoBling);
-        $d['qtd_itens'] = count($itens);
-        $d['qtd_total'] = array_sum(array_column($itens, 'quantidade'));
+        $temItens = $itens !== [];   // mesma regra dos pedidos de venda: resposta sem itens não apaga nem zera (23/11 noite)
+        if ($temItens) {
+            $d['qtd_itens'] = count($itens);
+            $d['qtd_total'] = array_sum(array_column($itens, 'quantidade'));
+        }
         $d['qtd_recebida'] = 0;
 
         $r = $this->repo->upsert('bling_purchase_orders', $accountId, $d);
         $compraId = $this->repo->idPorBlingId('bling_purchase_orders', $accountId, $d['bling_id']);
 
-        if ($compraId !== null) {
+        if ($compraId !== null && $temItens) {
             $this->repo->pdo()->prepare('DELETE FROM bling_purchase_order_items WHERE purchase_order_id = ?')
                 ->execute([$compraId]);
             $st = $this->repo->pdo()->prepare(
