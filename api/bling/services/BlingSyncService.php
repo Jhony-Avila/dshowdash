@@ -1118,7 +1118,7 @@ final class BlingSyncService
     /** Id externo do Bling só se for inteiro POSITIVO (int ou texto de dígitos sem zero à esquerda); 0, "0", vazio, ilegível ou ausente → null. */
     private static function idPositivo(mixed $v): ?string
     {
-        return ((is_int($v) || is_string($v)) && preg_match('/^[1-9][0-9]{0,19}$/', (string) $v)) ? (string) $v : null;
+        return BlingNormalizer::idExterno($v);   // Codex DSHOW-115: a MESMA regra estrita dos três caminhos (int > 0 ou texto ^[1-9][0-9]{0,19}$)
     }
 
     private function gravarSituacaoLoja(int $accountId, array $bruto): string
