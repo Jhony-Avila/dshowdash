@@ -298,6 +298,23 @@ try {
     ok('e) cursor NÃO avança com item em falha', $repo2->estadoSync($conta, 'pedidos')['watermark'] === $w0);
     $p2['transporte'] = ['transportador' => ['nome' => 'Correios']]; $api->responder('pedidos/vendas', new BlingResposta(200, ['data' => [$p2]]));
     $sync2->sincronizar($conta, 'pedidos', 'incremental', 'teste-13f');
+    // achado 1 da ACIMA_ESQUERDA (24/11): loja ausente ou 0 na listagem NUNCA apaga a loja conhecida (guarda igual à do situacao_bling_id)
+    $lojaDe = static fn() => $pdo->query("SELECT loja_bling_id FROM bling_sales_orders WHERE bling_id = '9200'")->fetchColumn();
+    $semLoja = $p2; unset($semLoja['loja']); $semLoja['total'] = 33;
+    $api->responder('pedidos/vendas', new BlingResposta(200, ['data' => [$semLoja]]));
+    $sync2->sincronizar($conta, 'pedidos', 'reconciliacao', 'teste-13g');
+    ok('f) listagem SEM loja.id: a loja conhecida (777) fica — não vira NULL', $lojaDe() === '777' && (float) $pdo->query("SELECT total FROM bling_sales_orders WHERE bling_id = '9200'")->fetchColumn() === 33.0, var_export($lojaDe(), true));
+    $zero = $p2; $zero['loja'] = ['id' => 0]; $zero['total'] = 34;
+    $api->responder('pedidos/vendas', new BlingResposta(200, ['data' => [$zero]]));
+    $sync2->sincronizar($conta, 'pedidos', 'reconciliacao', 'teste-13h');
+    ok('f) listagem com loja.id = 0: a loja conhecida fica — não vira "0"', $lojaDe() === '777', var_export($lojaDe(), true));
+    $outra = $p2; $outra['loja'] = ['id' => 888]; $outra['total'] = 35;
+    $api->responder('pedidos/vendas', new BlingResposta(200, ['data' => [$outra]]));
+    $sync2->sincronizar($conta, 'pedidos', 'reconciliacao', 'teste-13i');
+    ok('f) loja.id VÁLIDO e diferente: atualiza (a guarda só protege a ausência)', $lojaDe() === '888', var_export($lojaDe(), true));
+    $p2['loja']['id'] = 777;
+    $api->responder('pedidos/vendas', new BlingResposta(200, ['data' => [$p2]]));
+    $sync2->sincronizar($conta, 'pedidos', 'reconciliacao', 'teste-13j');
     ok('e) depois de corrigido: grava e o cursor avança', $repo2->estadoSync($conta, 'pedidos')['watermark'] !== $w0 && (float) $pdo->query("SELECT total FROM bling_sales_orders WHERE bling_id = '9200'")->fetchColumn() === 32.0);
     $d1 = (new BlingReal($repo2))->disponibilidade('pedidos');
     ok('f) última TENTATIVA e última sincronização CONCLUÍDA são campos separados', array_key_exists('ultima_tentativa', $d1) && array_key_exists('ultimo_sucesso', $d1));

@@ -116,10 +116,18 @@ foreach (['lib/BlingSituacoes', 'lib/BlingCrypto', 'lib/BlingTransporte', 'lib/B
 
 $repo = new BlingRepository();
 if (!$repo->disponivel() || !$repo->schemaAplicado() || !BlingCrypto::disponivel()) { fwrite(STDERR, "[ERRO] banco BLING, esquema ou chave de cifra indisponível\n"); exit(1); }
-$contas = $args['conta'] !== null ? [$args['conta']] : $repo->contasAtivas();
-if (count($contas) !== 1) { fwrite(STDERR, "[ERRO] esperava exatamente 1 conta Bling ativa (achei " . count($contas) . "); use --conta=<id>\n"); exit(2); }
-$conta = (int) $contas[0];
 $sync = new BlingSyncService($repo, new BlingAuthService($repo, new BlingTransporteCurl()));
+// revisão da ACIMA_ESQUERDA (achado 4): conta conferida (ativa, conectada e, se for ao Bling, com token) ANTES da trava e do marcador — só leitura
+$escolha = $sync->contaParaReleitura($args['conta'], $modo !== 'contagem');
+if (isset($escolha['erro'])) { fwrite(STDERR, '[ERRO] ' . $escolha['erro'] . " — nada feito\n"); exit(2); }
+$conta = $escolha['conta'];
+// falha de autenticação mais adiante (ex.: renovação do token recusada) = [ERRO] claro, sem stack trace; nunca grava pela metade
+$comBling = static function (callable $f) {
+    try { return $f(); } catch (Throwable $e) {
+        fwrite(STDERR, '[ERRO] não foi possível falar com o Bling (' . get_class($e) . ') — reconecte a conta se persistir; o progresso já gravado fica\n');
+        exit(1);
+    }
+};
 $mostrar = static fn(array $x) => print(json_encode($x, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n");
 
 echo "== contagem (banco local) — conta $conta\n";
@@ -128,7 +136,7 @@ $mostrar($antes);
 
 if ($modo === 'situacoes') {
     echo "== situações do módulo de vendas (2 GETs ao Bling)\n";
-    $s = $sync->lerSituacoesVendas($conta);
+    $s = $comBling(static fn() => $sync->lerSituacoesVendas($conta));
     $mostrar($s);
     if ($s['situacao'] === 'escopo_ausente') { echo "[AVISO] o token atual NÃO tem o escopo de situações — nada foi reautorizado; decisão do Jhony\n"; exit(3); }
     exit($s['situacao'] === 'ok' ? 0 : 1);
@@ -144,7 +152,7 @@ if (is_file(ARQ_PARAR)) { @unlink(ARQ_PARAR); }   // pedido de parada ANTIGO nã
 $t0 = microtime(true);
 if ($pedidos !== null) {
     echo "== releitura SÓ dos pedidos indicados (" . count($pedidos) . ") — o checkpoint da releitura inteira não é tocado\n";
-    $r = $sync->releituraPedidosIds($conta, $pedidos, static fn(): bool => is_file(ARQ_PARAR), static function (int $ms): void { usleep($ms * 1000); }, $pausa);
+    $r = $comBling(static fn() => $sync->releituraPedidosIds($conta, $pedidos, static fn(): bool => is_file(ARQ_PARAR), static function (int $ms): void { usleep($ms * 1000); }, $pausa));
     $mostrar($r + ['segundos' => round(microtime(true) - $t0, 1)]);
     echo "== contagem depois\n"; $mostrar($sync->contagemSituacao($conta));
     if (is_file(ARQ_PARAR)) { @unlink(ARQ_PARAR); }
@@ -158,7 +166,7 @@ if ($pedidos !== null) {
     };
     exit($r['situacao'] === 'concluida' || $r['situacao'] === 'interrompida' ? 0 : 1);
 }
-$r = $sync->releituraPedidos($conta, static fn(): bool => is_file(ARQ_PARAR), static function (int $ms): void { usleep($ms * 1000); }, $pausa);
+$r = $comBling(static fn() => $sync->releituraPedidos($conta, static fn(): bool => is_file(ARQ_PARAR), static function (int $ms): void { usleep($ms * 1000); }, $pausa));
 echo "== releitura\n"; $mostrar($r + ['segundos' => round(microtime(true) - $t0, 1)]);
 echo "== contagem depois\n"; $mostrar($sync->contagemSituacao($conta));
 if (is_file(ARQ_PARAR)) { @unlink(ARQ_PARAR); }

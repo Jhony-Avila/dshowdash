@@ -371,6 +371,39 @@ try {
     $r10c = $sync->releituraPedidos($conta, static fn() => true, static fn(int $ms) => null, 1500);
     ok('P2 releitura inteira: erro na página e parada → interrompida_com_erros', $r10c['situacao'] === 'interrompida_com_erros' && $r10c['erros'] === 1 && $r10c['paginas'] === 1, json_encode($r10c));
     ok('P2 releitura inteira: checkpoint continua parcial (rodar de novo retoma)', ($e10c = $repo->estadoSync($conta, BlingSyncService::RECURSO_RELEITURA)) && $e10c['situacao'] === 'parcial' && (int) $e10c['pagina_atual'] === 1, json_encode($e10c));
+
+    echo "== 11. revisão da ACIMA_ESQUERDA (24/11) · achado 4 (--conta) e pergunta 6 (reprocesso com sucesso não fica como afetado)\n";
+    $E6 = (int) $pdo->query('SELECT COALESCE(MAX(id),0) FROM bling_sync_errors')->fetchColumn();
+    $DET['900003'] = new BlingResposta(200, ['data' => ['id' => 900003, 'situacao' => ['id' => 21], 'loja' => ['id' => 205003]]]);
+    $r11 = $sync4->releituraPedidosIds($conta, ['900003'], static fn() => false, static fn(int $ms) => null, 1500);
+    ok('6) o afetado de antes (900003) reprocessado com sucesso: concluida, 0 erro', $r11['situacao'] === 'concluida' && $r11['erros'] === 0, json_encode($r11));
+    ok('6) nenhuma linha NOVA de erro → o fechamento (erros depois da marca do reprocesso) não o lista mais', (int) $pdo->query("SELECT COUNT(*) FROM bling_sync_errors WHERE id > $E6")->fetchColumn() === 0);
+    ok('6) contador do reprocesso = 0 e estado ok (o que o fechamento lê em releitura_situacao_pedidos)', ($e11 = $repo->estadoSync($conta, BlingSyncService::RECURSO_REPROCESSO)) && (int) $e11['erros'] === 0 && $e11['situacao'] === 'ok');
+    $cp = $sync->contaParaReleitura(null, true);
+    ok('4) sem --conta e 1 conta ativa com token: escolhe a conta', ($cp['conta'] ?? null) === $conta, json_encode($cp));
+    ok('4) --conta = a conta ativa: aceita', ($sync->contaParaReleitura($conta, true)['conta'] ?? null) === $conta);
+    $cx = $sync->contaParaReleitura(987654, true);
+    ok('4) --conta inexistente: erro claro (antes: rc 255 com stack trace)', isset($cx['erro']) && str_contains($cx['erro'], '987654') && str_contains($cx['erro'], 'ativa'), json_encode($cx));
+    $tok = $pdo->query("SELECT * FROM bling_oauth_tokens WHERE account_id = $conta")->fetchAll();
+    $pdo->exec("DELETE FROM bling_oauth_tokens WHERE account_id = $conta");   // tabela do próprio teste
+    $cs = $sync->contaParaReleitura($conta, true);
+    ok('4) conta sem token, modo que vai ao Bling: erro claro', isset($cs['erro']) && str_contains($cs['erro'], 'token'), json_encode($cs));
+    ok('4) conta sem token, só contagem (não vai ao Bling): aceita', ($sync->contaParaReleitura($conta, false)['conta'] ?? null) === $conta);
+    foreach ($tok as $t) { $cols = array_keys($t); $pdo->prepare('INSERT INTO bling_oauth_tokens (`' . implode('`,`', $cols) . '`) VALUES (' . implode(',', array_fill(0, count($cols), '?')) . ')')->execute(array_values($t)); }
+    $pdo->exec("UPDATE bling_oauth_tokens SET access_token_enc = 'lixo-sintetico' WHERE account_id = $conta");
+    ok('4) só o access ilegível (o refresh ainda renova): aceita', ($sync->contaParaReleitura($conta, true)['conta'] ?? null) === $conta);
+    $pdo->exec("UPDATE bling_oauth_tokens SET refresh_token_enc = 'lixo-sintetico' WHERE account_id = $conta");
+    $ci = $sync->contaParaReleitura($conta, true);
+    ok('4) access E refresh ilegíveis: erro claro (sem exceção)', isset($ci['erro']) && str_contains($ci['erro'], 'ilegível'), json_encode($ci));
+    $pdo->exec("UPDATE bling_accounts SET is_ativo = 0 WHERE id = $conta");
+    $cn = $sync->contaParaReleitura($conta, false);
+    ok('4) conta INATIVA com --conta: erro (a guarda de conta ativa não é mais pulada)', isset($cn['erro']), json_encode($cn));
+    $pdo->exec("UPDATE bling_accounts SET is_ativo = 1 WHERE id = $conta");
+    $src = (string) file_get_contents($script);
+    $pConta = strpos($src, '$sync->contaParaReleitura('); $pTrava = strpos($src, "fopen('/var/lib/bling/releitura-situacao.lock'"); $pMarca = strpos($src, '@unlink(ARQ_PARAR)');
+    ok('4) no script a conta é conferida ANTES da trava e de apagar o marcador antigo (zero efeitos), com rc 2', $pConta !== false && $pTrava !== false && $pMarca !== false
+        && $pConta < $pTrava && $pConta < $pMarca && (bool) preg_match('/if \(isset\(\$escolha\[\'erro\'\]\)\) \{[^}]*exit\(2\);/', $src));
+    ok('4) todas as chamadas ao Bling no script passam pelo envoltório (sem stack trace)', substr_count($src, '$comBling(static fn() => $sync->') === 3);
 } catch (Throwable $e) {
     $falhas++; echo 'FALHA exceção: ', get_class($e), ': ', $e->getMessage(), ' @', basename($e->getFile()), ':', $e->getLine(), "\n";
 } finally {
