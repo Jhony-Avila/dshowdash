@@ -28,27 +28,62 @@ export function mensagemSessao(codigo: string): string {
 }
 /** Entrar de novo resolve? (sim para sessão revogada/expirada; não para usuário desativado). */
 export const sessaoReentravel = (codigo: string) => codigo !== 'USER_DISABLED';
-/** Encerra a sessão do Dash DE VERDADE, pelo mesmo caminho do menu → Sair (user-menu: check.php para o CSRF → POST /api/auth/logout.php).
- *  Pedido da DIREITA (§114, 23/11): no 401 SESSION_REVOKED do proxy a sessão PHP pode continuar viva, e /login com sessão viva não pede senha
- *  (nem chega ao servidor). Sem sessão (403/401 do logout) ou sem rede: segue assim mesmo — /login sem sessão mostra a senha. */
-export async function encerrarSessaoDoDash(): Promise<boolean> {
+/** Codex DSHOW-114 (P9): TRÊS estados de sessão. Só a saída CONFIRMADA vale; o resto é DESCONHECIDO e nunca vira saída nem entrada.
+ *  - encerrada: logout 2xx confirmado, ou check 200 `authenticated:false` (a sessão anterior já tinha acabado);
+ *  - desconhecido: check 503 SESSION_CHECK_UNAVAILABLE, rede, timeout, 403 de CSRF, 5xx. */
+export type SaidaSessao = { estado: 'encerrada'; sessaoAntiga: string | null } | { estado: 'desconhecido'; motivo: string };
+type Checagem = { estado: 'autenticado'; token: string | null; csrf: string } | { estado: 'nao_autenticado' } | { estado: 'desconhecido'; motivo: string };
+const comPrazo = (ms: number) => { const c = new AbortController(); const t = window.setTimeout(() => c.abort(), ms); return { sinal: c.signal, fim: () => window.clearTimeout(t) }; };
+
+/** check.php: 200 `authenticated:true` = autenticado (com o token da sessão, para provar depois que é OUTRA); 200 `false` = não autenticado
+ *  confirmado; qualquer outra coisa (503, rede, timeout, corpo inválido) = desconhecido. */
+export async function checarSessao(): Promise<Checagem> {
+  const p = comPrazo(10000);
   try {
-    const r = await fetch('/api/auth/check.php', { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' } });
-    const j = r.ok ? await r.json().catch(() => null) : null;
-    const token: string = j?.data?.session?.csrf_token ?? j?.session?.csrf_token ?? '';
-    const s = await fetch('/api/auth/logout.php', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', ...(token ? { 'X-CSRF-Token': token } : {}) } });
-    return s.ok;
-  } catch { return false; }
+    const r = await fetch('/api/auth/check.php', { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' }, signal: p.sinal });
+    if (r.status !== 200) return { estado: 'desconhecido', motivo: `check ${r.status}` };
+    const j = await r.json().catch(() => null); const d = j?.data ?? j ?? {};
+    if (d.authenticated === true) return { estado: 'autenticado', token: d.session?.token ?? null, csrf: d.session?.csrf_token ?? '' };
+    if (d.authenticated === false) return { estado: 'nao_autenticado' };
+    return { estado: 'desconhecido', motivo: 'resposta sem authenticated' };
+  } catch { return { estado: 'desconhecido', motivo: 'rede ou tempo esgotado' }; } finally { p.fim(); }
 }
-/** "Entrar novamente": encerra a sessão (acima) e abre a entrada do Dash (/login → tela de senha) em OUTRA aba, para não perder a fila de
- *  fotos nem a ficha aberta nesta. A aba nova abre JÁ no clique (senão o navegador a bloqueia como pop-up) e só vai a /login depois do logout.
- *  O cookie de sessão é o mesmo; depois de entrar, a pessoa volta a esta aba e clica em "Continuar". Pop-up bloqueado: vai a /login nesta aba. */
-export function entrarNovamente(): Promise<void> {
+
+/** Encerra a sessão do Dash pelo mesmo caminho do menu → Sair (check.php → POST /api/auth/logout.php com o CSRF) e SÓ devolve "encerrada"
+ *  com prova: logout 2xx, ou check confirmando que não havia sessão. Mesma regra do cliente único `core/auth/logout-client` (`ok:true`). */
+export async function encerrarSessaoDoDash(): Promise<SaidaSessao> {
+  const c = await checarSessao();
+  if (c.estado === 'nao_autenticado') return { estado: 'encerrada', sessaoAntiga: null };
+  if (c.estado === 'desconhecido') return { estado: 'desconhecido', motivo: c.motivo };
+  const p = comPrazo(10000);
+  try {
+    const s = await fetch('/api/auth/logout.php', { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: p.sinal,
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(c.csrf ? { 'X-CSRF-Token': c.csrf } : {}) }, body: '{}' });
+    await s.text().catch(() => '');
+    return s.ok ? { estado: 'encerrada', sessaoAntiga: c.token } : { estado: 'desconhecido', motivo: `logout ${s.status}` };
+  } catch { return { estado: 'desconhecido', motivo: 'rede ou tempo esgotado' }; } finally { p.fim(); }
+}
+
+/** "Entrar novamente": encerra a sessão (acima) e, SÓ com a saída confirmada, abre a entrada do Dash (/login) em OUTRA aba — a fila de fotos e
+ *  a ficha ficam nesta. A aba abre no clique (senão o navegador bloqueia o pop-up) e é FECHADA se a saída não for confirmada: com o estado
+ *  desconhecido nada de /login, o aviso fica e a pessoa tenta de novo. Pop-up bloqueado e saída confirmada: vai a /login nesta aba. */
+export async function entrarNovamente(): Promise<SaidaSessao> {
   const aba = window.open('about:blank', '_blank');
-  return encerrarSessaoDoDash().then(() => {
-    if (aba && !aba.closed) { try { aba.opener = null; } catch { /* ignora */ } aba.location.href = '/login'; }
-    else window.location.assign('/login');
-  });
+  const r = await encerrarSessaoDoDash();
+  if (r.estado !== 'encerrada') { try { aba?.close(); } catch { /* ignora */ } return r; }
+  if (aba && !aba.closed) { try { aba.opener = null; } catch { /* ignora */ } aba.location.href = '/login'; }
+  else window.location.assign('/login');
+  return r;
+}
+
+/** Retomar depois de "Entrar novamente": só com um LOGIN REAL — autenticado e com uma sessão diferente da que foi encerrada. A sessão
+ *  antiga ainda viva (logout que não pegou) ou o check indisponível NUNCA contam como reentrada. */
+export async function sessaoRenovada(sessaoAntiga: string | null): Promise<'nova' | 'sem_login' | 'antiga' | 'desconhecido'> {
+  const c = await checarSessao();
+  if (c.estado === 'desconhecido') return 'desconhecido';
+  if (c.estado === 'nao_autenticado') return 'sem_login';
+  if (sessaoAntiga !== null && (c.token === null || c.token === sessaoAntiga)) return 'antiga';
+  return 'nova';
 }
 /** Proxy corrigido (35f037cd): o canal recusou a assinatura (401 ou 403 assinatura_invalida do app) → 503 APP_UNAVAILABLE com desfecho
  *  "recusada" e gravado false. A tela diz só "não foi possível enviar agora" (não afirma salvo; não culpa o usuário). */

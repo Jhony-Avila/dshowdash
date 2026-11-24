@@ -6,7 +6,7 @@
 // Aba Fotos: "Definir como principal", Reordenar (arrastar ou setas; "A primeira foto será a principal"; Salvar ordem / Cancelar), remover com Desfazer, restaurar.
 import React from 'react';
 import { ErroApi, novaChaveOperacao } from '../../lib/api';
-import { ACEITOS, conferirFoto, DETALHES_LIMITES, ehHeic, entrarNovamente, FORMATOS_TEXTO, LIMITE_BYTES, marcarCapa, ordenarFotos, prepararArquivo, publicarFoto, removerFoto, restaurarFoto,
+import { ACEITOS, conferirFoto, DETALHES_LIMITES, ehHeic, entrarNovamente, sessaoRenovada, FORMATOS_TEXTO, LIMITE_BYTES, marcarCapa, ordenarFotos, prepararArquivo, publicarFoto, removerFoto, restaurarFoto,
   urlImagem, type EstadoGaleria, type FotoGaleria, type ReciboFoto, type RespostaFoto, classificarErroFoto } from '../../lib/fotos';
 import { marcarPendencia } from '../../lib/pendencias';
 import { Botao, Dialogo, Foto } from '../Comuns';
@@ -31,17 +31,35 @@ const TEXTO: Record<EstadoItem, string> = { pronta: 'Pronta para publicar', envi
   recusada: 'Não foi publicada', desconhecido: 'Ainda não conseguimos confirmar o envio desta foto.', conferindo: 'Conferindo a gravação…', andando: 'Ainda em processamento no servidor' };
 
 /** Sessão encerrada (401, parecer do Jhony 23/11): "Entrar novamente" ENCERRA a sessão do Dash (como o menu → Sair; §114) e abre a tela de
- *  senha em outra aba (a fila e a ficha ficam aqui); depois aparece a orientação de retomada e o botão de continuar.
- *  Usado na linha da foto, no aviso da página e na aba Fotos. */
+ *  senha em outra aba (a fila e a ficha ficam aqui). Codex DSHOW-114 (P9):
+ *  - a saída só vale CONFIRMADA (logout 2xx ou check "não autenticado"); desconhecida (503, rede, CSRF, 5xx) = o aviso fica, nada de /login,
+ *    e a pessoa tenta de novo;
+ *  - "Continuar" só retoma depois de um LOGIN REAL (sessão nova). Sessão antiga ainda viva ou check indisponível NÃO retomam.
+ *  Usado na linha da foto, no aviso da página e na aba Fotos. Nenhuma operação incerta é reenviada daqui (só a recusada por sessão). */
 export function EntrarNovamente({ aoContinuar, rotulo = 'Continuar' }: { aoContinuar: () => void; rotulo?: string }) {
-  const [abriu, setAbriu] = React.useState(false);
-  const [saindo, setSaindo] = React.useState(false);
-  const clicar = () => { if (saindo) return; setSaindo(true); void entrarNovamente().finally(() => { setSaindo(false); setAbriu(true); }); };
+  type Fase = { f: 'inicial' } | { f: 'saindo' } | { f: 'nao_saiu'; motivo: string } | { f: 'aguardando'; sessaoAntiga: string | null; aviso?: string } | { f: 'conferindo'; sessaoAntiga: string | null };
+  const [fase, setFase] = React.useState<Fase>({ f: 'inicial' });
+  const sair = () => {
+    if (fase.f === 'saindo') return; setFase({ f: 'saindo' });
+    void entrarNovamente().then((r) => setFase(r.estado === 'encerrada' ? { f: 'aguardando', sessaoAntiga: r.sessaoAntiga } : { f: 'nao_saiu', motivo: r.motivo }));
+  };
+  const continuar = () => {
+    if (fase.f !== 'aguardando') return; const antiga = fase.sessaoAntiga; setFase({ f: 'conferindo', sessaoAntiga: antiga });
+    void sessaoRenovada(antiga).then((v) => {
+      if (v === 'nova') { setFase({ f: 'inicial' }); aoContinuar(); return; }
+      setFase({ f: 'aguardando', sessaoAntiga: antiga, aviso: v === 'desconhecido' ? 'Não foi possível verificar a sua entrada agora. Tente de novo.'
+        : v === 'antiga' ? 'A sessão anterior ainda está ativa. Entre de novo na outra aba e depois clique em “' + rotulo + '”.'
+        : 'Ainda não identificamos a sua entrada. Entre na outra aba e depois clique em “' + rotulo + '”.' });
+    });
+  };
+  const aguardando = fase.f === 'aguardando' || fase.f === 'conferindo';
   return (
-    <span className="at-entrar-novamente" data-at-entrar>
-      <button type="button" className="at-link" onClick={clicar} disabled={saindo} aria-busy={saindo}>{saindo ? 'Encerrando a sessão…' : 'Entrar novamente'}</button>
-      {abriu && <> <span className="at-entrar-novamente__dica" data-at-entrar-retomar>Depois de entrar na nova aba, volte aqui e clique em “{rotulo}”.</span>
-        <button type="button" className="at-link" onClick={aoContinuar}>{rotulo}</button></>}
+    <span className="at-entrar-novamente" data-at-entrar data-at-entrar-fase={fase.f}>
+      {!aguardando && <button type="button" className="at-link" onClick={sair} disabled={fase.f === 'saindo'} aria-busy={fase.f === 'saindo'}>
+        {fase.f === 'saindo' ? 'Encerrando a sessão…' : fase.f === 'nao_saiu' ? 'Tentar de novo' : 'Entrar novamente'}</button>}
+      {fase.f === 'nao_saiu' && <span className="at-entrar-novamente__dica" role="alert" data-at-entrar-nao-saiu> Não foi possível encerrar a sessão agora. Verifique a conexão e tente de novo.</span>}
+      {aguardando && <> <span className="at-entrar-novamente__dica" data-at-entrar-retomar>{fase.f === 'aguardando' && fase.aviso ? fase.aviso : `Depois de entrar na nova aba, volte aqui e clique em “${rotulo}”.`}</span>
+        <button type="button" className="at-link" onClick={continuar} disabled={fase.f === 'conferindo'} aria-busy={fase.f === 'conferindo'}>{fase.f === 'conferindo' ? 'Verificando…' : rotulo}</button></>}
     </span>
   );
 }
