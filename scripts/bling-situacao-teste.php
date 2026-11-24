@@ -441,6 +441,51 @@ try {
     }
     ok('seletivo, loja válida 205777: atualiza', $lojaAntes($alvosS['valida']) === '205777');
     ok('nenhuma loja "0" gravada em lugar nenhum', n($pdo, "SELECT COUNT(*) FROM bling_sales_orders WHERE loja_bling_id = '0'") === 0);
+
+    echo "== 13. revisão da ACIMA_ESQUERDA (P6.1, 24/11) · situacao.id ausente, ilegível, 0 e \"0\" NUNCA trocam a situação conhecida — geral, seletivo e sincronização normal\n";
+    $varSit = ['ausente' => null, 'ilegivel' => 'abc', 'zero-numerico' => 0, 'zero-texto' => '0', 'valida' => 24];
+    $GLOBALS['PEDIDOS'] = pedidosFalsos(250, static fn(int $i) => 15);
+    $alvosG = []; $k = 0;
+    foreach ($varSit as $nome => $sid) {   // GERAL: 900051..900055, loja nova 205888 (para haver o que gravar)
+        $i = 51 + $k++; $alvosG[$nome] = (string) (900000 + $i);
+        $GLOBALS['PEDIDOS'][$i - 1]['loja'] = ['id' => 205888];
+        if ($sid === null) { unset($GLOBALS['PEDIDOS'][$i - 1]['situacao']['id']); } else { $GLOBALS['PEDIDOS'][$i - 1]['situacao']['id'] = $sid; }
+    }
+    $sitG = []; foreach ($alvosG as $nome => $b) { $sitG[$nome] = $sitDe($b); }
+    $api->responder('pedidos/vendas', static fn($m, $url) => $paginaDe($GLOBALS['PEDIDOS'], $url));
+    $pdo->exec("DELETE FROM bling_sync_state WHERE account_id = $conta AND recurso = '" . BlingSyncService::RECURSO_RELEITURA . "'");
+    $r13 = $sync->releituraPedidos($conta, static fn() => false, static fn(int $ms) => null, 1500);
+    ok('geral: releitura concluída', $r13['situacao'] === 'concluida', json_encode($r13));
+    foreach (['ausente', 'ilegivel', 'zero-numerico', 'zero-texto'] as $nome) {
+        ok("geral, situação $nome: situação conhecida PRESERVADA (loja 205888 gravada)", $sitDe($alvosG[$nome]) === $sitG[$nome] && $sitG[$nome] !== ''
+            && $sitG[$nome] !== '0' && $lojaAntes($alvosG[$nome]) === '205888', $alvosG[$nome] . ': ' . $sitG[$nome] . ' → ' . $sitDe($alvosG[$nome]));
+    }
+    ok('geral, situação válida 24: atualiza', $sitDe($alvosG['valida']) === '24');
+    $alvosS = []; $k = 0;
+    foreach ($varSit as $nome => $sid) {   // SELETIVO (--pedidos): 900061..900065, loja nova 205999
+        $b = (string) (900061 + $k++); $alvosS[$nome] = $b;
+        $dado = ['id' => (int) $b, 'loja' => ['id' => 205999], 'situacao' => ['valor' => 0] + ($sid === null ? [] : ['id' => $sid])];
+        $DET[$b] = new BlingResposta(200, ['data' => $dado]);
+    }
+    $sitS = []; foreach ($alvosS as $nome => $b) { $sitS[$nome] = $sitDe($b); }
+    $r13s = $sync4->releituraPedidosIds($conta, array_values($alvosS), static fn() => false, static fn(int $ms) => null, 1500);
+    ok('seletivo: concluída, 5 atualizados (loja 205999)', $r13s['situacao'] === 'concluida' && $r13s['atualizados'] === 5, json_encode($r13s));
+    foreach (['ausente', 'ilegivel', 'zero-numerico', 'zero-texto'] as $nome) {
+        ok("seletivo, situação $nome: situação conhecida PRESERVADA", $sitDe($alvosS[$nome]) === $sitS[$nome] && $sitS[$nome] !== '' && $sitS[$nome] !== '0'
+            && $lojaAntes($alvosS[$nome]) === '205999', $alvosS[$nome] . ': ' . $sitS[$nome] . ' → ' . $sitDe($alvosS[$nome]));
+    }
+    ok('seletivo, situação válida 24: atualiza', $sitDe($alvosS['valida']) === '24');
+    // sincronização NORMAL (mesma regra): 900071 com situação "0" e 900072 com 0 na listagem não apagam a conhecida
+    $GLOBALS['PEDIDOS'] = pedidosFalsos(250, static fn(int $i) => 15);
+    $GLOBALS['PEDIDOS'][70]['situacao']['id'] = '0'; $GLOBALS['PEDIDOS'][71]['situacao']['id'] = 0;
+    $GLOBALS['PEDIDOS'][70]['total'] = $GLOBALS['PEDIDOS'][70]['totalProdutos'] = 777.01; $GLOBALS['PEDIDOS'][71]['total'] = $GLOBALS['PEDIDOS'][71]['totalProdutos'] = 777.02;   // muda o hash → o pedido é regravado
+    $sn71 = $sitDe('900071'); $sn72 = $sitDe('900072');
+    $sync->sincronizar($conta, 'pedidos', 'carga_inicial', 't13-normal');
+    ok('normal: pedidos regravados (total novo)', (string) v($pdo, 'SELECT total FROM bling_sales_orders WHERE bling_id = ?', ['900071']) === '777.01'
+        && (string) v($pdo, 'SELECT total FROM bling_sales_orders WHERE bling_id = ?', ['900072']) === '777.02');
+    ok('normal, situação "0" e 0: situação conhecida PRESERVADA', $sitDe('900071') === $sn71 && $sitDe('900072') === $sn72 && $sn71 !== '' && $sn71 !== '0',
+        "$sn71 → " . $sitDe('900071') . "; $sn72 → " . $sitDe('900072'));
+    ok('nenhuma situação "0" gravada em lugar nenhum', n($pdo, "SELECT COUNT(*) FROM bling_sales_orders WHERE situacao_bling_id = '0'") === 0);
 } catch (Throwable $e) {
     $falhas++; echo 'FALHA exceção: ', get_class($e), ': ', $e->getMessage(), ' @', basename($e->getFile()), ':', $e->getLine(), "\n";
 } finally {
