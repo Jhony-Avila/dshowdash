@@ -551,8 +551,8 @@ html[data-shell-layout-v2="on"] [data-geral-react-root] .ger-prev-det-info { min
 [data-geral-react-root] .ger-wg-metrica { flex: 1 1 calc(50% - 12px); min-width: max-content; }
 [data-geral-react-root] .ger-wg-metrica-valor { white-space: nowrap; overflow-wrap: normal; }
 [data-geral-react-root] .ger-wg-metricas.is-desatualizado .ger-wg-metrica { min-width: 0; }
-[data-geral-react-root] .ger-wg-head .ger-wg-nome { flex: 0 1 auto; min-width: 7ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-[data-geral-react-root] .ger-wg-head .ger-wg-status { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+[data-geral-react-root] .ger-wg-head .ger-wg-nome { flex: 1 1 auto; min-width: 7ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-geral-react-root] .ger-wg-head .ger-wg-status { flex: 0 0 auto; max-width: 58%; overflow: hidden; text-overflow: ellipsis; }   /* pílula curta fica inteira; só a longa ganha reticências */
 [data-geral-react-root] .ger-aguardando-topo strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 [data-geral-react-root] .ger-hero-frase--carregando { display: flex; align-items: center; gap: 8px; opacity: .85; }
 [data-geral-react-root] .ger-hero-frase--carregando .ger-osso { width: 64px; height: 8px; margin: 0; }

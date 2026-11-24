@@ -92,7 +92,9 @@ function fontes() {
     { const quebra = await pg.$$eval('.ger-wg-metrica-valor', (xs) => xs.filter((x) => { const lh = parseFloat(getComputedStyle(x).lineHeight) || parseFloat(getComputedStyle(x).fontSize) * 1.3; return x.getBoundingClientRect().height > lh * 1.5; }).map((x) => x.textContent));
       afirma('P1: nenhum valor de métrica quebrado em duas linhas (ex.: valor do funil R$ 1.834.500 inteiro)', quebra.length === 0 && /R\$\s?1\.834\.500/.test(await pg.textContent('[data-ger-estado="conectado"]:has(.ger-wg-nome:text-is("Pipedrive"))')), JSON.stringify(quebra));
       const nomes = await pg.$$eval('.ger-rgl-item .ger-wg-nome', (xs) => xs.map((x) => [x.textContent, Math.round(x.getBoundingClientRect().width)]));
-      afirma('P2: o nome de cada módulo continua visível (≥ 40 px) mesmo com a pílula longa do Pipedrive', nomes.every(([, w]) => w >= 40), JSON.stringify(nomes)); }
+      afirma('P2: o nome de cada módulo continua visível (≥ 40 px) mesmo com a pílula longa do Pipedrive', nomes.every(([, w]) => w >= 40), JSON.stringify(nomes));
+      const pilulas = await pg.$$eval('.ger-rgl-item .ger-wg-status', (xs) => xs.filter((x) => x.textContent.length <= 14 && x.scrollWidth > x.clientWidth + 1).map((x) => x.textContent));
+      afirma('pílulas curtas (Operacional, Conectado, Com problema) aparecem inteiras, sem reticências', pilulas.length === 0, JSON.stringify(pilulas)); }
     await cap(pg, '2-conectado');
     // sincronizando: o ponto pulsa SÓ enquanto atualiza
     f.atraso = 2500; await pg.click('[data-geral-react-root] .ger-btn:has-text("Atualizar")'); await pg.waitForTimeout(500);
