@@ -586,10 +586,14 @@ export function opcaoFaixas(
       label: { show: true, position: 'right', color: t.texto2, fontSize: 10,
         formatter: (p: any) => fmtValor(p.value, formato) },
       // faixa desconhecida (consumo não lido): sem barra e rótulo "—" — nunca 0
-      data: [...faixas].reverse().map(f => ({
-        value: (() => { const v = metrica === 'valor' ? f.valor : f.itens; return desconhecido(v) ? null : v; })(),
-        itemStyle: { color: cor(f.cor) },
-      })),
+      // faixa com valor desconhecido: nenhuma barra (opacidade 0 na origem) e o rótulo ESCRITO "— desconhecido" — antes, com null,
+      // o ECharts não desenhava nem o rótulo e a faixa parecia vazia (32e46b62: item de 31 a 60 dias com valor a custo desconhecido)
+      data: [...faixas].reverse().map(f => {
+        const v = metrica === 'valor' ? f.valor : f.itens;
+        return desconhecido(v)
+          ? { value: 0, desconhecido: true, itemStyle: { opacity: 0 }, label: { formatter: '— desconhecido' } }
+          : { value: v, itemStyle: { color: cor(f.cor) } };
+      }),
     }],
   };
 }
