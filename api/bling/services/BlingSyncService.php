@@ -600,8 +600,13 @@ final class BlingSyncService
         // RESPOSTA SEM ITENS (23/11 noite, risco da 711fcedc:700): a listagem do Bling não traz itens. Sem itens na resposta, NÃO se apaga
         // item gravado nem se zera subtotal/custo/qtd_itens: essas colunas ficam fora do UPDATE (o upsert só grava as chaves enviadas) e o
         // total do cabeçalho não é recalculado a partir de uma soma vazia. Ausência de itens = "não informado", nunca "zero itens".
-        $temItens = $itens !== [];
-        if ($temItens) {
+        // Codex DSHOW-112: "campo ausente" ≠ "lista vazia" (aceite próprio). Ausente → nada muda; vazia confirmada → zero itens.
+        $estadoItens = self::estadoItens($bruto, $itens);
+        $temItens = $estadoItens === 'com_itens';
+        if ($estadoItens === 'vazia') {
+            $d['subtotal'] = 0.0; $d['custo_total'] = 0.0; $d['qtd_itens'] = 0;    // o Bling CONFIRMOU: pedido sem itens
+            if ($d['total'] <= 0) { unset($d['total']); }
+        } elseif ($temItens) {
             $subtotal = 0.0;
             $custo = 0.0;
             foreach ($itens as $i) {
@@ -646,8 +651,8 @@ final class BlingSyncService
                      VALUES (?, ?, ?, ?, ?, UTC_TIMESTAMP())'
                 )->execute([$accountId, $pedidoId, $situacaoAntes, $d['situacao'], 'sync']);
             }
-            if ($temItens) {   // sem itens na resposta: os itens gravados ficam como estão (nenhum DELETE)
-                $this->gravarItens($accountId, $pedidoId, $itens);
+            if ($estadoItens !== 'ausente') {   // itens AUSENTES na resposta: os gravados ficam como estão (nenhum DELETE)
+                $this->gravarItens($accountId, $pedidoId, $itens, $estadoItens === 'vazia');
             }
             $this->gravarEnvio($accountId, $pedidoId, $bruto, $d);
         }
@@ -719,10 +724,27 @@ final class BlingSyncService
      * simples e não deixa item fantasma de uma versão anterior do pedido.
      * Lista vazia = resposta SEM itens (a listagem não os traz): nada é apagado (23/11 noite).
      */
-    private function gravarItens(int $accountId, int $pedidoId, array $itens): void
+    /**
+     * Codex DSHOW-112 — estado dos itens na RESPOSTA do Bling:
+     *  'ausente'   = o campo não veio (a LISTAGEM do Bling não traz itens), veio nulo, veio com elementos mas nenhum item legível,
+     *                ou veio `[]` contradizendo o cabeçalho (totalProdutos > 0): os itens gravados NÃO são tocados.
+     *  'vazia'     = `itens: []` explícito e coerente com o cabeçalho: o pedido CONFIRMADAMENTE não tem itens (zera e remove os antigos).
+     *  'com_itens' = lista com itens legíveis: apaga e regrava (regra antiga para resposta completa).
+     */
+    private static function estadoItens(array $bruto, array $itensNormalizados): string
     {
-        if ($itens === []) {
-            return;   // nunca apaga sem ter o que gravar no lugar
+        $lista = array_key_exists('itens', $bruto) ? $bruto['itens'] : ($bruto['items'] ?? null);
+        if (!is_array($lista)) { return 'ausente'; }
+        if ($itensNormalizados !== []) { return 'com_itens'; }
+        if ($lista !== []) { return 'ausente'; }
+        $tp = $bruto['totalProdutos'] ?? null;
+        return is_numeric($tp) && (float) $tp > 0 ? 'ausente' : 'vazia';
+    }
+
+    private function gravarItens(int $accountId, int $pedidoId, array $itens, bool $vaziaConfirmada = false): void
+    {
+        if ($itens === [] && !$vaziaConfirmada) {
+            return;   // nunca apaga sem ter o que gravar no lugar, salvo lista vazia CONFIRMADA (Codex DSHOW-112)
         }
         $this->repo->pdo()->prepare('DELETE FROM bling_sales_order_items WHERE sales_order_id = ?')
             ->execute([$pedidoId]);
@@ -753,8 +775,8 @@ final class BlingSyncService
 
         $d['supplier_id'] = $this->repo->idPorBlingId('bling_suppliers', $accountId, $fornBling);
         $d['situacao'] = BlingVersionAdapter::situacaoCompra($situacaoBling);
-        $temItens = $itens !== [];   // mesma regra dos pedidos de venda: resposta sem itens não apaga nem zera (23/11 noite)
-        if ($temItens) {
+        $estadoItens = self::estadoItens($bruto, $itens);   // mesma regra dos pedidos de venda (Codex DSHOW-112)
+        if ($estadoItens !== 'ausente') {
             $d['qtd_itens'] = count($itens);
             $d['qtd_total'] = array_sum(array_column($itens, 'quantidade'));
         }
@@ -763,7 +785,7 @@ final class BlingSyncService
         $r = $this->repo->upsert('bling_purchase_orders', $accountId, $d);
         $compraId = $this->repo->idPorBlingId('bling_purchase_orders', $accountId, $d['bling_id']);
 
-        if ($compraId !== null && $temItens) {
+        if ($compraId !== null && $estadoItens !== 'ausente') {
             $this->repo->pdo()->prepare('DELETE FROM bling_purchase_order_items WHERE purchase_order_id = ?')
                 ->execute([$compraId]);
             $st = $this->repo->pdo()->prepare(

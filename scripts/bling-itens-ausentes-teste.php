@@ -94,17 +94,17 @@ try {
     echo "== 1. pedido COM itens (como o detalhe do Bling): grava itens e totais dos itens\n";
     $VENDAS = [pedido(1, true), pedido(2, true)];
     $sync->sincronizar($conta, 'pedidos', 'carga_inicial', 'i1');
-    $a = $retrato($pdo, '900001');
+    $a = $retrato($pdo, '900001'); $retratoAntes2 = $retrato($pdo, '900002');
     ok('2 itens gravados; subtotal 1234.56; qtd_itens 2; total = subtotal − desconto + frete', count($a['itens']) === 2 && (float) $a['pedido']['subtotal'] === 1234.56
         && (int) $a['pedido']['qtd_itens'] === 2 && (float) $a['pedido']['total'] === 1280.06, json_encode($a['pedido']));
 
     echo "== 2. DECISIVO: a MESMA venda chega SEM itens (como na listagem) → itens e totais intactos\n";
-    $VENDAS = [pedido(1, false, ['situacao' => ['id' => 12, 'valor' => 0]]), pedido(2, false, ['itens' => []])];
+    $VENDAS = [pedido(1, false, ['situacao' => ['id' => 12, 'valor' => 0]]), pedido(2, false, ['itens' => null])];
     $r = $sync->sincronizar($conta, 'pedidos', 'incremental', 'i2');
     $b = $retrato($pdo, '900001'); $b2 = $retrato($pdo, '900002'); $a2 = $a; 
     ok('DECISIVO: itens da venda 1 intactos (nenhum DELETE)', $b['itens'] === $a['itens'] && count($b['itens']) === 2, json_encode($b['itens']));
     ok('DECISIVO: subtotal, custo, qtd_itens e total intactos (ausência ≠ zero)', $b['pedido'] === $a['pedido'], json_encode([$a['pedido'], $b['pedido']]));
-    ok('`itens: []` explícito também não apaga', count($b2['itens']) === 2 && (int) $b2['pedido']['qtd_itens'] === 2);
+    ok('`itens: null` = ausente: não apaga', count($b2['itens']) === 2 && (int) $b2['pedido']['qtd_itens'] === 2 && $b2['pedido'] == $retratoAntes2['pedido']);
     ok('o resto do cabeçalho segue atualizando (situação nova: id 12 gravado)', (string) v($pdo, 'SELECT situacao_bling_id FROM bling_sales_orders WHERE bling_id = ?', ['900001']) === '12'
         && n($pdo, 'SELECT COUNT(*) FROM bling_sales_order_status_history') >= 2, json_encode(array_intersect_key($r, array_flip(['situacao', 'atualizados', 'erros']))));
     ok('nenhum erro na rodada', (int) ($r['erros'] ?? 0) === 0, json_encode($r));
@@ -122,6 +122,29 @@ try {
     $d = $retrato($pdo, '900003');
     ok('venda nova gravada com o total do cabeçalho (99.90), sem itens', (float) $d['pedido']['total'] === 99.9 && $d['itens'] === []);
 
+    echo "== 4b. ACEITE Codex DSHOW-112: campo AUSENTE ≠ lista VAZIA\n";
+    $VENDAS = [pedido(11, true), pedido(12, true), pedido(13, true)];
+    $sync->sincronizar($conta, 'pedidos', 'incremental', 'v1');
+    $antes11 = $retrato($pdo, '900011'); $antes12 = $retrato($pdo, '900012'); $antes13 = $retrato($pdo, '900013');
+    $VENDAS = [pedido(11, false, ['itens' => [], 'total' => 0, 'totalProdutos' => 0]),          // vazia CONFIRMADA (coerente com o cabeçalho)
+               pedido(12, false, ['itens' => [], 'totalProdutos' => 1234.56]),                   // vazia CONTRADIZ o cabeçalho → ausente
+               pedido(13, false, ['itens' => ['lixo', 7]])];                                    // veio algo, mas nenhum item legível → ausente
+    $rv = $sync->sincronizar($conta, 'pedidos', 'incremental', 'v2');
+    $v11 = $retrato($pdo, '900011'); $v12 = $retrato($pdo, '900012'); $v13 = $retrato($pdo, '900013');
+    ok('ACEITE lista vazia confirmada: itens removidos, qtd_itens 0, subtotal 0, custo 0', $v11['itens'] === [] && (int) $v11['pedido']['qtd_itens'] === 0
+        && (float) $v11['pedido']['subtotal'] === 0.0 && (float) $v11['pedido']['custo_total'] === 0.0, json_encode($v11));
+    ok('ACEITE lista vazia confirmada: total do cabeçalho 0 não sobrescreve o total gravado', (float) $v11['pedido']['total'] === (float) $antes11['pedido']['total']);
+    ok('ACEITE lista vazia que contradiz totalProdutos > 0: tratada como ausente, tudo intacto', $v12 == $antes12, json_encode([$antes12['pedido'], $v12['pedido']]));
+    ok('ACEITE lista com elementos ilegíveis: tratada como ausente, tudo intacto', $v13 == $antes13);
+    ok('rodada sem erros', (int) ($rv['erros'] ?? 0) === 0, json_encode($rv));
+    $COMPRAS = [compra(21, true)];
+    $sync->sincronizar($conta, 'compras', 'carga_inicial', 'cv1');
+    $COMPRAS = [compra(21, false) + ['itens' => []]];
+    $sync->sincronizar($conta, 'compras', 'incremental', 'cv2');
+    $q21 = $pdo->query("SELECT qtd_itens, qtd_total FROM bling_purchase_orders WHERE bling_id = '800021'")->fetch();
+    $i21 = n($pdo, "SELECT COUNT(*) FROM bling_purchase_order_items i JOIN bling_purchase_orders o ON o.id = i.purchase_order_id WHERE o.bling_id = '800021'");
+    ok('ACEITE compra com lista vazia confirmada: 0 itens, qtd 0', $i21 === 0 && (int) $q21['qtd_itens'] === 0 && (float) $q21['qtd_total'] === 0.0, json_encode([$i21, $q21]));
+
     echo "== 5. compras: mesma regra\n";
     $COMPRAS = [compra(1, true)];
     $sync->sincronizar($conta, 'compras', 'carga_inicial', 'c1');
@@ -135,7 +158,7 @@ try {
 
     echo "== 6. varredura do código\n";
     $codigo = (string) file_get_contents($raiz . '/api/bling/services/BlingSyncService.php');
-    ok('o DELETE de itens de venda vem DEPOIS da guarda de lista vazia', (bool) preg_match('/if \(\$itens === \[\]\) \{\s*return;[^}]*\}\s*\$this->repo->pdo\(\)->prepare\(\'DELETE FROM bling_sales_order_items/s', $codigo));
+    ok('o DELETE de itens de venda vem DEPOIS da guarda (vazia só se CONFIRMADA)', (bool) preg_match('/if \(\$itens === \[\] && !\$vaziaConfirmada\) \{\s*return;[^}]*\}\s*\$this->repo->pdo\(\)->prepare\(\'DELETE FROM bling_sales_order_items/s', $codigo));
 } catch (Throwable $e) {
     $falhas++; echo 'FALHA exceção: ', get_class($e), ': ', $e->getMessage(), ' @', basename($e->getFile()), ':', $e->getLine(), "\n";
 } finally {
