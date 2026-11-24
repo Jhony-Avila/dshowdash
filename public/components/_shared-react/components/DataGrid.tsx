@@ -48,7 +48,8 @@ export interface PropsDataGrid {
   estado: EstadoGrid;
   aoMudarEstado: (parcial: Partial<EstadoGrid>) => void;
   carregando?: boolean;
-  totais?: Record<string, number>;
+  /** null = total desconhecido (alguma linha desconhecida): aparece "—", nunca zero. */
+  totais?: Record<string, number | null>;
   /** Chave estável da linha. Sem ela o React reordena mal em ordenação. */
   chaveLinha?: (linha: Record<string, unknown>) => string;
   aoAbrirLinha?: (linha: Record<string, unknown>) => void;

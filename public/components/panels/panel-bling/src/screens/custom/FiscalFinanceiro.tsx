@@ -13,6 +13,7 @@ import { PropsTela } from '../generic/TelaCatalogo';
 // A tela financeira reusa o MESMO componente D3 do fluxo empresarial —
 // não existe um segundo Sankey no projeto.
 import { SankeyD3 as SankeyFinanceiro } from '../../viz/D3';
+import { numOuNulo } from '../../lib/ausencia';
 import { Grafico, tokens, opcaoFunil } from '../../viz/Echarts';
 
 const GRID_INICIAL: EstadoGrid = { ordenar: '', direcao: 'desc', pagina: 1, limite: 50, busca: '' };
@@ -114,7 +115,8 @@ export function NotasFiscais({ filtros, aoMudarFiltros, larguraPainel }: PropsTe
         kpi('rejeitadas', 'Rejeitadas', conta('rejeitada'), 'inteiro', conta('rejeitada') > 0 ? 'critico' : 'ok'),
         kpi('canceladas', 'Canceladas', conta('cancelada'), 'inteiro'),
         kpi('inutilizadas', 'Inutilizadas', conta('inutilizada'), 'inteiro'),
-        kpi('valor', 'Valor emitido', totais.valor ?? 0, 'moeda'),
+        // Ausência ≠ zero: total desconhecido é "—" (a fonte está no ar), nunca R$ 0,00.
+        { ...kpi('valor', 'Valor emitido', numOuNulo(totais.valor), 'moeda'), rotuloNulo: '—' },
       ]} />
 
       <div style={{ display: 'grid', gridTemplateColumns: duas ? '1fr 1fr' : '1fr', gap: 14, marginTop: 18 }}>
@@ -442,7 +444,12 @@ export function FluxoCaixa({ filtros, aoMudarFiltros, larguraPainel }: PropsTela
           {sankey.dados ? (
             <>
               <SankeyFinanceiro dados={sankey.dados} altura={larguraPainel < 980 ? 260 : 320} />
-              {sankey.dados.prejuizo_total > 0 && (
+              {sankey.dados.custo_desconhecido && (
+              <p data-bl-aviso="fluxo-custo-desconhecido" style={{ fontSize: 12, color: 'var(--bl-texto-2)', margin: '8px 0 0' }}>
+                Parte dos pedidos tem custo de produto desconhecido: o fluxo não mostra custo nem margem (não é zero).
+              </p>
+              )}
+              {!sankey.dados.custo_desconhecido && sankey.dados.prejuizo_total > 0 && (
                 <div style={{
                   marginTop: 10, padding: '7px 10px', fontSize: 11.5,
                   borderRadius: 'var(--bl-raio-sm)', background: 'var(--bl-erro-bg)',

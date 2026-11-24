@@ -153,7 +153,16 @@ const tooltipBase = (t: ReturnType<typeof tokens>) => ({
   extraCssText: 'box-shadow:0 4px 18px rgba(0,0,0,.3);border-radius:8px;',
 });
 
-export function fmtValor(v: number, formato: string): string {
+/** Valor que pode ser desconhecido (ausência ≠ zero, pacote B do Bling). */
+export type Talvez = number | null | undefined;
+
+const desconhecido = (v: unknown): boolean =>
+  v === null || v === undefined || v === '-' || (typeof v === 'number' && !Number.isFinite(v));
+
+/** Nunca quebra com null: valor desconhecido vira "—" (nunca "R$ 0,00", nunca "NaN"). */
+export function fmtValor(v: Talvez | string, formato: string): string {
+  if (desconhecido(v)) return '—';
+  v = Number(v);
   if (formato === 'moeda') {
     return v >= 10000 || v <= -10000
       ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 }).format(v)
@@ -164,23 +173,59 @@ export function fmtValor(v: number, formato: string): string {
   return new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(v);
 }
 
+/** Ponto de série: `valor` null = desconhecido (lacuna no gráfico, "—" no tooltip). */
+export type PontoSerie = { data: string; valor: number | null };
+
+/**
+ * Valores a desenhar de uma série, por dia ou acumulados.
+ * - Por dia: null continua null (lacuna).
+ * - Acumulado de valor (moeda/inteiro): soma corrida; a partir do primeiro desconhecido, o
+ *   acumulado é desconhecido (null) — somar só o que se conhece mostraria um total menor que o real.
+ * - Percentual NÃO se soma. A margem acumulada é (Σfaturamento − Σcusto) ÷ Σfaturamento, a partir
+ *   das séries de apoio; sem elas, ou depois do primeiro custo desconhecido, é null.
+ */
+export function acumularSerie(acumulado: boolean, apoio?: { faturamento?: PontoSerie[]; custo?: PontoSerie[] }) {
+  return (pontos: PontoSerie[], s?: { id: string; formato: string }): (number | null)[] => {
+    if (!acumulado) return pontos.map(p => (desconhecido(p.valor) ? null : Number(p.valor)));
+    if (s?.formato === 'percentual') {
+      if (s.id !== 'margem' || !apoio?.faturamento || !apoio?.custo) return pontos.map(() => null);
+      const fat = new Map(apoio.faturamento.map(p => [p.data, p.valor]));
+      const cus = new Map(apoio.custo.map(p => [p.data, p.valor]));
+      let f = 0, c = 0, quebrou = false;
+      return pontos.map(p => {
+        const fv = fat.get(p.data), cv = cus.get(p.data);
+        if (quebrou || desconhecido(fv) || desconhecido(cv)) { quebrou = true; return null; }
+        f += Number(fv); c += Number(cv);
+        return f > 0 ? Math.round(((f - c) / f) * 1000) / 10 : null;
+      });
+    }
+    let soma = 0, quebrou = false;
+    return pontos.map(p => {
+      if (quebrou || desconhecido(p.valor)) { quebrou = true; return null; }
+      soma += Number(p.valor);
+      return Math.round(soma * 100) / 100;
+    });
+  };
+}
+
 /** Série temporal com eixo duplo, zoom e média móvel (§17). */
 export function opcaoLinhaTempo(
   t: ReturnType<typeof tokens>,
-  series: { id: string; rotulo: string; formato: string; eixo: string; pontos: { data: string; valor: number }[] }[],
-  mediaMovel?: { data: string; valor: number }[],
-  opcoes: { acumulado?: boolean; marcacoes?: { data: string; rotulo: string }[] } = {},
+  series: { id: string; rotulo: string; formato: string; eixo: string; pontos: PontoSerie[]; apoio?: boolean }[],
+  mediaMovel?: PontoSerie[],
+  opcoes: {
+    acumulado?: boolean;
+    marcacoes?: { data: string; rotulo: string }[];
+    /** Séries de apoio (não desenhadas) para a margem acumulada: Σfaturamento e Σcusto. */
+    apoio?: { faturamento?: PontoSerie[]; custo?: PontoSerie[] };
+  } = {},
 ): echarts.EChartsCoreOption {
+  // Série marcada `apoio` serve de insumo, não de linha (ex.: custo para a margem acumulada).
+  series = series.filter(s => !s.apoio);
   const datas = series[0]?.pontos.map(p => p.data) ?? [];
   const temDireita = series.some(s => s.eixo === 'direita');
-
-  // Acumulado (§17): soma corrida. Útil para responder "quanto já fechamos no
-  // mês" — a série diária sozinha não responde isso.
-  const transformar = (pontos: { data: string; valor: number }[]) => {
-    if (!opcoes.acumulado) return pontos.map(p => p.valor);
-    let soma = 0;
-    return pontos.map(p => (soma += p.valor));
-  };
+  const v = acumularSerie(opcoes.acumulado === true, opcoes.apoio);
+  const transformar = (pontos: PontoSerie[], s?: { id: string; formato: string }) => v(pontos, s);
 
   const dados: any[] = series.map((s, i) => ({
     name: s.rotulo,
@@ -194,7 +239,9 @@ export function opcaoLinhaTempo(
         { offset: 0, color: `${t.serie[0]}44` }, { offset: 1, color: `${t.serie[0]}00` },
       ]),
     } : undefined,
-    data: transformar(s.pontos),
+    // null = lacuna: a linha é interrompida no ponto desconhecido; nunca desce a zero.
+    connectNulls: false,
+    data: transformar(s.pontos, s),
     _formato: s.formato,
   }));
 
@@ -214,9 +261,9 @@ export function opcaoLinhaTempo(
   if (mediaMovel?.length) {
     dados.push({
       name: 'Média móvel (7)',
-      type: 'line', smooth: true, symbol: 'none',
+      type: 'line', smooth: true, symbol: 'none', connectNulls: false,
       lineStyle: { width: 1.4, type: 'dashed', color: t.texto3 },
-      data: transformar(mediaMovel),
+      data: transformar(mediaMovel, { id: 'media_movel', formato: 'moeda' }),
       _formato: 'moeda',
     });
   }
@@ -277,10 +324,12 @@ export function opcaoLinhaTempo(
 /** Barras horizontais ordenadas — a forma mais legível para ranking categórico. */
 export function opcaoBarras(
   t: ReturnType<typeof tokens>,
-  itens: { rotulo: string; valor: number }[],
+  itens: { rotulo: string; valor: Talvez }[],
   formato = 'moeda',
 ): echarts.EChartsCoreOption {
-  const ord = [...itens].sort((a, b) => a.valor - b.valor);
+  // Desconhecido fica no fim do ranking (sem barra, rótulo "—"); nunca é ordenado como zero.
+  const chave = (x: Talvez) => (desconhecido(x) ? -Infinity : Number(x));
+  const ord = [...itens].sort((a, b) => chave(a.valor) - chave(b.valor));
   return {
     color: [t.serie[0]],
     grid: { left: 8, right: 44, top: 8, bottom: 8, containLabel: true },
@@ -295,7 +344,7 @@ export function opcaoBarras(
       axisLabel: { ...eixoBase(t).axisLabel, width: 130, overflow: 'truncate' },
     },
     series: [{
-      type: 'bar', data: ord.map(i => i.valor),
+      type: 'bar', data: ord.map(i => (desconhecido(i.valor) ? null : i.valor)),
       itemStyle: { borderRadius: [0, 3, 3, 0] },
       barMaxWidth: 16,
       label: { show: true, position: 'right', color: t.texto2, fontSize: 10,
@@ -307,9 +356,11 @@ export function opcaoBarras(
 /** Rosca com participação — usada só quando as fatias são poucas e comparáveis. */
 export function opcaoPizza(
   t: ReturnType<typeof tokens>,
-  itens: { rotulo: string; valor: number }[],
+  itens: { rotulo: string; valor: Talvez }[],
   formato = 'moeda',
 ): echarts.EChartsCoreOption {
+  // Participação de um valor desconhecido não existe: a fatia sai (quem chama avisa quantas saíram).
+  itens = itens.filter(i => !desconhecido(i.valor));
   return {
     color: t.serie,
     tooltip: {
@@ -362,9 +413,11 @@ export function opcaoFunil(
 /** Pareto: barras + curva acumulada. A linha de 80% é o corte da classe A. */
 export function opcaoPareto(
   t: ReturnType<typeof tokens>,
-  itens: { rotulo: string; valor: number; acumulado_pct?: number }[],
+  itensBrutos: { rotulo: string; valor: Talvez; acumulado_pct?: number }[],
   formato = 'moeda',
 ): echarts.EChartsCoreOption {
+  // Concentração só se calcula sobre valores conhecidos.
+  const itens = itensBrutos.filter(i => !desconhecido(i.valor)) as { rotulo: string; valor: number }[];
   const total = itens.reduce((s, i) => s + i.valor, 0);
   let acc = 0;
   const acumulado = itens.map(i => {
@@ -402,10 +455,12 @@ export function opcaoPareto(
 /** Dispersão — usada em margem × volume e pontualidade × volume. */
 export function opcaoDispersao(
   t: ReturnType<typeof tokens>,
-  itens: { rotulo: string; x: number; y: number; tamanho?: number }[],
+  itensBrutos: { rotulo: string; x: Talvez; y: Talvez; tamanho?: number }[],
   rotuloX: string, rotuloY: string,
   formatoX = 'moeda', formatoY = 'percentual',
 ): echarts.EChartsCoreOption {
+  // Ponto sem x ou sem y não tem posição: sai do gráfico (nunca vai para a linha do zero).
+  const itens = itensBrutos.filter(i => !desconhecido(i.x) && !desconhecido(i.y)) as { rotulo: string; x: number; y: number; tamanho?: number }[];
   const maxT = Math.max(1, ...itens.map(i => i.tamanho ?? 1));
   return {
     color: [t.serie[1]],
@@ -434,22 +489,30 @@ export function opcaoDispersao(
 /** Waterfall de rentabilidade (§40). Implementado com barra empilhada invisível. */
 export function opcaoWaterfall(
   t: ReturnType<typeof tokens>,
-  passos: { rotulo: string; valor: number; tipo: string }[],
+  passos: { rotulo: string; valor: Talvez; tipo: string }[],
 ): echarts.EChartsCoreOption {
-  const base: number[] = [];
+  const base: (number | string)[] = [];
   const positivos: (number | string)[] = [];
   const negativos: (number | string)[] = [];
-  let acumulado = 0;
+  // null = posição desconhecida. Um passo desconhecido (ex.: custo) desloca tudo o que vem
+  // depois: dali em diante não se desenha barra (seria inventar o lucro); o rótulo mostra "—".
+  let acumulado: number | null = 0;
 
   passos.forEach(p => {
     if (p.tipo === 'inicial' || p.tipo === 'final') {
-      base.push(0);
-      positivos.push(Math.abs(p.valor));
+      const conhecido = !desconhecido(p.valor) && (p.tipo === 'inicial' || acumulado !== null);
+      base.push(conhecido ? 0 : '-');
+      positivos.push(conhecido ? Math.abs(Number(p.valor)) : '-');
       negativos.push('-');
-      acumulado = p.tipo === 'inicial' ? p.valor : acumulado;
+      if (p.tipo === 'inicial') acumulado = desconhecido(p.valor) ? null : Number(p.valor);
       return;
     }
-    const v = p.valor;           // já vem negativo nas reduções
+    if (desconhecido(p.valor) || acumulado === null) {
+      base.push('-'); positivos.push('-'); negativos.push('-');
+      acumulado = null;
+      return;
+    }
+    const v = Number(p.valor);   // já vem negativo nas reduções
     base.push(acumulado + v);
     positivos.push('-');
     negativos.push(Math.abs(v));
@@ -610,7 +673,7 @@ export function opcaoPrometidoRealizado(
  */
 export function opcaoPrecoCusto(
   t: ReturnType<typeof tokens>,
-  pontos: { data: string; preco: number; custo: number; unidades: number }[],
+  pontos: { data: string; preco: Talvez; custo: Talvez; unidades: Talvez }[],
 ): echarts.EChartsCoreOption {
   return {
     color: [t.serie[0], t.erro, t.serie[1]],
@@ -620,11 +683,13 @@ export function opcaoPrecoCusto(
       trigger: 'axis', ...tooltipBase(t),
       formatter: (ps: any[]) => {
         const p = pontos[ps[0]?.dataIndex ?? 0];
-        const margem = p.preco > 0 ? ((p.preco - p.custo) / p.preco) * 100 : 0;
+        // Custo desconhecido = margem desconhecida (nunca 100%, nunca 0%).
+        const margem = !desconhecido(p.preco) && !desconhecido(p.custo) && Number(p.preco) > 0
+          ? ((Number(p.preco) - Number(p.custo)) / Number(p.preco)) * 100 : null;
         return `<div style="font-weight:600;margin-bottom:4px">${p.data}</div>`
              + `preço: ${fmtValor(p.preco, 'moeda')}<br/>`
              + `custo: ${fmtValor(p.custo, 'moeda')}<br/>`
-             + `margem: ${margem.toFixed(1).replace('.', ',')}%<br/>`
+             + `margem: ${fmtValor(margem, 'percentual')}<br/>`
              + `<strong>${fmtValor(p.unidades, 'inteiro')} unidade(s)</strong>`;
       },
     },
@@ -638,14 +703,14 @@ export function opcaoPrecoCusto(
     ],
     series: [
       { name: 'Preço', type: 'line', symbol: 'none', lineStyle: { width: 2 },
-        data: pontos.map(p => p.preco) },
+        connectNulls: false, data: pontos.map(p => (desconhecido(p.preco) ? null : p.preco)) },
       { name: 'Custo', type: 'line', symbol: 'none',
         lineStyle: { width: 1.6, type: 'dashed' },
         areaStyle: { color: `${t.serie[0]}14` },
-        data: pontos.map(p => p.custo) },
+        connectNulls: false, data: pontos.map(p => (desconhecido(p.custo) ? null : p.custo)) },
       { name: 'Unidades vendidas', type: 'bar', yAxisIndex: 1, barMaxWidth: 14,
         itemStyle: { borderRadius: [2, 2, 0, 0], opacity: .75 },
-        data: pontos.map(p => p.unidades) },
+        data: pontos.map(p => (desconhecido(p.unidades) ? null : p.unidades)) },
     ],
   };
 }

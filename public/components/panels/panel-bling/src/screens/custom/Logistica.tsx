@@ -19,11 +19,15 @@ import {
 
 const GRID_INICIAL: EstadoGrid = { ordenar: '', direcao: 'desc', pagina: 1, limite: 50, busca: '' };
 
-function kpi(id: string, rotulo: string, valor: number, formato: string,
+import { numOuNulo } from '../../lib/ausencia';
+
+function kpi(id: string, rotulo: string, valor: number | null, formato: string,
   semantica: 'ok' | 'atencao' | 'critico' = 'ok', tooltip: string | null = null): Kpi {
+  // null = desconhecido: "—", nunca zero (pacote B).
   return {
     id, rotulo, valor, formato: formato as any, variacao: null, tendencia: 'estavel',
     sparkline: null, drilldown: null, semantica, tooltip,
+    rotuloNulo: valor === null ? '—' : undefined,
   };
 }
 
@@ -65,7 +69,7 @@ export function Transportadoras({ filtros, aoMudarFiltros, larguraPainel }: Prop
         kpi('entregues', 'Entregues', r.entregues ?? 0, 'inteiro'),
         kpi('atrasados', 'Atrasados', r.atrasados ?? 0, 'inteiro',
           (r.atrasados ?? 0) > 0 ? 'atencao' : 'ok'),
-        kpi('custo', 'Custo de frete', r.custo ?? 0, 'moeda'),
+        kpi('custo', 'Custo de frete', numOuNulo(r.custo), 'moeda'),
         kpi('desvio', 'Maior desvio de prazo', piorDesvio?.desvio ?? 0, 'numero',
           (piorDesvio?.desvio ?? 0) > 2 ? 'critico' : (piorDesvio?.desvio ?? 0) > 0 ? 'atencao' : 'ok',
           piorDesvio ? `${piorDesvio.transportadora}: ${piorDesvio.realizado} dias contra ${piorDesvio.prometido} prometidos.` : null),

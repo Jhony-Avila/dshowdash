@@ -10,7 +10,8 @@ import { api, RespostaOverview, Ocorrencia, IndicadorSaude } from '../../service
 import { useCarga } from '../../app/estado';
 import { PropsTela } from '../generic/TelaCatalogo';
 import { SankeyD3, RedeD3 } from '../../viz/D3';
-import { Grafico, tokens, opcaoLinhaTempo, opcaoFunil, opcaoBarras } from '../../viz/Echarts';
+import { Grafico, tokens, opcaoLinhaTempo, opcaoFunil, opcaoBarras, PontoSerie } from '../../viz/Echarts';
+import { kpiDaApi } from '../../lib/ausencia';
 import { Icone } from '../../shell/Icone';
 import { useSelecao, DESTINO_KPI, DESTINO_ATENCAO } from '../../app/selecao';
 
@@ -67,7 +68,7 @@ export function VisaoGeral({ filtros, aoMudarFiltros, aoNavegar, larguraPainel }
         {/* Drill-down (§55): o KPI leva a tela E o recorte que o explica. Sem o
             recorte, clicar em "notas com erro: 5" abre uma lista de 85. */}
         <GradeKpis
-          kpis={d.kpis as unknown as Kpi[]}
+          kpis={(d.kpis as unknown as Record<string, any>[]).map(kpiDaApi)}
           aoAbrir={(id, drilldown) => aoNavegar(DESTINO_KPI[id] ?? drilldown ?? id)}
         />
       </Secao>
@@ -103,12 +104,13 @@ export function VisaoGeral({ filtros, aoMudarFiltros, aoNavegar, larguraPainel }
               t,
               d.evolucao.series.filter(s => ['faturamento', 'pedidos', 'margem'].includes(s.id)),
               acumulado ? undefined : d.evolucao.media_movel?.faturamento,
-              { acumulado },
+              { acumulado, apoio: apoioMargem(d.evolucao.series) },
             )}
             descricao={acumulado
               ? 'Faturamento, pedidos e margem acumulados ao longo do período.'
               : 'Faturamento, número de pedidos e margem por dia, com média móvel de 7 dias.'}
           />
+          <NotaLacunas series={d.evolucao.series} acumulado={acumulado} />
         </div>
       </Secao>
 
@@ -136,6 +138,11 @@ export function VisaoGeral({ filtros, aoMudarFiltros, aoNavegar, larguraPainel }
                 }
               }}
             />
+            {d.fluxo.custo_desconhecido && (
+              <p data-bl-aviso="fluxo-custo-desconhecido" style={{ fontSize: 12, color: 'var(--bl-texto-2)', margin: '8px 0 0' }}>
+                Parte dos pedidos tem custo de produto desconhecido: o fluxo não mostra custo nem margem (não é zero).
+              </p>
+            )}
             <p style={{ fontSize: 11, color: 'var(--bl-texto-3)', margin: '8px 0 0' }}>
               Do canal ao recebimento. A espessura é o valor; a queda entre etapas é a perda.
               Clicar num canal recorta todas as telas.
@@ -352,7 +359,7 @@ export function Diretoria({ filtros, aoMudarFiltros, aoNavegar, larguraPainel }:
         aoLimpar={() => aoMudarFiltros({ periodo: '30d' })} />
 
       <Secao titulo="Resultado do período">
-        <GradeKpis kpis={d.kpis}
+        <GradeKpis kpis={(d.kpis as Record<string, any>[]).map(kpiDaApi)}
           aoAbrir={(id, drilldown) => aoNavegar(DESTINO_KPI[id] ?? drilldown ?? id)}
           colunasMin={200} />
       </Secao>
@@ -363,6 +370,7 @@ export function Diretoria({ filtros, aoMudarFiltros, aoNavegar, larguraPainel }:
             opcao={opcaoLinhaTempo(t, d.evolucao.series.filter((s: any) =>
               ['faturamento', 'margem'].includes(s.id)), d.evolucao.media_movel?.faturamento)}
             descricao="Faturamento e margem ao longo do período." />
+          <NotaLacunas series={d.evolucao.series} acumulado={false} />
         </div>
       </Secao>
 
@@ -459,10 +467,10 @@ export function Indicadores({ filtros, aoMudarFiltros, aoNavegar }: PropsTela) {
                   <td style={{
                     padding: '8px 12px', fontSize: 12, textAlign: 'right',
                     borderBottom: '1px solid var(--bl-borda)',
-                    color: k.variacao === null ? 'var(--bl-texto-3)'
+                    color: k.variacao == null ? 'var(--bl-texto-3)'
                       : k.variacao > 0 ? 'var(--bl-sucesso)' : k.variacao < 0 ? 'var(--bl-erro)' : 'var(--bl-texto-3)',
                   }}>
-                    {k.variacao === null ? '—' : `${k.variacao > 0 ? '+' : ''}${k.variacao.toFixed(1).replace('.', ',')}%`}
+                    {k.variacao == null ? '—' : `${k.variacao > 0 ? '+' : ''}${k.variacao.toFixed(1).replace('.', ',')}%`}
                   </td>
                   <td style={{
                     padding: '8px 12px', fontSize: 11.5, color: 'var(--bl-texto-2)',
@@ -483,5 +491,28 @@ export function Indicadores({ filtros, aoMudarFiltros, aoNavegar }: PropsTela) {
         </div>
       </Secao>
     </div>
+  );
+}
+
+/* ── Pacote B (ausência ≠ zero): margem com lacunas ───────────────── */
+
+/** Séries de apoio para a margem acumulada: faturamento e custo (a API marca o custo com `apoio`). */
+function apoioMargem(series: { id: string; pontos: PontoSerie[] }[]) {
+  const fat = series.find(s => s.id === 'faturamento')?.pontos;
+  const custo = series.find(s => s.id === 'custo')?.pontos;
+  return fat && custo ? { faturamento: fat, custo } : undefined;
+}
+
+/** Explica a lacuna da margem: dia sem custo conhecido não vira 0%. */
+function NotaLacunas({ series, acumulado }: { series: { id: string; pontos: PontoSerie[] }[]; acumulado: boolean }) {
+  const margem = series.find(s => s.id === 'margem');
+  const lacunas = margem ? margem.pontos.filter(p => p.valor === null || p.valor === undefined).length : 0;
+  const semApoio = acumulado && !apoioMargem(series);
+  if (lacunas === 0 && !semApoio) return null;
+  return (
+    <p data-bl-aviso="margem-lacunas" style={{ fontSize: 12, color: 'var(--bl-texto-2)', margin: '8px 0 0' }}>
+      {lacunas > 0 && <>A margem tem {lacunas} {lacunas === 1 ? 'dia' : 'dias'} sem valor (custo de produto desconhecido ou dia sem venda): aparecem como lacuna, não como 0%. </>}
+      {semApoio && <>No acumulado, a margem não é mostrada: falta a série de custo para calculá-la.</>}
+    </p>
   );
 }
