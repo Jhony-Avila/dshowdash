@@ -2331,3 +2331,6 @@ dist/
 !/db/
 !/db/equipamentos/
 !/db/equipamentos/**
+# Geral V2 — serviço (ACIMA_DIREITA, 23/11/2026): resumo.php e lista.php, só leitura da base local
+!/api/geral/
+!/api/geral/**
