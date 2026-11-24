@@ -140,6 +140,35 @@ final class GeralV2
     }
 
     /**
+     * CONEXÃO de uma fonte, separada da CONSULTA (parecer do mockup, 24/11): a conta/o acesso existe e está autorizado?
+     * 'conectada' | 'aguardando' (nenhuma conta) | 'problema' (banco fora, conta que pede nova autorização, erro de leitura).
+     * @return array{estado:string, detalhe:?string}
+     */
+    public function conexao(string $id): array
+    {
+        $f = $this->fonte($id === 'pipedrive' ? 'pipedrive_negocios' : $id);
+        if ($f['estado'] === 'aguardando_conexao') return ['estado' => 'aguardando', 'detalhe' => $f['detalhe']];
+        if (in_array($f['detalhe'], ['sem_conexao_banco', 'erro_leitura'], true)) return ['estado' => 'problema', 'detalhe' => $f['detalhe']];
+        try {
+            if ($id === 'bling') {
+                $e = $this->bling->query("SELECT estado_conexao FROM `{$this->p}bling_accounts` WHERE is_ativo = 1 ORDER BY is_padrao DESC, id LIMIT 1")->fetchColumn();
+                if ($e !== 'conectado') return ['estado' => 'problema', 'detalhe' => 'conexao_' . (string) $e];
+                if ($f['detalhe'] === 'escopo_ausente') return ['estado' => 'problema', 'detalhe' => 'escopo_ausente'];
+            }
+            if ($id === 'google_calendar') {
+                $st = $this->gcal->prepare("SELECT COUNT(*) FROM `{$this->p}gcal_accounts` a JOIN `{$this->p}gcal_calendars` c ON c.account_id = a.id AND c.deleted = 0
+                                             WHERE a.user_id = ? AND a.is_active = 1 AND a.connection_status = 'connected'");
+                $st->execute([$this->usuario]);
+                if ((int) $st->fetchColumn() === 0) return ['estado' => 'problema', 'detalhe' => 'reautorizar'];
+            }
+        } catch (Throwable $e) {
+            error_log('[geral-v2] conexão ' . $id . ': ' . get_class($e));
+            return ['estado' => 'problema', 'detalhe' => 'erro_leitura'];
+        }
+        return ['estado' => 'conectada', 'detalhe' => null];
+    }
+
+    /**
      * Pipedrive por ENTIDADE (o indicador usa só as entidades de que depende).
      * Sucesso completo = run `completed` com `errors = 0`. Um run `completed` com `errors > 0` leu todas as páginas mas NÃO gravou N registros
      * (SyncService:221–224; resposta da ACIMA_DIREITA, 24/11 15:53) → não é sucesso completo e nunca dá zero.
@@ -300,19 +329,29 @@ final class GeralV2
         throw new GeralV2Erro('prioridade_invalida');
     }
 
+    /**
+     * A ÚNICA função de filtro das prioridades do Pipedrive (parecer do mockup, 24/11): o número do cartão e o `total` da lista saem DAQUI.
+     * Mesmo FROM/WHERE (basePrioridade) + o filtro opcional de responsável. Devolve a contagem, a referência mais antiga e o nº de responsáveis.
+     * @return array{n:int, antiga:?string, donos:int}
+     */
+    private function contarPrioridade(string $id, ?int $responsavel = null): array
+    {
+        [$from, $par, $ref] = $this->basePrioridade($id);
+        if ($responsavel !== null) { $from .= ' AND d.owner_id = :resp'; $par[':resp'] = $responsavel; }
+        $st = $this->pipe->prepare("SELECT COUNT(*) AS n, MIN($ref) AS antiga, COUNT(DISTINCT d.owner_id) AS donos $from");
+        $st->execute($par);
+        $r = $st->fetch(PDO::FETCH_ASSOC);
+        return ['n' => (int) $r['n'], 'antiga' => $r['antiga'] !== null ? substr((string) $r['antiga'], 0, 10) : null, 'donos' => (int) $r['donos']];
+    }
+
     private function prioridadePipe(string $id): array
     {
         $f = $this->fonte('pipedrive');
         $out = ['id' => $id, 'total' => null, 'mais_antiga' => null, 'responsaveis' => null, 'atualizado_em' => $f['atualizado_em']];
         if ($this->semNumero($f)) return $out + ['estado' => $f['estado']];
         try {
-            [$from, $par, $ref] = $this->basePrioridade($id);
-            $st = $this->pipe->prepare("SELECT COUNT(*) AS n, MIN($ref) AS antiga, COUNT(DISTINCT d.owner_id) AS donos $from");
-            $st->execute($par);
-            $r = $st->fetch(PDO::FETCH_ASSOC);
-            $out['total'] = (int) $r['n'];
-            $out['responsaveis'] = (int) $r['donos'];
-            $out['mais_antiga'] = $r['antiga'] !== null ? substr((string) $r['antiga'], 0, 10) : null;
+            $c = $this->contarPrioridade($id);
+            $out['total'] = $c['n']; $out['responsaveis'] = $c['donos']; $out['mais_antiga'] = $c['antiga'];
         } catch (Throwable $e) {
             error_log('[geral-v2] prioridade ' . $id . ': ' . get_class($e));
             return array_merge($out, ['total' => null, 'mais_antiga' => null, 'responsaveis' => null, 'estado' => 'indisponivel']);
@@ -557,9 +596,7 @@ final class GeralV2
         if ($this->semNumero($f)) return $base + ['estado' => $f['estado']];
         try {
             [$from, $par, $ref] = $this->basePrioridade($prioridade);
-            $st = $this->pipe->prepare("SELECT COUNT(*) $from");
-            $st->execute($par);
-            $base['total_sem_filtro'] = (int) $st->fetchColumn();
+            $base['total_sem_filtro'] = $this->contarPrioridade($prioridade)['n'];   // = o número do cartão (mesma função)
             // responsáveis do conjunto SEM filtro (para o seletor da tela)
             $st = $this->pipe->prepare("SELECT d.owner_id AS id, (SELECT u.name FROM `{$this->p}pipe_users` u WHERE u.pipedrive_id = d.owner_id LIMIT 1) AS nome, COUNT(*) AS n
                                         $from AND d.owner_id IS NOT NULL GROUP BY d.owner_id ORDER BY nome IS NULL, nome, d.owner_id");
@@ -569,10 +606,8 @@ final class GeralV2
             $st = $this->pipe->prepare("SELECT COUNT(*) $from AND d.owner_id IS NULL");
             $st->execute($par);
             $base['sem_responsavel'] = (int) $st->fetchColumn();
+            $total = $this->contarPrioridade($prioridade, $responsavel)['n'];
             if ($responsavel !== null) { $from .= ' AND d.owner_id = :resp'; $par[':resp'] = $responsavel; }
-            $st = $this->pipe->prepare("SELECT COUNT(*) $from");
-            $st->execute($par);
-            $total = (int) $st->fetchColumn();
             $p = $this->p;
             // nulos sempre no fim (nas duas direções); desempate fixo pelo negócio → paginação estável
             $D = $dir === 'desc' ? 'DESC' : 'ASC';
