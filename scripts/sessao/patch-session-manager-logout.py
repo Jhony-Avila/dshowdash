@@ -16,6 +16,10 @@ trocas = [
   # 2) auth: só limpa o estado e anuncia LOGOUT_SUCCESS com a confirmação do servidor
   ('return ce.logout(e).then(() => (i.clear(), E.clearAll(), zt(), t && K(m.LOGOUT_SUCCESS, { sessionId: r }), { ok: !0 }));',
    'return ce.logout(e).then((n) => n && n.ok ? (i.clear(), E.clearAll(), zt(), t && K(m.LOGOUT_SUCCESS, { sessionId: r }), { ok: !0 }) : { ok: !1, error: n && n.error || "logout não confirmado" });'),
+  # 3) Codex DSHOW-114: consulta indisponível = estado DESCONHECIDO — nenhum SESSION_CHECKED (a guarda do roteador e a identidade global
+  #    leriam authenticated:false como saída), nada limpo, nenhum logout anunciado (= core/auth.ts)
+  ('return K(m.SESSION_CHECKED, { authenticated: !1, error: t.error }), { ok: !1, error: t.error };',
+   'return b.sessionChecksUnknown = (b.sessionChecksUnknown || 0) + 1, { ok: !1, estado: "desconhecido", error: t.error };'),
 ]
 for a, b in trocas:
     assert s.count(a) == 1, 'trecho esperado não encontrado exatamente 1 vez: ' + a[:60]

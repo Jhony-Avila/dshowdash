@@ -70,9 +70,10 @@ for (const arq of ['public/components/session-manager/core/auth.js', 'public/com
   const corpo = (fn) => { const i = s.indexOf(`function ${fn}(`); const j = s.indexOf('\nfunction ', i + 10); return s.slice(i, j > i ? j : undefined); };
   const lo = corpo('logout'), iFalha = lo.search(/if \(!r \|\| !r\.ok\) return \{ ok: false/), iLimpa = lo.indexOf('sessionStore.clear()'), iAnuncia = lo.indexOf('LOGOUT_SUCCESS');
   afirma(`${nome}: logout limpa e anuncia só DEPOIS da confirmação (r.ok)`, iFalha > 0 && iLimpa > iFalha && iAnuncia > iLimpa, `${iFalha}/${iLimpa}/${iAnuncia}`);
-  const ck = corpo('checkSession'); const a = ck.indexOf('if (!result.ok) {'), b = ck.indexOf('return { ok: false, error: result.error }', a);
-  const ramo = a > 0 && b > a ? ck.slice(a, b) : null;   // do teste de erro até o return do ramo de erro
+  const ck = corpo('checkSession'); const a = ck.indexOf('if (!result.ok) {'), b = a > 0 ? a + ck.slice(a).search(/estado: ["']desconhecido["']/) : -1;
+  const ramo = a > 0 && b > a ? ck.slice(a, ck.indexOf('}', b) + 1) : null;   // do teste de erro até o return do ramo de erro (Codex DSHOW-114)
   afirma(`${nome}: check indisponível não limpa identidade, tokens nem cookie`, ramo !== null && !/sessionStore\.clear|TokenManager\.clearAll|clearInvalidSessionCookie/.test(ramo), ramo ? ramo.replace(/\s+/g, ' ').slice(0, 160) : 'sem o ramo de erro');
+  afirma(`${nome}: check indisponível = estado DESCONHECIDO, sem SESSION_CHECKED (Codex DSHOW-114)`, ramo !== null && !/emitAuthEvent|SESSION_CHECKED/.test(ramo.replace(/\/\*[\s\S]*?\*\//g, '')), ramo ? ramo.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, ' ').slice(0, 160) : 'sem o ramo de erro');
 }
 // Decisão do Jhony (24/11): "Erro ao sair. Tente novamente." aparece NA TELA (não só no anunciador sr-only) e o anúncio continua.
 // (a) o aviso visível (ui/aviso-erro.js, o .js servido) com um DOM falso mínimo; (b) o .catch do handleLogout (.ts e .js) chama os DOIS;
