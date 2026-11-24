@@ -505,6 +505,28 @@ try {
     [$rcQ, $dQ, $txtQ] = $endpoint('AnalyticsController', 'qualidade');
     ok('A) qualidade do cadastro: receita afetada null onde há produto da pendência', $rcQ === 0 && array_filter($dQ['pendencias'] ?? [], static fn($x) => $x['produtos'] > 0 && $x['receita_afetada'] !== null) === [],
         mb_substr($txtQ, 0, 200));
+    // revisão ESQUERDA 24/11: o provedor real ainda não calcula pendências de cadastro (qualidade_pendencias = []), então a regra é testada direto
+    if (!class_exists('AnalyticsController')) { require_once $raiz . '/api/bling/controllers/AnalyticsController.php'; }
+    $pr = [AnalyticsController::prioridadePendencia(null, 50, 100), AnalyticsController::prioridadePendencia(null, 1, 100),
+           AnalyticsController::prioridadePendencia(1000.0, 1, 100), AnalyticsController::prioridadePendencia(0.0, 50, 100), AnalyticsController::prioridadePendencia(0.0, 1, 100)];
+    ok('A) receita desconhecida → prioridade "indisponivel" com motivo, qualquer que seja a quantidade (antes: rebaixada para média/baixa sem aviso)',
+        $pr[0] === ['prioridade' => 'indisponivel', 'prioridade_motivo' => 'receita_desconhecida'] && $pr[1] === $pr[0], json_encode($pr));
+    ok('C) receita conhecida → alta/média/baixa como antes, sem motivo', $pr[2] === ['prioridade' => 'alta', 'prioridade_motivo' => null]
+        && $pr[3] === ['prioridade' => 'media', 'prioridade_motivo' => null] && $pr[4] === ['prioridade' => 'baixa', 'prioridade_motivo' => null], json_encode($pr));
+    $srcQ = (string) file_get_contents($raiz . '/api/bling/controllers/AnalyticsController.php');
+    ok('… e o endpoint de qualidade usa ESSA regra (nenhuma prioridade calculada à parte)', substr_count($srcQ, 'self::prioridadePendencia($receitaAfetada, $qtd, $total)') === 1
+        && !preg_match("/'prioridade'\s*=>\s*\$receitaAfetada/", $srcQ));
+    // ultima_movimentacao: o estoque sintético não tem registro de movimentação
+    ok('revisão ESQUERDA 24/11: estoque sem movimentação registrada → ultima_movimentacao null (antes: "hoje")', $e31['ultima_movimentacao'] === null && $e32['ultima_movimentacao'] === null,
+        json_encode([$e31['ultima_movimentacao'], $e32['ultima_movimentacao']]));
+    ok('… e o aging não o conta como "Até 30 dias": vai para aging_sem_registro', array_sum(array_column($dB['aging'], 'itens')) === 0
+        && ($dB['aging_sem_registro']['itens'] ?? null) === 2, json_encode([$dB['aging'], $dB['aging_sem_registro'] ?? '(sem)']));
+    ok('… e a tabela de estoque mostra null (não a data de hoje)', array_key_exists('ultima_movimentacao', $le) && $le['ultima_movimentacao'] === null, json_encode($le['ultima_movimentacao'] ?? '(sem)'));
+    $dataMov = gmdate('Y-m-d', strtotime('-45 days'));
+    $pdo->prepare('UPDATE bling_inventory SET ultima_movimentacao = ? WHERE product_id = ?')->execute([$dataMov . ' 10:00:00', $prodId('31')]);
+    [, $dB2] = $endpoint('HistoryController', 'analiseEstoque');
+    ok('… com a data registrada: a data vem e cai na faixa certa (31 a 60 dias)', $estApi('31')['ultima_movimentacao'] === $dataMov
+        && $dB2['aging'][1]['itens'] === 1 && $dB2['aging_sem_registro']['itens'] === 1, json_encode([$dB2['aging'], $dB2['aging_sem_registro']]));
 
     // B) cobertura completa SEM vendas → zero legítimo
     $sitOrig = $pdo->query('SELECT id, situacao FROM bling_sales_orders')->fetchAll();

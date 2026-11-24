@@ -457,8 +457,9 @@ final class BlingReal extends BlingProviderBase
                 'fisico' => $fisico, 'reservado' => (int) $e['reservado'],
                 'disponivel' => $disponivel, 'minimo' => $minimo,
                 'maximo' => (int) ($e['maximo'] ?? 0), 'divergencia' => 0,
-                'ultima_movimentacao' => $e['ultima_movimentacao']
-                    ? substr((string) $e['ultima_movimentacao'], 0, 10) : gmdate('Y-m-d'),
+                // revisão da ACIMA_ESQUERDA (B, 24/11): sem registro de movimentação = null (antes virava "hoje" e o item parecia recém-movido)
+                'ultima_movimentacao' => ($e['ultima_movimentacao'] ?? null) !== null && (string) $e['ultima_movimentacao'] !== ''
+                    ? substr((string) $e['ultima_movimentacao'], 0, 10) : null,
                 'consumo_90d' => $consumo90 === null ? null : (int) $consumo90,
                 'consumo_dia' => $consumoDia === null ? null : round($consumoDia, 3),
                 'cobertura_dias' => $cobertura,

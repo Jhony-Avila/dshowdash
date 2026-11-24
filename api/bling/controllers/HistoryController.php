@@ -189,6 +189,7 @@ final class HistoryController
             ['id' => '91-180',  'rotulo' => '91 a 180 dias', 'itens' => 0, 'valor' => 0.0],
             ['id' => '180+',    'rotulo' => 'Mais de 180',   'itens' => 0, 'valor' => 0.0],
         ];
+        $agingSemRegistro = ['itens' => 0, 'valor' => 0.0];
         // ── Estoque × venda: dispersão ───────────────────────────
         $dispersao = [];
 
@@ -229,14 +230,18 @@ final class HistoryController
                 ];
             }
 
-            // aging
-            $dias = (int) ((strtotime($hoje) - strtotime($e['ultima_movimentacao'])) / 86400);
-            $iAging = match (true) {
-                $dias <= 30  => 0, $dias <= 60  => 1,
-                $dias <= 90  => 2, $dias <= 180 => 3, default => 4,
-            };
-            $aging[$iAging]['itens']++;
-            $aging[$iAging]['valor'] += $valor;
+            // aging — sem movimentação registrada (null) NÃO entra em faixa nenhuma: vai para aging_sem_registro (antes: contava como "hoje")
+            if (($e['ultima_movimentacao'] ?? null) === null) {
+                $agingSemRegistro['itens']++; $agingSemRegistro['valor'] += $valor;
+            } else {
+                $dias = (int) ((strtotime($hoje) - strtotime($e['ultima_movimentacao'])) / 86400);
+                $iAging = match (true) {
+                    $dias <= 30  => 0, $dias <= 60  => 1,
+                    $dias <= 90  => 2, $dias <= 180 => 3, default => 4,
+                };
+                $aging[$iAging]['itens']++;
+                $aging[$iAging]['valor'] += $valor;
+            }
 
             // estoque × venda
             if ($e['fisico'] > 0 || $e['consumo_90d'] > 0) {
@@ -302,6 +307,7 @@ final class HistoryController
             'rupturas'    => array_slice($rupturas, 0, 60),
             'rupturas_total' => count($rupturas),
             'aging'       => $aging,
+            'aging_sem_registro' => ['itens' => $agingSemRegistro['itens'], 'valor' => round($agingSemRegistro['valor'], 2)],   // aditivo (revisão ESQUERDA 24/11)
             'dispersao'   => $dispersao,
             'consumo'     => $serieConsumo,
             'indisponivel' => $consumoDesc ? 'itens_desconhecidos' : null,   // Codex DSHOW-114 (aditivo): faixas/rupturas sem base

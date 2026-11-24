@@ -637,7 +637,7 @@ final class AnalyticsController
                 'produtos' => $qtd,
                 'participacao' => $total > 0 ? round(($qtd / $total) * 100, 1) : 0.0,
                 'receita_afetada' => $receitaAfetada === null ? null : round($receitaAfetada, 2),
-                'prioridade' => $receitaAfetada > 0 ? 'alta' : ($qtd > $total * 0.2 ? 'media' : 'baixa'),
+            ] + self::prioridadePendencia($receitaAfetada, $qtd, $total) + [
                 'acao' => 'Completar o campo no cadastro do produto.',
             ];
         }
@@ -661,6 +661,17 @@ final class AnalyticsController
             'pendencias' => $pendencias,
             'distribuicao' => self::histograma($scores, 10),
         ], bling_meta(['filtros' => $f]));
+    }
+
+    /**
+     * Prioridade de uma pendência de cadastro. Revisão da ACIMA_ESQUERDA (B, 24/11): receita afetada DESCONHECIDA não rebaixa a pendência
+     * para média/baixa em silêncio (antes: null > 0 era falso) — fica 'indisponivel', com o motivo 'receita_desconhecida'.
+     * @return array{prioridade:string, prioridade_motivo:?string}
+     */
+    public static function prioridadePendencia(?float $receitaAfetada, int $qtd, int $total): array
+    {
+        if ($receitaAfetada === null) { return ['prioridade' => 'indisponivel', 'prioridade_motivo' => 'receita_desconhecida']; }
+        return ['prioridade' => $receitaAfetada > 0 ? 'alta' : ($qtd > $total * 0.2 ? 'media' : 'baixa'), 'prioridade_motivo' => null];
     }
 
     /** Histograma simples para a distribuicao de scores. */
