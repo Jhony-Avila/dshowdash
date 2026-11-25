@@ -72,8 +72,11 @@ final class Migrador
         if ($agora - $st['mtime'] > $maxIdade || $st['mtime'] > $agora + 60) throw new MigradorErro("prova do tripwire fora do prazo ({$maxIdade}s)" . $nada);
         $l = array_map('rtrim', file($arq) ?: []);
         if (($l[0] ?? '') !== 'EQUIVALENCIA_OK') throw new MigradorErro('prova do tripwire sem EQUIVALENCIA_OK' . $nada);
-        if (!preg_match('/^[0-9a-f]{40}$/', $releaseSha) || !in_array("ALVO=$releaseSha", $l, true)) throw new MigradorErro('prova do tripwire de outro ALVO' . $nada);
-        foreach ($shas as $v => $sha) if (!in_array('SHA' . substr((string) $v, 0, 3) . "=$sha", $l, true)) throw new MigradorErro("prova do tripwire não confere a $v" . $nada);
+        // cada chave UMA vez só (nit da ACIMA_ESQUERDA: duas linhas ALVO= — uma de outro commit — eram aceitas)
+        $uma = static fn(string $k) => array_values(array_filter($l, static fn($x) => str_starts_with($x, "$k=")));
+        $alvo = $uma('ALVO');
+        if (!preg_match('/^[0-9a-f]{40}$/', $releaseSha) || $alvo !== ["ALVO=$releaseSha"]) throw new MigradorErro('prova do tripwire de outro ALVO' . $nada);
+        foreach ($shas as $v => $sha) { $k = 'SHA' . substr((string) $v, 0, 3); if ($uma($k) !== ["$k=$sha"]) throw new MigradorErro("prova do tripwire não confere a $v" . $nada); }
     }
 
     public static function validarSchema(string $schema, bool $modoProducao, ?string $senhaPortao): void

@@ -48,6 +48,8 @@ if ($temFuncoes) {
     afirma('(6) prova como link simbólico → recusa', str_contains((string) $c("$T/link.txt"), 'não é arquivo regular'));
     $l = $boa(); $l[0] = 'DIVERGENTE';
     afirma('(6b) 1ª linha ≠ EQUIVALENCIA_OK → recusa', str_contains((string) $c(prova($T, $l)), 'sem EQUIVALENCIA_OK'));
+    afirma('(3c) DOIS ALVO= (outro commit + o certo) → recusa (nit da ACIMA_ESQUERDA)', str_contains((string) $c(prova($T, $boa(['ALVO=' . str_repeat('c', 40)]))), 'outro ALVO'));
+    afirma('(4b) DOIS SHA012= (um errado + o certo) → recusa', str_contains((string) $c(prova($T, $boa(['SHA012=' . str_repeat('0', 64)]))), 'não confere a 012'));
     afirma('(7) prova válida → aceita', $c(prova($T, $boa())) === null);
     afirma('(9) 012/013 já no ledger → nada exige prova', Migrador::exigemProva((new Migrador(new FalsoPDO, 'X', $dirMig, fn() => null))->arquivos(), array_fill_keys(array_keys((new Migrador(new FalsoPDO, 'X', $dirMig, fn() => null))->arquivos()), str_repeat('d', 64)), null) === []);
     afirma('(9b) --ate 011 → 012/013 não vão → nada exige prova', Migrador::exigemProva((new Migrador(new FalsoPDO, 'X', $dirMig, fn() => null))->arquivos(), [], '011_operacao') === []);
