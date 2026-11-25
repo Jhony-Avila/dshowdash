@@ -70,6 +70,54 @@ abstract class BlingProviderBase
         return round((($atual - $anterior) / abs($anterior)) * 100, 1);
     }
 
+    // ── "ausência ≠ zero" (24/11/2026, decisão do Jhony, opção B) ─────────────────────────────────────────────────────────────
+    // Um pedido real do Bling só tem itens/subtotal/qtd conhecidos quando os itens vieram de coleção completa (detalhe), e o custo
+    // NUNCA vem nos dados do pedido (VendasItemDTO não tem custo). Desconhecido chega aqui como null — e TODA conta que dependa dele
+    // vira null (nunca soma parcial, nunca 0). Campo AUSENTE na linha (ex.: o mock antigo) segue a regra antiga (= conhecido).
+
+    /** Soma do campo; null se QUALQUER linha tiver o campo explicitamente null. */
+    public static function somaConhecida(array $linhas, string $campo): ?float
+    {
+        $s = 0.0;
+        foreach ($linhas as $l) {
+            if (array_key_exists($campo, $l) && $l[$campo] === null) { return null; }
+            $s += (float) ($l[$campo] ?? 0);
+        }
+        return $s;
+    }
+
+    /** Margem % sobre a receita; null sem custo conhecido. */
+    public static function margemPct(float $receita, ?float $custo): ?float
+    {
+        if ($custo === null || $receita <= 0) { return null; }   // achado 3 da ACIMA_ESQUERDA: margem sobre receita zero é indefinida, não 0 %
+        return round((($receita - $custo) / $receita) * 100, 1);
+    }
+
+    /** Todos os pedidos do conjunto têm os itens conhecidos? (sem isso, qualquer soma por item é parcial) */
+    public static function itensConhecidos(array $pedidos): bool
+    {
+        foreach ($pedidos as $p) {
+            if (($p['itens_conhecidos'] ?? true) === false) { return false; }
+        }
+        return true;
+    }
+
+    /** Unidades vendidas (soma das quantidades dos itens); null se algum pedido tiver itens desconhecidos. */
+    public static function unidadesConhecidas(array $pedidos): ?float
+    {
+        if (!self::itensConhecidos($pedidos)) { return null; }
+        $u = 0.0;
+        foreach ($pedidos as $p) { foreach ($p['itens'] as $it) { $u += $it['quantidade']; } }
+        return $u;
+    }
+
+    /** Custo de um item (quantidade × custo unitário); null se o custo do item é desconhecido. */
+    public static function custoItem(array $it): ?float
+    {
+        if (array_key_exists('custo_unitario', $it) && $it['custo_unitario'] === null) { return null; }
+        return (float) ($it['custo_unitario'] ?? 0) * (float) $it['quantidade'];
+    }
+
     /** Pedidos que contam como venda: exclui rascunho e cancelado. */
     protected function pedidosValidos(array $pedidos): array
     {
@@ -99,20 +147,16 @@ abstract class BlingProviderBase
 
         $fatBruto  = array_sum(array_column($noPer, 'total'));
         $fatAnt    = array_sum(array_column($noAnt, 'total'));
-        $custo     = array_sum(array_column($noPer, 'custo'));
-        $desconto  = array_sum(array_column($noPer, 'desconto'));
-        $frete     = array_sum(array_column($noPer, 'frete'));
-        $fatLiquido= $fatBruto - $frete;
+        $custo     = self::somaConhecida($noPer, 'custo');   // null = custo desconhecido (sem margem)
+        $desconto  = self::somaConhecida($noPer, 'desconto');   // null = detalhe não lido (opção A do Jhony)
+        $frete     = self::somaConhecida($noPer, 'frete');
+        $fatLiquido= $frete === null ? null : $fatBruto - $frete;
+        $freteAnt  = self::somaConhecida($noAnt, 'frete');
 
         $faturados = array_values(array_filter($noPer, static fn($p) =>
             in_array($p['situacao'], ['faturado', 'nota_emitida', 'separacao', 'enviado', 'entregue'], true)));
 
-        $unidades = 0;
-        foreach ($noPer as $p) {
-            foreach ($p['itens'] as $it) {
-                $unidades += $it['quantidade'];
-            }
-        }
+        $unidades = self::unidadesConhecidas($noPer);   // null = itens desconhecidos (nunca 0 por ausência)
 
         $notasPer   = $this->noPeriodo($notas, 'emissao', $f);
         $notasErro  = array_values(array_filter($notasPer, static fn($n) => $n['situacao'] === 'rejeitada'));
@@ -142,21 +186,23 @@ abstract class BlingProviderBase
         $integracoesFalha = count(array_filter($sync, static fn($s) => $s['situacao'] === 'erro'));
 
         $clientesDistintos = count(array_unique(array_column($noPer, 'cliente')));
-        $ticket = count($noPer) > 0 ? $fatBruto / count($noPer) : 0.0;
-        $ticketAnt = count($noAnt) > 0 ? $fatAnt / count($noAnt) : 0.0;
-        $margem = $fatLiquido > 0 ? (($fatLiquido - $custo) / $fatLiquido) * 100 : 0.0;
+        $ticket = count($noPer) > 0 ? $fatBruto / count($noPer) : null;      // sem pedido = ticket indefinido (null), não R$ 0
+        $ticketAnt = count($noAnt) > 0 ? $fatAnt / count($noAnt) : null;
+        $margem = ($custo === null || $fatLiquido === null || $fatLiquido <= 0) ? null : (($fatLiquido - $custo) / $fatLiquido) * 100;   // sem receita = indefinida
 
         return $this->aplicarDisponibilidadeReceber([
             $this->kpi('faturamento_bruto', 'Faturamento bruto', $fatBruto, 'moeda',
                 $this->variacao($fatBruto, $fatAnt), $this->serieDiaria($noPer, 'data', 'total', $f), 'pedidos-venda'),
-            $this->kpi('faturamento_liquido', 'Faturamento líquido', $fatLiquido, 'moeda',
-                $this->variacao($fatLiquido, $fatAnt - array_sum(array_column($noAnt, 'frete'))), null, 'vendas'),
+            self::seDesconhecido($this->kpi('faturamento_liquido', 'Faturamento líquido', $fatLiquido, 'moeda',
+                ($fatLiquido === null || $freteAnt === null) ? null : $this->variacao($fatLiquido, $fatAnt - $freteAnt), null, 'vendas'),
+                'o frete dos pedidos só vem no detalhe do Bling, que ainda não foi lido'),
             $this->kpi('pedidos', 'Pedidos de venda', count($noPer), 'inteiro',
                 $this->variacao(count($noPer), count($noAnt)), $this->serieDiaria($noPer, 'data', null, $f), 'pedidos-venda'),
             $this->kpi('pedidos_faturados', 'Pedidos faturados', count($faturados), 'inteiro', null, null, 'pedidos-venda'),
             $this->kpi('ticket_medio', 'Ticket médio', $ticket, 'moeda',
-                $this->variacao($ticket, $ticketAnt), null, 'vendas'),
-            $this->kpi('produtos_vendidos', 'Produtos vendidos', $unidades, 'inteiro', null, null, 'produtos'),
+                ($ticket === null || $ticketAnt === null) ? null : $this->variacao($ticket, $ticketAnt), null, 'vendas'),
+            self::seDesconhecido($this->kpi('produtos_vendidos', 'Produtos vendidos', $unidades, 'inteiro', null, null, 'produtos'),
+                'os itens dos pedidos ainda não foram lidos do Bling'),
             $this->kpi('clientes', 'Clientes', $clientesDistintos, 'inteiro', null, null, 'clientes'),
             $this->kpi('contas_receber', 'Contas a receber', array_sum(array_column($recAberto, 'saldo')), 'moeda', null, null, 'contas-receber'),
             $this->kpi('contas_vencidas', 'Contas vencidas', array_sum(array_column($recVencido, 'saldo')), 'moeda',
@@ -175,8 +221,9 @@ abstract class BlingProviderBase
             $this->kpi('pedidos_compra', 'Pedidos de compra', count($comprasPer), 'inteiro', null, null, 'pedidos-compra'),
             $this->kpi('aguardando_expedicao', 'Aguardando expedição', $aguardandoExpedicao, 'inteiro', null, null, 'expedicao',
                 $aguardandoExpedicao > 30 ? 'atencao' : 'ok'),
-            $this->kpi('margem_estimada', 'Margem estimada', $margem, 'percentual', null, null, 'rentabilidade',
+            self::seDesconhecido($this->kpi('margem_estimada', 'Margem estimada', $margem, 'percentual', null, null, 'rentabilidade',
                 'ok', 'Estimativa: receita menos custo de produto. Não inclui composição contábil completa.'),
+                'o custo dos produtos vendidos não vem nos pedidos do Bling'),
             $this->kpi('integracoes_falha', 'Integrações com falha', $integracoesFalha, 'inteiro', null, null, 'sincronizacao',
                 $integracoesFalha > 0 ? 'critico' : 'ok'),
         ]);
@@ -192,6 +239,16 @@ abstract class BlingProviderBase
     public function disponibilidade(string $recurso): array
     {
         return ['estado' => 'ok'];
+    }
+
+    /** "ausência ≠ zero": KPI com valor desconhecido ganha a mesma marca de disponibilidade do DSHOW-012 (a tela mostra "—" e o motivo). */
+    protected static function seDesconhecido(array $k, string $motivo): array
+    {
+        if ($k['valor'] !== null) { return $k; }
+        $k['variacao'] = null; $k['tendencia'] = 'estavel'; $k['semantica'] = 'atencao';
+        $k['disponibilidade'] = ['estado' => 'indisponivel', 'motivo' => $motivo];
+        $k['tooltip'] = 'Indisponível: ' . $motivo . '.';
+        return $k;
     }
 
     /** Aplica a disponibilidade de RECEBER aos KPIs que dependem dela (contas a pagar não muda). */
@@ -215,14 +272,14 @@ abstract class BlingProviderBase
 
     /** Monta um card de KPI no formato que o front-end espera (§14.1). */
     protected function kpi(
-        string $id, string $rotulo, float $valor, string $formato,
+        string $id, string $rotulo, ?float $valor, string $formato,
         ?float $variacao = null, ?array $sparkline = null, ?string $drilldown = null,
         string $semantica = 'ok', ?string $tooltip = null
     ): array {
         return [
             'id'        => $id,
             'rotulo'    => $rotulo,
-            'valor'     => round($valor, 2),
+            'valor'     => $valor === null ? null : round($valor, 2),   // null = desconhecido (a tela mostra "—")
             'formato'   => $formato,
             'variacao'  => $variacao,
             'tendencia' => $variacao === null ? 'estavel' : ($variacao > 1 ? 'alta' : ($variacao < -1 ? 'baixa' : 'estavel')),
@@ -251,11 +308,17 @@ abstract class BlingProviderBase
             if (!isset($mapa[$d])) {
                 continue;
             }
-            $mapa[$d] += $campo === null ? 1 : (float) ($l[$campo] ?? 0);
+            if ($campo !== null && array_key_exists($campo, $l) && $l[$campo] === null) {
+                $mapa[$d] = null;   // um valor desconhecido no dia = o dia desconhecido (nunca soma parcial)
+                continue;
+            }
+            if ($mapa[$d] !== null) {
+                $mapa[$d] += $campo === null ? 1 : (float) ($l[$campo] ?? 0);
+            }
         }
         $saida = [];
         foreach ($mapa as $data => $v) {
-            $saida[] = ['data' => $data, 'valor' => round($v, 2)];
+            $saida[] = ['data' => $data, 'valor' => $v === null ? null : round($v, 2)];
         }
         return $saida;
     }
@@ -271,11 +334,12 @@ abstract class BlingProviderBase
             $chave = $granularidade === 'mes'
                 ? substr($ponto['data'], 0, 7)
                 : date('o-\WW', strtotime($ponto['data']));
-            $mapa[$chave] = ($mapa[$chave] ?? 0) + $ponto['valor'];
+            $mapa[$chave] = (array_key_exists($chave, $mapa) && $mapa[$chave] === null) || $ponto['valor'] === null
+                ? null : ($mapa[$chave] ?? 0) + $ponto['valor'];   // null pegajoso: um ponto desconhecido torna o período desconhecido
         }
         $saida = [];
         foreach ($mapa as $data => $v) {
-            $saida[] = ['data' => $data, 'valor' => round($v, 2)];
+            $saida[] = ['data' => $data, 'valor' => $v === null ? null : round($v, 2)];
         }
         return $saida;
     }
@@ -325,10 +389,12 @@ abstract class BlingProviderBase
         $margem = [];
         foreach ($faturamento as $i => $ponto) {
             $qtd = $pedidos[$i]['valor'] ?? 0;
-            $ticket[] = ['data' => $ponto['data'], 'valor' => $qtd > 0 ? round($ponto['valor'] / $qtd, 2) : 0.0];
-            $c = $custo[$i]['valor'] ?? 0;
-            $margem[] = ['data' => $ponto['data'],
-                'valor' => $ponto['valor'] > 0 ? round((($ponto['valor'] - $c) / $ponto['valor']) * 100, 1) : 0.0];
+            // dia sem pedido: ticket médio é INDEFINIDO (null = lacuna), não R$ 0 (pedido da CIMA, item D)
+            $ticket[] = ['data' => $ponto['data'], 'valor' => $qtd > 0 ? round($ponto['valor'] / $qtd, 2) : null];
+            $c = array_key_exists($i, $custo) ? $custo[$i]['valor'] : 0.0;   // NÃO usar ??: ele trata null (desconhecido) como ausente → 0
+            $margem[] = ['data' => $ponto['data'],   // custo desconhecido no ponto = margem desconhecida (lacuna na série, não zero)
+                // dia sem faturamento: margem INDEFINIDA (null), não 0 % (pedido da CIMA, item D)
+                'valor' => ($c === null || $ponto['valor'] <= 0) ? null : round((($ponto['valor'] - $c) / $ponto['valor']) * 100, 1)];
         }
 
         return [
@@ -692,6 +758,19 @@ abstract class BlingProviderBase
     public function curvaAbc(string $dimensao, string $metrica, array $f): array
     {
         $pedidos = $this->pedidosValidos($this->noPeriodo($this->colecao('pedidos'), 'data', $f));
+        // "ausência ≠ zero": ranking com custo ou itens desconhecidos seria parcial — devolve INDISPONÍVEL (a tela explica), nunca zeros.
+        $nivelPedidoPre = in_array($dimensao, ['clientes', 'canais'], true);
+        $precisaItens = !$nivelPedidoPre || $metrica === 'unidades';
+        if ($precisaItens && !self::itensConhecidos($pedidos)) {
+            return ['itens' => [], 'total' => null, 'indisponivel' => 'itens_desconhecidos'];
+        }
+        if ($metrica === 'margem') {
+            $custoOk = $nivelPedidoPre ? self::somaConhecida($pedidos, 'custo') !== null : true;
+            if (!$nivelPedidoPre) {
+                foreach ($pedidos as $p) { foreach ($p['itens'] as $it) { if (self::custoItem($it) === null) { $custoOk = false; break 2; } } }
+            }
+            if (!$custoOk) { return ['itens' => [], 'total' => null, 'indisponivel' => 'custo_desconhecido']; }
+        }
 
         $produtos = [];
         foreach ($this->colecao('produtos') as $p) {
@@ -765,7 +844,7 @@ abstract class BlingProviderBase
 
                 $registrar($chave, $rotulo, match ($metrica) {
                     'unidades'   => $it['quantidade'],
-                    'margem'     => $liquido - ($it['custo_unitario'] * $it['quantidade']),
+                    'margem'     => $liquido - (float) self::custoItem($it),   // custo conhecido garantido pela checagem do início
                     'frequencia' => 1,
                     default      => $liquido,
                 });
@@ -793,9 +872,19 @@ abstract class BlingProviderBase
     // Rentabilidade (§40)
     // ─────────────────────────────────────────────────────────────
 
+    /** "ausência ≠ zero": por que a rentabilidade desta dimensão não pode ser calculada (null = pode). */
+    public function rentabilidadeIndisponivel(string $dimensao, array $f): ?string
+    {
+        $pedidos = $this->pedidosValidos($this->noPeriodo($this->colecao('pedidos'), 'data', $f));
+        // desconto e frete (e os itens) só vêm no DETALHE: sem ele em todos os pedidos não há receita líquida → indisponível em QUALQUER dimensão
+        if (!self::itensConhecidos($pedidos)) { return 'itens_desconhecidos'; }
+        return null;
+    }
+
     public function rentabilidade(string $dimensao, array $f): array
     {
         $pedidos = $this->pedidosValidos($this->noPeriodo($this->colecao('pedidos'), 'data', $f));
+        if ($this->rentabilidadeIndisponivel($dimensao, $f) !== null) { return []; }   // por item sem itens conhecidos: nada parcial
 
         $formas = [];
         foreach ($this->colecao('formas_pagamento') as $fp) {
@@ -847,15 +936,15 @@ abstract class BlingProviderBase
                 };
 
                 $proporcao = $p['subtotal'] > 0 ? $receitaBruta / $p['subtotal'] : 1.0;
-                $desconto  = $p['desconto'] * $proporcao;
-                $frete     = $p['frete'] * $proporcao;
-                $custo     = $it !== null ? $it['custo_unitario'] * $it['quantidade'] : $p['custo'];
-                $receita   = $receitaBruta - $desconto;
-                $comissao  = $receita * $comissaoPct;
-                $taxaValor = $receita * $taxa;
+                $desconto  = $p['desconto'] === null ? null : $p['desconto'] * $proporcao;   // null = desconhecido (defesa; o início já recusa)
+                $frete     = $p['frete'] === null ? null : $p['frete'] * $proporcao;
+                $custo     = $it !== null ? self::custoItem($it) : ($p['custo'] === null ? null : (float) $p['custo']);   // null = desconhecido
+                $receita   = $desconto === null ? null : $receitaBruta - $desconto;
+                $comissao  = $receita === null ? null : $receita * $comissaoPct;
+                $taxaValor = $receita === null ? null : $receita * $taxa;
                 // Estimativa de imposto — declarada como estimativa em toda a UI (§26.2).
-                $imposto   = $receita * 0.115;
-                $lucro     = $receita - $custo - $comissao - $taxaValor - $imposto - $frete;
+                $imposto   = $receita === null ? null : $receita * 0.115;
+                $lucro     = ($custo === null || $receita === null || $frete === null) ? null : $receita - $custo - $comissao - $taxaValor - $imposto - $frete;
 
                 if (!isset($acum[$chave])) {
                     $acum[$chave] = [
@@ -865,14 +954,15 @@ abstract class BlingProviderBase
                     ];
                 }
                 $a = &$acum[$chave];
-                $a['receita']  += $receita;
-                $a['desconto'] += $desconto;
-                $a['frete']    += $frete;
-                $a['comissao'] += $comissao;
-                $a['impostos'] += $imposto;
-                $a['taxas']    += $taxaValor;
-                $a['custo']    += $custo;
-                $a['lucro']    += $lucro;
+                $soma = static fn($x, $y) => ($x === null || $y === null) ? null : $x + $y;   // null pegajoso
+                $a['receita']  = $soma($a['receita'], $receita);
+                $a['desconto'] = $soma($a['desconto'], $desconto);
+                $a['frete']    = $soma($a['frete'], $frete);
+                $a['comissao'] = $soma($a['comissao'], $comissao);
+                $a['impostos'] = $soma($a['impostos'], $imposto);
+                $a['taxas']    = $soma($a['taxas'], $taxaValor);
+                $a['custo']    = ($a['custo'] === null || $custo === null) ? null : $a['custo'] + $custo;   // null pegajoso
+                $a['lucro']    = ($a['lucro'] === null || $lucro === null) ? null : $a['lucro'] + $lucro;
                 $a['pedidos']  += $it === null ? 1 : 0;
                 $a['unidades'] += $it !== null ? $it['quantidade'] : 0;
                 unset($a);
@@ -882,10 +972,10 @@ abstract class BlingProviderBase
         $lista = array_values($acum);
         foreach ($lista as &$l) {
             foreach (['receita', 'desconto', 'frete', 'comissao', 'impostos', 'taxas', 'custo', 'lucro'] as $c) {
-                $l[$c] = round($l[$c], 2);
+                $l[$c] = $l[$c] === null ? null : round($l[$c], 2);
             }
-            $l['margem_pct'] = $l['receita'] > 0 ? round(($l['lucro'] / $l['receita']) * 100, 1) : 0.0;
-            $l['prejuizo'] = $l['lucro'] < 0;
+            $l['margem_pct'] = ($l['lucro'] === null || $l['receita'] === null || $l['receita'] <= 0) ? null : round(($l['lucro'] / $l['receita']) * 100, 1);
+            $l['prejuizo'] = $l['lucro'] === null ? null : $l['lucro'] < 0;   // null = não se sabe (não é "sem prejuízo")
         }
         unset($l);
         usort($lista, static fn($a, $b) => $b['receita'] <=> $a['receita']);

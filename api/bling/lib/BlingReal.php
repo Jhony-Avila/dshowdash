@@ -58,8 +58,8 @@ final class BlingReal extends BlingProviderBase
     public function disponibilidade(string $recurso): array
     {
         // DSHOW-012 complemento (Codex DSHOW-016, 18/11): por recurso — fonte desativada, última tentativa, último sucesso
-        // e cobertura (completa/parcial). bling_sync_state guarda só a ÚLTIMA execução e a situação dela: "último sucesso"
-        // é conhecido quando a última execução foi ok/atencao; senão fica null (coluna própria = migração futura).
+        // e cobertura (completa/parcial/nenhuma). bling_sync_state guarda só a ÚLTIMA execução e a situação dela: "último sucesso"
+        // vem do último job concluído, ou da última execução quando ela foi 'ok'; senão fica null (coluna própria = migração futura).
         if (!class_exists('BlingSyncService', false)) require_once __DIR__ . '/../services/BlingSyncService.php';
         $conta = $this->conta();
         $motivo = BlingSyncService::desativado($conta, $recurso);
@@ -68,14 +68,31 @@ final class BlingReal extends BlingProviderBase
         $iso = static fn($v) => $v === null ? null : gmdate('c', strtotime($v . ' UTC'));
         // 23/11: o último sucesso vem do último job CONCLUÍDO do recurso — uma falha depois dele não o apaga do painel
         $okJob = $this->repo->valor("SELECT MAX(terminado_em) FROM bling_sync_jobs WHERE account_id = ? AND recurso = ? AND situacao = 'concluido'", [$conta, $recurso]);
+        // 24/11 (aprovado pelo Jhony, pacote B): 'atencao' tem DOIS sentidos e nenhum é "cobertura completa":
+        //  · ESCOPO AUSENTE (403 insufficient_scope): NADA foi lido — o job MAIS RECENTE do recurso foi 'cancelado' e o erro mais recente é ESCOPO_AUSENTE;
+        //  · erro em < 10 % dos registros numa coleta concluída (job 'concluido'): leitura PARCIAL (o watermark parou; a próxima rodada relê).
+        // Sem comparar horários: bling_sync_errors.ocorrido_em é o relógio LOCAL do MySQL e terminado_em é UTC (comparar erraria por horas).
+        // "Último sucesso" só de job CONCLUÍDO ou de situação 'ok' — nunca a hora de uma tentativa.
+        $escopo = false;
+        if ($sit === 'atencao') {
+            $job = $this->repo->valor('SELECT situacao FROM bling_sync_jobs WHERE account_id = ? AND recurso = ? ORDER BY id DESC LIMIT 1', [$conta, $recurso]);
+            $erro = $this->repo->valor('SELECT codigo FROM bling_sync_errors WHERE account_id = ? AND recurso = ? ORDER BY id DESC LIMIT 1', [$conta, $recurso]);
+            $escopo = $job === 'cancelado' && $erro === BlingSyncService::ESCOPO_AUSENTE;
+        }
         $base = ['fonte_desativada' => $motivo !== null, 'ultima_tentativa' => $iso($ult),
-                 'ultimo_sucesso' => $okJob ? $iso($okJob) : (in_array($sit, ['ok', 'atencao'], true) ? $iso($ult) : null),
-                 'cobertura' => in_array($sit, ['ok', 'atencao'], true) ? 'completa' : ($sit === null || $sit === 'nunca_executado' ? 'nenhuma' : 'parcial')];
+                 'ultimo_sucesso' => $okJob ? $iso($okJob) : ($sit === 'ok' ? $iso($ult) : null),
+                 'cobertura' => $sit === 'ok' ? 'completa' : ($sit === null || $sit === 'nunca_executado' || $escopo ? 'nenhuma' : 'parcial')];
         if ($motivo !== null) {
             return ['estado' => 'indisponivel', 'motivo' => 'sincronização de ' . $recurso . ' desativada para esta conta', 'fonte' => stripos($motivo, 'asaas') !== false ? 'Asaas' : $motivo] + $base;
         }
+        if ($escopo) {
+            return ['estado' => 'indisponivel', 'motivo' => 'o acesso ao Bling não inclui ' . $recurso . ' (escopo ausente) — reautorize a conta com esse escopo', 'fonte' => 'Bling'] + $base;
+        }
         if ($ult === null || $sit === 'nunca_executado') return ['estado' => 'sem_dados', 'motivo' => 'recurso ainda não sincronizado'] + $base;
-        if ($base['cobertura'] === 'parcial') return ['estado' => 'parcial', 'motivo' => 'última coleta ' . $sit . '; dados podem estar incompletos'] + $base;
+        if ($base['cobertura'] === 'parcial') {
+            return ['estado' => 'parcial', 'motivo' => $sit === 'atencao' ? 'a última coleta leu tudo, mas alguns registros não foram gravados; a próxima rodada relê'
+                                                                          : 'última coleta ' . $sit . '; dados podem estar incompletos'] + $base;
+        }
         return ['estado' => 'ok'] + $base;
     }
 
@@ -318,8 +335,23 @@ final class BlingReal extends BlingProviderBase
         ], $r);
     }
 
+    /**
+     * Codex DSHOW-114: a cobertura de ITENS do conjunto de pedidos que um agregado soma é completa? (todo pedido válido do conjunto com itens lidos
+     * do detalhe). Incompleta = o agregado é DESCONHECIDO (null) — nunca zero nem soma parcial como total. Sem a coluna itens_lidos_em = incompleta.
+     * Mesmo conjunto das subconsultas abaixo: pedidos fora de rascunho/cancelado (e, com $desde, a partir dessa data).
+     */
+    private function itensCompletos(?string $desde = null): bool
+    {
+        if (!$this->repo->temColuna('bling_sales_orders', 'itens_lidos_em')) { return false; }
+        $r = $this->repo->consultar("SELECT COUNT(*) c FROM bling_sales_orders WHERE account_id = ? AND situacao NOT IN ('rascunho','cancelado')
+                                       AND itens_lidos_em IS NULL" . ($desde !== null ? ' AND data_pedido >= ?' : ''),
+            $desde !== null ? [$this->conta(), $desde] : [$this->conta()]);
+        return (int) ($r[0]['c'] ?? 1) === 0;
+    }
+
     private function produtos(): array
     {
+        $vendasOk = $this->itensCompletos();   // Codex DSHOW-114: vendas por produto só com TODOS os pedidos com itens lidos
         // Derivados (receita, unidades, última venda) vêm agregados na consulta:
         // calcular em PHP sobre milhares de produtos inviabilizaria a tela.
         $r = $this->repo->consultar(
@@ -348,7 +380,7 @@ final class BlingReal extends BlingProviderBase
 
         $canaisPorProduto = [];   // vínculo com canal não existe na v3 por produto
 
-        return array_map(static function ($p) use ($canaisPorProduto) {
+        return array_map(static function ($p) use ($canaisPorProduto, $vendasOk) {
             $preco = (float) ($p['preco_promocional'] ?? 0) ?: (float) $p['preco'];
             $custo = $p['custo'] === null ? null : (float) $p['custo'];   // DSHOW-018: null = desconhecido (não é zero)
             return [
@@ -368,9 +400,10 @@ final class BlingReal extends BlingProviderBase
                 'canais' => $canaisPorProduto[$p['id']] ?? [],
                 // Derivados — mesmos nomes do mock (BlingMock::enriquecerProdutos)
                 'margem_pct' => ($preco > 0 && $custo !== null) ? round((($preco - $custo) / $preco) * 100, 1) : null,   // DSHOW-018: sem custo, margem desconhecida (não 100%)
-                'ultima_venda' => $p['ultima_venda'],
-                'unidades_vendidas' => (int) $p['unidades'],
-                'receita' => round((float) $p['receita'], 2),
+                // Codex DSHOW-114: cobertura de itens incompleta = desconhecido (antes COALESCE(…,0): soma parcial ou 0 apresentados como total)
+                'ultima_venda' => $vendasOk ? $p['ultima_venda'] : null,
+                'unidades_vendidas' => $vendasOk ? (int) $p['unidades'] : null,
+                'receita' => $vendasOk ? round((float) $p['receita'], 2) : null,
                 'estoque_total' => (int) $p['estoque_total'],
                 'qualidade_score' => (int) ($p['qualidade_score'] ?? 0),
                 'qualidade_pendencias' => [],
@@ -381,6 +414,7 @@ final class BlingReal extends BlingProviderBase
     private function estoque(): array
     {
         $corte = gmdate('Y-m-d', strtotime('-90 days'));
+        $consumoOk = $this->itensCompletos($corte);   // Codex DSHOW-114: consumo de 90 dias só com os pedidos desses 90 dias com itens lidos
         $r = $this->repo->consultar(
             "SELECT e.product_id, e.warehouse_id, e.fisico, e.reservado, e.disponivel,
                     e.minimo, e.maximo, e.ultima_movimentacao,
@@ -397,13 +431,13 @@ final class BlingReal extends BlingProviderBase
             [$corte, $this->conta()]
         );
 
-        return array_map(static function ($e) {
-            $consumo90 = (float) $e['consumo_90d'];
-            $consumoDia = $consumo90 / 90;
+        return array_map(static function ($e) use ($consumoOk) {
+            $consumo90 = $consumoOk ? (float) $e['consumo_90d'] : null;   // null = desconhecido (não "parado")
+            $consumoDia = $consumo90 === null ? null : $consumo90 / 90;
             $disponivel = (int) $e['disponivel'];
             $fisico = (int) $e['fisico'];
             $minimo = (int) ($e['minimo'] ?? 0);
-            $cobertura = $consumoDia > 0 ? round($disponivel / $consumoDia, 1) : null;
+            $cobertura = ($consumoDia !== null && $consumoDia > 0) ? round($disponivel / $consumoDia, 1) : null;
 
             // Mesma classificação do mock. Duplicar a REGRA aqui seria o erro:
             // ela é idêntica de propósito e o smoke compara os dois provedores.
@@ -411,6 +445,7 @@ final class BlingReal extends BlingProviderBase
                 $fisico < 0                          => 'negativo',
                 $disponivel <= 0                     => 'zerado',
                 $minimo > 0 && $disponivel < $minimo => 'critico',
+                $consumo90 === null                  => 'consumo_desconhecido',   // nunca "parado"/"normal" sem saber o consumo
                 $cobertura !== null && $cobertura < 15 => 'baixa_cobertura',
                 $consumo90 == 0 && $fisico > 0       => 'parado',
                 default                              => 'normal',
@@ -422,12 +457,13 @@ final class BlingReal extends BlingProviderBase
                 'fisico' => $fisico, 'reservado' => (int) $e['reservado'],
                 'disponivel' => $disponivel, 'minimo' => $minimo,
                 'maximo' => (int) ($e['maximo'] ?? 0), 'divergencia' => 0,
-                'ultima_movimentacao' => $e['ultima_movimentacao']
-                    ? substr((string) $e['ultima_movimentacao'], 0, 10) : gmdate('Y-m-d'),
-                'consumo_90d' => (int) $consumo90,
-                'consumo_dia' => round($consumoDia, 3),
+                // revisão da ACIMA_ESQUERDA (B, 24/11): sem registro de movimentação = null (antes virava "hoje" e o item parecia recém-movido)
+                'ultima_movimentacao' => ($e['ultima_movimentacao'] ?? null) !== null && (string) $e['ultima_movimentacao'] !== ''
+                    ? substr((string) $e['ultima_movimentacao'], 0, 10) : null,
+                'consumo_90d' => $consumo90 === null ? null : (int) $consumo90,
+                'consumo_dia' => $consumoDia === null ? null : round($consumoDia, 3),
                 'cobertura_dias' => $cobertura,
-                'giro_anual' => $fisico > 0 ? round(($consumo90 / 90 * 365) / max(1, $fisico), 2) : 0.0,
+                'giro_anual' => $consumo90 === null ? null : ($fisico > 0 ? round(($consumo90 / 90 * 365) / max(1, $fisico), 2) : 0.0),
                 'status' => $status,
             ];
         }, $r);
@@ -439,10 +475,12 @@ final class BlingReal extends BlingProviderBase
 
     private function pedidos(): array
     {
+        // "ausência ≠ zero" (24/11, opção B): sem a coluna da migração 20261124, nenhum pedido tem itens conhecidos.
+        $lidos = $this->repo->temColuna('bling_sales_orders', 'itens_lidos_em') ? 'itens_lidos_em' : 'NULL AS itens_lidos_em';
         $pedidos = $this->repo->consultar(
             'SELECT id, bling_id, numero, data_pedido, situacao, contact_id, sales_channel_id,
                     vendedor, forma_pagamento, subtotal, desconto, frete, total, custo_total,
-                    qtd_itens, atualizado_externo_em
+                    qtd_itens, ' . $lidos . ', atualizado_externo_em
                FROM bling_sales_orders
               WHERE account_id = ? AND deletado_em IS NULL',
             [$this->conta()]
@@ -469,7 +507,8 @@ final class BlingReal extends BlingProviderBase
                 'quantidade' => (int) $i['quantidade'],
                 'unitario' => (float) $i['valor_unitario'],
                 'total' => (float) $i['valor_total'],
-                'custo_unitario' => (float) $i['custo_unitario'],
+                // o item do pedido do Bling NÃO tem custo (VendasItemDTO, OpenAPI oficial): o 0 gravado é ausência, não custo zero
+                'custo_unitario' => null,
             ];
         }
 
@@ -483,6 +522,7 @@ final class BlingReal extends BlingProviderBase
         }
 
         return array_map(static function ($p) use ($porPedido, $vendedores, $formas) {
+            $conhecidos = $p['itens_lidos_em'] !== null;   // itens lidos de coleção COMPLETA (detalhe)
             return [
                 'id' => (string) $p['id'], 'numero' => (string) ($p['numero'] ?? $p['id']),
                 'bling_id' => (int) $p['bling_id'],
@@ -493,12 +533,14 @@ final class BlingReal extends BlingProviderBase
                 'canal' => (string) ($p['sales_channel_id'] ?? ''),
                 'conta' => 'conta-padrao',
                 'itens' => $porPedido[(int) $p['id']] ?? [],
-                'qtd_itens' => (int) $p['qtd_itens'],
-                'subtotal' => (float) $p['subtotal'],
-                'desconto' => (float) $p['desconto'],
-                'frete' => (float) $p['frete'],
+                'itens_conhecidos' => $conhecidos,
+                'qtd_itens' => $conhecidos ? (int) $p['qtd_itens'] : null,      // null = desconhecido (os zeros antigos não são lidos)
+                'subtotal' => $conhecidos ? (float) $p['subtotal'] : null,
+                // opção A do Jhony (24/11): desconto e frete só vêm no DETALHE (a listagem não os traz) → desconhecidos até o detalhe ser lido
+                'desconto' => $conhecidos ? (float) $p['desconto'] : null,
+                'frete' => $conhecidos ? (float) $p['frete'] : null,
                 'total' => (float) $p['total'],
-                'custo' => (float) $p['custo_total'],
+                'custo' => null,   // o pedido do Bling não traz custo (nem a listagem nem o detalhe): desconhecido → sem margem
                 'forma_pagamento' => $formas[$p['forma_pagamento'] ?? ''] ?? '',
                 'atualizado_em' => $p['atualizado_externo_em']
                     ? gmdate('c', strtotime($p['atualizado_externo_em'] . ' UTC'))
@@ -627,7 +669,8 @@ final class BlingReal extends BlingProviderBase
     {
         $compras = $this->repo->consultar(
             'SELECT id, bling_id, numero, supplier_id, situacao, data_emissao, data_previsao,
-                    data_recebimento, valor, qtd_itens, qtd_total, qtd_recebida, comprador,
+                    data_recebimento, valor, qtd_itens, qtd_total, qtd_recebida, comprador, '
+                    . ($this->repo->temColuna('bling_purchase_orders', 'itens_lidos_em') ? 'itens_lidos_em' : 'NULL AS itens_lidos_em') . ',
                     tem_divergencia, atualizado_externo_em
                FROM bling_purchase_orders WHERE account_id = ? AND deletado_em IS NULL',
             [$this->conta()]
@@ -664,9 +707,10 @@ final class BlingReal extends BlingProviderBase
             'previsao' => (string) ($c['data_previsao'] ?? $c['data_emissao']),
             'recebimento' => $c['data_recebimento'],
             'itens' => $porCompra[(int) $c['id']] ?? [],
-            'qtd_itens' => (int) $c['qtd_itens'],
-            'qtd_total' => (int) $c['qtd_total'],
-            'qtd_recebida' => (int) $c['qtd_recebida'],
+            'itens_conhecidos' => $c['itens_lidos_em'] !== null,
+            'qtd_itens' => $c['itens_lidos_em'] !== null ? (int) $c['qtd_itens'] : null,   // null = desconhecido
+            'qtd_total' => $c['itens_lidos_em'] !== null ? (int) $c['qtd_total'] : null,
+            'qtd_recebida' => null,   // nada no Bling informa o recebido: o 0 da coluna é ausência (achado 2 da ACIMA_ESQUERDA)
             'valor' => (float) $c['valor'],
             'situacao' => $c['situacao'],
             'comprador' => $c['comprador'] ?? '',

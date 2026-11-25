@@ -247,7 +247,8 @@ final class BlingNormalizer
         return [
             'bling_id'    => self::exigir(self::texto($p, 'id'), 'id', 'pedido'),
             'numero'      => self::texto($p, 'numero', 'numeroPedidoLoja'),
-            'data_pedido' => self::data($p, 'data', 'dataSaida') ?? date('Y-m-d'),
+            // revisão da ACIMA_ESQUERDA (achado 3): data ausente/ilegível = null, NUNCA "hoje" (quem grava mantém a conhecida ou recusa)
+            'data_pedido' => self::data($p, 'data', 'dataSaida'),
             'situacao_bling' => self::texto($p, 'situacao.valor', 'situacao.id', 'situacao'),
             // PORTÃO BLING SITUAÇÃO (23/11/2026): o ID real da situação (o `situacao.valor` acima não distingue situação — todos os
             // pedidos desde 04/2025 vieram 0). Só o id, sem fallback: ausente = null (nunca o `valor` no lugar do id).
@@ -257,8 +258,9 @@ final class BlingNormalizer
             'canal_bling_id'    => self::idExterno(self::bruto($p, 'loja.id') ?? self::bruto($p, 'canal.id')),
             'vendedor'    => self::texto($p, 'vendedor.nome', 'vendedor.id'),
             'forma_pagamento' => self::texto($p, 'formaPagamento.nome', 'formaPagamento.id'),
-            'desconto'    => self::numero($p, 'desconto.valor', 'desconto'),
-            'frete'       => self::numero($p, 'transporte.frete', 'frete'),
+            // achado 2: ausente = null (a LISTAGEM do Bling não traz desconto nem transporte — só o detalhe); quem grava não sobrescreve o conhecido
+            'desconto'    => self::numeroOpcional($p, 'desconto.valor', 'desconto'),
+            'frete'       => self::numeroOpcional($p, 'transporte.frete', 'frete'),
             'total'       => self::numero($p, 'total', 'totalProdutos'),
             'itens'       => self::itensPedido($p),
             'criado_externo_em'     => self::dataHoraUtc($p, 'dataCriacao', 'data'),
@@ -303,9 +305,9 @@ final class BlingNormalizer
             'numero'     => self::texto($p, 'numero'),
             'fornecedor_bling_id' => self::texto($p, 'fornecedor.id', 'contato.id'),
             'situacao_bling' => self::texto($p, 'situacao.valor', 'situacao'),
-            'data_emissao'  => self::data($p, 'data') ?? date('Y-m-d'),
+            'data_emissao'  => self::data($p, 'data'),                    // achado 3: null, nunca "hoje"
             'data_previsao' => self::data($p, 'dataPrevista', 'previsaoEntrega'),
-            'valor'      => self::numero($p, 'total'),
+            'valor'      => self::numeroOpcional($p, 'total'),               // achado 2: ausente = null (não sobrescreve o conhecido)
             'comprador'  => self::texto($p, 'comprador.nome', 'comprador'),
             'itens'      => self::itensPedido($p),
             'payload_hash' => self::hash($p),
@@ -321,8 +323,10 @@ final class BlingNormalizer
             'chave'     => preg_replace('/\D/', '', (string) (self::texto($p, 'chaveAcesso', 'chave') ?? '')) ?: null,
             'pedido_bling_id' => self::texto($p, 'pedido.id', 'idPedido'),
             'contato_bling_id'=> self::texto($p, 'contato.id'),
-            'data_emissao' => self::data($p, 'dataEmissao', 'data') ?? date('Y-m-d'),
-            'valor'     => self::numero($p, 'valorNota', 'total'),
+            // 24/11 (Jhony): emissão ausente/ilegível = null, NUNCA "hoje" (a nota apareceria "emitida hoje"); quem grava repõe a conhecida ou recusa
+            'data_emissao' => self::data($p, 'dataEmissao', 'data'),
+            // OpenAPI oficial (24/11): a LISTAGEM GET /nfe (NotasFiscaisDadosBaseDTO) NÃO traz valorNota (só o detalhe) → ausente = null, nunca 0
+            'valor'     => self::numeroOpcional($p, 'valorNota', 'total'),
             'situacao_bling' => self::texto($p, 'situacao'),
             'finalidade'=> self::texto($p, 'finalidade'),
             'tipo'      => ((int) (self::campo($p, 'tipo') ?? 1)) === 0 ? 'entrada' : 'saida',
@@ -345,7 +349,8 @@ final class BlingNormalizer
             'categoria_bling_id' => self::texto($p, 'categoria.id'),
             'forma_bling_id'     => self::texto($p, 'formaPagamento.id', 'portador.id'),
             'data_emissao'    => self::data($p, 'dataEmissao'),
-            'data_vencimento' => self::data($p, 'vencimento', 'dataVencimento') ?? date('Y-m-d'),
+            // 24/11 (Jhony): vencimento ausente/ilegível = null, NUNCA "hoje" (o título apareceria "vencendo hoje"); quem grava repõe o conhecido ou recusa
+            'data_vencimento' => self::data($p, 'vencimento', 'dataVencimento'),
             'valor'         => $valor,
             // ⚠️ QUITADO TEM SALDO ZERO — testar `> 0` inverte o significado.
             // A versão anterior fazia `numero(valorPago, saldo) > 0 ? valor - saldo : valorPago`.
@@ -428,7 +433,8 @@ final class BlingNormalizer
         $r = self::contaReceber($p);
         $r['fornecedor_bling_id'] = self::texto($p, 'contato.id', 'fornecedor.id');
         $r['valor_pago'] = $r['valor_recebido'];
-        $r['competencia'] = substr((string) ($r['data_emissao'] ?? $r['data_vencimento']), 0, 7);
+        $base = $r['data_emissao'] ?? $r['data_vencimento'];
+        $r['competencia'] = $base === null ? null : substr((string) $base, 0, 7);   // sem data = null (antes: '' ou, com o vencimento "hoje", o mês atual)
         $r['descricao'] = self::texto($p, 'historico', 'descricao');
         unset($r['valor_recebido'], $r['contato_bling_id']);
         return $r;

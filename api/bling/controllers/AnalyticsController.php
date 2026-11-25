@@ -43,6 +43,10 @@ final class AnalyticsController
         }
         foreach ($classes as $k => &$c) {
             $c['classe'] = $k;
+            if (isset($r['indisponivel'])) {   // "ausência ≠ zero" (pedido da CIMA): curva indisponível = classes desconhecidas, não 0 itens / R$ 0
+                $c['itens'] = null; $c['valor'] = null; $c['participacao'] = null;
+                continue;
+            }
             $c['valor'] = round($c['valor'], 2);
             $c['participacao'] = $r['total'] > 0 ? round(($c['valor'] / $r['total']) * 100, 1) : 0.0;
         }
@@ -51,6 +55,7 @@ final class AnalyticsController
         ApiResponse::success([
             'dimensao' => $dim, 'metrica' => $met,
             'itens'    => $r['itens'], 'total' => $r['total'],
+            'indisponivel' => $r['indisponivel'] ?? null,   // "ausência ≠ zero": 'itens_desconhecidos' | 'custo_desconhecido' | null
             'classes'  => array_values($classes),
             'dimensoes_disponiveis' => $dimsOk,
             'metricas_disponiveis'  => $metsOk,
@@ -67,26 +72,35 @@ final class AnalyticsController
             $dim = 'canal';
         }
 
-        $linhas = BlingProvider::atual()->rentabilidade($dim, $f);
+        $prov = BlingProvider::atual();
+        $linhas = $prov->rentabilidade($dim, $f);
+        $indisponivel = $prov->rentabilidadeIndisponivel($dim, $f);
+        $ok = $indisponivel === null;   // indisponível = nenhuma linha → nenhuma soma (que daria 0)
 
-        // Waterfall consolidado: receita -> deducoes -> lucro.
-        $soma = static fn(string $c) => round(array_sum(array_column($linhas, $c)), 2);
+        // Waterfall consolidado: receita -> deducoes -> lucro. "ausência ≠ zero": custo/lucro desconhecidos = null (array_sum faria 0).
+        $soma = static function (string $c) use ($linhas, $ok): ?float {
+            if (!$ok) { return null; }   // sem linhas por indisponibilidade: soma de nada NÃO é 0
+            $s = BlingProviderBase::somaConhecida($linhas, $c); return $s === null ? null : round($s, 2);
+        };
+        $neg = static fn(?float $v): ?float => $v === null ? null : -$v;   // nunca -null (o PHP daria 0)
+        $mais = static fn(?float $x, ?float $y): ?float => ($x === null || $y === null) ? null : round($x + $y, 2);
         $waterfall = [
-            ['id' => 'receita',  'rotulo' => 'Receita bruta', 'valor' => $soma('receita') + $soma('desconto'), 'tipo' => 'inicial'],
-            ['id' => 'desconto', 'rotulo' => 'Descontos',     'valor' => -$soma('desconto'), 'tipo' => 'reducao'],
-            ['id' => 'custo',    'rotulo' => 'Custo',         'valor' => -$soma('custo'),    'tipo' => 'reducao'],
-            ['id' => 'comissao', 'rotulo' => 'Comissões',     'valor' => -$soma('comissao'), 'tipo' => 'reducao'],
-            ['id' => 'taxas',    'rotulo' => 'Taxas',         'valor' => -$soma('taxas'),    'tipo' => 'reducao'],
-            ['id' => 'impostos', 'rotulo' => 'Impostos (est.)','valor' => -$soma('impostos'),'tipo' => 'reducao'],
-            ['id' => 'frete',    'rotulo' => 'Frete',         'valor' => -$soma('frete'),    'tipo' => 'reducao'],
-            ['id' => 'lucro',    'rotulo' => 'Lucro',         'valor' => $soma('lucro'),     'tipo' => 'final'],
+            ['id' => 'receita',  'rotulo' => 'Receita bruta', 'valor' => $mais($soma('receita'), $soma('desconto')), 'tipo' => 'inicial'],
+            ['id' => 'desconto', 'rotulo' => 'Descontos',     'valor' => $neg($soma('desconto')), 'tipo' => 'reducao'],
+            ['id' => 'custo',    'rotulo' => 'Custo',         'valor' => $neg($soma('custo')),    'tipo' => 'reducao'],
+            ['id' => 'comissao', 'rotulo' => 'Comissões',     'valor' => $neg($soma('comissao')), 'tipo' => 'reducao'],
+            ['id' => 'taxas',    'rotulo' => 'Taxas',         'valor' => $neg($soma('taxas')),    'tipo' => 'reducao'],
+            ['id' => 'impostos', 'rotulo' => 'Impostos (est.)','valor' => $neg($soma('impostos')),'tipo' => 'reducao'],
+            ['id' => 'frete',    'rotulo' => 'Frete',         'valor' => $neg($soma('frete')),    'tipo' => 'reducao'],
+            ['id' => 'lucro',    'rotulo' => 'Lucro',         'valor' => $soma('lucro'),          'tipo' => 'final'],
         ];
 
         ApiResponse::success([
             'dimensao'  => $dim,
             'itens'     => $linhas,
+            'indisponivel' => $indisponivel ?? ($soma('custo') === null ? 'custo_desconhecido' : null),
             'waterfall' => $waterfall,
-            'prejuizo'  => array_values(array_filter($linhas, static fn($l) => $l['prejuizo'])),
+            'prejuizo'  => array_values(array_filter($linhas, static fn($l) => $l['prejuizo'] === true)),
             'dimensoes_disponiveis' => $dimsOk,
             'nota' => 'Impostos e taxas são estimativas. Não substituem apuração contábil.',
         ], bling_meta(['filtros' => $f]));
@@ -237,11 +251,78 @@ final class AnalyticsController
         $f = bling_filtros();
         $p = BlingProvider::atual();
         $linhas = $p->rentabilidade('canal', $f);
+        $ind = $p->rentabilidadeIndisponivel('canal', $f);
+        if ($ind !== null) {   // "ausência ≠ zero": sem receita líquida conhecida não há fluxo (antes: nós vazios = "nada entrou")
+            ApiResponse::success(['nos' => [], 'links' => [], 'links_desconhecidos' => [], 'links_zero' => [], 'fluxo_indisponivel' => true, 'fluxo_zerado' => false,
+                'indisponivel' => $ind, 'prejuizo_total' => null, 'nota' => 'Impostos e taxas são estimativas.'], bling_meta(['filtros' => $f]));
+            return;
+        }
 
+        $fluxo = self::montarFluxo($linhas);
+        // Codex DSHOW-115 (complemento, Jhony 24/11): "sem vendas = fluxo zerado" SÓ com leitura válida do Bling cobrindo o período inteiro
+        if ($fluxo['fluxo_zerado']) {
+            $motivo = self::semCoberturaDoPeriodo($p->disponibilidade('pedidos'), $f['ate'], time());
+            if ($motivo !== null) {
+                $fluxo = ['fluxo_indisponivel' => true, 'fluxo_zerado' => false, 'indisponivel' => 'leitura_sem_cobertura', 'motivo_indisponivel' => $motivo,
+                          'links_zero' => [], 'prejuizo_total' => null] + $fluxo;
+            }
+        }
+        ApiResponse::success($fluxo + ['nota' => 'Impostos e taxas são estimativas.'], bling_meta(['filtros' => $f]));
+    }
+
+    /** Tolerância do período EM CURSO (termina hoje/no futuro): a leitura ok tem de ser no máximo desta idade (o fim do período ainda não chegou). */
+    public const ATRASO_MAX_LEITURA_S = 3600;
+
+    /**
+     * Codex DSHOW-115 (complemento): o período tem leitura VÁLIDA do Bling que o cubra inteiro? null = sim; senão o motivo (para "indisponível").
+     * Válida = selo de disponibilidade dos pedidos 'ok' (cobertura completa, sem falha, escopo, desativação) E último sucesso DEPOIS do fim do período.
+     * Período que ainda não terminou: o fim efetivo é agora → último sucesso há no máximo ATRASO_MAX_LEITURA_S. Função pura (testada direto).
+     * @param array{estado?:string, motivo?:string, ultimo_sucesso?:?string, cobertura?:string} $disp
+     */
+    public static function semCoberturaDoPeriodo(array $disp, string $fimPeriodo, int $agora): ?string
+    {
+        if (($disp['estado'] ?? null) !== 'ok') {
+            return 'leitura dos pedidos ' . (($disp['estado'] ?? '') === 'sem_dados' ? 'ainda não feita' : 'não está completa') . ($disp['motivo'] ?? null ? ': ' . $disp['motivo'] : '');
+        }
+        $ult = ($disp['ultimo_sucesso'] ?? null) === null ? null : strtotime((string) $disp['ultimo_sucesso']);
+        if ($ult === null || $ult === false) { return 'não há leitura concluída dos pedidos'; }
+        $fim = strtotime($fimPeriodo . ' 23:59:59');
+        if ($fim === false) { return 'fim do período ilegível'; }
+        $exigido = $fim <= $agora ? $fim : $agora - self::ATRASO_MAX_LEITURA_S;
+        if ($ult < $exigido) {
+            return 'a última leitura concluída dos pedidos (' . gmdate('Y-m-d H:i', $ult) . ' UTC) é anterior ao fim do período — não cobre o período inteiro';
+        }
+        return null;
+    }
+
+    /**
+     * Monta o Sankey a partir das linhas de rentabilidade por canal. Função pura (testada direto).
+     * Valor desconhecido (null) NUNCA some em silêncio: antes, $add com null só não desenhava a ligação e o fluxo parecia completo
+     * (ex.: um canal com desconto não lido saía da receita; frete desconhecido sumia como se fosse zero). Agora cada ligação desconhecida
+     * vai para links_desconhecidos e o fluxo fica 'indisponivel' = 'valores_desconhecidos' (ou 'custo_desconhecido', que já existia).
+     * Zero e negativo continuam sem ligação (o Sankey não desenha) — são valores CONHECIDOS; o prejuízo sai em prejuizo_total.
+     * Codex DSHOW-115 (pacote B): indicadores EXPLÍCITOS para a tela não deduzir "indisponível" de `nos` vazio (antes: fluxo todo ZERADO e conhecido
+     * aparecia "Fluxo indisponível"): fluxo_indisponivel (nada conhecido a desenhar porque há valor desconhecido), fluxo_zerado (tudo conhecido e
+     * nada se moveu), links_zero (ligações com ZERO conhecido — nunca em links_desconhecidos).
+     * @param list<array<string,mixed>> $linhas
+     * @return array{nos:list<array{id:string,nome:string}>, links:list<array>, links_desconhecidos:list<array{origem:string,destino:string}>, indisponivel:?string, prejuizo_total:?float}
+     */
+    public static function montarFluxo(array $linhas): array
+    {
         $nos = [];
         $links = [];
-        $add = static function (string $de, string $para, float $valor) use (&$links, &$nos): void {
-            if ($valor <= 0) {
+        $desconhecidos = [];
+        $zeros = [];
+        $add = static function (string $de, string $para, ?float $valor) use (&$links, &$nos, &$desconhecidos, &$zeros): void {
+            if ($valor === null) {   // desconhecido: registrado, nunca tratado como "nada passou por aqui"
+                $desconhecidos[] = ['origem' => $de, 'destino' => $para];
+                return;
+            }
+            if ($valor == 0.0) {   // zero CONHECIDO: declarado à parte, nunca "desconhecido"
+                $zeros[] = ['origem' => $de, 'destino' => $para];
+                return;
+            }
+            if ($valor < 0) {
                 return;
             }
             $nos[$de] = true;
@@ -251,23 +332,36 @@ final class AnalyticsController
         };
 
         foreach ($linhas as $l) {
-            $add($l['rotulo'], 'Receita', $l['receita']);
+            $add((string) $l['rotulo'], 'Receita', $l['receita'] === null ? null : (float) $l['receita']);
         }
 
-        $soma = static fn(string $c) => round(array_sum(array_column($linhas, $c)), 2);
-        $add('Receita', 'Custo do produto', $soma('custo'));
+        $soma = static function (string $c) use ($linhas): ?float { $s = BlingProviderBase::somaConhecida($linhas, $c); return $s === null ? null : round($s, 2); };
+        $custo = $soma('custo'); $lucro = $soma('lucro');
         $add('Receita', 'Impostos (est.)',  $soma('impostos'));
         $add('Receita', 'Taxas',            $soma('taxas'));
         $add('Receita', 'Comissões',        $soma('comissao'));
         $add('Receita', 'Frete',            $soma('frete'));
-        $add('Receita', 'Margem',           max(0, $soma('lucro')));
+        if ($custo !== null && $lucro !== null) {
+            $add('Receita', 'Custo do produto', $custo);
+            $add('Receita', 'Margem',           max(0, $lucro));
+        } else {
+            // "ausência ≠ zero": sem custo conhecido, custo e margem NÃO são separados — o resto da receita vai para um nó só, rotulado.
+            $partes = [$soma('receita'), $soma('impostos'), $soma('taxas'), $soma('comissao'), $soma('frete')];
+            // nunca (float) null → 0: com qualquer parte desconhecida o resto também é desconhecido (registrado em links_desconhecidos)
+            $resto = in_array(null, $partes, true) ? null : $partes[0] - $partes[1] - $partes[2] - $partes[3] - $partes[4];
+            $add('Receita', 'Custo e margem (não informados)', $resto === null ? null : round($resto, 2));
+        }
 
-        ApiResponse::success([
+        return [
             'nos' => array_values(array_map(static fn($n) => ['id' => $n, 'nome' => $n], array_keys($nos))),
             'links' => array_values($links),
-            'prejuizo_total' => $soma('lucro') < 0 ? abs($soma('lucro')) : 0.0,
-            'nota' => 'Impostos e taxas são estimativas.',
-        ], bling_meta(['filtros' => $f]));
+            'links_desconhecidos' => $desconhecidos,   // aditivo (24/11)
+            'links_zero' => $zeros,                                                  // aditivo (DSHOW-115)
+            'fluxo_indisponivel' => $links === [] && $desconhecidos !== [],           // aditivo (DSHOW-115): nada conhecido a desenhar por falta de dado
+            'fluxo_zerado' => $links === [] && $desconhecidos === [],                 // aditivo (DSHOW-115): tudo conhecido e zero — NÃO é indisponível
+            'indisponivel' => $custo === null ? 'custo_desconhecido' : ($desconhecidos !== [] ? 'valores_desconhecidos' : null),
+            'prejuizo_total' => $lucro === null ? null : ($lucro < 0 ? abs($lucro) : 0.0),
+        ];
     }
 
     /**
@@ -286,7 +380,14 @@ final class AnalyticsController
         }
 
         $porProduto = [];
-        foreach ($p->colecao('estoque') as $e) {
+        $estoqueM = $p->colecao('estoque');
+        // Codex DSHOW-114: giro (consumo) ou receita desconhecidos = matriz indisponível — nada de mediana sobre zeros
+        if (in_array(null, array_column($estoqueM, 'giro_anual'), true) || in_array(null, array_column($produtos, 'receita'), true)) {
+            ApiResponse::success(['itens' => [], 'cortes' => ['giro' => null, 'margem_pct' => null, 'metodo' => 'mediana'], 'quadrantes' => [],
+                'indisponivel' => 'itens_desconhecidos'], bling_meta(['filtros' => $f]));
+            return;
+        }
+        foreach ($estoqueM as $e) {
             if (!isset($porProduto[$e['produto']])) {
                 $porProduto[$e['produto']] = ['giro' => 0.0, 'disponivel' => 0, 'valor' => 0.0];
             }
@@ -590,7 +691,8 @@ final class AnalyticsController
             $receitaAfetada = 0.0;
             foreach ($produtos as $prod) {
                 if (in_array($criterio, $prod['qualidade_pendencias'], true)) {
-                    $receitaAfetada += $prod['receita'];
+                    // Codex DSHOW-114: receita desconhecida = impacto desconhecido (null pegajoso), nunca soma parcial
+                    $receitaAfetada = ($receitaAfetada === null || $prod['receita'] === null) ? null : $receitaAfetada + $prod['receita'];
                 }
             }
             $pendencias[] = [
@@ -598,8 +700,8 @@ final class AnalyticsController
                 'rotulo' => $rotulos[$criterio] ?? $criterio,
                 'produtos' => $qtd,
                 'participacao' => $total > 0 ? round(($qtd / $total) * 100, 1) : 0.0,
-                'receita_afetada' => round($receitaAfetada, 2),
-                'prioridade' => $receitaAfetada > 0 ? 'alta' : ($qtd > $total * 0.2 ? 'media' : 'baixa'),
+                'receita_afetada' => $receitaAfetada === null ? null : round($receitaAfetada, 2),
+            ] + self::prioridadePendencia($receitaAfetada, $qtd, $total) + [
                 'acao' => 'Completar o campo no cadastro do produto.',
             ];
         }
@@ -623,6 +725,17 @@ final class AnalyticsController
             'pendencias' => $pendencias,
             'distribuicao' => self::histograma($scores, 10),
         ], bling_meta(['filtros' => $f]));
+    }
+
+    /**
+     * Prioridade de uma pendência de cadastro. Revisão da ACIMA_ESQUERDA (B, 24/11): receita afetada DESCONHECIDA não rebaixa a pendência
+     * para média/baixa em silêncio (antes: null > 0 era falso) — fica 'indisponivel', com o motivo 'receita_desconhecida'.
+     * @return array{prioridade:string, prioridade_motivo:?string}
+     */
+    public static function prioridadePendencia(?float $receitaAfetada, int $qtd, int $total): array
+    {
+        if ($receitaAfetada === null) { return ['prioridade' => 'indisponivel', 'prioridade_motivo' => 'receita_desconhecida']; }
+        return ['prioridade' => $receitaAfetada > 0 ? 'alta' : ($qtd > $total * 0.2 ? 'media' : 'baixa'), 'prioridade_motivo' => null];
     }
 
     /** Histograma simples para a distribuicao de scores. */

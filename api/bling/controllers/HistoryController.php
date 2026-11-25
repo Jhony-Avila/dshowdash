@@ -61,6 +61,7 @@ final class HistoryController
         $prod = $produtos[$produtoId];
 
         // Unidades e receita por dia, a partir dos pedidos reais.
+        $itensDesconhecidos = false;
         $porDia = [];
         $cursor = strtotime($f['de']);
         $fim = strtotime($f['ate']);
@@ -73,6 +74,10 @@ final class HistoryController
                 continue;
             }
             if (in_array($ped['situacao'], ['rascunho', 'cancelado'], true)) {
+                continue;
+            }
+            if (($ped['itens_conhecidos'] ?? true) === false) {   // "ausência ≠ zero": um pedido sem itens lidos torna a série desconhecida
+                $itensDesconhecidos = true;
                 continue;
             }
             foreach ($ped['itens'] as $it) {
@@ -92,8 +97,8 @@ final class HistoryController
         foreach ($porDia as $data => $d) {
             $pontos[] = [
                 'data'      => $data,
-                'unidades'  => $d['unidades'],
-                'receita'   => round($d['receita'], 2),
+                'unidades'  => $itensDesconhecidos ? null : $d['unidades'],           // null = itens dos pedidos não lidos (não é "0 vendido")
+                'receita'   => $itensDesconhecidos ? null : round($d['receita'], 2),
                 // Preço e custo vigentes, repetidos — declarados como tal.
                 'preco'     => $precoVigente,
                 'custo'     => $prod['custo'],
@@ -120,6 +125,7 @@ final class HistoryController
                 'ultima_venda' => $prod['ultima_venda'],
             ],
             'pontos' => $pontos,
+            'indisponivel' => $itensDesconhecidos ? 'itens_desconhecidos' : null,
             'estoque_por_deposito' => $estoquePorDeposito,
             'origem' => [
                 'unidades' => 'real — pedidos do período',
@@ -158,6 +164,9 @@ final class HistoryController
                 static fn($e) => $e['deposito'] === $f['deposito']));
         }
 
+        // Codex DSHOW-114: consumo de 90 dias desconhecido (cobertura de itens incompleta) → faixas de cobertura e ruptura projetada INDISPONÍVEIS
+        // (antes: consumo desconhecido virava "parado"/"sem consumo"); o aging não depende do consumo e continua.
+        $consumoDesc = in_array(null, array_column($estoque, 'consumo_90d'), true);
         // ── Cobertura: distribuição em faixas ────────────────────
         $faixas = [
             ['id' => 'ruptura',  'rotulo' => 'Sem cobertura',  'min' => null, 'max' => 0,   'cor' => 'erro'],
@@ -180,6 +189,7 @@ final class HistoryController
             ['id' => '91-180',  'rotulo' => '91 a 180 dias', 'itens' => 0, 'valor' => 0.0],
             ['id' => '180+',    'rotulo' => 'Mais de 180',   'itens' => 0, 'valor' => 0.0],
         ];
+        $agingSemRegistro = ['itens' => 0, 'valor' => 0.0];
         // ── Estoque × venda: dispersão ───────────────────────────
         $dispersao = [];
 
@@ -220,14 +230,18 @@ final class HistoryController
                 ];
             }
 
-            // aging
-            $dias = (int) ((strtotime($hoje) - strtotime($e['ultima_movimentacao'])) / 86400);
-            $iAging = match (true) {
-                $dias <= 30  => 0, $dias <= 60  => 1,
-                $dias <= 90  => 2, $dias <= 180 => 3, default => 4,
-            };
-            $aging[$iAging]['itens']++;
-            $aging[$iAging]['valor'] += $valor;
+            // aging — sem movimentação registrada (null) NÃO entra em faixa nenhuma: vai para aging_sem_registro (antes: contava como "hoje")
+            if (($e['ultima_movimentacao'] ?? null) === null) {
+                $agingSemRegistro['itens']++; $agingSemRegistro['valor'] += $valor;
+            } else {
+                $dias = (int) ((strtotime($hoje) - strtotime($e['ultima_movimentacao'])) / 86400);
+                $iAging = match (true) {
+                    $dias <= 30  => 0, $dias <= 60  => 1,
+                    $dias <= 90  => 2, $dias <= 180 => 3, default => 4,
+                };
+                $aging[$iAging]['itens']++;
+                $aging[$iAging]['valor'] += $valor;
+            }
 
             // estoque × venda
             if ($e['fisico'] > 0 || $e['consumo_90d'] > 0) {
@@ -244,10 +258,11 @@ final class HistoryController
         }
 
         foreach ($faixas as &$fx) {
-            $fx['itens'] = $contagem[$fx['id']]['itens'];
-            $fx['valor'] = round($contagem[$fx['id']]['valor'], 2);
+            $fx['itens'] = $consumoDesc ? null : $contagem[$fx['id']]['itens'];
+            $fx['valor'] = $consumoDesc ? null : round($contagem[$fx['id']]['valor'], 2);
         }
         unset($fx);
+        if ($consumoDesc) { $rupturas = []; }
         foreach ($aging as &$a) {
             $a['valor'] = round($a['valor'], 2);
         }
@@ -273,6 +288,8 @@ final class HistoryController
                 || in_array($ped['situacao'], ['rascunho', 'cancelado'], true)) {
                 continue;
             }
+            if (($ped['itens_conhecidos'] ?? true) === false) { $consumo[$ped['data']] = null; }   // Codex DSHOW-114: dia com pedido sem itens = desconhecido
+            if ($consumo[$ped['data']] === null) { continue; }
             foreach ($ped['itens'] as $it) {
                 if ($produtosDoDeposito !== null && !isset($produtosDoDeposito[$it['produto']])) {
                     continue;
@@ -290,8 +307,10 @@ final class HistoryController
             'rupturas'    => array_slice($rupturas, 0, 60),
             'rupturas_total' => count($rupturas),
             'aging'       => $aging,
+            'aging_sem_registro' => ['itens' => $agingSemRegistro['itens'], 'valor' => round($agingSemRegistro['valor'], 2)],   // aditivo (revisão ESQUERDA 24/11)
             'dispersao'   => $dispersao,
             'consumo'     => $serieConsumo,
+            'indisponivel' => $consumoDesc ? 'itens_desconhecidos' : null,   // Codex DSHOW-114 (aditivo): faixas/rupturas sem base
             'nota_aging'  => 'Aging pela última movimentação registrada. Item parado com '
                            . 'valor alto é capital imobilizado sem giro.',
         ], bling_meta(['filtros' => $f]));
@@ -445,8 +464,22 @@ final class HistoryController
             $dim = 'produto';
         }
 
-        $linhas = BlingProvider::atual()->rentabilidade($dim, $f);
+        $prov = BlingProvider::atual();
+        $linhas = $prov->rentabilidade($dim, $f);
         $itens = array_values(array_filter($linhas, static fn($l) => $l['receita'] != 0));
+        // "ausência ≠ zero": sem margem conhecida em TODAS as linhas não há mediana nem quadrante (antes: margem com custo 0 = tudo "alta margem")
+        $indisponivel = $prov->rentabilidadeIndisponivel($dim, $f)
+            ?? (array_filter($itens, static fn($l) => $l['margem_pct'] === null) !== [] ? 'custo_desconhecido' : null);
+        if ($indisponivel !== null) {
+            ApiResponse::success([
+                'dimensao'   => $dim,
+                'itens'      => array_map(static fn($i) => $i + ['quadrante' => null], $itens),
+                'indisponivel' => $indisponivel,
+                'cortes'     => ['receita' => null, 'margem_pct' => null, 'metodo' => 'mediana'],
+                'quadrantes' => [],
+                'dimensoes_disponiveis' => ['produto', 'cliente', 'canal', 'categoria', 'vendedor'],
+            ], bling_meta(['filtros' => $f]));
+        }
 
         $mediana = static function (array $v): float {
             if ($v === []) {
@@ -485,13 +518,15 @@ final class HistoryController
             $doQ = array_values(array_filter($itens, static fn($i) => $i['quadrante'] === $q['id']));
             $q['itens']   = count($doQ);
             $q['receita'] = round(array_sum(array_column($doQ, 'receita')), 2);
-            $q['lucro']   = round(array_sum(array_column($doQ, 'lucro')), 2);
+            $l = BlingProviderBase::somaConhecida($doQ, 'lucro');   // nunca array_sum de lucro (null viraria 0)
+            $q['lucro']   = $l === null ? null : round($l, 2);
         }
         unset($q);
 
         ApiResponse::success([
             'dimensao'   => $dim,
             'itens'      => $itens,
+            'indisponivel' => null,
             'cortes'     => ['receita' => round($corteVolume, 2),
                              'margem_pct' => round($corteMargem, 1), 'metodo' => 'mediana'],
             'quadrantes' => $quadrantes,
