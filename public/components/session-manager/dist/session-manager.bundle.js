@@ -1060,7 +1060,7 @@ function Xs(e) {
 function Qs(e) {
   return e || (e = {}), b.sessionChecks++, ce.checkSession(e).then((t) => {
     if (!t.ok)
-      return K(m.SESSION_CHECKED, { authenticated: !1, error: t.error }), { ok: !1, error: t.error };
+      return b.sessionChecksUnknown = (b.sessionChecksUnknown || 0) + 1, { ok: !1, estado: "desconhecido", error: t.error };
     if (t.authenticated && t.user) {
       const r = Kt(t.user), n = Et(t.expiresIn || 604800);
       return i.update({ authenticated: !0, user: r, userId: r ? r.id : null, roles: r ? r.roles : [], level: r ? r.level : null, expiresAt: n, lastActivity: Date.now() }), t.token && (E.setToken(t.token), i.setToken(t.token)), t.csrf && E.setCsrf(t.csrf), K(m.SESSION_CHECKED, { authenticated: !0, user: r }), { ok: !0, authenticated: !0, user: r };

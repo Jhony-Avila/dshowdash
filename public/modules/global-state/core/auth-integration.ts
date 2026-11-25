@@ -121,7 +121,9 @@ export function setupAuthEventIntegration(manager: Record<string, unknown>) {
       if (d?.authenticated && d?.user) {
         m.setSession({ isAuthenticated: true, userId: d.user.id || d.userId, user: d.user, token: d.token || null, lastActivity: Date.now() });
         emit(manager, GLOBAL_STATE_EVENTS.SESSION_SYNCED, { source: 'session-checked' });
-      } else if (!d?.authenticated) {
+      } else if (d?.authenticated === false && !d?.error && d?.estado !== 'desconhecido') {
+        // Codex DSHOW-114: só "não autenticado CONFIRMADO" limpa a identidade global. Evento sem authenticated, com erro ou com
+        // estado desconhecido (consulta indisponível) NÃO limpa, NÃO emite SESSION_CLEARED e NÃO vira logout.
         m.clearSession();
         emit(manager, GLOBAL_STATE_EVENTS.SESSION_CLEARED, { source: 'session-checked-unauthenticated' });
       }

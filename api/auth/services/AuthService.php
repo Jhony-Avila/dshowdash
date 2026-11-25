@@ -108,7 +108,16 @@ class AuthService
             // DSHOW-110: o registro fica INATIVO (antes: DELETE). O token é o id da sessão em curso (o cookie pode estar velho).
             $tokenAtual = session_id() !== '' ? session_id() : $sessionToken;
             if (!SessaoRegistro::encerrar($tokenAtual, $userId, 'logout')) {
+                // Codex DSHOW-113 (4): sem a revogação PERSISTENTE não há logout confirmado. A sessão fica como estava (nada é destruído
+                // pela metade); o cliente recebe erro ("Erro ao sair") e tenta de novo quando o banco voltar. Antes: seguia e respondia sucesso.
                 $this->logEvent($userId, 'logout_registro_nao_gravado', $ip, ['request_id' => $requestId]);
+                return [
+                    'success' => false,
+                    'error' => 'LOGOUT_NOT_PERSISTED',
+                    'code' => 503,
+                    'message' => 'Não foi possível encerrar a sessão agora. Tente de novo em instantes.',
+                    'request_id' => $requestId
+                ];
             }
             $_SESSION = [];
 
@@ -125,7 +134,18 @@ class AuthService
                 );
             }
 
-            session_destroy();
+            if (!session_destroy()) {
+                // Codex DSHOW-113 (4): o registro já está inativo (nenhum portão aceita mais esta sessão), mas a limpeza da sessão do PHP
+                // falhou → não se anuncia sucesso; um novo "Sair" encontra a sessão encerrada (check.php: authenticated:false).
+                $this->logEvent($userId, 'logout_limpeza_falhou', $ip, ['request_id' => $requestId]);
+                return [
+                    'success' => false,
+                    'error' => 'LOGOUT_CLEANUP_FAILED',
+                    'code' => 500,
+                    'message' => 'A sessão foi encerrada, mas a limpeza não terminou. Tente sair de novo.',
+                    'request_id' => $requestId
+                ];
+            }
 
             $this->logEvent($userId, 'logout_success', $ip, [
                 'username' => $username,
