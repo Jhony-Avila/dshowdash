@@ -48,7 +48,7 @@ final class AsaasEsquema
 
     public static function prefixo(string $p): void
     {
-        if ($p !== '' && preg_match('/^asaas_t[a-z0-9]{6,16}_$/', $p) !== 1) throw new InvalidArgumentException('prefixo de teste inválido');
+        if ($p !== '' && preg_match('/^asaas_t[a-z0-9]{6,16}_\z/', $p) !== 1) throw new InvalidArgumentException('prefixo de teste inválido');
     }
 }
 
@@ -65,7 +65,7 @@ final class AsaasValor
     {
         if (is_int($v)) return $v * 100;
         if (!is_string($v)) return null;                                         // float NUNCA: já perdeu o literal
-        if (preg_match('/^(-?)(\d{1,13})(?:\.(\d{1,2}))?$/', $v, $m) !== 1) return null;
+        if (preg_match('/^(-?)(\d{1,13})(?:\.(\d{1,2}))?\z/', $v, $m) !== 1) return null;
         $c = (int) $m[2] * 100 + (int) str_pad($m[3] ?? '', 2, '0');
         return $m[1] === '-' ? -$c : $c;
     }
@@ -108,7 +108,7 @@ final class AsaasValor
     }
 
     public static function data(mixed $v): ?string { return is_string($v) && preg_match('/^\d{4}-\d{2}-\d{2}/', $v) ? substr($v, 0, 10) : null; }
-    public static function id(mixed $v): ?string { return is_string($v) && preg_match('/^[A-Za-z0-9_-]{1,40}$/', $v) ? $v : null; }
+    public static function id(mixed $v): ?string { return is_string($v) && preg_match('/^[A-Za-z0-9_-]{1,40}\z/', $v) ? $v : null; }
     public static function curto(mixed $v, int $n): ?string { return is_string($v) && $v !== '' ? mb_substr($v, 0, $n) : null; }
 }
 
@@ -146,7 +146,7 @@ final class AsaasRepositorio
         try {
             foreach ($itens as $c) {
                 $id = AsaasValor::id($c['id'] ?? null); $valor = AsaasValor::dinheiro($c['value'] ?? null);
-                $status = is_string($c['status'] ?? null) && preg_match('/^[A-Z_]{3,40}$/', $c['status']) ? $c['status'] : null;
+                $status = is_string($c['status'] ?? null) && preg_match('/^[A-Z_]{3,40}\z/', $c['status']) ? $c['status'] : null;
                 if ($id === null || $valor === null || $status === null) throw new AsaasErro('resposta_invalida', 200);
                 $st->execute([$conta, $ger, $id, $status, AsaasValor::curto($c['billingType'] ?? null, 24), $valor, AsaasValor::opcional($c, 'netValue', 'cobranca'),
                     AsaasValor::data($c['dueDate'] ?? null), AsaasValor::data($c['dateCreated'] ?? null), AsaasValor::data($c['paymentDate'] ?? ($c['clientPaymentDate'] ?? null)),
@@ -181,7 +181,7 @@ final class AsaasRepositorio
     public function gravarEstatistica(string $conta, int $ger, string $chave, array $d, string $agora): void
     {
         $q = $d['quantity'] ?? null; $v = AsaasValor::dinheiro($d['value'] ?? null);   // números chegam como texto (AsaasJson)
-        $q = is_string($q) && preg_match('/^(0|[1-9][0-9]{0,8})$/', $q) === 1 ? (int) $q : (is_int($q) && $q >= 0 ? $q : null);
+        $q = is_string($q) && preg_match('/^(0|[1-9][0-9]{0,8})\z/', $q) === 1 ? (int) $q : (is_int($q) && $q >= 0 ? $q : null);
         if ($q === null || $v === null) throw new AsaasErro('resposta_invalida', 200);
         $this->q("INSERT INTO `{p}asaas_estatisticas` (`conta`,`geracao`,`chave`,`quantidade`,`valor`,`valor_liquido`,`consultado_em`) VALUES (?,?,?,?,?,?,?)
                   ON DUPLICATE KEY UPDATE `quantidade`=VALUES(`quantidade`),`valor`=VALUES(`valor`),`valor_liquido`=VALUES(`valor_liquido`),`consultado_em`=VALUES(`consultado_em`)",

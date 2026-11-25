@@ -467,6 +467,30 @@ if ($pdo !== null) {
     $estado['A']['nov'] = $pPend;
 }
 
+// ================= G2 (DSHOW-116). texto BRUTO com \z: no PHP o `$` aceita um "\n" no fim =================
+$quebrados = ["pay_1\n", "pay_1\r\n", "\npay_1", "pay_1 ", "pay 1", ''];
+check('\z · AsaasValor::id recusa "\n", "\r\n", espaço e vazio; aceita o canônico', AsaasValor::id('pay_1') === 'pay_1'
+    && array_filter(array_map(fn($v) => AsaasValor::id($v), $quebrados), fn($r) => $r !== null) === []);
+check('\z · centavosDe recusa "10.00\n" e "10\r\n"', AsaasValor::centavosDe('10.00') === 1000 && AsaasValor::centavosDe("10.00\n") === null && AsaasValor::centavosDe("10\r\n") === null);
+check('\z · rótulo e chave: "conta-a\n" e "$aact_…\n" não casam', preg_match(AsaasChaves::RE_ROTULO, 'conta-a') === 1 && preg_match(AsaasChaves::RE_ROTULO, "conta-a\n") === 0
+    && preg_match(AsaasChaves::RE_CHAVE, '$aact_' . str_repeat('a', 30)) === 1 && preg_match(AsaasChaves::RE_CHAVE, '$aact_' . str_repeat('a', 30) . "\n") === 0);
+$srcAs = '';
+foreach (array_merge(glob(__DIR__ . '/../../api/asaas/*.php'), glob(__DIR__ . '/asaas-*.php')) as $f) $srcAs .= (string) file_get_contents($f);
+check('\z · nenhum regex do Asaas (api e scripts de produção) termina em $', preg_match('/\$[\/#][imsuxUA]*\'/', $srcAs) === 0);
+if ($pdo !== null) {
+    $repoQ = new AsaasRepositorio($pdo, $P);
+    $itemQ = fn(string $id, string $st) => ['object' => 'payment', 'id' => $id, 'dateCreated' => '2026-11-02', 'customer' => 'cus_000001', 'value' => '10.00',
+        'netValue' => '9.50', 'billingType' => 'PIX', 'status' => $st, 'dueDate' => '2026-11-02', 'paymentDate' => null, 'deleted' => false];
+    check('\z · status "RECEIVED\n" do Asaas → resposta_invalida (nunca gravado com a quebra, fora dos filtros de recebido)',
+        erroDe(fn() => $repoQ->gravarCobrancas('conta-q', 0, 0, [$itemQ('pay_q1', "RECEIVED\n")], '2026-11-23 10:00:00')) === 'resposta_invalida');
+    check('\z · payment_id "pay_q2\n" → resposta_invalida (nunca uma 2ª linha "pay_q2\n" ao lado da "pay_q2")',
+        erroDe(fn() => $repoQ->gravarCobrancas('conta-q', 0, 0, [$itemQ("pay_q2\n", 'RECEIVED')], '2026-11-23 10:00:00')) === 'resposta_invalida');
+    check('\z · nada da conta-q gravado', (int) $pdo->query("SELECT COUNT(*) FROM `{$P}asaas_cobrancas` WHERE conta = 'conta-q'")->fetchColumn() === 0);
+    check('\z · CONTROLE: o mesmo item canônico é gravado (o teste recusa pelo \\n, não por outro campo)',
+        $repoQ->gravarCobrancas('conta-q', 0, 0, [$itemQ('pay_q3', 'RECEIVED')], '2026-11-23 10:00:00') === 1
+        && $pdo->query("SELECT status FROM `{$P}asaas_cobrancas` WHERE conta = 'conta-q' AND payment_id = 'pay_q3'")->fetchColumn() === 'RECEIVED');
+}
+
 // ================= H. CONFERÊNCIA (portão de ativação): os 11 rótulos, total e detalhe por empresa =================
 require_once __DIR__ . '/../../api/asaas/AsaasConferencia.php';
 $ONZE = ['zenthra', 'astrelux', 'lunvox', 'loja-painel-led', 'led-lovers', 'j-carvalho', 'jwa', 'a-marques', 'gav', 'neoled', 'rovic'];

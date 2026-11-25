@@ -13,7 +13,7 @@ require_once __DIR__ . '/../../api/asaas/AsaasDados.php';
 
 $conta = null;
 foreach (array_slice($argv, 1) as $a) {
-    if (preg_match('/^--conta=([a-z0-9][a-z0-9-]{1,31})$/', $a, $m) === 1) { $conta = $m[1]; continue; }
+    if (preg_match('/^--conta=([a-z0-9][a-z0-9-]{1,31})\z/', $a, $m) === 1) { $conta = $m[1]; continue; }
     fwrite(STDERR, "argumento desconhecido (não exibido)\n"); exit(2);
 }
 $trava = fopen(sys_get_temp_dir() . '/dshow-asaas-sincronizar.lock', 'c');

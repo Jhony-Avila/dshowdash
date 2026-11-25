@@ -32,11 +32,11 @@ final class AsaasRotas
         'sandbox'  => 'https://api-sandbox.asaas.com/v3',
     ];
 
-    private const DATA = '/^\d{4}-\d{2}-\d{2}$/';
-    private const STATUS = '/^(PENDING|RECEIVED|CONFIRMED|OVERDUE|REFUNDED|RECEIVED_IN_CASH|REFUND_REQUESTED|REFUND_IN_PROGRESS|CHARGEBACK_REQUESTED|CHARGEBACK_DISPUTE|AWAITING_CHARGEBACK_REVERSAL|DUNNING_REQUESTED|DUNNING_RECEIVED|AWAITING_RISK_ANALYSIS)$/';
-    private const TIPO = '/^(BOLETO|CREDIT_CARD|PIX|UNDEFINED)$/';
-    private const OFFSET = '/^(0|[1-9][0-9]{0,6})$/';
-    private const LIMITE = '/^([1-9]|[1-9][0-9]|100)$/';
+    private const DATA = '/^\d{4}-\d{2}-\d{2}\z/';
+    private const STATUS = '/^(PENDING|RECEIVED|CONFIRMED|OVERDUE|REFUNDED|RECEIVED_IN_CASH|REFUND_REQUESTED|REFUND_IN_PROGRESS|CHARGEBACK_REQUESTED|CHARGEBACK_DISPUTE|AWAITING_CHARGEBACK_REVERSAL|DUNNING_REQUESTED|DUNNING_RECEIVED|AWAITING_RISK_ANALYSIS)\z/';
+    private const TIPO = '/^(BOLETO|CREDIT_CARD|PIX|UNDEFINED)\z/';
+    private const OFFSET = '/^(0|[1-9][0-9]{0,6})\z/';
+    private const LIMITE = '/^([1-9]|[1-9][0-9]|100)\z/';
 
     /**
      * Lista FECHADA: nome lógico → caminho e parâmetros permitidos (regex do valor). Tudo GET.
@@ -53,7 +53,7 @@ final class AsaasRotas
             'dueDate[ge]' => self::DATA, 'dueDate[le]' => self::DATA, 'dateCreated[ge]' => self::DATA, 'dateCreated[le]' => self::DATA,
         ]],
         'extrato' => ['caminho' => '/financialTransactions', 'params' => [
-            'offset' => self::OFFSET, 'limit' => self::LIMITE, 'startDate' => self::DATA, 'finishDate' => self::DATA, 'order' => '/^(asc|desc)$/',
+            'offset' => self::OFFSET, 'limit' => self::LIMITE, 'startDate' => self::DATA, 'finishDate' => self::DATA, 'order' => '/^(asc|desc)\z/',
         ]],
         'saldo' => ['caminho' => '/finance/balance', 'params' => []],
         // Codex DSHOW-111 (B2): identidade estável da conta (cpfCnpj → HMAC-SHA256 com segredo, DSHOW-112 C; nunca guardado em claro). Leitura, GET.
@@ -198,7 +198,7 @@ final class AsaasCliente
     {
         foreach (['ratelimit-reset', 'retry-after'] as $h) {
             $v = $cab[$h] ?? null;
-            if (is_string($v) && preg_match('/^\d{1,6}$/', trim($v))) return max(1, min(60, (int) trim($v)));
+            if (is_string($v) && preg_match('/^\d{1,6}\z/', trim($v))) return max(1, min(60, (int) trim($v)));
         }
         return min(60, 5 * $n);
     }
@@ -207,8 +207,8 @@ final class AsaasCliente
 /** Contas e chaves: um arquivo por conta em <config>/asaas/<rótulo>.key (0600, dono do php-fpm). */
 final class AsaasChaves
 {
-    public const RE_ROTULO = '/^[a-z0-9][a-z0-9-]{1,31}$/';
-    public const RE_CHAVE = '/^\$aact_[A-Za-z0-9_$:=+\/.-]{20,400}$/';
+    public const RE_ROTULO = '/^[a-z0-9][a-z0-9-]{1,31}\z/';
+    public const RE_CHAVE = '/^\$aact_[A-Za-z0-9_$:=+\/.-]{20,400}\z/';
 
     public function __construct(private readonly string $pasta) {}
 
@@ -243,7 +243,7 @@ final class AsaasChaves
         // Codex DSHOW-112 C: identidade = HMAC-SHA256(segredo, dígitos do cpfCnpj) — sem o segredo não há identidade (nem sincronização).
         $fi = $this->pasta . '/' . $rotulo . '.id';
         $id = is_file($fi) && !is_link($fi) ? trim((string) @file_get_contents($fi)) : '';
-        if (preg_match('/^[0-9a-f]{64}$/', $id) !== 1) throw new AsaasErro('sem_identidade');
+        if (preg_match('/^[0-9a-f]{64}\z/', $id) !== 1) throw new AsaasErro('sem_identidade');
         $this->segredo();
         return ['chave' => $k, 'base' => AsaasRotas::BASES[$amb], 'ambiente' => $amb, 'identidade' => $id];
     }
@@ -267,7 +267,7 @@ final class AsaasChaves
     {
         $f = $this->pasta . '/' . self::SEGREDO;
         $s = is_file($f) && !is_link($f) ? trim((string) @file_get_contents($f)) : '';
-        if (preg_match('/^[0-9a-f]{64}$/', $s) !== 1) throw new AsaasErro('sem_identidade');
+        if (preg_match('/^[0-9a-f]{64}\z/', $s) !== 1) throw new AsaasErro('sem_identidade');
         return $s;
     }
 }

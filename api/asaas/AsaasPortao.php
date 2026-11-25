@@ -71,7 +71,7 @@ final class AsaasPortao
 
             $s = ($d->sessao)();
             $uid = is_array($s) ? ($s['user_id'] ?? null) : null;
-            $uid = is_int($uid) ? $uid : (is_string($uid) && preg_match('/^[1-9][0-9]{0,9}$/', $uid) ? (int) $uid : 0);
+            $uid = is_int($uid) ? $uid : (is_string($uid) && preg_match('/^[1-9][0-9]{0,9}\z/', $uid) ? (int) $uid : 0);
             $tok = (string) ($d->token)();
             if ($uid <= 0 || $tok === '') return self::erro(401, 'NOT_AUTHENTICATED');
             try { $st = $d->repo->situacao($tok, $uid); }

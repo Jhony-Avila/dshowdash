@@ -10,7 +10,7 @@ require_once __DIR__ . '/../../api/asaas/AsaasDados.php';
 require_once __DIR__ . '/../../api/asaas/AsaasConferencia.php';
 $so = null;
 foreach (array_slice($argv, 1) as $a) {
-    if (preg_match('/^--conta=([a-z0-9][a-z0-9-]{1,31})$/', $a, $m) === 1) { $so = $m[1]; continue; }
+    if (preg_match('/^--conta=([a-z0-9][a-z0-9-]{1,31})\z/', $a, $m) === 1) { $so = $m[1]; continue; }
     fwrite(STDERR, "argumento desconhecido (não exibido)\n"); exit(2);
 }
 $rotulos = AsaasChaves::padrao()->rotulos();
