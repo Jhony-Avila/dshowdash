@@ -728,6 +728,23 @@ try {
         ($lnm['quantidade'] ?? null) === 4 && ($lnm['fora_dos_totais'] ?? null) === true && array_key_exists('participacao', $lnm) && $lnm['participacao'] === null
         && ($sfD['totais']['quantidade'] ?? null) == ($sfTotAntes['quantidade'] ?? 0) + 2 && ($sfD['totais']['valor'] ?? null) == round((float) ($sfTotAntes['valor'] ?? 0) + 200, 2)
         && abs($somaPart - 100.0) <= 0.3, json_encode([$lnm, $sfD['totais'] ?? null, $sfTotAntes, $somaPart]));
+    // 115C trilha B (decisivo): filtro "situação não mapeada" — as 4 (7, 11, 99, "travada") na lista, paginação certa, NENHUMA como Emitida
+    $cf = static fn(array $d) => array_key_exists('contagem_fiscal', $d) ? $d['contagem_fiscal'] : '(sem o campo)';
+    $nmP1 = $lista(['situacao' => 'nao_mapeada', 'limite' => 2, 'pagina' => 1], 'invoices');
+    $nmP2 = $lista(['situacao' => 'nao_mapeada', 'limite' => 2, 'pagina' => 2], 'invoices');
+    $numsNm = array_merge(array_column($nmP1['itens'] ?? [], 'numero'), array_column($nmP2['itens'] ?? [], 'numero')); sort($numsNm);
+    ok('115C (decisivo): filtro "não mapeadas" — as 4 (7, 11, 99, "travada") aparecem na lista e a paginação segue certa (meta.total 4, 2 páginas de 2)',
+        $numsNm === ['733007', '733011', '733098', '733099'] && (int) ($nmP1['_meta']['total'] ?? -1) === 4 && (int) ($nmP1['_meta']['paginas'] ?? -1) === 2
+        && count($nmP1['itens'] ?? []) === 2 && count($nmP2['itens'] ?? []) === 2, json_encode([$numsNm, $nmP1['_meta']['total'] ?? null, $nmP1['_meta']['paginas'] ?? null]));
+    ok('115C (decisivo): com o filtro, contagem_fiscal.emitidas = 0 (nenhuma não mapeada conta como Emitida) e fora_das_emitidas = 4',
+        $cf($nmP1) === ['emitidas' => 0, 'fora_das_emitidas' => 4] && $cf($nmP2) === ['emitidas' => 0, 'fora_das_emitidas' => 4], json_encode([$cf($nmP1), $cf($nmP2)]));
+    $padrao = $lista([], 'invoices'); $sitPorNum = array_column($padrao['itens'] ?? [], 'situacao', 'numero');
+    ok('115C: na visão padrão os códigos CONHECIDOS seguem classificados (4 → rejeitada, 5 → autorizada), contagem_fiscal.emitidas = meta.total e nenhuma fora',
+        ($sitPorNum['733004'] ?? null) === 'rejeitada' && ($sitPorNum['733005'] ?? null) === 'autorizada'
+        && $cf($padrao) === ['emitidas' => (int) ($padrao['_meta']['total'] ?? -1), 'fora_das_emitidas' => 0], json_encode([$sitPorNum['733004'] ?? null, $sitPorNum['733005'] ?? null, $cf($padrao), $padrao['_meta']['total'] ?? null]));
+    $aut = $lista(['situacao' => 'autorizada'], 'invoices');
+    ok('115C: filtro de uma situação CONHECIDA (autorizada) — emitidas = meta.total (o significado de Emitidas não muda fora das não mapeadas)',
+        $cf($aut) === ['emitidas' => (int) ($aut['_meta']['total'] ?? -1), 'fora_das_emitidas' => 0] && (int) ($aut['_meta']['total'] ?? 0) >= 1, json_encode([$cf($aut), $aut['_meta']['total'] ?? null]));
     ok('ACIMA_ESQUERDA: Documentos — só as 2 contáveis com DANFE entram (contagem +2), as não mapeadas fora', $tot($lista([], 'documents'))[0] === $docAntes[0] + 2,
         json_encode([$docAntes, $tot($lista([], 'documents'))]));
     // funil/fluxo/conciliação: um pedido FATURADO do período SEM nota ganha só a nota não mapeada 733007 → nada pode mudar

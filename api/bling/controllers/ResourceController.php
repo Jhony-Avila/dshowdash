@@ -96,12 +96,15 @@ final class ResourceController
         $total = count($linhas);
         $offset = ($f['pagina'] - 1) * $f['limite'];
 
+        // 115C trilha B (P10.1): contagem FISCAL própria, sobre o MESMO conjunto filtrado — meta.total continua sendo só a contagem da paginação
+        $extra = !empty($dados['contagem_fiscal']) ? ['contagem_fiscal' => self::contagemFiscal($linhas)] : [];
+
         ApiResponse::success([
             'itens'   => array_values(array_slice($linhas, $offset, $f['limite'])),
             'colunas' => $colunas,
             'totais'  => $totais,
             'facetas' => $facetas,
-        ], bling_meta([
+        ] + $extra, bling_meta([
             'total'   => $total,
             'pagina'  => $f['pagina'],
             'limite'  => $f['limite'],
@@ -109,6 +112,19 @@ final class ResourceController
             'recurso' => $recurso,
             'filtros' => $f,
         ]));
+    }
+
+    /**
+     * 115C trilha B (P10.1): "Emitidas" da tela de Notas Fiscais. Antes a tela usava meta.total (contagem da PAGINAÇÃO) — com o filtro "situação não
+     * mapeada" as não mapeadas viravam "Emitidas". Agora: emitidas = linhas do conjunto filtrado que entram em totais (notaContavel); as marcadas
+     * fora_dos_totais (não mapeadas) ficam em fora_das_emitidas. meta.total NÃO muda de significado (paginação = todas as linhas listadas).
+     * @param list<array<string,mixed>> $linhas
+     * @return array{emitidas:int, fora_das_emitidas:int}
+     */
+    public static function contagemFiscal(array $linhas): array
+    {
+        $fora = count(array_filter($linhas, static fn($l) => !empty($l['fora_dos_totais'])));
+        return ['emitidas' => count($linhas) - $fora, 'fora_das_emitidas' => $fora];
     }
 
     /**
@@ -1466,6 +1482,7 @@ final class ResourceController
             'linhas' => $linhas,
             'busca'  => ['numero', 'chave', 'cliente', 'pedido', 'erro_codigo'],
             'totalizar' => ['valor'],
+            'contagem_fiscal' => true,   // 115C trilha B: a resposta ganha contagem_fiscal {emitidas, fora_das_emitidas} (a tela troca o meta.total por ela)
             'facetas' => ['situacao' => self::facetar($f['situacao'] === '' ? $facetaTodas : $linhas, 'situacao')],
             'colunas' => [
                 self::col('numero', 'Número'),
