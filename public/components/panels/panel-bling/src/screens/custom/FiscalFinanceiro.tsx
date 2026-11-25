@@ -446,9 +446,7 @@ export function FluxoCaixa({ filtros, aoMudarFiltros, larguraPainel }: PropsTela
               {/* DSHOW-115: "indisponível" SÓ pelo campo explícito do backend (`indisponivel` com motivo). Sem nós e sem `indisponivel` =
                   período com valores CONHECIDOS e zerados — tela própria, nunca "indisponível" deduzido de zeros. */}
               {sankey.dados.nos.length === 0 && fluxoMarcadoIndisponivel(sankey.dados)
-                ? <span data-bl-fluxo="indisponivel"><EstadoVazio titulo="Fluxo indisponível" descricao={motivoIndisponivel((sankey.dados as any).indisponivel)
-                    ? TEXTO_INDISPONIVEL[motivoIndisponivel((sankey.dados as any).indisponivel)!]
-                    : 'O Bling não informou todos os valores do período: o fluxo não é desenhado (não é zero).'} /></span>
+                ? <span data-bl-fluxo="indisponivel"><EstadoVazio titulo="Fluxo indisponível" descricao={textoFluxoIndisponivel(sankey.dados)} /></span>
                 : sankey.dados.nos.length === 0
                   ? <span data-bl-fluxo="zerado"><EstadoVazio titulo="Nenhum valor no período" descricao="As vendas do período foram lidas por completo e somam zero: não há valor para distribuir (zero conhecido, não é falta de dado)." /></span>
                   : <SankeyFinanceiro dados={sankey.dados} altura={larguraPainel < 980 ? 260 : 320} />}
@@ -457,6 +455,11 @@ export function FluxoCaixa({ filtros, aoMudarFiltros, larguraPainel }: PropsTela
                 {motivoIndisponivel((sankey.dados as any).indisponivel) === 'valores_desconhecidos'
                   ? TEXTO_INDISPONIVEL.valores_desconhecidos
                   : 'Parte dos pedidos tem custo de produto desconhecido: o fluxo não mostra custo nem margem (não é zero).'}
+              </p>
+              )}
+              {sankey.dados.nos.length > 0 && Array.isArray((sankey.dados as any).links_zero) && (sankey.dados as any).links_zero.length > 0 && (
+              <p data-bl-aviso="fluxo-links-zero" style={{ fontSize: 12, color: 'var(--bl-texto-3)', margin: '6px 0 0' }}>
+                Zero no período (valor conhecido): {(sankey.dados as any).links_zero.map((l: { origem: string; destino: string }) => `${l.origem} → ${l.destino}`).join(' · ')}.
               </p>
               )}
               {/* 32e46b62: ligações com valor desconhecido NUNCA somem em silêncio — cada uma é listada (não é zero) */}
@@ -487,10 +490,23 @@ export function FluxoCaixa({ filtros, aoMudarFiltros, larguraPainel }: PropsTela
   );
 }
 
-/** Fluxo "indisponível" SÓ pelos campos explícitos do backend (DSHOW-115): `indisponivel` com qualquer valor, ou ligações desconhecidas.
- *  Nunca deduzido de zeros: sem nós e sem esses campos = período zerado e conhecido. */
+/** Fluxo "indisponível" SÓ pelos indicadores EXPLÍCITOS do backend (DSHOW-115, B a03ec6cd): `fluxo_indisponivel` / `fluxo_zerado`.
+ *  Backend sem esses campos (anterior ao a03ec6cd): `indisponivel` com qualquer valor, ou ligações desconhecidas. Nunca deduzido de zeros. */
 function fluxoMarcadoIndisponivel(d: unknown): boolean {
-  const x = d as { indisponivel?: unknown; links_desconhecidos?: unknown };
+  const x = d as { indisponivel?: unknown; links_desconhecidos?: unknown; fluxo_indisponivel?: unknown; fluxo_zerado?: unknown };
+  if (x.fluxo_indisponivel === true) return true;
+  if (x.fluxo_zerado === true) return false;
+  if (typeof x.fluxo_indisponivel === 'boolean') return false;   // contrato novo: false explícito = não indisponível
   return (x.indisponivel !== null && x.indisponivel !== undefined && x.indisponivel !== '')
     || (Array.isArray(x.links_desconhecidos) && x.links_desconhecidos.length > 0);
+}
+/** Texto do fluxo indisponível: o motivo do backend quando vem (`motivo_indisponivel`, ex.: leitura sem cobertura do período). */
+function textoFluxoIndisponivel(d: unknown): string {
+  const x = d as { indisponivel?: unknown; motivo_indisponivel?: unknown };
+  const m = motivoIndisponivel(x.indisponivel);
+  if (m) return TEXTO_INDISPONIVEL[m];
+  if (x.indisponivel === 'leitura_sem_cobertura') {
+    return `A leitura dos pedidos do Bling não cobre o período inteiro${typeof x.motivo_indisponivel === 'string' && x.motivo_indisponivel ? ` (${x.motivo_indisponivel})` : ''}: o fluxo não é desenhado e não é zero.`;
+  }
+  return 'O Bling não informou todos os valores do período: o fluxo não é desenhado (não é zero).';
 }
