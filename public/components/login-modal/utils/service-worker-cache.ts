@@ -42,7 +42,7 @@ export function getPorts() { return Ports.snapshot(); }
 const _debugEnabled = () => { const cfg = _getPort('config'); return (cfg && cfg.app && cfg.app.debug) ? true : false; };
 const _log = function(level: string) { const logger = _getPort('logger'); if (!logger) return; const args = Array.prototype.slice.call(arguments, 1); if (level === 'error') { if (logger.error) logger.error(...['[sw-cache]'].concat(args)); return; } if (level === 'warn') { if (logger.warn) logger.warn(...['[sw-cache]'].concat(args)); return; } if (_debugEnabled() && logger.debug) logger.debug(...['[sw-cache]'].concat(args)); };
 
-const PRECACHE_ASSETS = ['/components/login-modal/styles.css', '/components/login-modal/index.js', '/components/login-modal/template.js', '/components/login-modal/config.json', '/assets/videos/video_background_site_web.mp4', '/assets/icons/logo-horizontal.png'];
+const PRECACHE_ASSETS = ['/components/login-modal/styles.css', '/components/login-modal/index.js', '/components/login-modal/template.js', '/components/login-modal/config.json', '/assets/brand/dshow-logo-branco.svg'];
 
 export function ServiceWorkerCache(this: any, config: Record<string, any>) { if (!config) config = {}; const sw = config.serviceWorker || {}; this.config = config; this.enabled = sw.enabled !== false && typeof navigator !== 'undefined' && 'serviceWorker' in navigator && typeof caches !== 'undefined'; this.cacheName = sw.cacheName || CACHE_NAME; this.precacheAssets = sw.assets || PRECACHE_ASSETS; this._registered = false; this._metrics = { cacheHits: 0, cacheMisses: 0, precached: 0, errors: 0 }; _initPorts(); }
 

@@ -29,7 +29,8 @@
   },
 
   "video": {
-    "src": "/assets/videos/video_background_site_web.mp4",
+    "enabled": false,
+    "src": "",
     "preload": "none",
     "cleanupOnClose": true,
     "fallbackClass": "video-fallback",

@@ -1,6 +1,6 @@
 import { createUiPorts } from "/core/runtime/ports-profiles.js";
 import { encerrarSessao } from "/core/auth/logout-client.js";
-const VERSION = "7.7.0-ES6";
+const VERSION = "7.8.0-NONFATAL-WARN";
 const MODULE_ID = "header.user-menu.api.fetch";
 const Ports = createUiPorts({ moduleId: MODULE_ID });
 function _initPorts() {

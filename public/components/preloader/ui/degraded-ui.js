@@ -98,7 +98,7 @@ function injectFallbackScreen(addTrace) {
   fallback.setAttribute("data-injected-by", "preloader");
   fallback.setAttribute("data-module-id", MODULE_ID);
   fallback.className = "visible";
-  fallback.innerHTML = '<div class="loading-logo-container"><img src="/assets/icons/logo-square.png" alt="DshowDash Logo" class="loading-logo" width="180" height="168"></div><div class="loading-text">Carregando</div><div class="loading-progress-wrapper"><div class="loading-progress"><div class="loading-progress-bar" id="loading-progress-bar"></div></div><div class="loading-percentage">0%</div></div>';
+  fallback.innerHTML = '<div class="loading-logo-container dsd-marca-area"><img src="/assets/brand/dshow-logo-branco.svg" alt="DShow" class="loading-logo dsd-marca-logo" width="240" height="81"></div><div class="loading-text">Carregando</div><div class="loading-progress-wrapper"><div class="loading-progress"><div class="loading-progress-bar" id="loading-progress-bar"></div></div><div class="loading-percentage">0%</div></div>';
   document.body.insertBefore(fallback, document.body.firstChild);
   if (typeof addTrace === "function") {
     addTrace("fallback-screen:injected");

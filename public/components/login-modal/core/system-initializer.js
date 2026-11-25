@@ -101,7 +101,7 @@ class SystemInitializer {
     const config = this.modal.config;
     let logger = this.modal.logger;
     this.modal.errorHandler = new ErrorHandler({ logger, security: config.security, debug: !!(config.debug && config.debug.enabled) });
-    this.modal.videoManager = new VideoManager(video, { video: config.video, logger });
+    this.modal.videoManager = video && !(config.video && config.video.enabled === false) ? new VideoManager(video, { video: config.video, logger }) : null;
     this._initialized.managers = true;
     if (logger && logger.info) logger.info("Core Managers inicializados");
   }

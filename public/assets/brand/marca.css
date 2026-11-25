@@ -1,0 +1,54 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * MARCA DShow — identidade nova (BrandGuide v1.2, /srv/dshow-brand; pacote IDENTIDADE, ESQUERDA, 23/11/2026)
+ * Regras do guia aplicadas aqui (p.41–45): proporção sempre preservada; área de respiro ≥ 12,5 % da altura;
+ * logotipo ≥ 50 px de largura; sem sombra, contorno, brilho, transparência, rotação ou forma em volta.
+ * Claro × escuro: logotipo em gradiente (positiva) no tema claro, branco (negativa) no escuro e em todo fundo
+ * escuro fixo (boot, carregamento, login). Os bundles de CSS do shell NÃO são editados: estas regras os sobrepõem.
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* um logotipo por tema: o tema vem de html[data-theme] (padrão escuro, definido antes de qualquer CSS) */
+html[data-theme="dark"] .dsd-marca--claro,
+html:not([data-theme]) .dsd-marca--claro { display: none !important; }
+html[data-theme]:not([data-theme="dark"]) .dsd-marca--escuro { display: none !important; }
+
+/* logotipo: só redimensiona, nunca distorce nem recebe efeito */
+.dsd-marca-logo {
+  display: block;
+  width: auto;
+  object-fit: contain;
+  filter: none !important;
+  opacity: 1 !important;
+  transform: none;
+}
+
+/* ── Cabeçalho: altura 32 → largura ≈ 94 px; respiro ≥ 4 px ──────────────────────── */
+.logo-component .dsd-marca-logo { height: 32px; margin: 4px; }
+@media (max-width: 768px) { .logo-component .dsd-marca-logo { height: 28px; } }
+@media (max-width: 480px) { .logo-component .dsd-marca-logo { height: 24px; } }
+
+/* ── Rodapé: altura 28 → largura ≈ 83 px ───────────────────────────────────────── */
+.dsd-footer__brand-content .dsd-marca-logo { height: 28px; width: auto; margin: 4px 0; }
+
+/* ── Login (fundo escuro fixo): logotipo branco, altura 41 → largura 120 px ─────── */
+.lm-logo.dsd-marca-logo { height: 41px; width: auto; animation: none !important; }
+/* o login tinha uma camada preta a 30 % (.lm-wrapper::before, z-index 2) para escurecer o VÍDEO de fundo; o vídeo saiu
+   (arquivo inexistente, 404) e a camada ficava por cima do cartão — logotipo inclusive (guia: sem transparência). Sai junto. */
+.login-container-wrapper::before, .lm-wrapper::before { content: none !important; }
+
+/* ── Boot e carregamento (fundo #0a0e27 fixo): logotipo branco horizontal, 240 px ─ */
+/* o guia não admite forma em volta do logo, nem brilho ou pulsação */
+.preloader-logo-container.dsd-marca-area::before,
+[data-preloader-logo].dsd-marca-area::before { content: none !important; display: none !important; }
+.preloader-logo.dsd-marca-logo,
+[data-preloader-logo] img.dsd-marca-logo,
+.loading-logo.dsd-marca-logo {
+  width: 240px !important;
+  height: auto !important;
+  max-width: 70vw;
+  animation: none !important;
+}
+@media (max-width: 480px) {
+  .preloader-logo.dsd-marca-logo,
+  [data-preloader-logo] img.dsd-marca-logo,
+  .loading-logo.dsd-marca-logo { width: 180px !important; }
+}

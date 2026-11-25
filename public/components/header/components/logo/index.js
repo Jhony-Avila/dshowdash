@@ -65,8 +65,8 @@ LogoComponent.prototype.render = function() {
   this.element.href = "/";
   this.element.title = "DShow Dashboard - Ir para in\xEDcio";
   this.element.dataset.status = "ok";
-  this.element.setAttribute("aria-label", "Logo DShow Dashboard - Ir para p\xE1gina inicial");
-  this.element.innerHTML = '<img src="/assets/images/logo.png" alt="DShow Dashboard" class="logo-image" />';
+  this.element.setAttribute("aria-label", "DShow \u2014 ir para a p\xE1gina inicial");
+  this.element.innerHTML = '<img src="/assets/brand/dshow-logo.svg" alt="DShow" class="logo-image dsd-marca-logo dsd-marca--claro" width="94" height="32" /><img src="/assets/brand/dshow-logo-branco.svg" alt="DShow" class="logo-image dsd-marca-logo dsd-marca--escuro" width="94" height="32" />';
   if (this.container) this.container.appendChild(this.element);
   this.unsubscribe = this.store.subscribe((state) => {
     if (!self.element || self.isDestroyed) return;

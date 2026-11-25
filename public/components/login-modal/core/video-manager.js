@@ -48,7 +48,7 @@ function VideoManager(video, config) {
   this.listeners = /* @__PURE__ */ new Map();
   this.lazyLoad = vid.lazyLoad !== false;
   this.preloadOnMount = vid.preloadOnMount || false;
-  this._videoSrc = vid.src || "/assets/videos/video_background_site_web.mp4";
+  this._videoSrc = vid.src || "";
   this._srcLoaded = false;
   this._intersectionObserver = null;
   this._metrics = { mounts: 0, loads: 0, plays: 0, pauses: 0, errors: 0, retries: 0, cleanups: 0, lazyLoads: 0 };

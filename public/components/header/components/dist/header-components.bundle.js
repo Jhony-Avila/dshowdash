@@ -1,12 +1,12 @@
 import { createUiPorts as a } from "/core/runtime/ports-profiles.js";
-import { UI_EVENTS as v } from "/core/runtime/events/catalog/ui.events.js";
+import { UI_EVENTS as E } from "/core/runtime/events/catalog/ui.events.js";
 import { COMPONENT_EVENTS as o } from "/core/runtime/events/catalog/component.events.js";
 import "/core/runtime/events/catalog/nav.events.js";
 import { requestNavigation as pa } from "/components/header/core/navigation-adapter.js";
 import "/core/runtime/enterprise/strict-mode.js";
 import { encerrarSessao as fa } from "/core/auth/logout-client.js";
 import { getAnnouncerRoot as ga, getTooltipRoot as _a } from "/components/header/utils/overlay-root.js";
-const Rs = "1.1.0", Ls = "currency-rotator", cn = "header/components/currency-rotator", ln = { type: "indicator", reorderable: !0, hideable: !0, critical: !1, rendersUI: !0 }, ba = 5e3, ya = 3e4, Ca = 280, Ea = 40, va = 12e3, Da = "cotacao:asset", ka = "#/panel-cotacao", Ia = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect fill="#e0e0e0" height="336" rx="40" width="480" x="19.499" y="91.5"/><path d="m259.499 187.5h240v48h-240z" fill="#b73831"/><path d="m307.5 211.5h192v-24h-216a24 24 0 0 0 24 24z" fill="#d4483f"/><path d="m307.5 163.5h192v-24h-216a24 24 0 0 0 24 24z" fill="#f5f5f5"/><path d="m307.5 259.5h192v-24h-216a24 24 0 0 0 24 24z" fill="#f5f5f5"/><g fill="#b73831"><path d="m19.499 283.5h480v48h-480z"/><path d="m19.5 387.5a40 40 0 0 0 40 40h400a40 40 0 0 0 40-40v-8h-480z"/><path d="m459.5 91.5h-200v48h240v-8a40 40 0 0 0 -40-40z"/></g><path d="m259.5 283.5v-192h-200a40 40 0 0 0 -40 40v152z" fill="#2b66ba"/><path d="m43.5 94.877v132.623a32 32 0 0 0 32 32h184v-168h-200a39.781 39.781 0 0 0 -16 3.377z" fill="#3477cc"/><polygon fill="#e0e0e0" points="86.4,130.4 98.4,168 137.6,168 106.4,190.4 118.4,227.2 86.4,204 55.2,226.4 67.2,190.4 35.2,168 74.4,168"/><polygon fill="#fff" points="74.894,139.3 67.499,123.563 67.499,163.317 82.32,171.5 79.484,154.133 91.499,141.834"/></svg>', Sa = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 496"><path fill="#DC3027" d="M496,369.6c0,27.2-21.6,46.4-48,46.4H48c-26.4,0-48-19.2-48-46.4V126.4C0,99.2,21.6,80,48,80h400c26.4,0,48,19.2,48,46.4V369.6z"/><polygon fill="#F8D12E" points="86.4,130.4 98.4,168 137.6,168 106.4,190.4 118.4,227.2 86.4,204 55.2,226.4 67.2,190.4 35.2,168 74.4,168"/></svg>', wa = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><defs><linearGradient id="btc-grad" x1="6.105" x2="25.895" y1="6.105" y2="25.895" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fdc830"/><stop offset="1" stop-color="#f37335"/></linearGradient></defs><path d="m18 15h-5v-4h5a2 2 0 0 1 0 4zm1 2h-6v4h6a2 2 0 0 0 0-4zm11-1a14 14 0 1 1 -14-14 14.016 14.016 0 0 1 14 14zm-7 3a3.988 3.988 0 0 0 -1.965-3.425 3.963 3.963 0 0 0 .965-2.575 4 4 0 0 0 -4-4v-2h-2v2h-1v-2h-2v2h-3v2h1v10h-1v2h3v2h2v-2h1v2h2v-2h1a4 4 0 0 0 4-4z" fill="url(#btc-grad)"/></svg>';
+const Rs = "1.1.0", Ls = "currency-rotator", cn = "header/components/currency-rotator", ln = { type: "indicator", reorderable: !0, hideable: !0, critical: !1, rendersUI: !0 }, ba = 5e3, ya = 3e4, Ca = 280, va = 40, Ea = 12e3, Da = "cotacao:asset", ka = "#/panel-cotacao", Ia = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect fill="#e0e0e0" height="336" rx="40" width="480" x="19.499" y="91.5"/><path d="m259.499 187.5h240v48h-240z" fill="#b73831"/><path d="m307.5 211.5h192v-24h-216a24 24 0 0 0 24 24z" fill="#d4483f"/><path d="m307.5 163.5h192v-24h-216a24 24 0 0 0 24 24z" fill="#f5f5f5"/><path d="m307.5 259.5h192v-24h-216a24 24 0 0 0 24 24z" fill="#f5f5f5"/><g fill="#b73831"><path d="m19.499 283.5h480v48h-480z"/><path d="m19.5 387.5a40 40 0 0 0 40 40h400a40 40 0 0 0 40-40v-8h-480z"/><path d="m459.5 91.5h-200v48h240v-8a40 40 0 0 0 -40-40z"/></g><path d="m259.5 283.5v-192h-200a40 40 0 0 0 -40 40v152z" fill="#2b66ba"/><path d="m43.5 94.877v132.623a32 32 0 0 0 32 32h184v-168h-200a39.781 39.781 0 0 0 -16 3.377z" fill="#3477cc"/><polygon fill="#e0e0e0" points="86.4,130.4 98.4,168 137.6,168 106.4,190.4 118.4,227.2 86.4,204 55.2,226.4 67.2,190.4 35.2,168 74.4,168"/><polygon fill="#fff" points="74.894,139.3 67.499,123.563 67.499,163.317 82.32,171.5 79.484,154.133 91.499,141.834"/></svg>', wa = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 496"><path fill="#DC3027" d="M496,369.6c0,27.2-21.6,46.4-48,46.4H48c-26.4,0-48-19.2-48-46.4V126.4C0,99.2,21.6,80,48,80h400c26.4,0,48,19.2,48,46.4V369.6z"/><polygon fill="#F8D12E" points="86.4,130.4 98.4,168 137.6,168 106.4,190.4 118.4,227.2 86.4,204 55.2,226.4 67.2,190.4 35.2,168 74.4,168"/></svg>', Sa = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><defs><linearGradient id="btc-grad" x1="6.105" x2="25.895" y1="6.105" y2="25.895" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fdc830"/><stop offset="1" stop-color="#f37335"/></linearGradient></defs><path d="m18 15h-5v-4h5a2 2 0 0 1 0 4zm1 2h-6v4h6a2 2 0 0 0 0-4zm11-1a14 14 0 1 1 -14-14 14.016 14.016 0 0 1 14 14zm-7 3a3.988 3.988 0 0 0 -1.965-3.425 3.963 3.963 0 0 0 .965-2.575 4 4 0 0 0 -4-4v-2h-2v2h-1v-2h-2v2h-3v2h1v10h-1v2h3v2h2v-2h1v2h2v-2h1a4 4 0 0 0 4-4z" fill="url(#btc-grad)"/></svg>';
 function Nn(t) {
   return t == null ? "--" : Number(t).toFixed(2);
 }
@@ -22,12 +22,12 @@ const F = [
   }, pickChg: function(t) {
     return t.percent_change;
   }, fmtVal: Nn },
-  { key: "usd-cny", title: "Yuan (USD/CNY)", icon: Sa, endpoint: "/api/currencies/get_usd_cny.php", pickVal: function(t) {
+  { key: "usd-cny", title: "Yuan (USD/CNY)", icon: wa, endpoint: "/api/currencies/get_usd_cny.php", pickVal: function(t) {
     return t.rate;
   }, pickChg: function(t) {
     return t.percent_change;
   }, fmtVal: Nn },
-  { key: "btc", title: "Bitcoin (BTC/USD)", icon: wa, endpoint: "/api/currencies/get_btc.php", pickVal: function(t) {
+  { key: "btc", title: "Bitcoin (BTC/USD)", icon: Sa, endpoint: "/api/currencies/get_btc.php", pickVal: function(t) {
     return t.usd;
   }, pickChg: function(t) {
     return t.usd_24h_change;
@@ -82,7 +82,7 @@ u.prototype.currentAsset = function() {
   return F[this.rotIndex % F.length];
 };
 u.prototype._applyIndex = function(t) {
-  this.track && (this.track.style.transition = t ? "" : "none", this.track.style.transform = `translateY(${-this.rotIndex * Ea}px)`, t || (this.track.offsetHeight, this.track.style.transition = ""));
+  this.track && (this.track.style.transition = t ? "" : "none", this.track.style.transform = `translateY(${-this.rotIndex * va}px)`, t || (this.track.offsetHeight, this.track.style.transition = ""));
 };
 u.prototype.advance = function() {
   const t = this;
@@ -115,7 +115,7 @@ u.prototype.fetchAsset = function(t) {
   if (this.isDestroyed) return Promise.resolve();
   const s = new AbortController(), n = setTimeout(function() {
     s.abort();
-  }, va);
+  }, Ea);
   return fetch(t.endpoint, { signal: s.signal, headers: { "Content-Type": "application/json" } }).then(function(i) {
     if (clearTimeout(n), !i.ok) throw new Error("HTTP " + i.status);
     return i.json();
@@ -228,9 +228,9 @@ ne.prototype.resetMetrics = function() {
 };
 var Ra = ne;
 const jn = "5.1.0-ENTERPRISE", Bn = "header/components/errors-status/core/lifecycle";
-let Sr = !1, Ye = [];
+let wr = !1, Ye = [];
 function La(t, ...e) {
-  !Sr && t === "debug" || (Ye.push({ level: t, args: e, ts: Date.now() }), Ye.length > 50 && Ye.shift());
+  !wr && t === "debug" || (Ye.push({ level: t, args: e, ts: Date.now() }), Ye.length > 50 && Ye.shift());
 }
 let Ua = class {
   constructor(e) {
@@ -285,7 +285,7 @@ let Ua = class {
     return { version: jn, moduleId: Bn, state: this.state, metrics: this._metrics, healthCheck: this.healthCheck() };
   }
   setDebug(e) {
-    Sr = !!e;
+    wr = !!e;
   }
   getMetrics() {
     return { ...this._metrics };
@@ -299,9 +299,9 @@ let Ua = class {
   }
 };
 const zn = "5.1.0-ENTERPRISE", qn = "header/components/errors-status/state/store";
-let wr = !1, Fe = [];
+let Sr = !1, Fe = [];
 function xa(t, ...e) {
-  !wr && t === "debug" || (Fe.push({ level: t, args: e, ts: Date.now() }), Fe.length > 50 && Fe.shift());
+  !Sr && t === "debug" || (Fe.push({ level: t, args: e, ts: Date.now() }), Fe.length > 50 && Fe.shift());
 }
 let Ha = class {
   constructor(e = {}) {
@@ -337,7 +337,7 @@ let Ha = class {
     return { version: zn, moduleId: qn, subscriberCount: this.subscribers.length, metrics: this._metrics, healthCheck: this.healthCheck() };
   }
   setDebug(e) {
-    this._debug = !!e, wr = !!e;
+    this._debug = !!e, Sr = !!e;
   }
   getMetrics() {
     return { ...this._metrics };
@@ -486,9 +486,9 @@ let qa = class {
     return [...Ke];
   }
 };
-const dn = "8.8.0-P1-UARPS", ye = "errors-status", Or = { type: "indicator", reorderable: !1, hideable: !1, critical: !0, rendersUI: !0 }, pt = "header/components/errors-status", vt = a({ moduleId: pt }), Va = () => {
-  vt.init();
-}, Dt = (t) => vt.get(t), Ga = (t) => vt.inject(t), Ya = () => vt.snapshot();
+const dn = "8.8.0-P1-UARPS", ye = "errors-status", Or = { type: "indicator", reorderable: !1, hideable: !1, critical: !0, rendersUI: !0 }, pt = "header/components/errors-status", Et = a({ moduleId: pt }), Va = () => {
+  Et.init();
+}, Dt = (t) => Et.get(t), Ga = (t) => Et.inject(t), Ya = () => Et.snapshot();
 (function() {
   const e = "/components/header/components/errors-status/component.css";
   if (!document.querySelector(`link[href="${e}"]`)) {
@@ -498,7 +498,7 @@ const dn = "8.8.0-P1-UARPS", ye = "errors-status", Or = { type: "indicator", reo
 })();
 const Fa = (t = {}) => {
   const e = Dt("eventBus");
-  !e || !e.emit || e.emit(v.ACTION, { actionId: "header:errors-status", source: pt, timestamp: Date.now(), kind: "ui", meta: Object.assign({ label: "Erros do Sistema" }, t) });
+  !e || !e.emit || e.emit(E.ACTION, { actionId: "header:errors-status", source: pt, timestamp: Date.now(), kind: "ui", meta: Object.assign({ label: "Erros do Sistema" }, t) });
 }, Wa = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="m208.587 54.407-201.17 348.437c-21.073 36.499 5.268 82.122 47.413 82.122h402.34c42.145 0 68.486-45.624 47.413-82.122l-201.17-348.437c-21.072-36.498-73.754-36.498-94.826 0z" fill="#da4a54"/><path d="m54.83 443.76c-6.802 0-10.267-4.242-11.727-6.771s-3.401-7.65 0-13.542l201.17-348.436c3.401-5.891 8.807-6.771 11.727-6.771s8.326.88 11.727 6.771l201.17 348.436c3.401 5.891 1.46 11.013 0 13.541-1.46 2.529-4.925 6.771-11.727 6.771h-402.34z" fill="#f6e266"/><g fill="#544f57"><path d="m256 327.138c-14.379 0-26.036-11.657-26.036-26.036v-119.216c0-14.379 11.657-26.036 26.036-26.036 14.379 0 26.036 11.657 26.036 26.036v119.217c0 14.379-11.657 26.035-26.036 26.035z"/><circle cx="256" cy="381.152" r="26.036"/></g></svg>';
 function U(t) {
   t = t || {}, this.container = t.container, this.store = new Ha({ errorCount: 0, status: "loading" }), this.eventBus = Dt("eventBus"), this.lifecycle = new Ua(this);
@@ -549,11 +549,11 @@ U.prototype.unmount = function() {
   });
 };
 U.prototype.healthCheck = function() {
-  const t = Dt("eventBus"), e = { isMounted: !!this.element, hasStore: !!this.store, hasGlobalEventBus: !!t, pollingActive: !!this.polling, portsInitialized: vt.isInitialized() }, s = Object.values(e).filter(Boolean).length;
-  return { status: s === 5 ? "HEALTHY" : s >= 3 ? "DEGRADED" : "UNHEALTHY", score: s, maxScore: 5, checks: e, portsInitialized: vt.isInitialized(), version: dn, moduleId: pt };
+  const t = Dt("eventBus"), e = { isMounted: !!this.element, hasStore: !!this.store, hasGlobalEventBus: !!t, pollingActive: !!this.polling, portsInitialized: Et.isInitialized() }, s = Object.values(e).filter(Boolean).length;
+  return { status: s === 5 ? "HEALTHY" : s >= 3 ? "DEGRADED" : "UNHEALTHY", score: s, maxScore: 5, checks: e, portsInitialized: Et.isInitialized(), version: dn, moduleId: pt };
 };
 U.prototype.info = function() {
-  return { version: dn, moduleId: pt, id: ye, capabilities: Or, portsInitialized: vt.isInitialized(), mounted: !!this.element, errorCount: this.store.getState().errorCount, metrics: this._metrics };
+  return { version: dn, moduleId: pt, id: ye, capabilities: Or, portsInitialized: Et.isInitialized(), mounted: !!this.element, errorCount: this.store.getState().errorCount, metrics: this._metrics };
 };
 var Ka = U;
 const Ja = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
@@ -787,7 +787,7 @@ let sc = class {
   }
 };
 const Ur = "header.notifications.telemetry.logger", nc = "8.4.0-ES6", Xe = a({ moduleId: Ur });
-function Ee(t) {
+function ve(t) {
   return Xe.get(t);
 }
 let re = { logs: 0, warns: 0, errors: 0 };
@@ -797,23 +797,23 @@ function ft(t) {
 ft.prototype.info = function(...t) {
   if (!this.debug) return;
   re.logs++;
-  const e = Ee("logger");
+  const e = ve("logger");
   e && e.info ? e.info(...[this.prefix].concat(Array.prototype.slice.call(t))) : e && e.debug && e.debug(...[this.prefix].concat(Array.prototype.slice.call(t)));
 };
 ft.prototype.warn = function(...t) {
   re.warns++;
-  const e = Ee("logger");
+  const e = ve("logger");
   e && e.warn && e.warn(...[this.prefix].concat(Array.prototype.slice.call(t)));
 };
 ft.prototype.error = function(...t) {
   re.errors++;
-  const e = Ee("logger");
+  const e = ve("logger");
   e && e.error && e.error(...[this.prefix].concat(Array.prototype.slice.call(t)));
 };
 ft.prototype.debug = function(...t) {
   if (!this.debug) return;
   re.logs++;
-  const e = Ee("logger");
+  const e = ve("logger");
   e && e.debug && e.debug(...[this.prefix].concat(Array.prototype.slice.call(t)));
 };
 ft.prototype.getMetrics = () => Object.assign({}, re);
@@ -821,7 +821,7 @@ ft.prototype.resetMetrics = () => {
   re = { logs: 0, warns: 0, errors: 0 };
 };
 ft.prototype.healthCheck = function() {
-  return { status: Xe.isInitialized() ? "HEALTHY" : "DEGRADED", version: nc, moduleId: Ur, checks: { loggerReady: !!Ee("logger"), portsInitialized: Xe.isInitialized() }, metrics: this.getMetrics(), portsInitialized: Xe.isInitialized() };
+  return { status: Xe.isInitialized() ? "HEALTHY" : "DEGRADED", version: nc, moduleId: Ur, checks: { loggerReady: !!ve("logger"), portsInitialized: Xe.isInitialized() }, metrics: this.getMetrics(), portsInitialized: Xe.isInitialized() };
 };
 const Xn = "5.1.0-ENTERPRISE", Qn = "header/components/notifications/telemetry/tracker";
 let ic = [], rc = class {
@@ -921,7 +921,7 @@ let ac = class {
     return [...Qe];
   }
 };
-const mn = "10.4.0-FASE-B", ve = "notifications", Hr = { type: "indicator", reorderable: !0, hideable: !1, critical: !0, rendersUI: !0 }, x = "header/components/notifications", cc = "#/notificacoes", kt = a({ moduleId: x }), lc = () => {
+const mn = "10.4.0-FASE-B", Ee = "notifications", Hr = { type: "indicator", reorderable: !0, hideable: !1, critical: !0, rendersUI: !0 }, x = "header/components/notifications", cc = "#/notificacoes", kt = a({ moduleId: x }), lc = () => {
   kt.init();
 }, L = (t) => kt.get(t), uc = (t) => kt.inject(t), hc = () => kt.snapshot();
 function dc() {
@@ -950,7 +950,7 @@ function dc() {
 })();
 const mc = (t = {}) => {
   const e = L("eventBus");
-  !e || !e.emit || e.emit(v.ACTION, { actionId: "header:notifications", source: x, timestamp: Date.now(), kind: "ui", meta: Object.assign({ label: "Notificações" }, t) });
+  !e || !e.emit || e.emit(E.ACTION, { actionId: "header:notifications", source: x, timestamp: Date.now(), kind: "ui", meta: Object.assign({ label: "Notificações" }, t) });
 }, pc = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><path d="M29.07 26.74 27 20.733V16a9.008 9.008 0 0 0-6-8.475V6a3 3 0 0 0-6 0v1.525A9.008 9.008 0 0 0 9 16v4.574l-2.285 6.285A2.339 2.339 0 0 0 8.914 30h5.228a3.981 3.981 0 0 0 7.716 0h5.06a2.34 2.34 0 0 0 2.152-3.26zM17 7V6a1 1 0 0 1 2 0v1zm1 24a1.993 1.993 0 0 1-1.722-1h3.444A1.993 1.993 0 0 1 18 31zm9.2-3.156a.334.334 0 0 1-.287.156h-18a.34.34 0 0 1-.32-.457L11 20.926V16a7 7 0 0 1 14 0v5.068l2.193 6.363.036.088a.335.335 0 0 1-.024.325z" fill="currentColor"/></svg>';
 function H(t) {
   t = t || {}, this.container = t.container, this.store = new sc({ unreadCount: 0, status: "loading" }), this.eventBus = L("eventBus"), this.lifecycle = new tc(this);
@@ -962,7 +962,7 @@ H.prototype.mount = function() {
   return this.isDestroyed ? Promise.resolve() : (lc(), this.lifecycle.mount().then(() => (t.render(), t.fetchNotifications())).then(() => {
     t.startPolling(), t._metrics.mountCount++, t._metrics.lastMountAt = Date.now();
     const e = L("eventBus");
-    e && e.emit && e.emit(o.MOUNTED, { componentId: ve, moduleId: x, timestamp: Date.now() });
+    e && e.emit && e.emit(o.MOUNTED, { componentId: Ee, moduleId: x, timestamp: Date.now() });
   }));
 };
 H.prototype.render = function() {
@@ -983,7 +983,7 @@ H.prototype.fetchNotifications = function() {
     if (t.isDestroyed) return;
     t.store.setState({ unreadCount: e.unread_count || 0, status: "ok", lastUpdate: (/* @__PURE__ */ new Date()).toISOString() });
     const s = L("eventBus");
-    s && s.emit && s.emit(o.DATA_UPDATED, { componentId: ve, moduleId: x, data: { unreadCount: e.unread_count }, timestamp: Date.now() });
+    s && s.emit && s.emit(o.DATA_UPDATED, { componentId: Ee, moduleId: x, data: { unreadCount: e.unread_count }, timestamp: Date.now() });
   }).catch(() => {
     t.isDestroyed || t.store.setState({ status: "offline" });
   }));
@@ -1003,7 +1003,7 @@ H.prototype.unmount = function() {
   return this.isDestroyed = !0, this.lifecycle.unmount().then(() => {
     t.polling && (t.polling.stop(), t.polling = null), t.unsubscribe && (t.unsubscribe(), t.unsubscribe = null), t.store && t.store.reset(), t.element && (t.element.remove(), t.element = null);
     const e = L("eventBus");
-    e && e.emit && e.emit(o.UNMOUNTED, { componentId: ve, moduleId: x, timestamp: Date.now() });
+    e && e.emit && e.emit(o.UNMOUNTED, { componentId: Ee, moduleId: x, timestamp: Date.now() });
   });
 };
 H.prototype.healthCheck = function() {
@@ -1011,7 +1011,7 @@ H.prototype.healthCheck = function() {
   return { status: n === i ? "HEALTHY" : n >= i - 2 ? "DEGRADED" : "UNHEALTHY", score: n, maxScore: i, checks: s, portsInitialized: kt.isInitialized(), version: mn, moduleId: x };
 };
 H.prototype.info = function() {
-  return { version: mn, moduleId: x, id: ve, capabilities: Hr, portsInitialized: kt.isInitialized(), mounted: !!this.element, unreadCount: this.store.getState().unreadCount, metrics: this._metrics };
+  return { version: mn, moduleId: x, id: Ee, capabilities: Hr, portsInitialized: kt.isInitialized(), mounted: !!this.element, unreadCount: this.store.getState().unreadCount, metrics: this._metrics };
 };
 var fc = H;
 const gc = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
@@ -1022,7 +1022,7 @@ const gc = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   capabilities: Hr,
   default: fc,
   getPorts: hc,
-  id: ve,
+  id: Ee,
   injectPorts: uc
 }, Symbol.toStringTag, { value: "Module" })), si = "5.1.0-ENTERPRISE", ni = "header/components/real-time-clock/core/lifecycle";
 let Nr = !1, ts = [];
@@ -1132,7 +1132,7 @@ let Cc = class {
     return [...es];
   }
 };
-const Br = "header.real-time-clock.telemetry.logger", Ec = "8.4.0-ES6", ss = a({ moduleId: Br });
+const Br = "header.real-time-clock.telemetry.logger", vc = "8.4.0-ES6", ss = a({ moduleId: Br });
 function De(t) {
   return ss.get(t);
 }
@@ -1164,10 +1164,10 @@ Yt.prototype.debug = function(...t) {
 };
 Yt.prototype.getMetrics = () => Object.assign({}, ke);
 Yt.prototype.healthCheck = function() {
-  return { status: ss.isInitialized() ? "HEALTHY" : "DEGRADED", version: Ec, moduleId: Br, checks: { loggerReady: !!De("logger"), portsInitialized: ss.isInitialized() }, metrics: this.getMetrics(), portsInitialized: ss.isInitialized() };
+  return { status: ss.isInitialized() ? "HEALTHY" : "DEGRADED", version: vc, moduleId: Br, checks: { loggerReady: !!De("logger"), portsInitialized: ss.isInitialized() }, metrics: this.getMetrics(), portsInitialized: ss.isInitialized() };
 };
 const oi = "5.1.0-ENTERPRISE", ai = "header/components/real-time-clock/telemetry/tracker";
-let vc = [], Dc = class {
+let Ec = [], Dc = class {
   constructor(e = {}) {
     this.events = [], this.maxEvents = e.maxEvents || 100, this.enabled = e.enabled !== !1, this._metrics = { trackCount: 0, flushCount: 0, lastTrackAt: null };
   }
@@ -1207,7 +1207,7 @@ let vc = [], Dc = class {
   }
   // @ts-expect-error strict migration — TS7005
   static getLogs() {
-    return [...vc];
+    return [...Ec];
   }
 };
 const pn = "8.6.0-ES6", xs = "real-time-clock", zr = { type: "indicator", reorderable: !0, hideable: !0, critical: !1, rendersUI: !0 }, oe = "header/components/real-time-clock", It = a({ moduleId: oe });
@@ -1220,7 +1220,7 @@ function _e(t) {
 function Ic(t) {
   return It.inject(t);
 }
-function Sc() {
+function wc() {
   return It.snapshot();
 }
 (function() {
@@ -1276,18 +1276,18 @@ it.prototype.healthCheck = function() {
 it.prototype.info = function() {
   return { version: pn, moduleId: oe, id: xs, capabilities: zr, portsInitialized: It.isInitialized(), mounted: !!this.element, time: this.store.getState().time, metrics: this._metrics };
 };
-var wc = it;
+var Sc = it;
 const Ac = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   MODULE_ID: oe,
   RealTimeClockComponent: it,
   VERSION: pn,
   capabilities: zr,
-  default: wc,
-  getPorts: Sc,
+  default: Sc,
+  getPorts: wc,
   id: xs,
   injectPorts: Ic
-}, Symbol.toStringTag, { value: "Module" })), qr = "6.1.0-ES6", Hs = "header.weather-sp.api.fetch", $s = a({ moduleId: Hs });
+}, Symbol.toStringTag, { value: "Module" })), qr = "6.2.0-NONFATAL-WARN", Hs = "header.weather-sp.api.fetch", $s = a({ moduleId: Hs });
 function $c(t) {
   return $s.get(t);
 }
@@ -1483,33 +1483,33 @@ const Yr = "header.weather-sp.telemetry.logger", Uc = "2.3.0-ES6", rs = a({ modu
 function Ie(t) {
   return rs.get(t);
 }
-let Se = { logs: 0, warns: 0, errors: 0 };
+let we = { logs: 0, warns: 0, errors: 0 };
 function Ft(t) {
   t || (t = {}), this.prefix = t.prefix || "[weather-sp]", this.debug = t.debug || !1;
 }
 Ft.prototype.info = function() {
   if (!this.debug) return;
-  Se.logs++;
+  we.logs++;
   const t = Ie("logger");
   t && t.info ? t.info.apply(t, [this.prefix].concat(Array.prototype.slice.call(arguments))) : t && t.debug && t.debug.apply(t, [this.prefix].concat(Array.prototype.slice.call(arguments)));
 };
 Ft.prototype.warn = function() {
-  Se.warns++;
+  we.warns++;
   const t = Ie("logger");
   t && t.warn && t.warn.apply(t, [this.prefix].concat(Array.prototype.slice.call(arguments)));
 };
 Ft.prototype.error = function() {
-  Se.errors++;
+  we.errors++;
   const t = Ie("logger");
   t && t.error && t.error.apply(t, [this.prefix].concat(Array.prototype.slice.call(arguments)));
 };
 Ft.prototype.debug = function() {
   if (!this.debug) return;
-  Se.logs++;
+  we.logs++;
   const t = Ie("logger");
   t && t.debug && t.debug.apply(t, [this.prefix].concat(Array.prototype.slice.call(arguments)));
 };
-Ft.prototype.getMetrics = () => Object.assign({}, Se);
+Ft.prototype.getMetrics = () => Object.assign({}, we);
 Ft.prototype.healthCheck = function() {
   return { status: rs.isInitialized() ? "HEALTHY" : "DEGRADED", version: Uc, moduleId: Yr, checks: { loggerReady: !!Ie("logger"), portsInitialized: rs.isInitialized() }, metrics: this.getMetrics(), portsInitialized: rs.isInitialized() };
 };
@@ -1611,11 +1611,11 @@ let jc = class {
     return [...os];
   }
 };
-const fn = "9.7.0-P1-UARPS", we = "weather-sp", Wr = { type: "indicator", reorderable: !0, hideable: !0, critical: !1, rendersUI: !0 }, gt = "header/components/weather-sp", St = a({ moduleId: gt }), Bc = () => {
-  St.init();
-}, wt = (t) => St.get(t), zc = (t) => St.inject(t), qc = () => St.snapshot(), Vc = (t = {}) => {
-  const e = wt("eventBus");
-  !e || !e.emit || e.emit(v.ACTION, { actionId: "header:weather-sp", source: gt, timestamp: Date.now(), meta: Object.assign({ kind: "ui" }, t) });
+const fn = "9.7.0-P1-UARPS", Se = "weather-sp", Wr = { type: "indicator", reorderable: !0, hideable: !0, critical: !1, rendersUI: !0 }, gt = "header/components/weather-sp", wt = a({ moduleId: gt }), Bc = () => {
+  wt.init();
+}, St = (t) => wt.get(t), zc = (t) => wt.inject(t), qc = () => wt.snapshot(), Vc = (t = {}) => {
+  const e = St("eventBus");
+  !e || !e.emit || e.emit(E.ACTION, { actionId: "header:weather-sp", source: gt, timestamp: Date.now(), meta: Object.assign({ kind: "ui" }, t) });
 };
 (function() {
   const e = "/components/header/components/weather-sp/component.css";
@@ -1626,16 +1626,16 @@ const fn = "9.7.0-P1-UARPS", we = "weather-sp", Wr = { type: "indicator", reorde
 })();
 const ge = { sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>', cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>', cloudRain: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg>', moon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>' }, Gc = (t, e = !0) => t === 0 ? e ? ge.sun : ge.moon : t >= 1 && t <= 48 ? ge.cloud : ge.cloudRain;
 function N(t) {
-  t = t || {}, this.container = t.container, this.store = new Lc({ temp: null, code: 0, isDay: !0, status: "loading" }), this.eventBus = wt("eventBus"), this.lifecycle = new Pc(this);
-  const e = wt("config");
+  t = t || {}, this.container = t.container, this.store = new Lc({ temp: null, code: 0, isDay: !0, status: "loading" }), this.eventBus = St("eventBus"), this.lifecycle = new Pc(this);
+  const e = St("config");
   this.logger = new Ft({ prefix: "[Weather]", debug: e && e.app && e.app.debug }), this.telemetry = new Hc(), this.api = new Mc(), this.element = null, this.isDestroyed = !1, this.polling = null, this.unsubscribe = null, this._metrics = { mountCount: 0, fetchCount: 0, lastMountAt: null, lastFetchAt: null };
 }
 N.prototype.mount = function() {
   const t = this;
   return this.isDestroyed ? Promise.resolve() : (Bc(), this.lifecycle.mount().then(() => (t.render(), t.fetchWeather())).then(() => {
     t.startPolling(), t._metrics.mountCount++, t._metrics.lastMountAt = Date.now();
-    const e = wt("eventBus");
-    e && e.emit && e.emit(o.MOUNTED, { componentId: we, moduleId: gt, timestamp: Date.now() });
+    const e = St("eventBus");
+    e && e.emit && e.emit(o.MOUNTED, { componentId: Se, moduleId: gt, timestamp: Date.now() });
   }));
 };
 N.prototype.render = function() {
@@ -1655,8 +1655,8 @@ N.prototype.fetchWeather = function() {
   return this.isDestroyed ? Promise.resolve() : (this._metrics.fetchCount++, this._metrics.lastFetchAt = Date.now(), this.api.fetchWeather().then((e) => {
     if (t.isDestroyed) return;
     t.store.setState({ temp: e.temperature, code: e.weathercode || 0, isDay: e.is_day !== 0, status: "ok", lastUpdate: (/* @__PURE__ */ new Date()).toISOString() });
-    const s = wt("eventBus");
-    s && s.emit && s.emit(o.DATA_UPDATED, { componentId: we, moduleId: gt, data: { temp: e.temperature }, timestamp: Date.now() });
+    const s = St("eventBus");
+    s && s.emit && s.emit(o.DATA_UPDATED, { componentId: Se, moduleId: gt, data: { temp: e.temperature }, timestamp: Date.now() });
   }).catch(() => {
     t.isDestroyed || t.store.setState({ status: "offline" });
   }));
@@ -1669,16 +1669,16 @@ N.prototype.unmount = function() {
   const t = this;
   return this.isDestroyed = !0, this.lifecycle.unmount().then(() => {
     t.polling && (t.polling.stop(), t.polling = null), t.unsubscribe && (t.unsubscribe(), t.unsubscribe = null), t.store && t.store.reset(), t.element && (t.element.remove(), t.element = null);
-    const e = wt("eventBus");
-    e && e.emit && e.emit(o.UNMOUNTED, { componentId: we, moduleId: gt, timestamp: Date.now() });
+    const e = St("eventBus");
+    e && e.emit && e.emit(o.UNMOUNTED, { componentId: Se, moduleId: gt, timestamp: Date.now() });
   });
 };
 N.prototype.healthCheck = function() {
-  const t = wt("eventBus"), e = { isMounted: !!this.element, hasStore: !!this.store, hasGlobalEventBus: !!t, pollingActive: !!this.polling, portsInitialized: St.isInitialized() }, s = Object.values(e).filter(Boolean).length;
-  return { status: s === 5 ? "HEALTHY" : s >= 3 ? "DEGRADED" : "UNHEALTHY", score: s, maxScore: 5, checks: e, portsInitialized: St.isInitialized(), version: fn, moduleId: gt };
+  const t = St("eventBus"), e = { isMounted: !!this.element, hasStore: !!this.store, hasGlobalEventBus: !!t, pollingActive: !!this.polling, portsInitialized: wt.isInitialized() }, s = Object.values(e).filter(Boolean).length;
+  return { status: s === 5 ? "HEALTHY" : s >= 3 ? "DEGRADED" : "UNHEALTHY", score: s, maxScore: 5, checks: e, portsInitialized: wt.isInitialized(), version: fn, moduleId: gt };
 };
 N.prototype.info = function() {
-  return { version: fn, moduleId: gt, id: we, capabilities: Wr, portsInitialized: St.isInitialized(), mounted: !!this.element, temp: this.store.getState().temp, metrics: this._metrics };
+  return { version: fn, moduleId: gt, id: Se, capabilities: Wr, portsInitialized: wt.isInitialized(), mounted: !!this.element, temp: this.store.getState().temp, metrics: this._metrics };
 };
 var Yc = N;
 const Fc = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
@@ -1689,7 +1689,7 @@ const Fc = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   capabilities: Wr,
   default: Yc,
   getPorts: qc,
-  id: we,
+  id: Se,
   injectPorts: zc
 }, Symbol.toStringTag, { value: "Module" })), Wc = "header/components/user-menu.core.ports", Ae = a({ moduleId: Wc });
 function Kc() {
@@ -1710,7 +1710,7 @@ function Ws() {
 const Xc = {
   redirect(t, e, s) {
     const n = dt("eventBus");
-    n && n.emit && n.emit(v.HARD_NAV, {
+    n && n.emit && n.emit(E.HARD_NAV, {
       action: "redirect",
       url: t,
       reason: e,
@@ -1762,7 +1762,7 @@ function nl(t, e) {
 function Ns(t, e) {
   e || (e = {});
   const s = el();
-  !s || !s.emit || s.emit(v.ACTION, { actionId: `header:${ee.id}:${t}`, source: _n, timestamp: Date.now(), meta: Object.assign({ label: ee.label, icon: ee.icon, kind: ee.kind }, e) });
+  !s || !s.emit || s.emit(E.ACTION, { actionId: `header:${ee.id}:${t}`, source: _n, timestamp: Date.now(), meta: Object.assign({ label: ee.label, icon: ee.icon, kind: ee.kind }, e) });
 }
 function il(t, e) {
   const s = e.logger, n = e.store, i = e.onLogout;
@@ -1882,7 +1882,7 @@ class Zr {
     return [...pl];
   }
 }
-const Ei = "5.1.0-ENTERPRISE", vi = "header/components/user-menu/utils/formatters";
+const vi = "5.1.0-ENTERPRISE", Ei = "header/components/user-menu/utils/formatters";
 let fl = [];
 class gl {
   static formatUserName(e) {
@@ -1898,10 +1898,10 @@ class gl {
   }
   static healthCheck() {
     const e = { ready: !0 }, s = Object.values(e).filter(Boolean).length;
-    return { status: s === 1 ? "HEALTHY" : "DEGRADED", score: s, maxScore: 1, scoreDisplay: `${s}/1`, checks: e, version: Ei, moduleId: vi, timestamp: (/* @__PURE__ */ new Date()).toISOString() };
+    return { status: s === 1 ? "HEALTHY" : "DEGRADED", score: s, maxScore: 1, scoreDisplay: `${s}/1`, checks: e, version: vi, moduleId: Ei, timestamp: (/* @__PURE__ */ new Date()).toISOString() };
   }
   static info() {
-    return { version: Ei, moduleId: vi, healthCheck: this.healthCheck() };
+    return { version: vi, moduleId: Ei, healthCheck: this.healthCheck() };
   }
   // @ts-expect-error strict migration — TS7005
   static getLogs() {
@@ -1915,11 +1915,11 @@ function Xr(t) {
 function yl(t, e, s = bl) {
   if (!t || !e || !t.ownerDocument) return null;
   Xr(t);
-  const n = t.ownerDocument, i = n.defaultView, h = (t.querySelector(".user-menu-trigger") || t).getBoundingClientRect(), k = i ? i.innerWidth : 0, l = n.createElement("div");
+  const n = t.ownerDocument, i = n.defaultView, h = (t.querySelector(".user-menu-trigger") || t).getBoundingClientRect(), I = i ? i.innerWidth : 0, l = n.createElement("div");
   return l.className = "user-menu-aviso-erro", l.setAttribute("data-aviso-erro", "user-menu"), l.setAttribute("aria-hidden", "true"), l.setAttribute("title", "Fechar"), l.textContent = e, l.style.cssText = [
     "position:fixed",
     `top:${Math.round(h.bottom + 8)}px`,
-    `right:${Math.max(8, Math.round(k - h.right))}px`,
+    `right:${Math.max(8, Math.round(I - h.right))}px`,
     "z-index:100000",
     "max-width:320px",
     "padding:10px 14px",
@@ -2011,7 +2011,7 @@ function Cl(t) {
     if (!e) throw new Error("logout não confirmado pelo servidor");
     Ns("logout", { confirmed: !0 });
     const s = dt("eventBus");
-    s && s.emit && s.emit(v.ACTION, {
+    s && s.emit && s.emit(E.ACTION, {
       action: "logout",
       source: Ks,
       timestamp: Date.now()
@@ -2020,8 +2020,8 @@ function Cl(t) {
     t._log("error", "Erro logout:", e), t._announce(Di), yl(t.element, Di);
   }));
 }
-const no = "17.3.0-MODULAR", El = "user-menu", io = "header/components/user-menu";
-function vl(t) {
+const no = "17.3.0-MODULAR", vl = "user-menu", io = "header/components/user-menu";
+function El(t) {
   const e = !!(t.dropdown && t.dropdown.parentElement === document.body), s = gn(), n = {
     initialized: t._initialized,
     mounted: t._mounted,
@@ -2058,13 +2058,13 @@ function vl(t) {
       // @ts-expect-error TS migration - TS2339
       tooltips: t.tooltips ? t.tooltips.healthCheck() : null
     },
-    emits: [v.ACTION, v.HARD_NAV],
+    emits: [E.ACTION, E.HARD_NAV],
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   };
 }
 function Dl(t) {
   return {
-    id: El,
+    id: vl,
     // @ts-expect-error TS migration - TS2339
     capabilities: t.constructor._exportCapabilities || {
       type: "menu",
@@ -2084,7 +2084,7 @@ function Dl(t) {
     mounted: t._mounted,
     // @ts-expect-error TS migration - TS2339
     user: t.store.getState().user ? t.store.getState().user.name : null,
-    emits: [v.ACTION, v.HARD_NAV],
+    emits: [E.ACTION, E.HARD_NAV],
     adr015Compliant: !0,
     p0Compliant: !0,
     integrations: {
@@ -2101,7 +2101,7 @@ function Dl(t) {
     metrics: Object.assign({}, t._metrics)
   };
 }
-const ro = "7.7.0-ES6", js = "header.user-menu.api.fetch", Os = a({ moduleId: js });
+const ro = "7.8.0-NONFATAL-WARN", js = "header.user-menu.api.fetch", Os = a({ moduleId: js });
 function kl(t) {
   return Os.get(t);
 }
@@ -2179,10 +2179,10 @@ rt.prototype.resetMetrics = function() {
 var Il = rt;
 const ki = "5.1.0-ENTERPRISE", Ii = "header/components/user-menu/core/lifecycle";
 let oo = !1, as = [];
-function Sl(t, ...e) {
+function wl(t, ...e) {
   !oo && t === "debug" || (as.push({ level: t, args: e, ts: Date.now() }), as.length > 50 && as.shift());
 }
-let wl = class {
+let Sl = class {
   constructor(e) {
     this.component = e, this.state = "unmounted", this.hooks = { beforeMount: [], mounted: [], beforeUpdate: [], updated: [], beforeUnmount: [], unmounted: [] }, this._metrics = { mountCount: 0, unmountCount: 0, updateCount: 0, errorCount: 0, lastTransitionAt: null };
   }
@@ -2203,7 +2203,7 @@ let wl = class {
       try {
         await n(this.component);
       } catch (i) {
-        this._metrics.errorCount++, Sl("error", `Error in ${e}:`, i);
+        this._metrics.errorCount++, wl("error", `Error in ${e}:`, i);
       }
   }
   onBeforeMount(e) {
@@ -2248,7 +2248,7 @@ let wl = class {
     return [...as];
   }
 };
-const Si = "5.1.0-ENTERPRISE", wi = "header/components/user-menu/state/store";
+const wi = "5.1.0-ENTERPRISE", Si = "header/components/user-menu/state/store";
 let ao = !1, cs = [];
 function Al(t, ...e) {
   !ao && t === "debug" || (cs.push({ level: t, args: e, ts: Date.now() }), cs.length > 50 && cs.shift());
@@ -2281,10 +2281,10 @@ let $l = class {
   }
   healthCheck() {
     const e = { hasState: !!this.state, subscribersReady: Array.isArray(this.subscribers) }, s = Object.values(e).filter(Boolean).length;
-    return { status: s === 2 ? "HEALTHY" : "DEGRADED", score: s, maxScore: 2, scoreDisplay: `${s}/2`, checks: e, version: Si, moduleId: wi, timestamp: (/* @__PURE__ */ new Date()).toISOString() };
+    return { status: s === 2 ? "HEALTHY" : "DEGRADED", score: s, maxScore: 2, scoreDisplay: `${s}/2`, checks: e, version: wi, moduleId: Si, timestamp: (/* @__PURE__ */ new Date()).toISOString() };
   }
   info() {
-    return { version: Si, moduleId: wi, subscriberCount: this.subscribers.length, metrics: this._metrics, healthCheck: this.healthCheck() };
+    return { version: wi, moduleId: Si, subscriberCount: this.subscribers.length, metrics: this._metrics, healthCheck: this.healthCheck() };
   }
   setDebug(e) {
     this._debug = !!e, ao = !!e;
@@ -2378,7 +2378,7 @@ let Ml = [], Tl = class {
     return [...Ml];
   }
 };
-const Et = {
+const vt = {
   user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>',
   settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>',
   shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
@@ -2396,10 +2396,10 @@ function Rl(t) {
   return e.length >= 2 ? (e[0][0] + e[e.length - 1][0]).toUpperCase() : t.substring(0, 2).toUpperCase();
 }
 function Ll() {
-  return `<button class="user-menu-trigger" aria-haspopup="true" aria-expanded="false" aria-label="Menu do usuário" data-uarps-trigger="trigger:header:user-menu"><div class="user-avatar"><img class="avatar-img" src="" alt="" style="display:none"><span class="avatar-initials">--</span></div><span class="user-name">...</span><span class="user-chevron">${Et.chevron}</span></button>`;
+  return `<button class="user-menu-trigger" aria-haspopup="true" aria-expanded="false" aria-label="Menu do usuário" data-uarps-trigger="trigger:header:user-menu"><div class="user-avatar"><img class="avatar-img" src="" alt="" style="display:none"><span class="avatar-initials">--</span></div><span class="user-name">...</span><span class="user-chevron">${vt.chevron}</span></button>`;
 }
 function Ul() {
-  return `<div class="dropdown-header"><div class="user-avatar-large"><img class="avatar-img" src="" alt="" style="display:none"><span class="avatar-initials">--</span></div><div class="user-info"><span class="user-name-full">Carregando...</span><span class="user-role">---</span></div></div><div class="dropdown-divider"></div><button class="dropdown-item" role="menuitem" data-action="profile" data-uarps-trigger="trigger:header:profile"><span class="item-icon">${Et.user}</span>Meu Perfil</button><button class="dropdown-item" role="menuitem" data-action="preferences" data-uarps-trigger="trigger:header:preferences"><span class="item-icon">${Et.settings}</span>Minhas Preferências</button><button class="dropdown-item" role="menuitem" data-action="security" data-uarps-trigger="trigger:header:security"><span class="item-icon">${Et.shield}</span>Segurança da Conta</button><button class="dropdown-item" role="menuitem" data-action="notifications" data-uarps-trigger="trigger:header:notifications"><span class="item-icon">${Et.bell}</span>Notificações</button><button class="dropdown-item" role="menuitem" data-action="sessions" data-uarps-trigger="trigger:header:sessions"><span class="item-icon">${Et.monitor}</span>Sessões Ativas</button><div class="dropdown-divider"></div><button class="dropdown-item logout" role="menuitem" data-action="logout" data-uarps-trigger="trigger:header:logout"><span class="item-icon">${Et.logout}</span>Sair</button>`;
+  return `<div class="dropdown-header"><div class="user-avatar-large"><img class="avatar-img" src="" alt="" style="display:none"><span class="avatar-initials">--</span></div><div class="user-info"><span class="user-name-full">Carregando...</span><span class="user-role">---</span></div></div><div class="dropdown-divider"></div><button class="dropdown-item" role="menuitem" data-action="profile" data-uarps-trigger="trigger:header:profile"><span class="item-icon">${vt.user}</span>Meu Perfil</button><button class="dropdown-item" role="menuitem" data-action="preferences" data-uarps-trigger="trigger:header:preferences"><span class="item-icon">${vt.settings}</span>Minhas Preferências</button><button class="dropdown-item" role="menuitem" data-action="security" data-uarps-trigger="trigger:header:security"><span class="item-icon">${vt.shield}</span>Segurança da Conta</button><button class="dropdown-item" role="menuitem" data-action="notifications" data-uarps-trigger="trigger:header:notifications"><span class="item-icon">${vt.bell}</span>Notificações</button><button class="dropdown-item" role="menuitem" data-action="sessions" data-uarps-trigger="trigger:header:sessions"><span class="item-icon">${vt.monitor}</span>Sessões Ativas</button><div class="dropdown-divider"></div><button class="dropdown-item logout" role="menuitem" data-action="logout" data-uarps-trigger="trigger:header:logout"><span class="item-icon">${vt.logout}</span>Sair</button>`;
 }
 function lo(t, e) {
   if (!t || !e) return;
@@ -2410,14 +2410,14 @@ function lo(t, e) {
 }
 function xl(t, e, s) {
   if (!t || !e) return;
-  const n = t.querySelector(".user-avatar"), i = t.querySelector(".avatar-img"), r = t.querySelector(".avatar-initials"), h = e.querySelector(".user-avatar-large"), k = e.querySelector(".avatar-img"), l = e.querySelector(".avatar-initials"), lt = t.querySelector(".user-name"), ut = e.querySelector(".user-name-full"), da = e.querySelector(".user-role"), ma = t.querySelector(".user-menu-trigger");
+  const n = t.querySelector(".user-avatar"), i = t.querySelector(".avatar-img"), r = t.querySelector(".avatar-initials"), h = e.querySelector(".user-avatar-large"), I = e.querySelector(".avatar-img"), l = e.querySelector(".avatar-initials"), lt = t.querySelector(".user-name"), ut = e.querySelector(".user-name-full"), da = e.querySelector(".user-role"), ma = t.querySelector(".user-menu-trigger");
   if (s.user) {
     const Xt = Rl(s.user.name || s.user.fullName), me = s.user.avatar_url || s.user.avatar, Un = me && me.length > 0 && !me.includes("default"), xn = Pl(s.user.id);
-    Un ? (i.src = me, i.style.display = "block", r.style.display = "none") : (i.style.display = "none", r.style.display = "flex", r.textContent = Xt, n.style.background = xn), Un ? (k.src = me, k.style.display = "block", l.style.display = "none") : (k.style.display = "none", l.style.display = "flex", l.textContent = Xt, h.style.background = xn);
+    Un ? (i.src = me, i.style.display = "block", r.style.display = "none") : (i.style.display = "none", r.style.display = "flex", r.textContent = Xt, n.style.background = xn), Un ? (I.src = me, I.style.display = "block", l.style.display = "none") : (I.style.display = "none", l.style.display = "flex", l.textContent = Xt, h.style.background = xn);
     const Hn = s.user.name || s.user.fullName || "Usuário";
     lt.textContent = Hn, ut.textContent = s.user.fullName || Hn, da.textContent = s.user.funcao || s.user.role || "user", t.dataset.status = "ok", t.dataset.role = s.user.role || "user";
   } else
-    i.style.display = "none", r.style.display = "flex", r.textContent = "?", k.style.display = "none", l.style.display = "flex", l.textContent = "?", lt.textContent = "Visitante", ut.textContent = "Visitante", t.dataset.status = "guest";
+    i.style.display = "none", r.style.display = "flex", r.textContent = "?", I.style.display = "none", l.style.display = "flex", l.textContent = "?", lt.textContent = "Visitante", ut.textContent = "Visitante", t.dataset.status = "guest";
   if (s.isOpen)
     lo(t, e), e.setAttribute("aria-hidden", "false"), e.classList.add("is-open");
   else {
@@ -2627,7 +2627,7 @@ const Js = "17.3.0-MODULAR", Bs = "user-menu", yn = {
 }, zs = "header/components/user-menu";
 Qc();
 function c(t) {
-  t = t || {}, this.container = t.container, this.store = new $l({ user: null, isOpen: !1, status: "loading" }), this.eventBus = null, this.lifecycle = new wl(this), this.logger = null, this.telemetry = new Tl(), this.api = new Il(), this.element = null, this.dropdown = null, this.dropdownRoot = null, this._mounted = !1, this._initialized = !1, this.isDestroyed = !1, this.unsubscribe = null, this.shortcuts = new Nl(), this.announcer = new j(), this.circuitBreaker = new zl({ failureThreshold: 3, timeout: 1e4, resetTimeout: 3e4 }), this.tooltips = new B({ delay: 400 }), this.boundHandleClickOutside = (e) => al(this, e), this.boundHandleTriggerClick = (e) => ol(this, e), this.boundUpdateDropdownPosition = () => this._updatePosition(), this.boundHandleKeydown = (e) => ll(this, e), this._metrics = {
+  t = t || {}, this.container = t.container, this.store = new $l({ user: null, isOpen: !1, status: "loading" }), this.eventBus = null, this.lifecycle = new Sl(this), this.logger = null, this.telemetry = new Tl(), this.api = new Il(), this.element = null, this.dropdown = null, this.dropdownRoot = null, this._mounted = !1, this._initialized = !1, this.isDestroyed = !1, this.unsubscribe = null, this.shortcuts = new Nl(), this.announcer = new j(), this.circuitBreaker = new zl({ failureThreshold: 3, timeout: 1e4, resetTimeout: 3e4 }), this.tooltips = new B({ delay: 400 }), this.boundHandleClickOutside = (e) => al(this, e), this.boundHandleTriggerClick = (e) => ol(this, e), this.boundUpdateDropdownPosition = () => this._updatePosition(), this.boundHandleKeydown = (e) => ll(this, e), this._metrics = {
     mountCount: 0,
     setUserCount: 0,
     fetchCount: 0,
@@ -2714,7 +2714,7 @@ c.prototype.unmount = function() {
   })) : Promise.resolve(this);
 };
 c.prototype.healthCheck = function() {
-  return vl(this);
+  return El(this);
 };
 c.prototype.info = function() {
   return Dl(this);
@@ -2971,7 +2971,7 @@ ot.prototype.mount = function() {
 };
 ot.prototype.render = function() {
   const t = this;
-  this.element = document.createElement("a"), this.element.className = "logo-component", this.element.href = "/", this.element.title = "DShow Dashboard - Ir para início", this.element.dataset.status = "ok", this.element.setAttribute("aria-label", "Logo DShow Dashboard - Ir para página inicial"), this.element.innerHTML = '<img src="/assets/images/logo.png" alt="DShow Dashboard" class="logo-image" />', this.container && this.container.appendChild(this.element), this.unsubscribe = this.store.subscribe((e) => {
+  this.element = document.createElement("a"), this.element.className = "logo-component", this.element.href = "/", this.element.title = "DShow Dashboard - Ir para início", this.element.dataset.status = "ok", this.element.setAttribute("aria-label", "DShow — ir para a página inicial"), this.element.innerHTML = '<img src="/assets/brand/dshow-logo.svg" alt="DShow" class="logo-image dsd-marca-logo dsd-marca--claro" width="94" height="32" /><img src="/assets/brand/dshow-logo-branco.svg" alt="DShow" class="logo-image dsd-marca-logo dsd-marca--escuro" width="94" height="32" />', this.container && this.container.appendChild(this.element), this.unsubscribe = this.store.subscribe((e) => {
     !t.element || t.isDestroyed || t.updateUI(e);
   });
 };
@@ -3040,9 +3040,9 @@ const iu = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   getPorts: su,
   id: qs,
   injectPorts: eu
-}, Symbol.toStringTag, { value: "Module" })), bo = "6.1.0-ES6", Pe = "header.email-integration.api.fetch", En = a({ moduleId: Pe });
+}, Symbol.toStringTag, { value: "Module" })), bo = "6.1.0-ES6", Pe = "header.email-integration.api.fetch", vn = a({ moduleId: Pe });
 function yo(t) {
-  return En.get(t);
+  return vn.get(t);
 }
 const se = function(t, ...e) {
   const s = yo("logger");
@@ -3055,7 +3055,7 @@ function Co(t, e) {
   } catch {
   }
 }
-function Eo(t) {
+function vo(t) {
   const e = t.headers.get("content-type") || "", s = e.indexOf("application/json") !== -1, n = e.indexOf("text/html") !== -1;
   return {
     ok: t.ok,
@@ -3084,17 +3084,17 @@ at.prototype._request = function(t, e, s, n) {
   i._metrics.requestCount++, i._metrics.lastRequestAt = Date.now();
   const r = new AbortController(), h = setTimeout(() => {
     r.abort();
-  }, i.timeout), k = {
+  }, i.timeout), I = {
     method: t,
     headers: Object.assign({ Accept: "application/json" }, i.headers, n.headers || {}),
     signal: r.signal,
     credentials: "include"
   };
-  s && (k.body = JSON.stringify(s), k.headers["Content-Type"] = "application/json");
+  s && (I.body = JSON.stringify(s), I.headers["Content-Type"] = "application/json");
   const l = i.baseURL + e;
-  return fetch(l, k).then((lt) => {
+  return fetch(l, I).then((lt) => {
     clearTimeout(h);
-    const ut = Eo(lt);
+    const ut = vo(lt);
     return ut.isAuthError ? (i._metrics.authErrors++, se("info", "Auth required", { status: ut.status }), ht("auth-required")) : ut.isContractViolation ? (i._metrics.contractViolations++, se("error", "API_CONTRACT_VIOLATION", { contentType: ut.contentType }), Co("contract-violation", { contentType: ut.contentType }), ht("contract-violation")) : lt.ok ? (i._metrics.successCount++, lt.json()) : (i._metrics.errorCount++, ht("http-error"));
   }).catch((lt) => (clearTimeout(h), i._metrics.errorCount++, se("error", "Request failed", { method: t, endpoint: e, error: lt.message }), ht("network-error")));
 };
@@ -3110,7 +3110,7 @@ at.prototype.fetchStatus = function() {
     headers: { Accept: "application/json" }
   }).then((i) => {
     clearTimeout(s);
-    const r = Eo(i);
+    const r = vo(i);
     return r.isAuthError ? (t._metrics.authErrors++, se("info", "Auth required for email status", { status: r.status }), ht("auth-required")) : r.isContractViolation ? (t._metrics.contractViolations++, se("error", `API_CONTRACT_VIOLATION: Expected JSON, got ${r.contentType}`, { url: n }), Co("contract-violation", { contentType: r.contentType, url: n }), ht("contract-violation")) : i.ok ? (t._metrics.successCount++, i.json()) : (t._metrics.errorCount++, ht("http-error"));
   }).then((i) => i && i._fallback ? i : { unread_count: i.unread_count || i.count || 0, status: "ok" }).catch((i) => {
     clearTimeout(s), t._metrics.errorCount++;
@@ -3119,7 +3119,7 @@ at.prototype.fetchStatus = function() {
   });
 };
 at.prototype.healthCheck = function() {
-  const t = En.snapshot(), e = {
+  const t = vn.snapshot(), e = {
     hasBaseURL: this.baseURL !== void 0,
     goodSuccessRate: this._metrics.requestCount === 0 || this._metrics.successCount / this._metrics.requestCount > 0.5,
     lowContractViolations: this._metrics.requestCount === 0 || this._metrics.contractViolations / this._metrics.requestCount < 0.1,
@@ -3137,7 +3137,7 @@ at.prototype.healthCheck = function() {
   };
 };
 at.prototype.info = function() {
-  const t = En.snapshot();
+  const t = vn.snapshot();
   return {
     version: bo,
     moduleId: Pe,
@@ -3155,9 +3155,9 @@ at.prototype.resetMetrics = function() {
 };
 var ru = at;
 const Bi = "5.1.0-ENTERPRISE", zi = "header/components/email-integration/core/lifecycle";
-let vo = !1, ms = [];
+let Eo = !1, ms = [];
 function ou(t, ...e) {
-  !vo && t === "debug" || (ms.push({ level: t, args: e, ts: Date.now() }), ms.length > 50 && ms.shift());
+  !Eo && t === "debug" || (ms.push({ level: t, args: e, ts: Date.now() }), ms.length > 50 && ms.shift());
 }
 let au = class {
   constructor(e) {
@@ -3212,7 +3212,7 @@ let au = class {
     return { version: Bi, moduleId: zi, state: this.state, metrics: this._metrics, healthCheck: this.healthCheck() };
   }
   setDebug(e) {
-    vo = !!e;
+    Eo = !!e;
   }
   getMetrics() {
     return { ...this._metrics };
@@ -3361,9 +3361,9 @@ let du = [], mu = class {
   }
 };
 const Fi = "5.1.0-ENTERPRISE", Wi = "header/components/email-integration/core/polling";
-let So = !1, fs = [];
+let wo = !1, fs = [];
 function pu(t, ...e) {
-  !So && t === "debug" || (fs.push({ level: t, args: e, ts: Date.now() }), fs.length > 50 && fs.shift());
+  !wo && t === "debug" || (fs.push({ level: t, args: e, ts: Date.now() }), fs.length > 50 && fs.shift());
 }
 let fu = class {
   constructor(e = {}) {
@@ -3402,7 +3402,7 @@ let fu = class {
     return { version: Fi, moduleId: Wi, isRunning: this.isRunning, callbackCount: this.callbacks.length, metrics: this._metrics, healthCheck: this.healthCheck() };
   }
   setDebug(e) {
-    So = !!e;
+    wo = !!e;
   }
   getMetrics() {
     return { ...this._metrics };
@@ -3415,7 +3415,7 @@ let fu = class {
     return [...fs];
   }
 };
-const vn = "10.1.0-ES6", Re = "email-integration", wo = { type: "integration", reorderable: !0, hideable: !0, critical: !1, rendersUI: !0 }, ct = "header/components/email-integration", gu = "#/status-mail", Ot = a({ moduleId: ct });
+const En = "10.1.0-ES6", Re = "email-integration", So = { type: "integration", reorderable: !0, hideable: !0, critical: !1, rendersUI: !0 }, ct = "header/components/email-integration", gu = "#/status-mail", Ot = a({ moduleId: ct });
 function _u() {
   Ot.init();
 }
@@ -3431,7 +3431,7 @@ function yu() {
 function Cu(t) {
   t = t || {};
   const e = Mt("eventBus");
-  !e || !e.emit || e.emit(v.ACTION, { actionId: "header:email-integration", source: ct, timestamp: Date.now(), meta: Object.assign({ kind: "ui" }, t) });
+  !e || !e.emit || e.emit(E.ACTION, { actionId: "header:email-integration", source: ct, timestamp: Date.now(), meta: Object.assign({ kind: "ui" }, t) });
 }
 (function() {
   const e = "/components/header/components/email-integration/component.css";
@@ -3440,7 +3440,7 @@ function Cu(t) {
     s.rel = "stylesheet", s.href = e, document.head.appendChild(s);
   }
 })();
-const Eu = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>';
+const vu = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>';
 function z(t) {
   t = t || {}, this.container = t.container, this.store = new lu({ unreadCount: 0, status: "loading" }), this.eventBus = Mt("eventBus"), this.lifecycle = new au(this);
   const e = Mt("config");
@@ -3456,7 +3456,7 @@ z.prototype.mount = function() {
 };
 z.prototype.render = function() {
   const t = this;
-  this.element = document.createElement("div"), this.element.className = "email-integration-component", this.element.title = "E-mail", this.element.dataset.status = "loading", this.element.dataset.count = "0", this.element.setAttribute("data-uarps-trigger", "trigger:header:open-email-integration"), this.element.innerHTML = `<div class="integration-icon">${Eu}</div><span class="integration-badge">0</span>`, this.container && this.container.appendChild(this.element), this.element.style.cursor = "pointer", this.element.addEventListener("click", () => {
+  this.element = document.createElement("div"), this.element.className = "email-integration-component", this.element.title = "E-mail", this.element.dataset.status = "loading", this.element.dataset.count = "0", this.element.setAttribute("data-uarps-trigger", "trigger:header:open-email-integration"), this.element.innerHTML = `<div class="integration-icon">${vu}</div><span class="integration-badge">0</span>`, this.container && this.container.appendChild(this.element), this.element.style.cursor = "pointer", this.element.addEventListener("click", () => {
     t._metrics.clickCount++, t._metrics.lastClickAt = Date.now(), Cu({ clicked: !0, value: t.store && t.store.getState ? t.store.getState().unreadCount : 0 }), D(gu, ct);
   }), this.unsubscribe = this.store.subscribe((e) => {
     !t.element || t.isDestroyed || t.updateUI(e);
@@ -3491,23 +3491,23 @@ z.prototype.unmount = function() {
 };
 z.prototype.healthCheck = function() {
   const t = Mt("eventBus"), e = { isMounted: !!this.element, hasStore: !!this.store, hasGlobalEventBus: !!t, pollingActive: !!this.polling, portsInitialized: Ot.isInitialized() }, s = Object.values(e).filter(Boolean).length;
-  return { status: s === 5 ? "HEALTHY" : s >= 3 ? "DEGRADED" : "UNHEALTHY", score: s, maxScore: 5, checks: e, portsInitialized: Ot.isInitialized(), version: vn, moduleId: ct };
+  return { status: s === 5 ? "HEALTHY" : s >= 3 ? "DEGRADED" : "UNHEALTHY", score: s, maxScore: 5, checks: e, portsInitialized: Ot.isInitialized(), version: En, moduleId: ct };
 };
 z.prototype.info = function() {
-  return { version: vn, moduleId: ct, id: Re, capabilities: wo, portsInitialized: Ot.isInitialized(), mounted: !!this.element, unreadCount: this.store.getState().unreadCount, metrics: this._metrics };
+  return { version: En, moduleId: ct, id: Re, capabilities: So, portsInitialized: Ot.isInitialized(), mounted: !!this.element, unreadCount: this.store.getState().unreadCount, metrics: this._metrics };
 };
-var vu = z;
+var Eu = z;
 const Du = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   EmailIntegrationComponent: z,
   MODULE_ID: ct,
-  VERSION: vn,
-  capabilities: wo,
-  default: vu,
+  VERSION: En,
+  capabilities: So,
+  default: Eu,
   getPorts: yu,
   id: Re,
   injectPorts: bu
-}, Symbol.toStringTag, { value: "Module" })), Ao = "6.1.0-ES6", Vs = "header.whatsapp-integration.api.fetch", Ms = a({ moduleId: Vs });
+}, Symbol.toStringTag, { value: "Module" })), Ao = "6.2.0-NONFATAL-WARN", Vs = "header.whatsapp-integration.api.fetch", Ms = a({ moduleId: Vs });
 function ku(t) {
   return Ms.get(t);
 }
@@ -3586,10 +3586,10 @@ le.prototype.getMetrics = function() {
 le.prototype.resetMetrics = function() {
   this._metrics = { requestCount: 0, successCount: 0, errorCount: 0, lastRequestAt: null };
 };
-var Su = le;
+var wu = le;
 const Zi = "5.1.0-ENTERPRISE", Xi = "header/components/whatsapp-integration/core/lifecycle";
 let $o = !1, gs = [];
-function wu(t, ...e) {
+function Su(t, ...e) {
   !$o && t === "debug" || (gs.push({ level: t, args: e, ts: Date.now() }), gs.length > 50 && gs.shift());
 }
 let Au = class {
@@ -3613,7 +3613,7 @@ let Au = class {
       try {
         await n(this.component);
       } catch (i) {
-        this._metrics.errorCount++, wu("error", `Error in ${e}:`, i);
+        this._metrics.errorCount++, Su("error", `Error in ${e}:`, i);
       }
   }
   onBeforeMount(e) {
@@ -3848,7 +3848,7 @@ const Dn = "9.7.0-P1-UARPS", xe = "whatsapp-integration", Po = { type: "integrat
   Tt.init();
 }, He = (t) => Tt.get(t), xu = (t) => Tt.inject(t), Hu = () => Tt.snapshot(), Nu = (t = {}) => {
   const e = He("eventBus");
-  !e || !e.emit || e.emit(v.ACTION, { actionId: "header:whatsapp-integration", source: _t, timestamp: Date.now(), meta: Object.assign({ kind: "ui" }, t) });
+  !e || !e.emit || e.emit(E.ACTION, { actionId: "header:whatsapp-integration", source: _t, timestamp: Date.now(), meta: Object.assign({ kind: "ui" }, t) });
 };
 (function() {
   const e = "/components/header/components/whatsapp-integration/component.css";
@@ -3859,7 +3859,7 @@ const Dn = "9.7.0-P1-UARPS", xe = "whatsapp-integration", Po = { type: "integrat
 })();
 const ju = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 176 176"><rect fill="#29a71a" height="176" rx="24" width="176"/><g fill="#fff"><path d="m126.8 49.2a54.57 54.57 0 0 0 -87.42 63.13l-5.79 28.11a2.08 2.08 0 0 0 .33 1.63 2.11 2.11 0 0 0 2.24.87l27.55-6.53a54.56 54.56 0 0 0 63.09-87.21zm-8.59 68.56a42.74 42.74 0 0 1 -49.22 8l-3.84-1.9-16.89 4 .05-.21 3.5-17-1.88-3.71a42.72 42.72 0 0 1 7.86-49.59 42.73 42.73 0 0 1 60.42 0 2.28 2.28 0 0 0 .22.22 42.72 42.72 0 0 1 -.22 60.19z"/><path d="m116.71 105.29c-2.07 3.26-5.34 7.25-9.45 8.24-7.2 1.74-18.25.06-32-12.76l-.17-.15c-12.09-11.21-15.23-20.54-14.47-27.94.42-4.2 3.92-8 6.87-10.48a3.93 3.93 0 0 1 6.15 1.41l4.45 10a3.91 3.91 0 0 1 -.49 4l-2.25 2.92a3.87 3.87 0 0 0 -.35 4.32c1.26 2.21 4.28 5.46 7.63 8.47 3.76 3.4 7.93 6.51 10.57 7.57a3.82 3.82 0 0 0 4.19-.88l2.61-2.63a4 4 0 0 1 3.9-1l10.57 3a4 4 0 0 1 2.24 5.91z"/></g></svg>';
 function q(t) {
-  t = t || {}, this.container = t.container, this.store = new Ou({ unreadCount: 0, status: "loading" }), this.lifecycle = new Au(this), this.logger = new Jt({ prefix: "[WhatsApp]", debug: !1 }), this.telemetry = new Pu(), this.api = new Su(), this.element = null, this.isDestroyed = !1, this.polling = null, this.unsubscribe = null, this._metrics = { mountCount: 0, fetchCount: 0, lastMountAt: null, lastFetchAt: null };
+  t = t || {}, this.container = t.container, this.store = new Ou({ unreadCount: 0, status: "loading" }), this.lifecycle = new Au(this), this.logger = new Jt({ prefix: "[WhatsApp]", debug: !1 }), this.telemetry = new Pu(), this.api = new wu(), this.element = null, this.isDestroyed = !1, this.polling = null, this.unsubscribe = null, this._metrics = { mountCount: 0, fetchCount: 0, lastMountAt: null, lastFetchAt: null };
 }
 q.prototype.mount = function() {
   const t = this;
@@ -3922,7 +3922,7 @@ const zu = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   getPorts: Hu,
   id: xe,
   injectPorts: xu
-}, Symbol.toStringTag, { value: "Module" })), Ro = "6.1.0-ES6", Gs = "header.instagram-messenger-integration.api.fetch", Ts = a({ moduleId: Gs });
+}, Symbol.toStringTag, { value: "Module" })), Ro = "6.2.0-NONFATAL-WARN", Gs = "header.instagram-messenger-integration.api.fetch", Ts = a({ moduleId: Gs });
 function qu(t) {
   return Ts.get(t);
 }
@@ -4074,9 +4074,9 @@ let Fu = class {
   }
 };
 const lr = "5.1.0-ENTERPRISE", ur = "header/components/instagram-messenger-integration/state/store";
-let Uo = !1, Es = [];
+let Uo = !1, vs = [];
 function Wu(t, ...e) {
-  !Uo && t === "debug" || (Es.push({ level: t, args: e, ts: Date.now() }), Es.length > 50 && Es.shift());
+  !Uo && t === "debug" || (vs.push({ level: t, args: e, ts: Date.now() }), vs.length > 50 && vs.shift());
 }
 let Ku = class {
   constructor(e = {}) {
@@ -4122,12 +4122,12 @@ let Ku = class {
   }
   // @ts-expect-error strict migration — TS7005
   static getLogs() {
-    return [...Es];
+    return [...vs];
   }
 };
-const xo = "header.instagram-messenger-integration.telemetry.logger", Ju = "8.4.0-ES6", vs = a({ moduleId: xo });
+const xo = "header.instagram-messenger-integration.telemetry.logger", Ju = "8.4.0-ES6", Es = a({ moduleId: xo });
 function Ne(t) {
-  return vs.get(t);
+  return Es.get(t);
 }
 let he = { logs: 0, warns: 0, errors: 0 };
 function bt(t) {
@@ -4160,7 +4160,7 @@ bt.prototype.resetMetrics = () => {
   he = { logs: 0, warns: 0, errors: 0 };
 };
 bt.prototype.healthCheck = function() {
-  return { status: vs.isInitialized() ? "HEALTHY" : "DEGRADED", version: Ju, moduleId: xo, checks: { loggerReady: !!Ne("logger"), portsInitialized: vs.isInitialized() }, metrics: this.getMetrics(), portsInitialized: vs.isInitialized() };
+  return { status: Es.isInitialized() ? "HEALTHY" : "DEGRADED", version: Ju, moduleId: xo, checks: { loggerReady: !!Ne("logger"), portsInitialized: Es.isInitialized() }, metrics: this.getMetrics(), portsInitialized: Es.isInitialized() };
 };
 const hr = "5.1.0-ENTERPRISE", dr = "header/components/instagram-messenger-integration/telemetry/tracker";
 let Zu = [], Xu = class {
@@ -4265,7 +4265,7 @@ const kn = "9.7.0-P1-UARPS", je = "instagram-messenger-integration", No = { type
   Pt.init();
 }, Be = (t) => Pt.get(t), sh = (t) => Pt.inject(t), nh = () => Pt.snapshot(), ih = (t = {}) => {
   const e = Be("eventBus");
-  !e || !e.emit || e.emit(v.ACTION, { actionId: "header:instagram-messenger-integration", source: yt, timestamp: Date.now(), meta: Object.assign({ kind: "ui" }, t) });
+  !e || !e.emit || e.emit(E.ACTION, { actionId: "header:instagram-messenger-integration", source: yt, timestamp: Date.now(), meta: Object.assign({ kind: "ui" }, t) });
 };
 (function() {
   const e = "/components/header/components/instagram-messenger-integration/component.css";
@@ -4339,7 +4339,7 @@ const ah = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   getPorts: nh,
   id: je,
   injectPorts: sh
-}, Symbol.toStringTag, { value: "Module" })), jo = "6.1.0-ES6", Ys = "header.wechat-integration.api.fetch", Ps = a({ moduleId: Ys });
+}, Symbol.toStringTag, { value: "Module" })), jo = "6.2.0-NONFATAL-WARN", Ys = "header.wechat-integration.api.fetch", Ps = a({ moduleId: Ys });
 function ch(t) {
   return Ps.get(t);
 }
@@ -4543,9 +4543,9 @@ class ph {
     return [...Is];
   }
 }
-const qo = "header.wechat-integration.telemetry.logger", fh = "2.3.0-ES6", Ss = a({ moduleId: qo });
+const qo = "header.wechat-integration.telemetry.logger", fh = "2.3.0-ES6", ws = a({ moduleId: qo });
 function ze(t) {
-  return Ss.get(t);
+  return ws.get(t);
 }
 let qe = { logs: 0, warns: 0, errors: 0 };
 function Zt(t) {
@@ -4575,9 +4575,9 @@ Zt.prototype.debug = function(...t) {
 };
 Zt.prototype.getMetrics = () => Object.assign({}, qe);
 Zt.prototype.healthCheck = function() {
-  return { status: Ss.isInitialized() ? "HEALTHY" : "DEGRADED", version: fh, moduleId: qo, checks: { loggerReady: !!ze("logger"), portsInitialized: Ss.isInitialized() }, metrics: this.getMetrics(), portsInitialized: Ss.isInitialized() };
+  return { status: ws.isInitialized() ? "HEALTHY" : "DEGRADED", version: fh, moduleId: qo, checks: { loggerReady: !!ze("logger"), portsInitialized: ws.isInitialized() }, metrics: this.getMetrics(), portsInitialized: ws.isInitialized() };
 };
-const Er = "5.1.0-ENTERPRISE", vr = "header/components/wechat-integration/telemetry/tracker";
+const vr = "5.1.0-ENTERPRISE", Er = "header/components/wechat-integration/telemetry/tracker";
 let gh = [];
 class _h {
   constructor(e = {}) {
@@ -4604,10 +4604,10 @@ class _h {
   }
   healthCheck() {
     const e = { enabled: this.enabled, belowMax: this.events.length < this.maxEvents }, s = Object.values(e).filter(Boolean).length;
-    return { status: s === 2 ? "HEALTHY" : "DEGRADED", score: s, maxScore: 2, scoreDisplay: `${s}/2`, checks: e, version: Er, moduleId: vr, timestamp: (/* @__PURE__ */ new Date()).toISOString() };
+    return { status: s === 2 ? "HEALTHY" : "DEGRADED", score: s, maxScore: 2, scoreDisplay: `${s}/2`, checks: e, version: vr, moduleId: Er, timestamp: (/* @__PURE__ */ new Date()).toISOString() };
   }
   info() {
-    return { version: Er, moduleId: vr, enabled: this.enabled, eventCount: this.events.length, metrics: this._metrics, healthCheck: this.healthCheck() };
+    return { version: vr, moduleId: Er, enabled: this.enabled, eventCount: this.events.length, metrics: this._metrics, healthCheck: this.healthCheck() };
   }
   setDebug(e) {
   }
@@ -4623,9 +4623,9 @@ class _h {
   }
 }
 const Dr = "5.1.0-ENTERPRISE", kr = "header/components/wechat-integration/core/polling";
-let Vo = !1, ws = [];
+let Vo = !1, Ss = [];
 function bh(t, ...e) {
-  !Vo && t === "debug" || (ws.push({ level: t, args: e, ts: Date.now() }), ws.length > 50 && ws.shift());
+  !Vo && t === "debug" || (Ss.push({ level: t, args: e, ts: Date.now() }), Ss.length > 50 && Ss.shift());
 }
 class yh {
   constructor(e = {}) {
@@ -4674,14 +4674,14 @@ class yh {
   }
   // @ts-expect-error strict migration — TS7005
   static getLogs() {
-    return [...ws];
+    return [...Ss];
   }
 }
 const In = "9.7.0-P1-UARPS", Ve = "wechat-integration", Go = { type: "integration", reorderable: !0, hideable: !0, critical: !1, rendersUI: !0 }, Ct = "header/components/wechat-integration", Rt = a({ moduleId: Ct }), Ch = () => {
   Rt.init();
-}, Ge = (t) => Rt.get(t), Eh = (t) => Rt.inject(t), vh = () => Rt.snapshot(), Dh = (t = {}) => {
+}, Ge = (t) => Rt.get(t), vh = (t) => Rt.inject(t), Eh = () => Rt.snapshot(), Dh = (t = {}) => {
   const e = Ge("eventBus");
-  !e || !e.emit || e.emit(v.ACTION, { actionId: "header:wechat-integration", source: Ct, timestamp: Date.now(), meta: Object.assign({ kind: "ui" }, t) });
+  !e || !e.emit || e.emit(E.ACTION, { actionId: "header:wechat-integration", source: Ct, timestamp: Date.now(), meta: Object.assign({ kind: "ui" }, t) });
 };
 (function() {
   const e = "/components/header/components/wechat-integration/component.css";
@@ -4745,18 +4745,18 @@ G.prototype.info = function() {
   return { version: In, moduleId: Ct, id: Ve, capabilities: Go, mounted: !!this.element, unreadCount: this.store.getState().unreadCount, portsInitialized: Rt.isInitialized(), metrics: this._metrics };
 };
 var Ih = G;
-const Sh = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const wh = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   MODULE_ID: Ct,
   VERSION: In,
   WeChatIntegrationComponent: G,
   capabilities: Go,
   default: Ih,
-  getPorts: vh,
+  getPorts: Eh,
   id: Ve,
-  injectPorts: Eh
-}, Symbol.toStringTag, { value: "Module" })), Sn = "8.8.0-ES6", Yo = "panel-adwords", Fo = { type: "panel", reorderable: !0, hideable: !0, critical: !1, rendersUI: !0 }, W = "header/components/panel-adwords", I = { id: "panel-adwords", label: "Google Ads", route: "#/panel-ads", icon: "/assets/icons/system/header/adwords.svg" }, Lt = a({ moduleId: W });
-function wh() {
+  injectPorts: vh
+}, Symbol.toStringTag, { value: "Module" })), wn = "8.8.0-ES6", Yo = "panel-adwords", Fo = { type: "panel", reorderable: !0, hideable: !0, critical: !1, rendersUI: !0 }, W = "header/components/panel-adwords", w = { id: "panel-adwords", label: "Google Ads", route: "#/panel-ads", icon: "/assets/icons/system/header/adwords.svg" }, Lt = a({ moduleId: W });
+function Sh() {
   Lt.init();
 }
 function Ah(t) {
@@ -4788,36 +4788,36 @@ d.prototype.mount = function(t) {
     return this._metrics.errorCount++, Promise.resolve(this);
   if (this._isMounted) return Promise.resolve(this);
   try {
-    if (wh(), this.container = t || this.container, !this.container) throw new Error("Container required");
-    return this._render(), this._attachEvents(), this._isMounted = !0, this._metrics.mountCount++, this._metrics.lastMountAt = Date.now(), Zs(o.MOUNTED, { componentId: I.id, moduleId: W }), Promise.resolve(this);
+    if (Sh(), this.container = t || this.container, !this.container) throw new Error("Container required");
+    return this._render(), this._attachEvents(), this._isMounted = !0, this._metrics.mountCount++, this._metrics.lastMountAt = Date.now(), Zs(o.MOUNTED, { componentId: w.id, moduleId: W }), Promise.resolve(this);
   } catch (e) {
-    return this._metrics.errorCount++, Zs(o.ERROR, { componentId: I.id, moduleId: W, error: e.message }), Promise.reject(e);
+    return this._metrics.errorCount++, Zs(o.ERROR, { componentId: w.id, moduleId: W, error: e.message }), Promise.reject(e);
   }
 };
 d.prototype._render = function() {
-  this.element = document.createElement("button"), this.element.type = "button", this.element.className = "header-panel-trigger panel-adwords-trigger", this.element.title = I.label, this.element.setAttribute("aria-label", `Abrir ${I.label}`), this.element.setAttribute("aria-haspopup", "dialog"), this.element.setAttribute("data-panel-trigger", I.id), this.element.setAttribute("data-uarps-trigger", "trigger:header:open-panel-adwords"), this.element.innerHTML = `<img src="${I.icon}" alt="${I.label}" class="trigger-icon" loading="lazy" />`, this.container.appendChild(this.element);
+  this.element = document.createElement("button"), this.element.type = "button", this.element.className = "header-panel-trigger panel-adwords-trigger", this.element.title = w.label, this.element.setAttribute("aria-label", `Abrir ${w.label}`), this.element.setAttribute("aria-haspopup", "dialog"), this.element.setAttribute("data-panel-trigger", w.id), this.element.setAttribute("data-uarps-trigger", "trigger:header:open-panel-adwords"), this.element.innerHTML = `<img src="${w.icon}" alt="${w.label}" class="trigger-icon" loading="lazy" />`, this.container.appendChild(this.element);
 };
 d.prototype._attachEvents = function() {
   const t = this;
   this.element && (this._clickHandler = (e) => {
-    e.preventDefault(), t._metrics.clickCount++, t._metrics.lastClickAt = Date.now(), D(I.route, W);
+    e.preventDefault(), t._metrics.clickCount++, t._metrics.lastClickAt = Date.now(), D(w.route, W);
   }, this.element.addEventListener("click", this._clickHandler));
 };
 d.prototype._detachEvents = function() {
   this.element && this._clickHandler && (this.element.removeEventListener("click", this._clickHandler), this._clickHandler = null);
 };
 d.prototype.unmount = function() {
-  return !this._isMounted || this._isDestroyed ? Promise.resolve(this) : (this._detachEvents(), this.element && (this.element.remove(), this.element = null), this._isMounted = !1, this._metrics.unmountCount++, Zs(o.UNMOUNTED, { componentId: I.id, moduleId: W }), Promise.resolve(this));
+  return !this._isMounted || this._isDestroyed ? Promise.resolve(this) : (this._detachEvents(), this.element && (this.element.remove(), this.element = null), this._isMounted = !1, this._metrics.unmountCount++, Zs(o.UNMOUNTED, { componentId: w.id, moduleId: W }), Promise.resolve(this));
 };
 d.prototype.destroy = function() {
   this._isDestroyed || (this.unmount(), this._isDestroyed = !0, this.container = null);
 };
 d.prototype.healthCheck = function() {
   const t = { notDestroyed: !this._isDestroyed, isMounted: this._isMounted, hasElement: !!this.element, hasContainer: !!this.container, lowErrorRate: this._metrics.errorCount < 5, portsInitialized: Lt.isInitialized() }, e = Object.values(t).filter(Boolean).length, s = Object.keys(t).length;
-  return { status: e === s ? "HEALTHY" : e >= 4 ? "DEGRADED" : "UNHEALTHY", score: e, maxScore: s, scoreDisplay: `${e}/${s}`, checks: t, portsInitialized: Lt.isInitialized(), version: Sn, moduleId: W, timestamp: (/* @__PURE__ */ new Date()).toISOString() };
+  return { status: e === s ? "HEALTHY" : e >= 4 ? "DEGRADED" : "UNHEALTHY", score: e, maxScore: s, scoreDisplay: `${e}/${s}`, checks: t, portsInitialized: Lt.isInitialized(), version: wn, moduleId: W, timestamp: (/* @__PURE__ */ new Date()).toISOString() };
 };
 d.prototype.info = function() {
-  return { version: Sn, moduleId: W, id: Yo, capabilities: Fo, config: Object.assign({}, I), mounted: this._isMounted, destroyed: this._isDestroyed, portsInitialized: Lt.isInitialized(), metrics: Object.assign({}, this._metrics), healthCheck: this.healthCheck() };
+  return { version: wn, moduleId: W, id: Yo, capabilities: Fo, config: Object.assign({}, w), mounted: this._isMounted, destroyed: this._isDestroyed, portsInitialized: Lt.isInitialized(), metrics: Object.assign({}, this._metrics), healthCheck: this.healthCheck() };
 };
 d.prototype.getMetrics = function() {
   return Object.assign({}, this._metrics);
@@ -4839,14 +4839,14 @@ const Ph = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   MODULE_ID: W,
   PanelAdwordsComponent: d,
-  VERSION: Sn,
+  VERSION: wn,
   capabilities: Fo,
   createComponent: Mh,
   default: Th,
   getPorts: Oh,
   id: Yo,
   injectPorts: $h
-}, Symbol.toStringTag, { value: "Module" })), wn = "8.8.0-ES6", Wo = "panel-asaas", Ko = { type: "panel", reorderable: !0, hideable: !0, critical: !1, rendersUI: !0 }, K = "header/components/panel-asaas", S = { id: "panel-asaas", label: "Asaas", route: "#/integrations/asaas", icon: "/assets/icons/system/header/asaas.svg" }, Ut = a({ moduleId: K });
+}, Symbol.toStringTag, { value: "Module" })), Sn = "8.8.0-ES6", Wo = "panel-asaas", Ko = { type: "panel", reorderable: !0, hideable: !0, critical: !1, rendersUI: !0 }, K = "header/components/panel-asaas", S = { id: "panel-asaas", label: "Asaas", route: "#/integrations/asaas", icon: "/assets/icons/system/header/asaas.svg" }, Ut = a({ moduleId: K });
 function Rh() {
   Ut.init();
 }
@@ -4905,10 +4905,10 @@ m.prototype.destroy = function() {
 };
 m.prototype.healthCheck = function() {
   const t = { notDestroyed: !this._isDestroyed, isMounted: this._isMounted, hasElement: !!this.element, hasContainer: !!this.container, lowErrorRate: this._metrics.errorCount < 5, portsInitialized: Ut.isInitialized() }, e = Object.values(t).filter(Boolean).length, s = Object.keys(t).length;
-  return { status: e === s ? "HEALTHY" : e >= 4 ? "DEGRADED" : "UNHEALTHY", score: e, maxScore: s, scoreDisplay: `${e}/${s}`, checks: t, portsInitialized: Ut.isInitialized(), version: wn, moduleId: K, timestamp: (/* @__PURE__ */ new Date()).toISOString() };
+  return { status: e === s ? "HEALTHY" : e >= 4 ? "DEGRADED" : "UNHEALTHY", score: e, maxScore: s, scoreDisplay: `${e}/${s}`, checks: t, portsInitialized: Ut.isInitialized(), version: Sn, moduleId: K, timestamp: (/* @__PURE__ */ new Date()).toISOString() };
 };
 m.prototype.info = function() {
-  return { version: wn, moduleId: K, id: Wo, capabilities: Ko, config: Object.assign({}, S), mounted: this._isMounted, destroyed: this._isDestroyed, portsInitialized: Ut.isInitialized(), metrics: Object.assign({}, this._metrics), healthCheck: this.healthCheck() };
+  return { version: Sn, moduleId: K, id: Wo, capabilities: Ko, config: Object.assign({}, S), mounted: this._isMounted, destroyed: this._isDestroyed, portsInitialized: Ut.isInitialized(), metrics: Object.assign({}, this._metrics), healthCheck: this.healthCheck() };
 };
 m.prototype.getMetrics = function() {
   return Object.assign({}, this._metrics);
@@ -4930,14 +4930,14 @@ const jh = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   MODULE_ID: K,
   PanelAsaasComponent: m,
-  VERSION: wn,
+  VERSION: Sn,
   capabilities: Ko,
   createComponent: Hh,
   default: Nh,
   getPorts: xh,
   id: Wo,
   injectPorts: Uh
-}, Symbol.toStringTag, { value: "Module" })), An = "8.8.0-ES6", Jo = "panel-bling", Zo = { type: "panel", reorderable: !0, hideable: !0, critical: !1, rendersUI: !0 }, J = "header/components/panel-bling", w = { id: "panel-bling", label: "Bling", route: "#/integrations/bling", icon: "/assets/icons/system/header/bling.svg" }, xt = a({ moduleId: J });
+}, Symbol.toStringTag, { value: "Module" })), An = "8.8.0-ES6", Jo = "panel-bling", Zo = { type: "panel", reorderable: !0, hideable: !0, critical: !1, rendersUI: !0 }, J = "header/components/panel-bling", k = { id: "panel-bling", label: "Bling", route: "#/integrations/bling", icon: "/assets/icons/system/header/bling.svg" }, xt = a({ moduleId: J });
 function Bh() {
   xt.init();
 }
@@ -4971,25 +4971,29 @@ p.prototype.mount = function(t) {
   if (this._isMounted) return Promise.resolve(this);
   try {
     if (Bh(), this.container = t || this.container, !this.container) throw new Error("Container required");
-    return this._render(), this._attachEvents(), this._isMounted = !0, this._metrics.mountCount++, this._metrics.lastMountAt = Date.now(), Qs(o.MOUNTED, { componentId: w.id, moduleId: J }), Promise.resolve(this);
+    return this._render(), this._attachEvents(), this._isMounted = !0, this._metrics.mountCount++, this._metrics.lastMountAt = Date.now(), Qs(o.MOUNTED, { componentId: k.id, moduleId: J }), Promise.resolve(this);
   } catch (e) {
-    return this._metrics.errorCount++, Qs(o.ERROR, { componentId: w.id, moduleId: J, error: e.message }), Promise.reject(e);
+    return this._metrics.errorCount++, Qs(o.ERROR, { componentId: k.id, moduleId: J, error: e.message }), Promise.reject(e);
   }
 };
 p.prototype._render = function() {
-  this.element = document.createElement("button"), this.element.type = "button", this.element.className = "header-panel-trigger panel-bling-trigger", this.element.title = w.label, this.element.setAttribute("aria-label", `Abrir ${w.label}`), this.element.setAttribute("aria-haspopup", "dialog"), this.element.setAttribute("data-panel-trigger", w.id), this.element.setAttribute("data-uarps-trigger", "trigger:header:open-panel-bling"), this.element.innerHTML = `<img src="${w.icon}" alt="${w.label}" class="trigger-icon" loading="lazy" />`, this.container.appendChild(this.element);
+  this.element = document.createElement("button"), this.element.type = "button", this.element.className = "header-panel-trigger panel-bling-trigger", this.element.title = k.label, this.element.setAttribute("aria-label", `Abrir ${k.label}`), this.element.setAttribute("aria-haspopup", "dialog"), this.element.setAttribute("data-panel-trigger", k.id), this.element.setAttribute("data-uarps-trigger", "trigger:header:open-panel-bling"), this.element.innerHTML = `<img src="${k.icon}" alt="${k.label}" class="trigger-icon" loading="lazy" />`, this.container.appendChild(this.element);
 };
 p.prototype._attachEvents = function() {
   const t = this;
   this.element && (this._clickHandler = (e) => {
-    e.preventDefault(), t._metrics.clickCount++, t._metrics.lastClickAt = Date.now(), D(w.route, J);
+    e.preventDefault(), t._metrics.clickCount++, t._metrics.lastClickAt = Date.now();
+    const s = window.location.hash;
+    D(k.route, J), window.setTimeout(() => {
+      window.location.hash === s && (window.location.hash = k.route);
+    }, 140);
   }, this.element.addEventListener("click", this._clickHandler));
 };
 p.prototype._detachEvents = function() {
   this.element && this._clickHandler && (this.element.removeEventListener("click", this._clickHandler), this._clickHandler = null);
 };
 p.prototype.unmount = function() {
-  return !this._isMounted || this._isDestroyed ? Promise.resolve(this) : (this._detachEvents(), this.element && (this.element.remove(), this.element = null), this._isMounted = !1, this._metrics.unmountCount++, Qs(o.UNMOUNTED, { componentId: w.id, moduleId: J }), Promise.resolve(this));
+  return !this._isMounted || this._isDestroyed ? Promise.resolve(this) : (this._detachEvents(), this.element && (this.element.remove(), this.element = null), this._isMounted = !1, this._metrics.unmountCount++, Qs(o.UNMOUNTED, { componentId: k.id, moduleId: J }), Promise.resolve(this));
 };
 p.prototype.destroy = function() {
   this._isDestroyed || (this.unmount(), this._isDestroyed = !0, this.container = null);
@@ -4999,7 +5003,7 @@ p.prototype.healthCheck = function() {
   return { status: e === s ? "HEALTHY" : e >= 4 ? "DEGRADED" : "UNHEALTHY", score: e, maxScore: s, scoreDisplay: `${e}/${s}`, checks: t, portsInitialized: xt.isInitialized(), version: An, moduleId: J, timestamp: (/* @__PURE__ */ new Date()).toISOString() };
 };
 p.prototype.info = function() {
-  return { version: An, moduleId: J, id: Jo, capabilities: Zo, config: Object.assign({}, w), mounted: this._isMounted, destroyed: this._isDestroyed, portsInitialized: xt.isInitialized(), metrics: Object.assign({}, this._metrics), healthCheck: this.healthCheck() };
+  return { version: An, moduleId: J, id: Jo, capabilities: Zo, config: Object.assign({}, k), mounted: this._isMounted, destroyed: this._isDestroyed, portsInitialized: xt.isInitialized(), metrics: Object.assign({}, this._metrics), healthCheck: this.healthCheck() };
 };
 p.prototype.getMetrics = function() {
   return Object.assign({}, this._metrics);
@@ -5381,7 +5385,7 @@ function yd(t) {
   return new b(t);
 }
 var Cd = b;
-const Ed = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const vd = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   MODULE_ID: tt,
   PanelLojaIntegradaComponent: b,
@@ -5393,7 +5397,7 @@ const Ed = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   id: ia,
   injectPorts: _d
 }, Symbol.toStringTag, { value: "Module" })), Pn = "8.8.0-ES6", oa = "panel-maps", aa = { type: "panel", reorderable: !0, hideable: !0, critical: !1, rendersUI: !0 }, et = "header/components/panel-maps", T = { id: "panel-maps", label: "Mapas", route: "#/location", icon: "/assets/icons/system/header/maps.svg" }, zt = a({ moduleId: et });
-function vd() {
+function Ed() {
   zt.init();
 }
 function Dd(t) {
@@ -5425,7 +5429,7 @@ y.prototype.mount = function(t) {
     return this._metrics.errorCount++, Promise.resolve(this);
   if (this._isMounted) return Promise.resolve(this);
   try {
-    if (vd(), this.container = t || this.container, !this.container) throw new Error("Container required");
+    if (Ed(), this.container = t || this.container, !this.container) throw new Error("Container required");
     return this._render(), this._attachEvents(), this._isMounted = !0, this._metrics.mountCount++, this._metrics.lastMountAt = Date.now(), rn(o.MOUNTED, { componentId: T.id, moduleId: et }), Promise.resolve(this);
   } catch (e) {
     return this._metrics.errorCount++, rn(o.ERROR, { componentId: T.id, moduleId: et, error: e.message }), Promise.reject(e);
@@ -5468,22 +5472,22 @@ y.prototype.isDestroyed = function() {
 y.prototype.getElement = function() {
   return this.element;
 };
-function Sd(t) {
+function wd(t) {
   return new y(t);
 }
-var wd = y;
+var Sd = y;
 const Ad = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   MODULE_ID: et,
   PanelMapsComponent: y,
   VERSION: Pn,
   capabilities: aa,
-  createComponent: Sd,
-  default: wd,
+  createComponent: wd,
+  default: Sd,
   getPorts: Id,
   id: oa,
   injectPorts: kd
-}, Symbol.toStringTag, { value: "Module" })), Rn = "8.8.0-ES6", ca = "panel-mercado-livre", la = { type: "panel", reorderable: !0, hideable: !0, critical: !1, rendersUI: !0 }, st = "header/components/panel-mercado-livre", P = { id: "panel-mercado-livre", label: "Mercado Livre", route: "#/integrations/mercado-livre", icon: "/assets/icons/system/header/mercado-livre.svg" }, qt = a({ moduleId: st });
+}, Symbol.toStringTag, { value: "Module" })), Rn = "8.8.0-ES6", ca = "panel-mercado-livre", la = { type: "panel", reorderable: !0, hideable: !0, critical: !1, rendersUI: !0 }, st = "header/components/panel-mercado-livre", P = { id: "panel-mercado-livre", label: "Mercado Livre", route: "#/panel-mercadolivre", icon: "/assets/icons/system/header/mercado-livre.svg" }, qt = a({ moduleId: st });
 function $d() {
   qt.init();
 }
@@ -5599,10 +5603,10 @@ function an(t, e) {
   const s = xd("eventBus");
   s && s.emit && s.emit(t, Object.assign({ source: nt, timestamp: Date.now() }, e));
 }
-function E(t) {
+function v(t) {
   t = t || {}, this.container = t.container || null, this.element = null, this._isMounted = !1, this._isDestroyed = !1, this._clickHandler = null, this._metrics = { mountCount: 0, unmountCount: 0, clickCount: 0, errorCount: 0, lastMountAt: null, lastClickAt: null };
 }
-E.prototype.mount = function(t) {
+v.prototype.mount = function(t) {
   if (this._isDestroyed)
     return this._metrics.errorCount++, Promise.resolve(this);
   if (this._isMounted) return Promise.resolve(this);
@@ -5613,51 +5617,51 @@ E.prototype.mount = function(t) {
     return this._metrics.errorCount++, an(o.ERROR, { componentId: R.id, moduleId: nt, error: e.message }), Promise.reject(e);
   }
 };
-E.prototype._render = function() {
+v.prototype._render = function() {
   this.element = document.createElement("button"), this.element.type = "button", this.element.className = "header-panel-trigger panel-pipedrive-trigger", this.element.title = R.label, this.element.setAttribute("aria-label", `Abrir ${R.label}`), this.element.setAttribute("aria-haspopup", "dialog"), this.element.setAttribute("data-panel-trigger", R.id), this.element.setAttribute("data-uarps-trigger", "trigger:header:open-panel-pipedrive"), this.element.innerHTML = `<img src="${R.icon}" alt="${R.label}" class="trigger-icon" loading="lazy" />`, this.container.appendChild(this.element);
 };
-E.prototype._attachEvents = function() {
+v.prototype._attachEvents = function() {
   const t = this;
   this.element && (this._clickHandler = (e) => {
     e.preventDefault(), t._metrics.clickCount++, t._metrics.lastClickAt = Date.now(), D(R.route, nt);
   }, this.element.addEventListener("click", this._clickHandler));
 };
-E.prototype._detachEvents = function() {
+v.prototype._detachEvents = function() {
   this.element && this._clickHandler && (this.element.removeEventListener("click", this._clickHandler), this._clickHandler = null);
 };
-E.prototype.unmount = function() {
+v.prototype.unmount = function() {
   return !this._isMounted || this._isDestroyed ? Promise.resolve(this) : (this._detachEvents(), this.element && (this.element.remove(), this.element = null), this._isMounted = !1, this._metrics.unmountCount++, an(o.UNMOUNTED, { componentId: R.id, moduleId: nt }), Promise.resolve(this));
 };
-E.prototype.destroy = function() {
+v.prototype.destroy = function() {
   this._isDestroyed || (this.unmount(), this._isDestroyed = !0, this.container = null);
 };
-E.prototype.healthCheck = function() {
+v.prototype.healthCheck = function() {
   const t = { notDestroyed: !this._isDestroyed, isMounted: this._isMounted, hasElement: !!this.element, hasContainer: !!this.container, lowErrorRate: this._metrics.errorCount < 5, portsInitialized: Vt.isInitialized() }, e = Object.values(t).filter(Boolean).length, s = Object.keys(t).length;
   return { status: e === s ? "HEALTHY" : e >= 4 ? "DEGRADED" : "UNHEALTHY", score: e, maxScore: s, scoreDisplay: `${e}/${s}`, checks: t, portsInitialized: Vt.isInitialized(), version: Ln, moduleId: nt, timestamp: (/* @__PURE__ */ new Date()).toISOString() };
 };
-E.prototype.info = function() {
+v.prototype.info = function() {
   return { version: Ln, moduleId: nt, id: ua, capabilities: ha, config: Object.assign({}, R), mounted: this._isMounted, destroyed: this._isDestroyed, portsInitialized: Vt.isInitialized(), metrics: Object.assign({}, this._metrics), healthCheck: this.healthCheck() };
 };
-E.prototype.getMetrics = function() {
+v.prototype.getMetrics = function() {
   return Object.assign({}, this._metrics);
 };
-E.prototype.isMounted = function() {
+v.prototype.isMounted = function() {
   return this._isMounted;
 };
-E.prototype.isDestroyed = function() {
+v.prototype.isDestroyed = function() {
   return this._isDestroyed;
 };
-E.prototype.getElement = function() {
+v.prototype.getElement = function() {
   return this.element;
 };
 function jd(t) {
-  return new E(t);
+  return new v(t);
 }
-var Bd = E;
+var Bd = v;
 const zd = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   MODULE_ID: nt,
-  PanelPipedriveComponent: E,
+  PanelPipedriveComponent: v,
   VERSION: Ln,
   capabilities: ha,
   createComponent: jd,
@@ -5676,14 +5680,14 @@ const zd = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   "email-integration": Du,
   "whatsapp-integration": zu,
   "instagram-messenger-integration": ah,
-  "wechat-integration": Sh,
+  "wechat-integration": wh,
   "panel-adwords": Ph,
   "panel-asaas": jh,
   "panel-bling": Fh,
   "panel-calendar": td,
   "panel-chatgpt": ad,
   "panel-google-drive": pd,
-  "panel-loja-integrada": Ed,
+  "panel-loja-integrada": vd,
   "panel-maps": Ad,
   "panel-mercado-livre": Ld,
   "panel-pipedrive": zd

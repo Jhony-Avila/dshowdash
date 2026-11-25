@@ -33,7 +33,7 @@ const _log = function(level) {
   }
   if (_debugEnabled() && logger.debug) logger.debug(...["[sw-cache]"].concat(args));
 };
-const PRECACHE_ASSETS = ["/components/login-modal/styles.css", "/components/login-modal/index.js", "/components/login-modal/template.js", "/components/login-modal/config.json", "/assets/videos/video_background_site_web.mp4", "/assets/icons/logo-horizontal.png"];
+const PRECACHE_ASSETS = ["/components/login-modal/styles.css", "/components/login-modal/index.js", "/components/login-modal/template.js", "/components/login-modal/config.json", "/assets/brand/dshow-logo-branco.svg"];
 function ServiceWorkerCache(config) {
   if (!config) config = {};
   const sw = config.serviceWorker || {};

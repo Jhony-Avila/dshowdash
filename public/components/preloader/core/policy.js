@@ -34,7 +34,7 @@ const DEFAULT_POLICIES = {
   timeouts: { global: 3e4, auth: 1e4, components: 1e4, video: 5e3, hide: 300 },
   retries: { componentsMax: 3, authMax: 2, backoffMs: 5e3 },
   degraded: { allowDegraded: true, degradedOnVideoFail: true, degradedOnAuthTimeout: true, degradedOnComponentsTimeout: true, minProgressForDegraded: 50 },
-  video: { enabled: true, required: false, preload: "metadata", autoplay: true, loop: true, muted: true },
+  video: { enabled: false, required: false, preload: "metadata", autoplay: true, loop: true, muted: true },
   progress: { pollInterval: 200, debounceMs: 32, hits100Threshold: 3, smoothing: true },
   ui: { showLogo: true, showProgress: true, showPercentage: true, showText: true, animations: true, respectReducedMotion: true },
   force: { enableOnGlobalTimeout: true, minProgressForForce: 30 },

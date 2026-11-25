@@ -4,8 +4,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="DshowDash v3.0 - Enterprise Business Intelligence Dashboard">
-  <title>DshowDash v3.0 - Enterprise</title>
+  <meta name="description" content="DShow Dash — painel de gestão da DShow">
+  <title>DShow Dash</title>
+  <!-- IDENTIDADE (23/11/2026): marca nova (BrandGuide v1.2) — ícones, aplicativo instalável e regras visuais da marca -->
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/svg+xml" href="/assets/brand/dshow-simbolo.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/dshow-simbolo-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/brand/dshow-simbolo-180.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="stylesheet" href="/assets/brand/marca.css">
 
   <!-- FOUC-D5 (Doc 41, 2026-09-16): rede de segurança global — SVG inline sem width/height (ícone dimensionado só
        por CSS) nasce com 1em em vez de esticar à largura do container enquanto o CSS do componente ainda não
@@ -203,7 +210,7 @@
        evento de DOM (não por timeout): no instante em que o preloader real entra, ou se body[data-state] mudar. -->
   <div id="boot-splash" class="preloader-root visible" aria-hidden="true" data-boot-splash>
     <div class="preloader-container">
-      <div class="preloader-logo-container"><img src="/assets/icons/logo-square.png" alt="" class="preloader-logo" width="180" height="168" decoding="async" fetchpriority="high"></div>
+      <div class="preloader-logo-container dsd-marca-area"><img src="/assets/brand/dshow-logo-branco.svg" alt="" class="preloader-logo dsd-marca-logo" width="240" height="81" decoding="async" fetchpriority="high"></div>
       <div class="preloader-text">Carregando</div>
       <div class="preloader-progress-wrapper"><div class="preloader-progress"><div class="preloader-progress-bar"></div></div><div class="preloader-percentage">0%</div></div>
     </div>

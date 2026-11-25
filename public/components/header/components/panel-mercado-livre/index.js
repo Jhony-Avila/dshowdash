@@ -5,7 +5,7 @@ const VERSION = "8.8.0-ES6";
 const id = "panel-mercado-livre";
 const capabilities = { type: "panel", reorderable: true, hideable: true, critical: false, rendersUI: true };
 const MODULE_ID = "header/components/panel-mercado-livre";
-const PANEL_CONFIG = { id: "panel-mercado-livre", label: "Mercado Livre", route: "#/integrations/mercado-livre", icon: "/assets/icons/system/header/mercado-livre.svg" };
+const PANEL_CONFIG = { id: "panel-mercado-livre", label: "Mercado Livre", route: "#/panel-mercadolivre", icon: "/assets/icons/system/header/mercado-livre.svg" };
 const Ports = createUiPorts({ moduleId: MODULE_ID });
 function _initPorts() {
   Ports.init();

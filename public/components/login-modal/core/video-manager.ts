@@ -47,7 +47,7 @@ export function VideoManager(this: any, video: HTMLVideoElement | null, config: 
   this.video = video; this.config = config; this.logger = config.logger || null; this.state = VIDEO_STATES.IDLE; this.playPromise = null; this.retryCount = 0;
   this.maxRetries = vid.maxRetries || 3; this.liteMode = vid.liteMode || false; this.cleanupOnClose = vid.cleanupOnClose !== false; this.listeners = new Map();
   this.lazyLoad = vid.lazyLoad !== false; this.preloadOnMount = vid.preloadOnMount || false;
-  this._videoSrc = vid.src || '/assets/videos/video_background_site_web.mp4'; this._srcLoaded = false; this._intersectionObserver = null;
+  this._videoSrc = vid.src || ''; this._srcLoaded = false; this._intersectionObserver = null;
   this._metrics = { mounts: 0, loads: 0, plays: 0, pauses: 0, errors: 0, retries: 0, cleanups: 0, lazyLoads: 0 };
   _log('info', 'VideoManager inicializado', { liteMode: this.liteMode, lazyLoad: this.lazyLoad, state: this.state });
 }
