@@ -27,8 +27,6 @@ async function executar(timeoutMs) {
       const info = lerCsrf(await c.json().catch(() => ({})));
       if (info.autenticado === false) return { ok: true, status: c.status, motivo: "sem-sessao" };
       csrf = info.csrf;
-    } else if (c.status === 401) {
-      return { ok: true, status: 401, motivo: "sem-sessao" };
     }
     const headers = { "Content-Type": "application/json", Accept: "application/json" };
     if (csrf) headers["X-CSRF-Token"] = csrf;
@@ -40,7 +38,6 @@ async function executar(timeoutMs) {
     {
       try {
         const p = await fetch(ENDPOINT_CHECK, { method: "GET", credentials: "include", cache: "no-store", headers: { Accept: "application/json" }, signal: controle.signal });
-        if (p.status === 401) return { ok: true, status: p.status, motivo: "sem-sessao" };
         if (p.ok && lerCsrf(await p.json().catch(() => ({}))).autenticado === false) return { ok: true, status: p.status, motivo: "sem-sessao" };
       } catch {
       }

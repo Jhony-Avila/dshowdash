@@ -6,7 +6,8 @@
 //     é saída confirmada. 2xx ambíguo (HTML de proxy, JSON inválido, {ok:false}, 204) só vale se o check.php PROVAR authenticated:false;
 //     sem prova = falha 'desconhecido' (R7, DSHOW-115 — o mesmo critério da P9 8d10efbf). Falha de rede, timeout, 403 de CSRF ou 5xx = falha
 //     (a tela mostra o erro e não finge que saiu).
-//   - Já sem sessão no servidor (check.php diz authenticated:false — ex.: outra aba saiu antes) = sucesso: não há o que encerrar.
+//   - Já sem sessão no servidor (check.php 200 diz authenticated:false — ex.: outra aba saiu antes) = sucesso: não há o que encerrar.
+//     Só essa resposta prova: 401 (que o check.php nunca emite) vem de proxy/WAF e não conta.
 //   - Uma chamada por vez: cliques repetidos recebem a MESMA promessa.
 //   Quem navega para /login é quem chama, DEPOIS do sucesso (a navegação antes abortava o POST — achado de 23/11).
 // =====================================================
@@ -45,9 +46,9 @@ async function executar(timeoutMs: number): Promise<ResultadoLogout> {
       const info = lerCsrf(await c.json().catch(() => ({})));
       if (info.autenticado === false) return { ok: true, status: c.status, motivo: 'sem-sessao' };
       csrf = info.csrf;
-    } else if (c.status === 401) {
-      return { ok: true, status: 401, motivo: 'sem-sessao' };
     }
+    // 401 NÃO é prova de "sem sessão": o check.php só emite 200 (authenticated:true/false) ou 503; 401 vem de proxy/WAF (revisão da
+    // ACIMA_ESQUERDA, DSHOW-115B). Sem prova, o logout segue para o servidor (sem CSRF ele recusa e a tela mostra "Erro ao sair").
     const headers: Record<string, string> = { 'Content-Type': 'application/json', Accept: 'application/json' };
     if (csrf) headers['X-CSRF-Token'] = csrf;
     const r = await fetch(ENDPOINT_LOGOUT, { method: 'POST', credentials: 'include', cache: 'no-store', headers, body: '{}', signal: controle.signal });
@@ -60,7 +61,6 @@ async function executar(timeoutMs: number): Promise<ResultadoLogout> {
       // 2xx AMBÍGUO: só conta como saída se o check.php PROVAR que a sessão acabou; senão é desconhecido (nunca "saiu" sem prova)
       try {
         const p = await fetch(ENDPOINT_CHECK, { method: 'GET', credentials: 'include', cache: 'no-store', headers: { Accept: 'application/json' }, signal: controle.signal });
-        if (p.status === 401) return { ok: true, status: p.status, motivo: 'sem-sessao' };
         if (p.ok && lerCsrf(await p.json().catch(() => ({}))).autenticado === false) return { ok: true, status: p.status, motivo: 'sem-sessao' };
       } catch { /* sem prova */ }
       return { ok: false, status: r.status, motivo: 'desconhecido' };

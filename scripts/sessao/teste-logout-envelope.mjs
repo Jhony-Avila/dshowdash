@@ -30,8 +30,11 @@ await cenario('logout 204 sem corpo → NÃO confirma sem prova', [logado, bruto
 await cenario('logout 200 ambíguo e o check também falha (rede) → NÃO confirma', [logado, html(200, 'x'), new TypeError('rede')], { ok: false, motivo: 'desconhecido' });
 await cenario('logout 403 (CSRF) → falha csrf', [logado, json(403, { ok: false })], { ok: false, motivo: 'csrf' });
 await cenario('logout 500 → falha servidor', [logado, json(500, { ok: false })], { ok: false, motivo: 'servidor' });
-const s = await cenario('check 401 (sem sessão) → sucesso sem POST', [json(401, { ok: false })], { ok: true, motivo: 'sem-sessao' });
-afirma('check 401: nenhum POST de logout', !s.chamadas.some((c) => c.startsWith('POST')), JSON.stringify(s.chamadas));
+// revisão da ACIMA_ESQUERDA (DSHOW-115B): o check.php NUNCA emite 401 (só 200 authenticated:true/false ou 503) — um 401 vem de proxy/WAF e NÃO prova nada
+const s = await cenario('check 401 de proxy no INÍCIO → não é prova: segue o POST (sem CSRF); 403 → falha csrf', [json(401, { ok: false }), json(403, { ok: false })], { ok: false, motivo: 'csrf' });
+afirma('check 401 no início: o POST de logout é enviado (não "saiu" sem servidor)', s.chamadas.some((c) => c.startsWith('POST')), JSON.stringify(s.chamadas));
+await cenario('logout 200 com HTML de proxy + check 401 do proxy → NÃO confirma (sonda da ACIMA_ESQUERDA)', [logado, html(200, '<html>proxy</html>'), json(401, { ok: false })], { ok: false, motivo: 'desconhecido' });
+await cenario('check 401 de proxy no início + logout com o envelope {ok:true} → confirmado pelo servidor', [json(401, { ok: false }), json(200, { ok: true })], { ok: true });
 await cenario('rede fora no check → falha rede', [new TypeError('rede')], { ok: false, motivo: 'rede' });
 const t = await cenario('envelope {ok:true}: manda o X-CSRF-Token relido', [logado, json(200, { ok: true })], { ok: true });
 afirma('POST único', t.chamadas.filter((c) => c.startsWith('POST')).length === 1, JSON.stringify(t.chamadas));
