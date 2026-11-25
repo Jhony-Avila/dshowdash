@@ -51,7 +51,13 @@ export function GeralV2() {
   const vistaDe = <K extends 'resumo' | 'prioridades' | 'agenda' | 'fontes'>(k: K) =>
     ({ dados: painel.dados ? painel.dados[k] : null, erro: painel.erro, carregando: painel.carregando, atualizando: painel.atualizando,
        recarregar: painel.recarregar, okEm: painel.okEm }) as ReturnType<typeof useBloco<Painel[K]>>;
-  const resumo = vistaDe('resumo'), prioridades = vistaDe('prioridades'), agenda = vistaDe('agenda'), fontes = vistaDe('fontes');
+  // Parecer R3 item 2 (25/11): na TROCA de período, enquanto o período novo não chega, o resultado e o gráfico NÃO mostram os números
+  // do período anterior como se fossem atuais: ficam em "Carregando o período…". Prioridades, agenda e fontes não dependem do período
+  // e seguem na tela (aprovado). Se a troca falhar, vale o comportamento aprovado: última leitura válida + "a atualização falhou".
+  const trocando = painel.atualizando && !!painel.dados && painel.dados.resumo?.periodo?.id !== periodo;
+  const resumo0 = vistaDe('resumo');
+  const resumo = trocando ? ({ ...resumo0, dados: null, erro: null, carregando: true } as typeof resumo0) : resumo0;
+  const prioridades = vistaDe('prioridades'), agenda = vistaDe('agenda'), fontes = vistaDe('fontes');
   const topo = useRef<HTMLDivElement>(null);
   // Retorno do mockup (P10, 2ª rodada): NÃO rolar ao montar — o scrollIntoView alinhava a página ao topo da JANELA, por baixo da barra
   // fixa do shell (título "Geral" e períodos escondidos em 1440). Ao trocar de vista (lista ↔ geral), o contêiner que rola volta ao topo.
