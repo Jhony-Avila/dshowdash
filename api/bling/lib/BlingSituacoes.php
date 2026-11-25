@@ -41,6 +41,8 @@ final class BlingSituacoes
         'rejeitada'   => ['rotulo' => 'Rejeitada',   'cor' => 'erro',    'ordem' => 90],
         'cancelada'   => ['rotulo' => 'Cancelada',   'cor' => 'neutro',  'ordem' => 91],
         'inutilizada' => ['rotulo' => 'Inutilizada', 'cor' => 'neutro',  'ordem' => 92],
+        // ciclo 116 (Jhony): código do Bling sem sentido documentado (7 Registrada, 11 Bloqueada, ou novo) — contada à parte, nunca no faturamento
+        'nao_mapeada' => ['rotulo' => 'Situação não mapeada', 'cor' => 'aviso', 'ordem' => 80],
     ];
 
     /** Situacoes de titulo financeiro (§32, §33). */

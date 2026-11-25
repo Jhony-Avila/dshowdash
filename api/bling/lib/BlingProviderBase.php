@@ -372,7 +372,8 @@ abstract class BlingProviderBase
     public function evolucao(array $f): array
     {
         $pedidosPeriodo = $this->pedidosValidos($this->noPeriodo($this->colecao('pedidos'), 'data', $f));
-        $notasPeriodo   = $this->noPeriodo($this->colecao('notas'), 'emissao', $f);
+        // ciclo 116: nota com situação não mapeada não conta como "emitida" (fica à parte, em Situações fiscais)
+        $notasPeriodo   = array_values(array_filter($this->noPeriodo($this->colecao('notas'), 'emissao', $f), static fn($n) => $n['situacao'] !== 'nao_mapeada'));
         $comprasPeriodo = $this->noPeriodo($this->colecao('compras'), 'emissao', $f);
         $recPeriodo     = $this->noPeriodo($this->colecao('receber'), 'vencimento', $f);
         $pagPeriodo     = $this->noPeriodo($this->colecao('pagar'), 'vencimento', $f);

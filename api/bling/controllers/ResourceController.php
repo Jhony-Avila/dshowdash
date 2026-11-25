@@ -1441,6 +1441,7 @@ final class ResourceController
                 'erro_codigo'   => $n['erro']['codigo'] ?? null,
                 'erro_mensagem' => $n['erro']['mensagem'] ?? null,
                 'tentativas'=> $n['tentativas'],
+                'situacao_codigo' => $n['situacao_codigo'] ?? null,   // Codex 115B (aditivo): código original do Bling (ex.: 7, 11) — sem coluna nova na tabela
             ];
         }
 

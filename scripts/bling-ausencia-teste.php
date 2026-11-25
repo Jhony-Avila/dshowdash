@@ -643,9 +643,65 @@ try {
     $lidas = ['731005' => $sitLida('731005'), '731004' => $sitLida('731004'), '731002' => $sitLida('731002'), '731099' => $sitLida('731099'), '731098' => $sitLida('731098')];
     ok('DECISIVO: gravadas com o mapa antigo aparecem certas na leitura — 5 autorizada (gravada "cancelada"), 4 rejeitada (gravada "autorizada"), 2 cancelada',
         $lidas['731005'] === 'autorizada' && $lidas['731004'] === 'rejeitada' && $lidas['731002'] === 'cancelada', json_encode($lidas));
-    ok('código não numérico ou ausente: vale a situação gravada (nada inventado)', $lidas['731099'] === 'autorizada' && $lidas['731098'] === 'pendente', json_encode($lidas));
+    ok('código de TEXTO conhecido passa pelo mapa ("autorizada"); código ausente: vale a situação gravada (nada inventado)', $lidas['731099'] === 'autorizada' && $lidas['731098'] === 'pendente', json_encode($lidas));
     ok('nada reescrito no banco (só a leitura muda)', $tit('bling_invoices', '731005', 'situacao') === 'cancelada' && $tit('bling_invoices', '731004', 'situacao') === 'autorizada');
-    $pdo->exec("DELETE FROM bling_invoices WHERE bling_id IN ('730005','730004','731005','731004','731002','731099','731098')");
+    // ciclo 116 (Jhony): 7 Registrada / 11 Bloqueada / código desconhecido = "situação não mapeada" — à parte, visível, nunca autorizada/cancelada nem faturamento
+    $hojeN = gmdate('Y-m-d');
+    $sfAntes = $res('situacoesFiscais');
+    $autAntes = (int) (array_values(array_filter($sfAntes['linhas'], static fn($l) => $l['situacao'] === 'autorizada'))[0]['quantidade'] ?? 0);
+    $somaSerie = static function (array $ev): float { $sr = array_values(array_filter($ev['series'] ?? [], static fn($x) => $x['id'] === 'notas'))[0]['pontos'] ?? [];
+        return (float) array_sum(array_map(static fn($pt) => (float) ($pt['valor'] ?? 0), $sr)); };
+    $notasAntes = $somaSerie($real()->evolucao($F));
+    foreach ([['732007', 'pendente', '7'], ['732011', 'pendente', '11'], ['732099', 'pendente', '99'], ['732005', 'autorizada', '5']] as [$b, $sv, $c]) {
+        $insN->execute([$conta, $b, $b, $hojeN, $sv, $c, 'saida']);
+    }
+    $nm = ['7' => $sitLida('732007'), '11' => $sitLida('732011'), '99' => $sitLida('732099')];
+    ok('ciclo 116: 7, 11 e código desconhecido (99) → "nao_mapeada" (antes: "pendente"), com rótulo próprio visível',
+        $nm === ['7' => 'nao_mapeada', '11' => 'nao_mapeada', '99' => 'nao_mapeada'] && BlingSituacoes::descrever('nota', 'nao_mapeada')['rotulo'] === 'Situação não mapeada', json_encode($nm));
+    $sf = $res('situacoesFiscais');
+    $linhaSf = static fn(string $k) => array_values(array_filter($sf['linhas'], static fn($l) => $l['situacao'] === $k))[0] ?? null;
+    ok('Situações fiscais: linha PRÓPRIA "Situação não mapeada" com as 3 (contadas à parte); autorizadas sobem só 1 (a 732005)', ($linhaSf('nao_mapeada')['quantidade'] ?? null) === 3
+        && ($linhaSf('autorizada')['quantidade'] ?? null) === $autAntes + 1, json_encode([$linhaSf('nao_mapeada'), $linhaSf('autorizada'), $autAntes]));
+    $evN = $real()->evolucao($F);
+    $serieN = array_values(array_filter($evN['series'] ?? [], static fn($x) => $x['id'] === 'notas'))[0]['pontos'] ?? [];
+    $fatN = array_values(array_filter($evN['series'] ?? [], static fn($x) => $x['id'] === 'faturamento'))[0]['pontos'] ?? [];
+    $somaN = array_sum(array_map(static fn($pt) => (float) ($pt['valor'] ?? 0), $serieN));
+    $pdo->exec("DELETE FROM bling_invoices WHERE bling_id IN ('732007','732011','732099')");
+    $evN2 = $real()->evolucao($F);
+    $fatN2 = array_values(array_filter($evN2['series'] ?? [], static fn($x) => $x['id'] === 'faturamento'))[0]['pontos'] ?? [];
+    ok('"Notas emitidas" sobe só 1 (a autorizada), não conta as 3 não mapeadas; o FATURAMENTO não muda com elas', $somaN === $notasAntes + 1 && $fatN === $fatN2,
+        json_encode([$notasAntes, $somaN]));
+    // Codex 115B (P10.1, BlingVersionAdapter:67-79/127-129): estado EXPLÍCITO "situação não mapeada" — código original preservado, nunca contado como
+    // pendente, e a consulta não regrava nota antiga. Casos pedidos: 4, 5, 7, 11 e desconhecidos (99 numérico, "travada" texto). Gravadas com o mapa ANTIGO.
+    $pend = static fn(array $sfx) => (int) (array_values(array_filter($sfx['linhas'], static fn($l) => $l['situacao'] === 'pendente'))[0]['quantidade'] ?? 0);
+    $pendFaceta = static fn(array $rx) => (int) (array_values(array_filter($rx['facetas']['situacao'] ?? [], static fn($x) => ($x['valor'] ?? $x['id'] ?? null) === 'pendente'))[0]['quantidade'] ?? 0);
+    $pendAntes = $pend($res('situacoesFiscais')); $pendFacetaAntes = $pendFaceta($res('notas'));
+    $casos = ['733004' => ['autorizada', '4'], '733005' => ['cancelada', '5'], '733007' => ['pendente', '7'], '733011' => ['pendente', '11'],
+              '733099' => ['pendente', '99'], '733098' => ['pendente', 'travada']];
+    foreach ($casos as $b => [$sv, $c]) { $insN->execute([$conta, (string) $b, (string) $b, $hojeN, $sv, $c, 'saida']); }
+    $pdo->exec("UPDATE bling_invoices SET atualizado_em = '2026-11-01 00:00:00' WHERE bling_id IN ('" . implode("','", array_keys($casos)) . "')");
+    $lidasC = []; $codC = [];
+    foreach ($real()->colecao('notas') as $x) { $bx = (string) v($pdo, 'SELECT bling_id FROM bling_invoices WHERE id = ?', [$x['id']]);
+        if (isset($casos[$bx])) { $lidasC[$bx] = $x['situacao']; $codC[$bx] = $x['situacao_codigo'] ?? '(sem campo)'; } }
+    ksort($lidasC); ksort($codC);
+    ok('Codex 115B: 4 → rejeitada, 5 → autorizada, 7 / 11 / 99 / "travada" → nao_mapeada (nenhum cai em "pendente")', $lidasC === ['733004' => 'rejeitada',
+        '733005' => 'autorizada', '733007' => 'nao_mapeada', '733011' => 'nao_mapeada', '733098' => 'nao_mapeada', '733099' => 'nao_mapeada'], json_encode($lidasC));
+    ok('Codex 115B: código ORIGINAL preservado e exposto (situacao_codigo) — 4, 5, 7, 11, 99, "travada"', $codC === ['733004' => '4', '733005' => '5',
+        '733007' => '7', '733011' => '11', '733098' => 'travada', '733099' => '99'], json_encode($codC));
+    $rN = $res('notas'); $sfC = $res('situacoesFiscais');
+    $linhaCod = []; foreach ($rN['linhas'] as $l) { if (in_array($l['numero'], ['733007', '733011', '733099', '733098'], true)) { $linhaCod[$l['numero']] = [$l['situacao'], $l['situacao_codigo'] ?? '(sem)']; } }
+    ksort($linhaCod);
+    ok('Codex 115B: na lista de Notas Fiscais as 4 não mapeadas saem como nao_mapeada com o código original', $linhaCod === ['733007' => ['nao_mapeada', '7'],
+        '733011' => ['nao_mapeada', '11'], '733098' => ['nao_mapeada', 'travada'], '733099' => ['nao_mapeada', '99']], json_encode($linhaCod));
+    ok('Codex 115B: NÃO contadas como pendentes — "pendente" igual antes e depois (Situações fiscais e faceta da lista), apesar de gravadas "pendente"',
+        $pend($sfC) === $pendAntes && $pendFaceta($rN) === $pendFacetaAntes, json_encode([$pendAntes, $pend($sfC), $pendFacetaAntes, $pendFaceta($rN)]));
+    $real()->evolucao($F); $real()->kpis($F);
+    $gravC = []; foreach (array_keys($casos) as $b) { $b = (string) $b; $gravC[$b] = [$tit('bling_invoices', $b, 'situacao'), $tit('bling_invoices', $b, 'situacao_bling'), $tit('bling_invoices', $b, 'atualizado_em')]; }
+    $esperC = []; foreach ($casos as $b => [$sv, $c]) { $esperC[$b] = [$sv, $c, '2026-11-01 00:00:00']; }
+    ok('Codex 115B: a CONSULTA não regrava nota antiga — situação gravada, código cru e atualizado_em intactos depois de lista, situações, evolução e KPIs',
+        $gravC === $esperC, json_encode($gravC));
+    $pdo->exec("DELETE FROM bling_invoices WHERE bling_id IN ('" . implode("','", array_keys($casos)) . "')");
+    $pdo->exec("DELETE FROM bling_invoices WHERE bling_id IN ('730005','730004','731005','731004','731002','731099','731098','732005')");
 
     echo "== 5. o provedor de DEMONSTRAÇÃO (mock) não muda: números como antes\n";
     [$rc5, $d, $txt] = $endpoint('OverviewController', 'overview', [], 'mock');
