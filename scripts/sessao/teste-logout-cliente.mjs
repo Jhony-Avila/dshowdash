@@ -9,7 +9,8 @@ import path from 'node:path';
 const RAIZ = path.resolve(process.argv[2] || new URL('../..', import.meta.url).pathname);
 const { encerrarSessao } = await import(pathToFileURL(path.join(RAIZ, 'public/core/auth/logout-client.js')).href);
 let ok = 0, falhas = 0; const afirma = (n, c, x = '') => { if (c) { ok++; console.log('ok    ' + n); } else { falhas++; console.log('FALHA ' + n + (x ? ' · ' + x : '')); } };
-const resp = (status, corpo) => ({ ok: status >= 200 && status < 300, status, json: async () => corpo, text: async () => JSON.stringify(corpo) });
+// resposta falsa com o que uma Response real do PHP tem (ApiResponse manda Content-Type: application/json) — R7: o cliente exige o envelope JSON
+const resp = (status, corpo) => ({ ok: status >= 200 && status < 300, status, headers: { get: (h) => (/content-type/i.test(h) ? 'application/json; charset=utf-8' : null) }, json: async () => corpo, text: async () => JSON.stringify(corpo) });
 const CSRF_FALSO = 'teste-' + randomUUID();   // gerado na hora: nenhum valor de token fixo no código
 const CHECK_AUT = { ok: true, data: { authenticated: true, session: { csrf_token: CSRF_FALSO } } };
 function cenario(roteiro) { const pedidos = []; globalThis.fetch = async (url, op = {}) => { pedidos.push({ url, metodo: op.method || 'GET', csrf: (op.headers || {})['X-CSRF-Token'] }); return roteiro(url, op, pedidos); }; return pedidos; }
