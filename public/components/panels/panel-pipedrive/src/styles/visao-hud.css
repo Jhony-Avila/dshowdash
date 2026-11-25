@@ -109,7 +109,8 @@
 [data-pp-react-root] .hud-cta { background:var(--hud-sub); color:var(--hud-ink); border:1px solid var(--hud-stroke); padding:8px 13px; border-radius:8px; font-weight:500; font-size:11px; cursor:pointer; white-space:nowrap; }
 
 /* ── painel lateral (260 ms) ── */
-[data-pp-react-root] .hud-drawerbackdrop { position:fixed; inset:0; background:#01081478; z-index:60; animation:hud-fade .26s ease; }
+/* como o .pp-drawer-overlay do módulo: escopado ao painel (absolute), nunca por cima do cabeçalho do Dash */
+[data-pp-react-root] .hud-drawerbackdrop { position:absolute; inset:0; background:#01081478; z-index:50; animation:hud-fade .26s ease; }
 [data-pp-react-root] .hud-drawer { position:absolute; right:0; top:0; bottom:0; width:min(520px,100vw); background:var(--hud-panel); color:var(--hud-ink); border-left:1px solid var(--hud-stroke);
   box-shadow:-15px 0 45px #0003; padding:28px 27px; overflow-y:auto; animation:hud-entra .26s ease-out; }
 @keyframes hud-entra { from { transform:translateX(32px); opacity:0; } to { transform:none; opacity:1; } }
