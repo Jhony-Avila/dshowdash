@@ -1,7 +1,7 @@
 const objeto = (v) => !!v && typeof v === "object" && !Array.isArray(v);
 function lerCheckSessao(status, tipo, corpo) {
   if (status !== 200) return { estado: "desconhecido", motivo: `check ${status}` };
-  if (!/^application\/json\b/i.test(String(tipo ?? "").trim())) return { estado: "desconhecido", motivo: "check sem JSON" };
+  if (!/^application\/json\s*(;|$)/i.test(String(tipo ?? "").trim())) return { estado: "desconhecido", motivo: "check sem JSON" };
   let j;
   try {
     j = JSON.parse(corpo);

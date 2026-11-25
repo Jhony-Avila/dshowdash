@@ -22,7 +22,7 @@ const objeto = (v: unknown): v is Record<string, any> => !!v && typeof v === 'ob
 /** Lê a resposta do check.php pelo envelope EXATO. Só `encerrada` prova que a sessão acabou; `desconhecido` nunca vira saída nem entrada. */
 export function lerCheckSessao(status: number, tipo: string | null | undefined, corpo: string): LeituraCheck {
   if (status !== 200) return { estado: 'desconhecido', motivo: `check ${status}` };
-  if (!/^application\/json\b/i.test(String(tipo ?? '').trim())) return { estado: 'desconhecido', motivo: 'check sem JSON' };
+  if (!/^application\/json\s*(;|$)/i.test(String(tipo ?? '').trim())) return { estado: 'desconhecido', motivo: 'check sem JSON' };
   let j: unknown;
   try { j = JSON.parse(corpo); } catch { return { estado: 'desconhecido', motivo: 'check com JSON inválido' }; }
   if (!objeto(j) || j.ok !== true || !('error' in j) || j.error !== null || !objeto(j.data)) return { estado: 'desconhecido', motivo: 'check sem o envelope de sucesso' };
