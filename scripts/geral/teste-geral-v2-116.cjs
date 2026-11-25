@@ -49,6 +49,11 @@ const massa = JSON.parse(fs.readFileSync(RESP)).data; const r = massa.resumo;
     const graf = norm(await pg.textContent('[data-gv2-bloco="grafico"]')); const grafAria = await pg.$eval('[data-gv2-bloco="grafico"] svg', (x) => x.getAttribute('aria-label')).catch(() => '');
     afirma(`P0 1 · Pedidos/OS: número = QUANTIDADE (${r.pedidos_bling.quantidade}), sem "R$" no cartão`, porId.pedidos?.valor === String(r.pedidos_bling.quantidade) && !/R\$/.test(porId.pedidos?.texto || ''), porId.pedidos);
     afirma('P0 1 · gráfico Pedidos/OS sem "R$" (texto, eixo, dica e rótulo acessível)', !/R\$/.test(graf) && !/R\$/.test(grafAria || '') && /Pedidos \/ OS no período/.test(graf), graf.slice(0, 200));
+    // P2 do parecer do mockup (116): eixo em "N pedidos/OS" ("1 pedido/OS"), nunca "N OS"; rótulos inteiros dentro do gráfico
+    const eixo = await pg.$$eval('[data-gv2-bloco="grafico"] [data-gv2-eixo-y]', (xs) => { const svg = xs[0]?.closest('svg')?.getBoundingClientRect();
+      return xs.map((x) => ({ t: x.textContent, dentro: !!svg && x.getBoundingClientRect().left >= svg.left - 0.5 })); }).catch(() => []);
+    const rotuloEixoOk = (t) => t === '0' || t === '1 pedido/OS' || /^[\d.]+ pedidos\/OS$/.test(t) && !/^1 pedidos/.test(t);
+    afirma('P2 · eixo do gráfico: "1 pedido/OS" / "N pedidos/OS" (nunca "N OS"), rótulos inteiros dentro do gráfico', eixo.length === 5 && eixo.every((e) => rotuloEixoOk(e.t) && e.dentro), eixo);
     const somaDias = (r.pedidos_bling.por_dia || []).reduce((s, d) => s + (d.quantidade ?? 0), 0);
     const barras = await pg.$$eval('[data-gv2-bloco="grafico"] [data-gv2-dia]', (xs) => xs.length);
     afirma(`gráfico em CONTAGEM: ${barras} dias, "Total: ${r.pedidos_bling.quantidade} pedidos/OS · soma igual ao cartão acima" (soma dos dias = ${somaDias})`,
@@ -59,7 +64,7 @@ const massa = JSON.parse(fs.readFileSync(RESP)).data; const r = massa.resumo;
     afirma(`Negócios ganhos: número = QUANTIDADE (${r.negocios_ganhos.quantidade}), sem R$; "Fechados no período"; valor faltando não marca parcial`,
       porId.ganhos?.valor === String(r.negocios_ganhos.quantidade) && !/R\$/.test(porId.ganhos?.valor || '') && /Fechados no período/.test(porId.ganhos?.texto || '') && porId.ganhos?.estado === 'ok', porId.ganhos);
     // Funil = R$ potencial, fotografia (P0 5)
-    afirma('P0 5 · Funil aberto agora: R$ potencial + "Fotografia de …" (texto neutro) + dica "não filtra pelo período"', /^R\$/.test(porId.funil?.valor || '') && /Fotografia de/.test(porId.funil?.texto || '') && /não filtra pelo período/.test(porId.funil?.dica || ''), porId.funil);
+    afirma('P0 5 · Funil aberto agora: R$ potencial + "Fotografia de …" (texto neutro) + dica "não filtra pelo período"', /^R\$/.test(porId.funil?.valor || '') && /Fotografia de (hoje às|\d\d\/\d\d às) \d\d:\d\d/.test(porId.funil?.texto || '') && !/Fotografia de às/.test(porId.funil?.texto || '') && /não filtra pelo período/.test(porId.funil?.dica || ''), porId.funil);
     // P0 2/3a · Recebido = "— · Aguardando conexão", Precifica, nunca número, nunca R$ 0, nunca Asaas
     afirma('P0 2 · Recebido no período: "—" + "Aguardando conexão" + "Precifica · recebido"; nunca número, "R$ 0" ou "Asaas"', porId.recebido?.valor === '—' && porId.recebido?.estado === 'aguardando'
       && /Aguardando conexão/.test(porId.recebido?.texto || '') && /Precifica · recebido/.test(porId.recebido?.texto || '') && !/\d/.test(porId.recebido?.valor || '') && !/Asaas/.test(porId.recebido?.texto || ''), porId.recebido);

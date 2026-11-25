@@ -323,7 +323,7 @@ function BlocoResultado({ b, fl }: { b: ReturnType<typeof useBloco<Resumo>>; fl:
           rodape="Pipedrive · contagem" link={{ rotulo: 'Ver ganhos', rota: '#/panel-pipedrive' }} dica="Quantidade de negócios ganhos no período. Não é receita." />
         <CartaoNumero data="funil" marcador="Comercial · Pipedrive" titulo="Funil aberto agora" icone={<Layers size={18} />} estado={est(eu)} carregando={car || !!eu?.conferindo}
           valor={moeda(eu, f?.valor)} problema={porBloco(f)}
-          linha={f && eu && linhaEstado(eu, <>{plural(f.quantidade, 'negócio aberto', 'negócios abertos')}{foto && <span className="gv2-num-sub" data-gv2-fotografia>Fotografia de {fmtQuando(foto)}</span>}</>, f.valor)}
+          linha={f && eu && linhaEstado(eu, <>{plural(f.quantidade, 'negócio aberto', 'negócios abertos')}{foto && <span className="gv2-num-sub" data-gv2-fotografia>Fotografia {/^às /.test(fmtQuando(foto)) ? `de hoje ${fmtQuando(foto)}` : `de ${fmtQuando(foto)}`}</span>}</>, f.valor)}
           rodape="Pipedrive · valor potencial" link={{ rotulo: 'Abrir funil', rota: '#/panel-pipedrive' }} dica="Soma dos valores informados nos negócios abertos agora. Fotografia atual: não filtra pelo período." />
         <CartaoNumero data="pedidos" marcador="Operação · Bling" titulo="Pedidos / OS lançados" icone={<Package size={18} />} estado={est(ep)} carregando={car || !!ep?.conferindo}
           valor={qtd(ep, p?.quantidade)} problema={porBloco(p)} dica={`Bling principal${p?.conta ? ` (conta ${p.conta})` : ''} · ${p?.universo ?? 'pedidos de venda lançados no período'}. Não é faturamento nem recebimento.`}
@@ -353,7 +353,7 @@ function Barras({ p }: { p: PedidosBling }) {
       {W > 0 && (
         <svg className="gv2-barras" width={W} height={H + B} viewBox={`0 0 ${W} ${H + B}`} role="img" aria-label={`Pedidos e OS por dia: ${dias.map((d) => `${fmtDiaMes(d.dia)} ${d.quantidade === null ? 'sem dado' : fmtN(d.quantidade)}`).join('; ')}`}>
           {[0, 1, 2, 3, 4].map((k) => { const y = H - (k * passo / topo) * (H - T); return (
-            <g key={k}><line x1={E} x2={W} y1={y} y2={y} className="gv2-grade" /><text x={E - 10} y={y + 4} textAnchor="end" className="gv2-eixo" data-gv2-eixo-y>{k === 0 ? '0' : `${fmtN(k * passo)} pedidos/OS`}</text></g>); })}
+            <g key={k}><line x1={E} x2={W} y1={y} y2={y} className="gv2-grade" /><text x={E - 10} y={y + 4} textAnchor="end" className="gv2-eixo" data-gv2-eixo-y>{k === 0 ? '0' : `${fmtN(k * passo)} ${k * passo === 1 ? 'pedido/OS' : 'pedidos/OS'}`}</text></g>); })}
           {dias.map((d, i) => {
             const q = d.quantidade; const h = q === null ? 0 : Math.max(q > 0 ? 3 : 0, (q / topo) * (H - T)); const w = Math.min(84, larg * 0.6); const x = E + i * larg + (larg - w) / 2;
             return (
