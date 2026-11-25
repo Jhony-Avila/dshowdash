@@ -1,0 +1,99 @@
+/* CONFERÊNCIA V2 (ESQUERDA, 23/11) — filas no padrão da casa (briefing 0.2): linha de 36 px numa linha só com reticências, pesos 400/500,
+   pílulas com texto e sem bolinha, ações em uma linha com 254 px reservados, tokens do Dash. Larguras de 1440 (Parte B):
+   Sugestões 36·28·56·254·160·100·112·96·254 · Fora da ficha 28·56·300·210·160·96·246 · Obrigatórios 56·576·280·184 · Sem kit 28·56·254·158·116·230·254. */
+[data-bl-root] .cf-barra { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; padding: 8px 0; }
+[data-bl-root] .cf-busca { display: flex; align-items: center; gap: 6px; flex: 0 1 280px; min-width: 180px; height: 32px; padding: 0 10px;
+  border: 1px solid var(--bl-borda, #d8dde3); border-radius: 6px; background: var(--bl-superficie, #fff); color: var(--bl-texto-2, #5b6470); }
+[data-bl-root] .cf-busca input { border: 0; outline: 0; background: transparent; flex: 1; min-width: 0; font: inherit; color: var(--bl-texto, #1f2328); }
+[data-bl-root] .cf-busca:focus-within { border-color: var(--bl-destaque, #1a7f64); box-shadow: 0 0 0 2px color-mix(in srgb, var(--bl-destaque, #1a7f64) 25%, transparent); }
+[data-bl-root] .cf-contagem { color: var(--bl-texto-2, #5b6470); font-size: 13px; white-space: nowrap; }
+[data-bl-root] .cf-nota { margin: 0 0 8px; padding: 8px 12px; border: 1px solid var(--bl-borda, #d8dde3); border-radius: 6px; background: var(--bl-superficie-2, #f6f8fa); font-size: 13px; color: var(--bl-texto-2, #5b6470); }
+[data-bl-root] .cf-fraco { color: var(--bl-texto-2, #5b6470); }
+[data-bl-root] .cf-1l { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+
+[data-bl-root] .cf-selecao, [data-bl-root] .cf-confirmar, [data-bl-root] .cf-lote {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 8px; padding: 8px 12px; border-radius: 6px; font-size: 13px;
+  border: 1px solid color-mix(in srgb, var(--bl-destaque-info, #2f6feb) 35%, transparent); background: color-mix(in srgb, var(--bl-destaque-info, #2f6feb) 6%, var(--bl-superficie, #fff)); }
+[data-bl-root] .cf-confirmar { border-color: var(--bl-borda, #d8dde3); background: var(--bl-superficie, #fff); }
+[data-bl-root] .cf-confirmar p, [data-bl-root] .cf-lote p { margin: 2px 0 0; }
+[data-bl-root] .cf-selecao__acoes, [data-bl-root] .cf-confirmar__acoes, [data-bl-root] .cf-lote__acoes { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+[data-bl-root] .cf-lote--desconhecido, [data-bl-root] .cf-lote--parado, [data-bl-root] .cf-lote--nao_encontrada { border-color: color-mix(in srgb, var(--bl-aviso, #bf8700) 45%, transparent); background: color-mix(in srgb, var(--bl-aviso, #bf8700) 8%, var(--bl-superficie, #fff)); }
+[data-bl-root] .cf-lote--recusado { border-color: color-mix(in srgb, var(--bl-erro, #cf222e) 40%, transparent); background: color-mix(in srgb, var(--bl-erro, #cf222e) 6%, var(--bl-superficie, #fff)); }
+[data-bl-root] .cf-motivo { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+[data-bl-root] .cf-motivo input { height: 30px; min-width: 320px; padding: 0 8px; border: 1px solid var(--bl-borda, #d8dde3); border-radius: 6px; font: inherit; }
+
+/* grade */
+[data-bl-root] .cf-grade { font-size: 13px; }
+[data-bl-root] .cf-grade .at-td__th { height: 36px; font-size: 13px; font-weight: 500; white-space: nowrap; padding: 0 8px; }
+[data-bl-root] .cf-grade tr.at-td__linha > td { height: 36px; padding: 0 8px; white-space: nowrap; vertical-align: middle; font-weight: 400; overflow: hidden; text-overflow: ellipsis; }
+[data-bl-root] .cf-grade tr.at-td__linha > td * { font-weight: 400; }
+[data-bl-root] .cf-grade td.cf-col-sel { width: 36px; min-width: 36px; }
+[data-bl-root] .cf-grade td.cf-col-exp { width: 28px; min-width: 28px; padding: 0; }
+[data-bl-root] .cf-grade td.cf-col-id { width: 56px; min-width: 56px; }
+[data-bl-root] .cf-grade td.cf-col-prod { min-width: 254px; max-width: 0; }
+[data-bl-root] .cf-grade td.cf-col-atr { width: 160px; min-width: 160px; max-width: 160px; }
+[data-bl-root] .cf-grade td.cf-col-atual { width: 100px; min-width: 100px; max-width: 140px; }
+[data-bl-root] .cf-grade td.cf-col-sug { width: 112px; min-width: 112px; }
+[data-bl-root] .cf-grade td.cf-col-evid { width: 300px; min-width: 240px; max-width: 360px; }
+[data-bl-root] .cf-grade td.cf-col-sit { width: 96px; min-width: 96px; }
+[data-bl-root] .cf-grade td.cf-col-acoes { width: 254px; min-width: 254px; }
+[data-bl-root] .cf-expandir { width: 24px; height: 24px; border: 0; background: transparent; color: var(--bl-texto-2, #5b6470); cursor: pointer; }
+[data-bl-root] .cf-acoes { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+[data-bl-root] .cf-btn { height: 28px; min-width: 72px; padding: 0 10px; font-size: 13px; }
+[data-bl-root] .cf-btn--conferir { min-width: 140px; border-color: color-mix(in srgb, var(--bl-aviso, #bf8700) 55%, transparent); background: color-mix(in srgb, var(--bl-aviso, #bf8700) 12%, var(--bl-superficie, #fff)); }
+[data-bl-root] .cf-btn--largo { min-width: 140px; }
+[data-bl-root] .cf-feito { display: inline-block; min-width: 140px; }
+[data-bl-root] .cf-linha--concluida > td { background: color-mix(in srgb, var(--bl-sucesso, #1a7f37) 5%, transparent); }
+[data-bl-root] .cf-linha--conferir > td { background: color-mix(in srgb, var(--bl-aviso, #bf8700) 6%, transparent); }
+
+/* pílulas: texto, sem bolinha; cor nunca é a única indicação (o texto diz a situação) */
+[data-bl-root] .cf-pilula { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; line-height: 18px; white-space: nowrap; border: 1px solid transparent; }
+[data-bl-root] .cf-pilula--pendente { background: color-mix(in srgb, var(--bl-aviso, #bf8700) 14%, transparent); color: var(--bl-texto, #1f2328); }
+[data-bl-root] .cf-pilula--aviso { background: color-mix(in srgb, var(--bl-aviso, #bf8700) 22%, transparent); border-color: color-mix(in srgb, var(--bl-aviso, #bf8700) 40%, transparent); color: var(--bl-texto, #1f2328); }
+[data-bl-root] .cf-pilula--ativa { background: color-mix(in srgb, var(--bl-sucesso, #1a7f37) 14%, transparent); color: var(--bl-texto, #1f2328); }
+[data-bl-root] .cf-pilula--erro { background: color-mix(in srgb, var(--bl-erro, #cf222e) 12%, transparent); color: var(--bl-texto, #1f2328); }
+[data-bl-root] .cf-pilula--neutro { background: var(--bl-superficie-2, #eef1f4); color: var(--bl-texto-2, #5b6470); }
+
+/* expansão: rola com o corpo */
+[data-bl-root] .cf-evid { padding: 8px 12px 10px 76px; border-left: 3px solid var(--bl-borda, #d8dde3); font-size: 13px; }
+[data-bl-root] .cf-evid p { margin: 4px 0 0; white-space: normal; }
+[data-bl-root] .cf-evid__cab { display: flex; justify-content: space-between; font-size: 12px; }
+[data-bl-root] .cf-evid__texto { color: var(--bl-texto, #1f2328); }
+[data-bl-root] .cf-aviso { padding: 6px 10px; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--bl-aviso, #bf8700) 45%, transparent); background: color-mix(in srgb, var(--bl-aviso, #bf8700) 10%, var(--bl-superficie, #fff)); }
+
+[data-bl-root] .cf-rodape { display: flex; align-items: center; gap: 16px; justify-content: space-between; padding: 10px 4px; font-size: 13px; }
+[data-bl-root] .cf-rodape__pag { display: inline-flex; align-items: center; gap: 10px; }
+[data-bl-root] .cf-lendo { padding: 24px; color: var(--bl-texto-2, #5b6470); }
+
+/* Parte B — larguras de 1440 (briefing): Fora da ficha 28·56·300·210·160·96·246 · Obrigatórios 56·576·280·184 · Sem kit 28·56·254·158·116·230·254 */
+[data-bl-root] .cf-grade--fora_da_ficha td.cf-col-prod { min-width: 300px; }
+[data-bl-root] .cf-grade td.cf-col-atr2 { width: 210px; min-width: 210px; max-width: 210px; }
+[data-bl-root] .cf-grade td.cf-col-valor { width: 160px; min-width: 160px; max-width: 220px; }
+[data-bl-root] .cf-grade td.cf-col-acoes2 { width: 246px; min-width: 246px; }
+[data-bl-root] .cf-grade--obrigatorios_vazios td.cf-col-prod { min-width: 576px; }
+[data-bl-root] .cf-grade td.cf-col-obr { width: 280px; min-width: 280px; max-width: 280px; }
+[data-bl-root] .cf-grade td.cf-col-acao1 { width: 184px; min-width: 184px; }
+[data-bl-root] .cf-grade td.cf-col-sub { width: 158px; min-width: 158px; max-width: 158px; }
+[data-bl-root] .cf-grade td.cf-col-leg { width: 116px; min-width: 116px; max-width: 116px; }
+[data-bl-root] .cf-grade td.cf-col-kit { width: 230px; min-width: 230px; }
+[data-bl-root] .cf-kit { width: 214px; height: 28px; }
+[data-bl-root] .cf-evid__titulo { display: block; font-weight: 500; }
+/* as larguras do briefing INCLUEM o espaçamento: em 1440 a tabela cabe na área e a moldura não vira contêiner de rolagem horizontal
+   (o que soltaria o cabeçalho travado das colunas — mesmo caso do P2 dos Kits) */
+[data-bl-root] .cf-grade td, [data-bl-root] .cf-grade th { box-sizing: border-box; }
+[data-bl-root] .cf-grade td.cf-col-prod { min-width: 180px; }
+[data-bl-root] .cf-grade--fora_da_ficha td.cf-col-prod { min-width: 300px; }
+[data-bl-root] .cf-grade--obrigatorios_vazios td.cf-col-prod { min-width: 576px; }
+
+/* reticências também em botão/link (nome do produto): o bloco ocupa a célula e encolhe */
+[data-bl-root] .cf-grade .cf-1l { width: 100%; min-width: 0; }
+[data-bl-root] .cf-grade td.cf-col-prod .cf-1l { text-align: left; }
+[data-bl-root] .cf-grade td.cf-col-prod > .cf-1l, [data-bl-root] .cf-grade td.cf-col-prod button.cf-1l { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-bl-root] .cf-pilula[tabindex]:focus-visible { outline: 2px solid var(--bl-destaque, #1a7f64); outline-offset: 1px; }
+
+/* R2 (Jhony, 23/11): nome do produto na cor de link do módulo, como na prancha */
+[data-bl-root] .cf-grade .at-link-produto { color: var(--bl-info); }
+[data-bl-root] .cf-grade .at-link-produto:hover { text-decoration: underline; }
+/* R7: ação principal da linha com ícone e contorno de destaque (Vincular) */
+[data-bl-root] .cf-btn--acao { display: inline-flex; align-items: center; gap: 6px; border-color: color-mix(in srgb, var(--bl-destaque, #1a7f64) 55%, transparent); color: var(--bl-destaque, #1a7f64); }
+[data-bl-root] .cf-btn--acao svg { width: 14px; height: 14px; }

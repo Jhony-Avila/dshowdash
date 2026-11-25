@@ -32,7 +32,7 @@ foreach ($arqs as $arq) {
     foreach (preg_split('/;\s*\n/', $sql) ?: [] as $st) {
         $st = trim($st);
         if ($st === '') continue;
-        $permitido = preg_match('/^(CREATE TABLE IF NOT EXISTS|ALTER TABLE|INSERT (IGNORE )?INTO) `eq_[a-z_]+`/i', $st) === 1
+        $permitido = preg_match('/^(CREATE TABLE IF NOT EXISTS|ALTER TABLE|INSERT (IGNORE )?INTO|UPDATE) `eq_[a-z_]+`/i', $st) === 1   // UPDATE: preenchimento da 012
             && preg_match('/`\s*\.\s*`|\bUSE\b|\bDROP\b|\bDELETE\b|\bTRUNCATE\b|\bGRANT\b|\bDATABASE\b/i', (string) preg_replace(["/ON (DELETE|UPDATE) RESTRICT/i", "/'(?:[^'\\\\]|\\\\.|'')*'/", '/"(?:[^"\\\\]|\\\\.)*"/'], '', $st)) === 0;   // ATRIBUTOS-WEB: FK "ON DELETE RESTRICT" e textos de COMMENT não contam (o original recusava a própria 001)
         if (!$permitido) { echo '[RECUSADO] repo-mysql: comando fora da lista em ' . basename($arq) . ': ' . substr((string) preg_replace('/\s+/', ' ', $st), 0, 80) . "\n"; exit(3); }
         $comandos[] = rtrim($st, ';');

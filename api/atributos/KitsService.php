@@ -24,6 +24,21 @@ interface ModuloRepositorio
     public function concluirPedidoMassa(string $chave, array $resultado): void;
 }
 
+/**
+ * P1 kit-prioridade · ação de REORDENAR (18/11, depois do foi-salvo): trava e reescrita da fila de precedência (eq_grupo.prioridade, 012).
+ * Interface SEPARADA (molde UnidadesComTrava): só o AtributosRepoPdo a implementa; o RepoMemoria dos testes não — a ação responde 503
+ * KIT_PRIORITY_UNAVAILABLE sem mutar. Chamar dentro de transacao().
+ */
+interface KitsPrioridade
+{
+    /** A coluna eq_grupo.prioridade (012) existe? */
+    public function temPrioridadeKit(): bool;
+    /** SELECT … FOR UPDATE de TODAS as linhas de eq_grupo (id, nome, ativo, prioridade) na ordem (nome, id) do MySQL, com `ordem_nome` = posição. */
+    public function travarFilaKits(): array;
+    /** UPDATE só da prioridade (versao e atualizado_em ficam como estão: nenhuma tela de kit ganha conflito por reordenar). @return bool mudou */
+    public function definirPrioridadeKit(int $grupoId, int $prioridade): bool;
+}
+
 final class KitsService
 {
     public const MAX_DESTAQUES = 4;            // A4
@@ -257,6 +272,86 @@ final class KitsService
             $this->repo->auditar($this->usuario, $ativo ? 'reativar' : 'desativar', 'kit', (string) $antes['id'], ['ativo' => (int) $antes['ativo']], ['ativo' => $ativo], $b['motivo'] ?? null);
             return ['kit' => $this->kit((int) $antes['id'])];
         });
+    }
+
+    /**
+     * P1 kit-prioridade · REORDENAR a fila de precedência (POST kit_prioridade; docs/atributos/PORTAO-012-KIT-PRIORIDADE.md §9).
+     * Corpo: {ordem: [ids de TODOS os kits ATIVOS na nova precedência], ordem_antes: [a ordem dos ativos que a tela viu], motivo?}.
+     * Forma escolhida = LISTA COMPLETA (não "mover X para N"): o pedido diz o resultado inteiro, é idempotente por natureza (reenviar não
+     * empurra de novo) e a tela confere o que vai gravar; "mover" dependeria da posição atual e repetido moveria duas vezes.
+     *  · 422 antes de mutar: lista malformada/vazia, id repetido, id que não existe em eq_grupo, ordem ≠ conjunto de ordem_antes (incompleta
+     *    ou com kit a mais). ordem_antes é obrigatória (sensível à ordem, molde DSHOW-045 do opcao_reordenar).
+     *  · sob trava de TODA a fila (FOR UPDATE em eq_grupo): ordem_antes ≠ ativos atuais na precedência atual → 409 CONFLICT com meta.atual
+     *    {ordem, kits} (só em conflito real); depois, kit inativo/desconhecido na ordem → 422.
+     *  · ordem = atual → sem_mudanca (nada gravado, nada auditado).
+     *  · Grava: a fila INTEIRA vira 1..N — os ativos ocupam, na nova ordem, as vagas que os ativos ocupavam; os INATIVOS ficam onde estavam
+     *    (posição relativa preservada; não entram na ficha). Kit com prioridade NULL é normalizado. Só a coluna prioridade muda (versao e
+     *    atualizado_em do kit não: nenhuma tela de kit ganha 409 por isso). Auditoria `reordenar_kits` (antes/depois) na mesma transação.
+     *  · Nenhum VALOR é tocado; a ficha efetiva muda só onde kits disputam atributo (quem é dono do item: posição, importância, unidade do kit).
+     * Resposta (lida DENTRO da transação que gravou): {ordem, kits: [{id, nome, ativo, prioridade}] na precedência, versao_prioridade}.
+     */
+    public function reordenarPrioridade(array $b): array
+    {
+        $this->exigir();
+        $repo = $this->repo;
+        if (!$repo instanceof KitsPrioridade || !$repo->temPrioridadeKit())
+            throw new AtributosErro('KIT_PRIORITY_UNAVAILABLE', 503, 'A precedência de kits ainda não está disponível neste banco (migração 012). Nada foi gravado.');
+        $ordem = self::idsDaOrdem($b['ordem'] ?? null, 'ordem');
+        $antes = self::idsDaOrdem($b['ordem_antes'] ?? null, 'ordem_antes');
+        $a1 = $ordem; $b1 = $antes; sort($a1); sort($b1);
+        if ($a1 !== $b1) throw new AtributosErro('VALIDATION_ERROR', 422, 'A nova ordem precisa ter exatamente os kits ativos da lista atual, cada um uma vez.', ['ordem']);
+        $motivo = isset($b['motivo']) && is_string($b['motivo']) && trim($b['motivo']) !== '' ? trim($b['motivo']) : null;
+        return $this->repo->transacao(function () use ($repo, $ordem, $antes, $motivo): array {
+            $fila = $repo->travarFilaKits();
+            usort($fila, [Aplicabilidade::class, 'compararKits']);
+            $porId = []; foreach ($fila as $g) $porId[(int) $g['id']] = $g;
+            $inexistentes = array_values(array_filter($ordem, static fn($id) => !isset($porId[$id])));
+            if ($inexistentes) throw new AtributosErro('VALIDATION_ERROR', 422, 'Kit inexistente na ordem: ' . implode(', ', $inexistentes) . '.', ['ordem']);
+            $ativos = array_values(array_map(static fn($g) => (int) $g['id'], array_filter($fila, static fn($g) => (int) $g['ativo'] === 1)));
+            if ($antes !== $ativos) {
+                $e = new AtributosErro('CONFLICT', 409, 'A lista de kits ou a precedência mudou desde que você abriu. Recarregue e tente de novo.');
+                $e->meta = ['atual' => ['ordem' => $ativos, 'kits' => self::filaPublica($fila)]];
+                throw $e;
+            }
+            // ordem_antes = ativos e conjunto(ordem) = conjunto(ordem_antes): a ordem cobre exatamente os ativos (sem inativo, sem faltar)
+            if ($ordem === $ativos) return ['ordem' => $ativos, 'kits' => self::filaPublica($fila), 'versao_prioridade' => self::versaoPrioridade($fila), 'sem_mudanca' => true];
+            $proximo = 0; $nova = [];
+            foreach ($fila as $g) $nova[] = (int) $g['ativo'] === 1 ? $porId[$ordem[$proximo++]] : $g;
+            $prioAntes = []; $prioDepois = [];
+            foreach ($fila as $g) $prioAntes[(string) $g['id']] = $g['prioridade'] === null ? null : (int) $g['prioridade'];
+            foreach ($nova as $i => $g) { $repo->definirPrioridadeKit((int) $g['id'], $i + 1); $prioDepois[(string) $g['id']] = $i + 1; }
+            $this->repo->auditar($this->usuario, 'reordenar_kits', 'kit_prioridade', 'fila', ['ordem' => $ativos, 'prioridade' => $prioAntes], ['ordem' => $ordem, 'prioridade' => $prioDepois], $motivo);
+            $depois = $repo->travarFilaKits();   // releitura NA MESMA transação (o recibo ecoa o que ficou gravado)
+            usort($depois, [Aplicabilidade::class, 'compararKits']);
+            $lido = array_values(array_map(static fn($g) => (int) $g['id'], array_filter($depois, static fn($g) => (int) $g['ativo'] === 1)));
+            if ($lido !== $ordem) throw new RuntimeException('kit_prioridade: releitura diverge da ordem gravada');   // defesa: desfaz tudo
+            return ['ordem' => $lido, 'kits' => self::filaPublica($depois), 'versao_prioridade' => self::versaoPrioridade($depois)];
+        });
+    }
+
+    /** Lista de ids positivos, não vazia, sem repetição (até 1000). */
+    private static function idsDaOrdem(mixed $v, string $campo): array
+    {
+        if (!is_array($v) || !array_is_list($v) || $v === [] || count($v) > 1000) throw new AtributosErro('VALIDATION_ERROR', 422, 'Ordem de kits inválida.', [$campo]);
+        $ids = [];
+        foreach ($v as $x) {
+            $i = is_int($x) ? $x : (is_string($x) && preg_match('/^[1-9][0-9]{0,9}$/', $x) ? (int) $x : 0);
+            if ($i <= 0) throw new AtributosErro('VALIDATION_ERROR', 422, 'Ordem de kits inválida.', [$campo]);
+            $ids[] = $i;
+        }
+        if (count(array_unique($ids)) !== count($ids)) throw new AtributosErro('VALIDATION_ERROR', 422, 'Kit repetido na ordem.', [$campo]);
+        return $ids;
+    }
+
+    private static function filaPublica(array $fila): array
+    {
+        return array_map(static fn($g) => ['id' => (int) $g['id'], 'nome' => (string) $g['nome'], 'ativo' => (int) $g['ativo'] === 1, 'prioridade' => $g['prioridade'] === null ? null : (int) $g['prioridade']], array_values($fila));
+    }
+
+    /** Versão da fila (sensível à ordem e às prioridades gravadas): sha256 curto de [id, prioridade, ativo] na precedência. */
+    public static function versaoPrioridade(array $fila): string
+    {
+        return substr(hash('sha256', json_encode(array_map(static fn($g) => [(int) $g['id'], $g['prioridade'] === null ? null : (int) $g['prioridade'], (int) $g['ativo']], array_values($fila)))), 0, 16);
     }
 
     /** Itens do kit: ordem, obrigatório, visível no app, destaque (até 4), importância, unidade do kit. Grava só o que mudou (ATR-M1). */
