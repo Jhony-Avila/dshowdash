@@ -14,6 +14,8 @@ declare(strict_types=1);
  * flag `ponte.agenda.escrita`; exige GCAL_OAUTH_STAGE=write).
  * Noite 2 (31/10/2026): analytics — LEITURA do Google Analytics (provedor do módulo: mock ou GA4 real) para o app; nível 50 nos relatórios
  * (Q-GA.2, o mesmo do Pipedrive) e 80 em status/propriedades/qualidade ("Status da integração"); flag `ponte.analytics.leitura` (ausente = OFF).
+ * 25/11/2026 noite (ESQUERDA): feed_alertas.listar — LEITURA dos alertas do Pipedrive e do Asaas no formato AlertOut para a Início do app
+ * (libs/FeedAlertasLib.php; nível 50, o do módulo Pipedrive; Asaas só com as travas do cartão); flag `ponte.feed_alertas.leitura` (ausente = OFF).
  */
 require_once __DIR__ . '/PonteErro.php';
 require_once __DIR__ . '/libs/AlertaLib.php';
@@ -21,6 +23,7 @@ require_once __DIR__ . '/libs/NotificacaoLib.php';
 require_once __DIR__ . '/libs/MetaLib.php';
 require_once __DIR__ . '/libs/AgendaLib.php';
 require_once __DIR__ . '/libs/AnalyticsLib.php';
+require_once __DIR__ . '/libs/FeedAlertasLib.php';
 
 const PV2_ALLOWLIST = [
     'alertas' => [
@@ -61,6 +64,9 @@ const PV2_ALLOWLIST = [
         'criar'        => ['tipo' => 'escrita', 'nivel' => 0, 'handler' => 'pv2h_agenda_criar'],
         'atualizar'    => ['tipo' => 'escrita', 'nivel' => 0, 'handler' => 'pv2h_agenda_atualizar'],
         'excluir'      => ['tipo' => 'escrita', 'nivel' => 0, 'handler' => 'pv2h_agenda_excluir'],
+    ],
+    'feed_alertas' => [   // 25/11 noite: feed de alertas da Início do app (Pipedrive + Asaas, formato AlertOut)
+        'listar'       => ['tipo' => 'leitura', 'nivel' => 50, 'handler' => 'pv2h_feed_alertas_listar'],
     ],
 ];
 
@@ -139,6 +145,9 @@ function pv2h_agenda_excluir(PDO $pdo, int $userId, array $payload): array
     $d = agenda_excluir($userId, $payload);
     return ['data' => $d, 'recurso' => ['evento', null], 'depois' => ['deleted' => 1, 'event_id' => $payload['event_id'] ?? null]];
 }
+
+// ── feed_alertas (leitura) ──────────────────────────────────────────
+function pv2h_feed_alertas_listar(PDO $pdo, int $userId, array $payload): array { return ['data' => feed_alertas_ler($pdo, $userId), 'recurso' => ['feed_alertas', 0]]; }
 
 // ── analytics (leitura) ──────────────────────────────────────────────
 function pv2h_analytics_visao_geral(PDO $pdo, int $userId, array $payload): array { return ['data' => analytics_ler('visao_geral', $payload), 'recurso' => ['analytics', 0]]; }
