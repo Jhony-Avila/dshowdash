@@ -543,6 +543,63 @@ try {
     ok('seletivo: concluída', $r14s['situacao'] === 'concluida', json_encode($r14s));
     $conferir('seletivo', $alvosS);
     ok('nenhuma loja/situação "1" vinda de booleano em lugar nenhum', n($pdo, "SELECT COUNT(*) FROM bling_sales_orders WHERE loja_bling_id = '1' OR situacao_bling_id = '1'") === 0);
+
+    echo "== 15. revisão da ACIMA_ESQUERDA (SEGURAR 25018fec): quebra de linha/espaço no início ou no FIM nunca passa — `$` do PHP aceitava \"205777\\n\"\n";
+    $ruins = ['lf-fim' => "205777\n", 'crlf-fim' => "205777\r\n", 'lf-inicio' => "\n205777", 'espaco-inicio' => ' 205777', 'espaco-fim' => '205777 '];
+    $variantes15 = $ruins + $bons;
+    // (a) normal: 900161..
+    $GLOBALS['PEDIDOS'] = pedidosFalsos(250, static fn(int $i) => 15);
+    $alvosN = []; $k = 0;
+    foreach ($variantes15 as $nome => $v) {
+        $i = 161 + $k++; $alvosN[$nome] = (string) (900000 + $i);
+        $GLOBALS['PEDIDOS'][$i - 1]['situacao'] = ['id' => $v, 'valor' => 0]; $GLOBALS['PEDIDOS'][$i - 1]['loja'] = ['id' => $v];
+        $GLOBALS['PEDIDOS'][$i - 1]['total'] = $GLOBALS['PEDIDOS'][$i - 1]['totalProdutos'] = 4000 + $i;
+    }
+    $preparar(array_values($alvosN));
+    $api->responder('pedidos/vendas', static fn($m, $url) => $paginaDe($GLOBALS['PEDIDOS'], $url));
+    $sync->sincronizar($conta, 'pedidos', 'carga_inicial', 't15-normal');
+    $conferir15 = static function (string $modo, array $alvos) use ($ruins, $bons, $sitDe, $lojaAntes): void {
+        foreach ($ruins as $nome => $_) {
+            ok("$modo, $nome: loja 205000 e situação 15 PRESERVADAS", $lojaAntes($alvos[$nome]) === '205000' && $sitDe($alvos[$nome]) === '15',
+                $alvos[$nome] . ': loja ' . json_encode($lojaAntes($alvos[$nome])) . ', situação ' . json_encode($sitDe($alvos[$nome])));
+        }
+        foreach ($bons as $nome => $v) {
+            ok("$modo, id válido ($nome): atualiza", $lojaAntes($alvos[$nome]) === (string) $v && $sitDe($alvos[$nome]) === (string) $v);
+        }
+    };
+    $conferir15('normal', $alvosN);
+    // (b) releitura geral: 900181..
+    $GLOBALS['PEDIDOS'] = pedidosFalsos(250, static fn(int $i) => 15);
+    $alvosG = []; $k = 0;
+    foreach ($variantes15 as $nome => $v) {
+        $i = 181 + $k++; $alvosG[$nome] = (string) (900000 + $i);
+        $GLOBALS['PEDIDOS'][$i - 1]['situacao'] = ['id' => $v, 'valor' => 0]; $GLOBALS['PEDIDOS'][$i - 1]['loja'] = ['id' => $v];
+    }
+    $preparar(array_values($alvosG));
+    $pdo->exec("DELETE FROM bling_sync_state WHERE account_id = $conta AND recurso = '" . BlingSyncService::RECURSO_RELEITURA . "'");
+    $r15 = $sync->releituraPedidos($conta, static fn() => false, static fn(int $ms) => null, 1500);
+    ok('geral: releitura concluída', $r15['situacao'] === 'concluida', json_encode($r15));
+    $conferir15('geral', $alvosG);
+    // (c) releitura de pedidos: 900201..
+    $alvosS = []; $k = 0;
+    foreach ($variantes15 as $nome => $v) {
+        $b = (string) (900201 + $k++); $alvosS[$nome] = $b;
+        $DET[$b] = new BlingResposta(200, ['data' => ['id' => (int) $b, 'situacao' => ['id' => $v, 'valor' => 0], 'loja' => ['id' => $v]]]);
+    }
+    $preparar(array_values($alvosS));
+    $r15s = $sync4->releituraPedidosIds($conta, array_values($alvosS), static fn() => false, static fn(int $ms) => null, 1500);
+    ok('seletivo: concluída', $r15s['situacao'] === 'concluida', json_encode($r15s));
+    $conferir15('seletivo', $alvosS);
+    ok('nenhuma loja/situação com quebra de linha ou espaço gravada', n($pdo, "SELECT COUNT(*) FROM bling_sales_orders WHERE loja_bling_id REGEXP '[[:space:]]' OR situacao_bling_id REGEXP '[[:space:]]'") === 0);
+    // varredura: nenhuma validação nova de valor externo termina em `$` (só as 2 exceções documentadas: chave da cifra e detecção de fuso)
+    $comDolar = [];
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($raiz . '/api/bling', FilesystemIterator::SKIP_DOTS)) as $arq) {
+        if (!str_ends_with((string) $arq, '.php')) { continue; }
+        foreach (file((string) $arq) as $nl => $l) { if (preg_match("/preg_match\\('[^']*\\$\\/[a-zA-Z]*'/", $l)) { $comDolar[] = basename((string) $arq) . ':' . ($nl + 1); } }
+    }
+    sort($comDolar);
+    ok('varredura: em api/bling só restam as 2 exceções com `$` final (BlingCrypto: chave da configuração; dataHoraUtc: detecção de fuso)',
+        count($comDolar) === 2 && str_starts_with($comDolar[0], 'BlingCrypto.php:') && str_starts_with($comDolar[1], 'BlingNormalizer.php:'), json_encode($comDolar));
 } catch (Throwable $e) {
     $falhas++; echo 'FALHA exceção: ', get_class($e), ': ', $e->getMessage(), ' @', basename($e->getFile()), ':', $e->getLine(), "\n";
 } finally {

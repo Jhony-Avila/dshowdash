@@ -593,7 +593,7 @@ final class BlingSyncService
         if ($this->repo->temColuna('bling_sales_orders', 'loja_bling_id')) {
             // revisão da ACIMA_ESQUERDA (achado 1, 24/11): a MESMA guarda do situacao_bling_id — loja.id ausente, 0 ou ilegível na resposta
             // NUNCA apaga a loja já conhecida (antes: o upsert gravava NULL ou "0" por cima do que a releitura preencheu com COALESCE)
-            $loja = ($canalBling !== null && preg_match('/^[1-9][0-9]{0,19}$/', (string) $canalBling)) ? (string) $canalBling : null;
+            $loja = ($canalBling !== null && preg_match('/^[1-9][0-9]{0,19}\z/', (string) $canalBling)) ? (string) $canalBling : null;
             if ($loja === null) {
                 $conhecida = $this->repo->consultar('SELECT loja_bling_id FROM bling_sales_orders WHERE account_id = ? AND bling_id = ?',
                     [$accountId, $d['bling_id']]);
@@ -1113,7 +1113,7 @@ final class BlingSyncService
             throw new InvalidArgumentException('lista de pedidos vazia, repetida ou acima de ' . self::MAX_PEDIDOS_REPROCESSO);
         }
         foreach ($ids as $id) {
-            if (!is_string($id) || !preg_match('/^[1-9][0-9]{0,19}$/', $id)) { throw new InvalidArgumentException('id de pedido inválido'); }
+            if (!is_string($id) || !preg_match('/^[1-9][0-9]{0,19}\z/', $id)) { throw new InvalidArgumentException('id de pedido inválido'); }
         }
         $c = ['pedidos' => count($ids), 'consultados' => 0, 'atualizados' => 0, 'ignorados' => 0, 'ausentes' => 0, 'erros' => 0];
         if (!$this->repo->temColuna('bling_sales_orders', 'situacao_bling_id') || !$this->repo->temColuna('bling_sales_orders', 'loja_bling_id')) {
@@ -1218,14 +1218,14 @@ final class BlingSyncService
             return ['situacao' => 'modulo_nao_encontrado', 'modulos' => array_map(static fn($x) => ['id' => (string) ($x['id'] ?? ''), 'nome' => (string) ($x['nome'] ?? '')], $modulos)];
         }
         $idModulo = (string) ($vendas['id'] ?? '');
-        if (!preg_match('/^[0-9]{1,20}$/', $idModulo)) { return ['situacao' => 'erro', 'etapa' => 'id do módulo inválido']; }
+        if (!preg_match('/^[0-9]{1,20}\z/', $idModulo)) { return ['situacao' => 'erro', 'etapa' => 'id do módulo inválido']; }
         $s = $cliente->get('situacoes/modulos/' . $idModulo);
         if ($s->status === 403) { return ['situacao' => 'escopo_ausente', 'etapa' => 'situacoes/modulos/{id}', 'http' => 403]; }
         if (!$s->ok() || !is_array($s->corpo['data'] ?? null)) { return ['situacao' => 'erro', 'etapa' => 'situacoes/modulos/{id}', 'http' => $s->status]; }
         $lista = [];
         foreach ($s->corpo['data'] as $x) {
             $id = (string) ($x['id'] ?? '');
-            if (!preg_match('/^[0-9]{1,20}$/', $id)) { continue; }
+            if (!preg_match('/^[0-9]{1,20}\z/', $id)) { continue; }
             $lista[] = ['id' => $id, 'nome' => mb_substr((string) ($x['nome'] ?? ''), 0, 120),
                         'id_herdado' => isset($x['idHerdado']) ? (string) $x['idHerdado'] : null, 'cor' => isset($x['cor']) ? mb_substr((string) $x['cor'], 0, 16) : null];
         }
