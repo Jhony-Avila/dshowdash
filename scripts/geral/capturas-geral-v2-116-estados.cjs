@@ -20,13 +20,16 @@ const CENARIOS = [
 
 (async () => {
   const b = await chromium.launch({ executablePath: '/root/.cache/ms-playwright/chromium_headless_shell-1208/chrome-headless-shell-linux64/chrome-headless-shell' });
-  for (const [cen, periodo, conferir, rotulo] of CENARIOS) {
+  const SO = (process.env.SO || '').split(',').filter(Boolean);   // ex.: SO=2-zero-real,3-pipedrive-funil-parcial (só as capturas afetadas)
+  for (const [cen, periodo, conferir, rotulo] of CENARIOS.filter((c) => !SO.length || SO.includes(c[0]))) {
     const dir = path.join(RAIZ, cen);
     const ctx = await b.newContext({ colorScheme: TEMA, viewport: { width: W, height: H }, deviceScaleFactor: 1 });
     await ctx.route('**/api/geral/v2/**', (rt) => { const u = new URL(rt.request().url()); const f = path.join(dir, `painel-${u.searchParams.get('periodo')}.json`);
       if (u.pathname.endsWith('/painel.php') && fs.existsSync(f)) return rt.fulfill({ status: 200, contentType: 'application/json; charset=utf-8', body: fs.readFileSync(f) });
       return rt.fulfill({ status: 404, contentType: 'application/json', body: '{"ok":false,"data":null,"error":"SEM_ARQUIVO_DA_GRAVACAO"}' }); });
     await ctx.addInitScript((p) => { try { sessionStorage.clear(); localStorage.setItem('dshow.geral.v2.periodo', p); } catch {} }, periodo);
+    // P0 do parecer: relógio do navegador = referência das respostas do cenário (`leitura_em`)
+    const pj = JSON.parse(fs.readFileSync(path.join(dir, `painel-${periodo}.json`))).data; if (pj.leitura_em) await ctx.clock.setFixedTime(new Date(pj.leitura_em));
     const pg = await ctx.newPage();
     try {
       await pg.goto(`${B}/__entrar?perfil=admin&ir=%2F`, { waitUntil: 'networkidle', timeout: 60000 });
@@ -42,6 +45,12 @@ const CENARIOS = [
       const c = Object.fromEntries(await pg.$$eval('.gv2 [data-gv2-cartao]', (xs) => xs.map((x) => [x.dataset.gv2Cartao, { estado: x.dataset.gv2Estado, valor: x.querySelector('.gv2-num-valor')?.textContent.trim() ?? null, texto: x.innerText.replace(/\s+/g, ' ') }])));
       const graf = (await pg.textContent('[data-gv2-bloco="grafico"]')) || ''; const fontes = await pg.$$eval('[data-gv2-fonte]', (xs) => xs.map((x) => x.dataset.gv2Fonte));
       afirma(`${cen}: ${rotulo}`, conferir(c), Object.fromEntries(Object.entries(c).map(([k, v]) => [k, v.estado])));
+      const refDia = pj.leitura_em ? new Date(pj.leitura_em).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric' }) : null;
+      // na linha compacta de "Sem pendências" a tela mostra só "às HH:MM" (= hoje): vale a hora da referência
+      const refHora = pj.leitura_em ? new Date(pj.leitura_em).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }) : null;
+      const cabPrio = ((await pg.textContent('[data-gv2-bloco="prioridades"]').catch(() => '')) || '').replace(/\s+/g, ' ');
+      const cabRes = ((await pg.textContent('[data-gv2-bloco="resultado"] .gv2-sec-cab').catch(() => '')) || '').replace(/\s+/g, ' ');
+      afirma(`${cen}: data na tela = referência (${refDia}) e período "${pj.periodo.rotulo}" (${pj.periodo.de} a ${pj.periodo.ate})`, !!refDia && (cabPrio.includes(refDia) || (/Sem pendências/.test(cabPrio) && cabPrio.includes(`às ${refHora}`))) && cabRes.includes(pj.periodo.rotulo), { refDia, cabRes, cabPrio: cabPrio.slice(0, 120) });
       afirma(`${cen}: nenhum R$ em Pedidos/OS nem no gráfico; Recebido "—" + "Aguardando conexão"`, !/R\$/.test(c.pedidos?.texto || '') && !/R\$/.test(graf) && c.recebido?.valor === '—' && /Aguardando conexão/.test(c.recebido?.texto || ''), { pedidos: c.pedidos?.texto?.slice(0, 80), recebido: c.recebido });
       afirma(`${cen}: fontes = Pipedrive, Bling, Google Calendar, Precifica (sem Asaas)`, JSON.stringify(fontes) === '["pipedrive","bling","calendar","precifica"]', fontes);
       const peq = await pg.evaluate(() => { const out = []; const w = document.createTreeWalker(document.querySelector('.gv2'), NodeFilter.SHOW_TEXT);

@@ -344,7 +344,7 @@ function Barras({ p }: { p: PedidosBling }) {
   useEffect(() => { const el = caixa.current; if (!el) return; const ro = new ResizeObserver(([e]) => setW(Math.round(e.contentRect.width))); ro.observe(el); return () => ro.disconnect(); }, []);
   const dias = p.por_dia; const max = Math.max(1, ...dias.map((d) => d.quantidade ?? 0));
   const passo = [1, 2, 5, 10, 20, 25, 50, 100, 250, 500, 1000].find((s) => s * 4 >= max) ?? Math.ceil(max / 4);
-  const topo = passo * 4; const H = 210, E = 64, B = 26, T = 18;   // E = margem do eixo; B = rótulos embaixo; T = folga em cima
+  const topo = passo * 4; const H = 210, E = 118, B = 26, T = 18;   // E = margem do eixo (cabe "1.000 pedidos/OS" em 12 px); B = rótulos embaixo; T = folga em cima
   const larg = (W - E) / Math.max(1, dias.length);
   const cabe = Math.max(1, Math.ceil(46 / Math.max(1, larg)));   // um rótulo de dia a cada N barras (≥ 46 px entre rótulos)
   const numEmCima = larg >= 28;
@@ -353,7 +353,7 @@ function Barras({ p }: { p: PedidosBling }) {
       {W > 0 && (
         <svg className="gv2-barras" width={W} height={H + B} viewBox={`0 0 ${W} ${H + B}`} role="img" aria-label={`Pedidos e OS por dia: ${dias.map((d) => `${fmtDiaMes(d.dia)} ${d.quantidade === null ? 'sem dado' : fmtN(d.quantidade)}`).join('; ')}`}>
           {[0, 1, 2, 3, 4].map((k) => { const y = H - (k * passo / topo) * (H - T); return (
-            <g key={k}><line x1={E} x2={W} y1={y} y2={y} className="gv2-grade" /><text x={E - 10} y={y + 4} textAnchor="end" className="gv2-eixo">{k === 0 ? '0' : `${fmtN(k * passo)} OS`}</text></g>); })}
+            <g key={k}><line x1={E} x2={W} y1={y} y2={y} className="gv2-grade" /><text x={E - 10} y={y + 4} textAnchor="end" className="gv2-eixo" data-gv2-eixo-y>{k === 0 ? '0' : `${fmtN(k * passo)} pedidos/OS`}</text></g>); })}
           {dias.map((d, i) => {
             const q = d.quantidade; const h = q === null ? 0 : Math.max(q > 0 ? 3 : 0, (q / topo) * (H - T)); const w = Math.min(84, larg * 0.6); const x = E + i * larg + (larg - w) / 2;
             return (

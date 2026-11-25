@@ -4,7 +4,7 @@
 // Uso: RESP=…/painel-7d.json CONTRATO=novo|antigo W=2200 H=1470 TEMA=claro|escuro PORTA=8112 node teste-geral-v2-116.cjs (cwd = saída)
 //   CONTRATO=antigo: resposta do 674fa53e (ainda com `valor` nos pedidos, sem `recebido`) — prova que a tela não mostra R$ nem assim.
 const { chromium } = require('/srv/dshow-work/atributos-web-wt/node_modules/playwright-core');
-const fs = require('fs');
+const fs = require('fs'); const path = require('path');
 const RESP = process.env.RESP; const NOVO = process.env.CONTRATO !== 'antigo';
 const B = `http://127.0.0.1:${process.env.PORTA || 8112}`; const W = Number(process.env.W || 2200), H = Number(process.env.H || 1470);
 const TEMA = process.env.TEMA === 'escuro' ? 'dark' : 'light'; const NT = process.env.TEMA || 'claro';
@@ -16,8 +16,12 @@ const massa = JSON.parse(fs.readFileSync(RESP)).data; const r = massa.resumo;
 (async () => {
   const b = await chromium.launch({ executablePath: '/root/.cache/ms-playwright/chromium_headless_shell-1208/chrome-headless-shell-linux64/chrome-headless-shell' });
   const ctx = await b.newContext({ colorScheme: TEMA, viewport: { width: W, height: H }, deviceScaleFactor: 1 });
-  await ctx.route('**/api/geral/v2/**', (rt) => { const u = new URL(rt.request().url());
-    if (u.pathname.endsWith('/painel.php') && u.searchParams.get('periodo') === '7d') return rt.fulfill({ status: 200, contentType: 'application/json; charset=utf-8', body: fs.readFileSync(RESP) });
+  // P0 do parecer (referência temporal): o relógio do navegador = a referência das respostas (`leitura_em`), para a data na tela ser a mesma
+  const REF = massa.leitura_em; if (REF) await ctx.clock.setFixedTime(new Date(REF));
+  const irmao = (per) => path.join(path.dirname(RESP), `painel-${per}.json`);   // a mesma gravação traz os 3 períodos
+  await ctx.route('**/api/geral/v2/**', (rt) => { const u = new URL(rt.request().url()); const per = u.searchParams.get('periodo');
+    if (u.pathname.endsWith('/painel.php') && per !== '7d' && fs.existsSync(irmao(per))) return rt.fulfill({ status: 200, contentType: 'application/json; charset=utf-8', body: fs.readFileSync(irmao(per)) });
+    if (u.pathname.endsWith('/painel.php') && per === '7d') return rt.fulfill({ status: 200, contentType: 'application/json; charset=utf-8', body: fs.readFileSync(RESP) });
     return rt.fulfill({ status: 404, contentType: 'application/json', body: '{"ok":false,"data":null,"error":"SEM_ARQUIVO"}' }); });
   await ctx.addInitScript(() => { try { localStorage.removeItem('dshow.geral.v2.periodo'); sessionStorage.clear(); } catch {} });
   const pg = await ctx.newPage();
@@ -74,7 +78,23 @@ const massa = JSON.parse(fs.readFileSync(RESP)).data; const r = massa.resumo;
       for (let n = w.nextNode(); n; n = w.nextNode()) { if (!n.textContent.trim()) continue; const el = n.parentElement; if (el.closest('.bl-so-leitor, title')) continue; if (!el.getBoundingClientRect().width) continue;
         if (parseFloat(getComputedStyle(el).fontSize) < 12) out.push(n.textContent.trim().slice(0, 24)); } return [...new Set(out)].slice(0, 6); });
     afirma('nenhum texto abaixo de 12 px na Geral V2', peq.length === 0, peq);
+    // P0 · data mostrada = data da referência das respostas (Brasília)
+    const refDia = REF ? new Date(REF).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric' }) : null;
+    const cabPrio = norm(await pg.textContent('[data-gv2-bloco="prioridades"] .gv2-sec-cab, [data-gv2-bloco="prioridades"] header').catch(() => ''));
+    afirma(`P0 · data na tela = referência das respostas (${refDia}, leitura_em ${REF})`, !!refDia && cabPrio.includes(refDia), cabPrio.slice(0, 160));
     await cap('topo'); await cap('rolada', '[data-gv2-bloco="fontes"]');
+    // P0 · limites dos 3 períodos: o rótulo na tela é o do serviço (de/até da MESMA gravação)
+    const lim = [];
+    for (const [botao, per] of [['Ontem', 'ontem'], ['Mês até ontem', 'mes'], ['Últimos 7 dias', '7d']]) {
+      const arq = per === '7d' ? RESP : irmao(per); if (!fs.existsSync(arq)) { lim.push({ per, faltou: true }); continue; }
+      const pj = JSON.parse(fs.readFileSync(arq)).data.periodo;
+      await pg.evaluate(() => window.scrollTo(0, 0)); await pg.click(`.gv2-periodo:has-text("${botao}")`);
+      await pg.waitForFunction((t) => (document.querySelector('[data-gv2-bloco="resultado"] .gv2-sec-cab')?.textContent || '').includes(t), pj.rotulo, { timeout: 15000 }).catch(() => {});
+      const mostrado = norm(await pg.textContent('[data-gv2-bloco="resultado"] .gv2-sec-cab'));
+      lim.push({ periodo: botao, de: pj.de, ate: pj.ate, rotulo_servico: pj.rotulo, na_tela: mostrado.includes(pj.rotulo) });
+    }
+    console.log('LIMITES ' + JSON.stringify(lim));
+    afirma('P0 · Ontem, Mês até ontem e Últimos 7 dias: o rótulo na tela é o do serviço (mesma gravação)', lim.length === 3 && lim.every((x) => x.na_tela), lim);
   } catch (e) { falhas++; console.log('ERRO ' + (e.message || e).split('\n')[0]); }
   await b.close(); console.log(`GERAL V2 · 116 (${NOVO ? 'contrato novo' : 'contrato antigo'}, ${NT}, ${W}x${H}): ${ok} ok, ${falhas} falhas`); process.exit(falhas ? 1 : 0);
 })();
