@@ -120,6 +120,42 @@ const ABRIR = `window.__abertos = []; window.open = (u, t) => { const reg = { u:
       await pg.context().close();
     }
 
+    // ── E. (Codex, 115B: validador ESTRITO comum à P7 e à P9) envelope do check.php com ok:false NUNCA prova nada:
+    //    E1 · check 200 {ok:false, authenticated:false} ANTES do logout → desconhecido (a b6ede9af aceitava como "encerrada" e ia a /login);
+    //    E2 · logout 200 ambíguo + check de prova 200 {ok:false, authenticated:false} → desconhecido;
+    //    E3 · depois do login real, check 200 {ok:false, authenticated:true, token novo} → "Continuar" NÃO retoma (só com ok:true).
+    const CHECK_OKFALSE_SAIU = { status: 200, contentType: 'application/json', body: JSON.stringify({ ok: false, data: { authenticated: false }, error: 'SESSION_CHECK_FAILED' }) };
+    for (const caso of ['E1', 'E2']) {
+      const pg = await nova(); const s = await simular(pg, 'revogada'); await abrir(pg);
+      await pg.click('.at-fixo button[role="tab"]:has-text("Fotos")'); await pg.waitForSelector(`${AV} button:has-text("Entrar novamente")`, { timeout: 15000 });
+      const tok0 = await token(pg); const navs = []; pg.on('framenavigated', (f) => { if (f === pg.mainFrame()) navs.push(new URL(f.url()).pathname); });
+      if (caso === 'E1') await pg.route('**/api/auth/check.php', (r) => r.fulfill(CHECK_OKFALSE_SAIU));
+      else { let n = 0; await pg.route('**/api/auth/check.php', (r) => (n++ === 0 ? r.continue() : r.fulfill(CHECK_OKFALSE_SAIU)));   // 1º check real (pega o CSRF), o de prova falso
+        await pg.route('**/api/auth/logout.php', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":false,"data":null,"error":"LOGOUT_FAILED"}' })); }
+      await pg.click(`${AV} button:has-text("Entrar novamente")`); await pg.waitForSelector(`${AV} [data-at-entrar-nao-saiu], ${AV} [data-at-entrar-retomar]`, { timeout: 20000 }).catch(() => {});
+      const ab = await pg.evaluate(() => window.__abertos); const t = await pg.textContent(AV).catch(() => '');
+      afirma(`${caso}. check 200 com ok:false e authenticated:false${caso === 'E2' ? ' (prova depois de logout ambíguo)' : ''}: saída DESCONHECIDA — aviso com "Tentar de novo", sem "Continuar"`,
+        (await fase(pg, AV)) === 'nao_saiu' && !!(await pg.$(`${AV} button:has-text("Tentar de novo")`)) && !(await pg.$(`${AV} button:has-text("Continuar")`)), t.slice(0, 200));
+      afirma(`${caso}. nenhuma navegação a /login (aba do clique FECHADA), nenhuma foto gravada, a identidade/sessão antiga segue ativa`,
+        ab.length === 1 && ab[0].fechada === true && ab[0].foi === null && !navs.some((x) => x.startsWith('/login')) && s.posts.length === 0
+          && sql(`SELECT is_active FROM app_user_sessions WHERE session_token='${tok0}'`) === '1', JSON.stringify({ ab, navs, posts: s.posts.length }));
+      const tentar = await pg.$(`${AV} button:has-text("Tentar de novo")`);
+      if (caso === 'E2' && !tentar) afirma('E3. pulado: sem "Tentar de novo" (a saída não ficou desconhecida no E2)', false);
+      if (caso === 'E2' && tentar) {   // E3: saída real, login real, mas o check do "Continuar" vem com ok:false → não retoma; com o check real → retoma
+        await pg.unroute('**/api/auth/check.php'); await pg.unroute('**/api/auth/logout.php');
+        await pg.click(`${AV} button:has-text("Tentar de novo")`); await pg.waitForSelector(`${AV} [data-at-entrar-retomar]`, { timeout: 20000 }).catch(() => {});
+        await entrarDeNovo(pg); s.modo = 'ok'; const l1 = s.leituras;   // como no A5: depois do login real a galeria deixa de responder 401
+        await pg.route('**/api/auth/check.php', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: false, data: { authenticated: true, session: { token: 'token-falso-novo', csrf_token: 'x' } }, error: 'X' }) }));
+        await pg.click(`${AV} button:has-text("Continuar")`); await pg.waitForTimeout(1500);
+        afirma('E3. login real feito, mas o check do "Continuar" vem com ok:false (authenticated:true e token novo): NÃO retoma (sem reler a galeria)', s.leituras === l1 && !!(await pg.$(`${AV} button:has-text("Continuar")`)), String(s.leituras - l1));
+        await pg.unroute('**/api/auth/check.php');
+        await pg.click(`${AV} button:has-text("Continuar")`); await pg.waitForFunction((n) => !document.querySelector('[data-fotos-aviso="sessao"]'), l1, { timeout: 15000 }).catch(() => {});
+        afirma('E3. com o check real (ok:true, sessão NOVA do login real): "Continuar" retoma e relê a galeria', s.leituras > l1 && !!(await pg.$('.at-fotos-ger')) && (await token(pg)) !== tok0, String(s.leituras - l1));
+        await pg.screenshot({ path: `${CAP}/E3-retomada-${W}.png` });
+      }
+      await pg.context().close();
+    }
+
     // ── C. fila: foto INCERTA (resposta perdida) + foto recusada por sessão; saída desconhecida e depois real; a incerta NÃO é reenviada ──
     { const pg = await nova(); const s = await simular(pg, 'ok'); await abrir(pg);
       s.plano = ['perdida', 'revogada'];

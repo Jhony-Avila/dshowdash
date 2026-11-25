@@ -3,6 +3,7 @@
 // Envelope do Dash {ok, data, error, meta}. Escritas: X-Chave-Operacao (uma por intenção; 16–64 [A-Za-z0-9_-]) + X-CSRF-Token; "Publicada/Salvo"
 // SÓ com recibo (data.recibo). Erros → desfecho pelo tratarEscrita do api.ts (5xx/502/504 = desconhecido; 4xx com meta.desfecho).
 import { ErroApi, MSG_DESCONHECIDO, novaChaveOperacao, obterDe, tokenCsrf, tratarRespostaEscrita, enviarPara } from './api';
+import { lerRespostaCheck } from '../../../../../core/auth/sessao-encerrada';   // validador ÚNICO de sessão encerrada (P7 + P9, Codex 115B)
 
 const BASE = '/api/midia/index.php';
 
@@ -29,23 +30,25 @@ export function mensagemSessao(codigo: string): string {
 /** Entrar de novo resolve? (sim para sessão revogada/expirada; não para usuário desativado). */
 export const sessaoReentravel = (codigo: string) => codigo !== 'USER_DISABLED';
 /** Codex DSHOW-114 (P9): TRÊS estados de sessão. Só a saída CONFIRMADA vale; o resto é DESCONHECIDO e nunca vira saída nem entrada.
- *  - encerrada: logout 2xx com o envelope `ok:true`, ou check 200 `authenticated:false` (a sessão acabou);
+ *  - encerrada: logout 2xx com o envelope `ok:true`, ou o check.php PROVANDO a saída pelo validador único (envelope exato de sucesso com
+ *    `authenticated:false`, `user:null`);
  *  - desconhecido: check 503 SESSION_CHECK_UNAVAILABLE, rede, timeout, 403 de CSRF, 5xx. */
 export type SaidaSessao = { estado: 'encerrada'; sessaoAntiga: string | null } | { estado: 'desconhecido'; motivo: string };
 type Checagem = { estado: 'autenticado'; token: string | null; csrf: string } | { estado: 'nao_autenticado' } | { estado: 'desconhecido'; motivo: string };
 const comPrazo = (ms: number) => { const c = new AbortController(); const t = window.setTimeout(() => c.abort(), ms); return { sinal: c.signal, fim: () => window.clearTimeout(t) }; };
 
-/** check.php: 200 `authenticated:true` = autenticado (com o token da sessão, para provar depois que é OUTRA); 200 `false` = não autenticado
- *  confirmado; qualquer outra coisa (503, rede, timeout, corpo inválido) = desconhecido. */
+/** check.php pelo validador ÚNICO de sessão encerrada (core/auth/sessao-encerrada, DIREITA 993dd85e — o mesmo arquivo-fonte da P7, nunca
+ *  uma cópia). Codex 115B: o envelope tem de ser o EXATO de sucesso (200 + JSON + ok:true + error:null + data); `{ok:false, authenticated:false}`
+ *  não prova saída. ativa = autenticado (com o token, para provar depois que é OUTRA sessão); encerrada = não autenticado CONFIRMADO;
+ *  todo o resto (503, rede, tempo, envelope de erro, corpo ambíguo) = desconhecido — a identidade fica, nada de /login, nada de retomar. */
 export async function checarSessao(): Promise<Checagem> {
   const p = comPrazo(10000);
   try {
     const r = await fetch('/api/auth/check.php', { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' }, signal: p.sinal });
-    if (r.status !== 200) return { estado: 'desconhecido', motivo: `check ${r.status}` };
-    const j = await r.json().catch(() => null); const d = j?.data ?? j ?? {};
-    if (d.authenticated === true) return { estado: 'autenticado', token: d.session?.token ?? null, csrf: d.session?.csrf_token ?? '' };
-    if (d.authenticated === false) return { estado: 'nao_autenticado' };
-    return { estado: 'desconhecido', motivo: 'resposta sem authenticated' };
+    const l = await lerRespostaCheck(r);
+    if (l.estado === 'ativa') return { estado: 'autenticado', token: l.token, csrf: l.csrf };
+    if (l.estado === 'encerrada') return { estado: 'nao_autenticado' };
+    return { estado: 'desconhecido', motivo: l.motivo };
   } catch { return { estado: 'desconhecido', motivo: 'rede ou tempo esgotado' }; } finally { p.fim(); }
 }
 
