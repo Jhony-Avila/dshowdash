@@ -69,6 +69,17 @@ final class PipeAnalyticsController
         ApiResponse::success((new PipeAnalyticsRepository($pdo))->visaoGeralBlocos($per), ['ts' => date('c')]);
     }
 
+    /** GET /alerts-app?dias_parado=30&valor_alto=50000 — alertas do "Pede atenção" no formato AlertOut do app (contrato para a ESQUERDA). */
+    public static function alertsApp(string $method, PDO $pdo): void
+    {
+        requireMethod(['GET']);
+        $q = pipe_query(['dias_parado', 'valor_alto']);
+        $dias = isset($q['dias_parado']) && ctype_digit((string) $q['dias_parado']) ? (int) $q['dias_parado'] : 30;
+        $valor = isset($q['valor_alto']) && preg_match('/^\d{1,12}(\.\d{1,2})?\z/', (string) $q['valor_alto']) === 1 ? (float) $q['valor_alto'] : 50000.0;
+        $r = (new PipeAnalyticsRepository($pdo))->alertasApp($dias, $valor);
+        ApiResponse::success($r ?? ['alertas' => null, 'motivo' => 'leitura_indisponivel'], ['ts' => date('c')]);
+    }
+
     public static function conversion(string $method, PDO $pdo): void
     {
         requireMethod(['GET']);

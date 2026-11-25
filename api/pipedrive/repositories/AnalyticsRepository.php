@@ -743,6 +743,50 @@ final class PipeAnalyticsRepository
         ];
     }
 
+    /**
+     * 25/11 noite · alertas do "Pede atenção" no formato do APP (AlertOut do módulo alerts do app: id, type, severity critical|warning|info,
+     * status, title, message, target_type, target_id, connection, environment, occurrences, first_seen_at, last_seen_at, …). Calculados
+     * na hora (não persistidos): `first_seen_at` = desde quando a condição vale pelo dado (quando dá para saber; senão null), `last_seen_at` = agora.
+     * Regras (limiares por parâmetro): parado_ha_dias (aberto sem mudar de etapa há ≥ X dias; ≥ 2X = critical) · sem_proxima_atividade
+     * (aberto e next_activity_date nulo) · valor_alto_sem_dono (aberto, valor ≥ R$ X e sem dono ativo). Leitura de negócios indisponível → null.
+     */
+    public function alertasApp(int $diasParado = 30, float $valorAlto = 50000.0, int $limite = 200): ?array
+    {
+        if ($this->leituraNegocios()['estado'] === 'indisponivel') return null;
+        $diasParado = max(1, min($diasParado, 365)); $limite = max(1, min($limite, 500)); $agora = gmdate('Y-m-d\TH:i:s\Z');
+        $iso = static fn(?string $t) => $t === null ? null : gmdate('Y-m-d\TH:i:s\Z', strtotime($t . ' UTC'));
+        $out = [];
+        $base = static fn(string $tipo, int $id, string $sev, string $titulo, ?string $msg, ?string $desde) => [
+            'id' => "pipedrive:$tipo:$id", 'type' => "pipedrive_$tipo", 'severity' => $sev, 'status' => 'active', 'title' => $titulo, 'message' => $msg,
+            'target_type' => 'pipedrive_deal', 'target_id' => (string) $id, 'connection' => null, 'environment' => null, 'occurrences' => 1,
+            'first_seen_at' => $desde, 'last_seen_at' => $agora, 'acknowledged_at' => null, 'resolved_at' => null];
+        $st = $this->pdo->prepare(
+            "SELECT d.pipedrive_id, d.title, COALESCE(d.stage_change_time, d.add_time) AS desde, DATEDIFF(NOW(), COALESCE(d.stage_change_time, d.add_time)) AS dias, s.name AS etapa
+               FROM pipe_deals d LEFT JOIN pipe_stages s ON s.pipedrive_id = d.stage_id
+              WHERE d.is_deleted = 0 AND d.status = 'open' AND COALESCE(d.stage_change_time, d.add_time) < NOW() - INTERVAL ? DAY
+           ORDER BY desde ASC LIMIT {$limite}");
+        $st->execute([$diasParado]);
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $out[] = $base('parado_ha_dias', (int) $r['pipedrive_id'], (int) $r['dias'] >= 2 * $diasParado ? 'critical' : 'warning',
+                'Negócio parado há ' . (int) $r['dias'] . ' dias', ($r['title'] ?? '') . ($r['etapa'] ? ' · etapa ' . $r['etapa'] : ''), $iso($r['desde']));
+        }
+        $st = $this->pdo->query("SELECT d.pipedrive_id, d.title, d.last_activity_date FROM pipe_deals d
+              WHERE d.is_deleted = 0 AND d.status = 'open' AND d.next_activity_date IS NULL ORDER BY d.pipedrive_id LIMIT {$limite}");
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $out[] = $base('sem_proxima_atividade', (int) $r['pipedrive_id'], 'warning', 'Negócio sem próxima atividade', $r['title'], null);
+        }
+        $st = $this->pdo->prepare("SELECT d.pipedrive_id, d.title, d.value, d.currency FROM pipe_deals d LEFT JOIN pipe_users u ON u.pipedrive_id = d.owner_id
+              WHERE d.is_deleted = 0 AND d.status = 'open' AND d.value IS NOT NULL AND d.value >= ? AND (d.owner_id IS NULL OR u.pipedrive_id IS NULL OR u.is_active = 0)
+           ORDER BY d.value DESC LIMIT {$limite}");
+        $st->execute([$valorAlto]);
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $out[] = $base('valor_alto_sem_dono', (int) $r['pipedrive_id'], 'critical', 'Negócio de valor alto sem dono ativo',
+                ($r['title'] ?? '') . ' · ' . ($r['currency'] ?? 'BRL') . ' ' . number_format((float) $r['value'], 2, ',', '.'), null);
+        }
+        return ['gerado_em' => $agora, 'limiares' => ['dias_parado' => $diasParado, 'valor_alto' => $valorAlto], 'alertas' => $out,
+                'contagem' => array_count_values(array_column($out, 'type'))];
+    }
+
     private function estadoAgora(): array
     {
         $r = $this->pdo->query(
