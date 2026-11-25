@@ -119,8 +119,8 @@ export function NotasFiscais({ filtros, aoMudarFiltros, larguraPainel }: PropsTe
         kpi('rejeitadas', 'Rejeitadas', conta('rejeitada'), 'inteiro', conta('rejeitada') > 0 ? 'critico' : 'ok'),
         kpi('canceladas', 'Canceladas', conta('cancelada'), 'inteiro'),
         kpi('inutilizadas', 'Inutilizadas', conta('inutilizada'), 'inteiro'),
-        // Ausência ≠ zero: total desconhecido é "—" (a fonte está no ar), nunca R$ 0,00.
-        { ...kpi('valor', 'Valor emitido', numOuNulo(totais.valor), 'moeda'), rotuloNulo: '—' },
+        // Ausência ≠ zero: total desconhecido é "—" (a fonte está no ar), nunca R$ 0,00. 115C: com a dica de "não se aplica" / "desconhecido".
+        { ...kpi('valor', 'Valor emitido', numOuNulo(totais.valor), 'moeda', 'ok', dicaValorEmitido(carga.dados)), rotuloNulo: '—' },
       ]} />
 
       <div style={{ display: 'grid', gridTemplateColumns: duas ? '1fr 1fr' : '1fr', gap: 14, marginTop: 18 }}>
@@ -306,6 +306,21 @@ function Campo({ rotulo, valor }: { rotulo: string; valor: React.ReactNode }) {
 function emitidasFiscais(dados: RespostaRecurso | null | undefined): number | null {
   const v = dados?.contagem_fiscal?.emitidas;
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
+}
+
+/** 115C: "Valor emitido" = totais.valor só quando é número; null/ausente → null ("Indisponível"), nunca R$ 0 (ausência ≠ zero). */
+function valorEmitido(dados: RespostaRecurso | null | undefined): number | null {
+  const v = dados?.totais?.valor;
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
+}
+
+/** Dica do "Valor emitido" indisponível: não se aplica (só notas fora das emitidas) ou desconhecido (alguma nota sem valor). */
+function dicaValorEmitido(dados: RespostaRecurso | null | undefined): string | null {
+  if (!dados || valorEmitido(dados) !== null) return null;
+  const cf = dados.contagem_fiscal;
+  return cf && cf.emitidas === 0 && cf.fora_das_emitidas > 0
+    ? 'O valor não se aplica: as notas listadas estão fora das emitidas (situação não mapeada)'
+    : 'Valor desconhecido: há nota sem valor na resposta, então o total não é somado';
 }
 
 function kpi(id: string, rotulo: string, valor: number | null, formato: string,
