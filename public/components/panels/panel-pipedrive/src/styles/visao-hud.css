@@ -220,3 +220,31 @@
   [data-pp-react-root] .hud-api-kpi b { font-size:15px; } [data-pp-react-root] .hud-api-graf { height:170px; }
 }
 @media (max-width:1100px) { [data-pp-react-root] .hud-api-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
+/* ── celular (≤ 600 px, 390×844): 1 KPI por linha, cabeçalhos que quebram, ranking sem a trilha, gráficos mais altos ── */
+@media (max-width:600px) {
+  [data-pp-react-root] { --hud-panelh:340px; }
+  [data-pp-react-root] .hud-grid { grid-template-columns:1fr; gap:8px; }
+  [data-pp-react-root] .hud-stat { height:auto; min-height:96px; padding:10px 12px 22px; }
+  [data-pp-react-root] .hud-label { max-width:none; flex:1; }
+  [data-pp-react-root] .hud-value { font-size:24px; }
+  [data-pp-react-root] .hud-delta { max-width:62%; }
+  [data-pp-react-root] .hud-spark { width:32%; height:30px; bottom:20px; }
+  [data-pp-react-root] .hud-charts { grid-template-columns:1fr; gap:10px; }
+  [data-pp-react-root] .hud-panelhead { flex-wrap:wrap; padding:12px 12px 6px; }
+  [data-pp-react-root] .hud-panelhead > div:first-child { flex:1 1 100%; }
+  [data-pp-react-root] .hud-panelname { font-size:15px; flex-wrap:wrap; }
+  [data-pp-react-root] .hud-chartfoot { flex-wrap:wrap; height:auto; padding:4px 11px 8px; gap:2px 10px; }
+  [data-pp-react-root] .hud-donutinner { flex-direction:column; }
+  [data-pp-react-root] .hud-donut { width:min(220px,70vw); }
+  [data-pp-react-root] .hud-donutlegend { width:100%; max-width:none; }
+  [data-pp-react-root] .hud-rankrow { grid-template-columns:24px minmax(0,1fr) auto; }
+  [data-pp-react-root] .hud-ranktrack, [data-pp-react-root] .hud-ranklink { display:none; }
+  [data-pp-react-root] .hud-rankingfoot { flex-direction:column; align-items:flex-start; }
+  [data-pp-react-root] .hud-atencao-item { grid-template-columns:48px minmax(0,1fr); }
+  [data-pp-react-root] .hud-atencao-acao, [data-pp-react-root] .hud-atencao-ok { grid-column:2; justify-self:start; }
+  [data-pp-react-root] .hud-api-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  [data-pp-react-root] .hud-drawer { padding:18px 16px; }
+  [data-pp-react-root] .hud-drawerrow { grid-template-columns:minmax(0,1fr) 88px; }
+  [data-pp-react-root] .hud-drawerrowowner, [data-pp-react-root] .hud-drawerrow span:last-child { display:none; }
+}

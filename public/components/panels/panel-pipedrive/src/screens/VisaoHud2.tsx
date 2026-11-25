@@ -132,7 +132,7 @@ export function BlocoCiclo({ periodo, resumo, onDrill }: { periodo: PipePeriodoI
     grid: { left: 36, right: 12, top: 22, bottom: 26 },
     tooltip: { trigger: 'item', transitionDuration: 0.1, backgroundColor: escuro ? '#07121f' : '#12243a', borderWidth: 0, textStyle: { color: '#f5faff', fontSize: 12 },
       formatter: (p: unknown) => { const i = (p as { dataIndex: number }).dataIndex; return `${FAIXAS[i].rot}: <b style="font-weight:500">${fmtNum(vals[i])}</b> ${vals[i] === 1 ? 'ganho' : 'ganhos'}${tot ? ` (${Math.round((vals[i] / tot) * 100)}%)` : ''}`; } },
-    xAxis: { type: 'category', data: FAIXAS.map((f) => f.rot), axisTick: { show: false }, axisLine: { lineStyle: { color: pal.border } }, axisLabel: { color: pal.textDim, fontSize: 11, interval: 0, hideOverlap: false } },
+    xAxis: { type: 'category', data: FAIXAS.map((f) => f.rot), axisTick: { show: false }, axisLine: { lineStyle: { color: pal.border } }, axisLabel: { color: pal.textDim, fontSize: 11, interval: 0, hideOverlap: false, width: 64, overflow: 'break', lineHeight: 13 } },
     yAxis: { type: 'value', minInterval: 1, splitLine: { lineStyle: { color: pal.border, opacity: 0.6 } }, axisLabel: { color: pal.textDim, fontSize: 11 } },
     series: [{ type: 'bar', barMaxWidth: 54, cursor: 'pointer', data: vals.map((v, i) => ({ value: v, itemStyle: { color: cores[i], borderRadius: [6, 6, 0, 0] } })),
       label: { show: true, position: 'top', color: pal.text, fontSize: 11 } }],

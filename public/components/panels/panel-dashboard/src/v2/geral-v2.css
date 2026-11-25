@@ -216,3 +216,13 @@
   .gv2-btn--evento { padding-left: 8px; padding-right: 8px; }
   .gv2-btn--evento .gv2-btn-rotulo { display: none; }
 }
+
+/* celular (≤ 600 px, 390×844): a prioridade vira bloco — texto em cima, responsável e prazo numa linha, ação abaixo (nada se sobrepõe) */
+@media (max-width: 600px) {
+  [data-geral-react-root] .gv2-prio { grid-template-columns: 4px minmax(0, 1fr) auto; grid-template-areas: "b t t" "b m q" "b l l"; gap: 6px 12px; align-items: start; }
+  [data-geral-react-root] .gv2-prio-barra { grid-area: b; height: 100%; min-height: 34px; }
+  [data-geral-react-root] .gv2-prio-txt { grid-area: t; }
+  [data-geral-react-root] .gv2-prio-meio { grid-area: m; font-size: 12px; }
+  [data-geral-react-root] .gv2-prio-quando { grid-area: q; justify-self: end; }
+  [data-geral-react-root] .gv2-prio .gv2-link { grid-area: l; justify-self: start; }
+}
