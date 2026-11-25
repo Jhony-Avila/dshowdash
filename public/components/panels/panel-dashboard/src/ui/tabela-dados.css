@@ -1,0 +1,93 @@
+/* panel-atributos/src/ui/tabela-dados.css — TabelaDados (padrão das tabelas do módulo).
+   Escopo [data-bl-root] .at-td…; cores só por tokens var(--bl-…) (claro e escuro vêm de _shared-react/styles/tokens.css).
+   Sticky: o <th> gruda no topo do ancestral rolável mais próximo.
+   · data-rolagem="propria" (padrão): a própria moldura rola (a .at-raiz do módulo não tem altura limitada; quem rola é o
+     <main> do app-shell — ver TabelaDados.tsx). Ajuste da altura: --at-td-altura-max.
+   · data-rolagem="container": sem overflow na moldura (gruda no ancestral rolável); rolagem horizontal só com data-larga="1". */
+
+[data-bl-root] .at-td { position: relative; min-width: 0; }
+[data-bl-root] .at-td[data-rolagem="propria"] { overflow: auto; max-height: var(--at-td-altura-max, max(320px, calc(100dvh - 240px))); }
+[data-bl-root] .at-td[data-rolagem="container"][data-larga="1"] { overflow-x: auto; }
+
+[data-bl-root] .at-td__tabela { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px; }
+
+/* Cabeçalho fixo com fundo próprio (opaco nos dois temas) e sombra leve quando há rolagem */
+[data-bl-root] .at-td__th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--bl-superficie-2); color: var(--bl-texto-2);
+  font-size: 11.5px; font-weight: 600; text-align: left; white-space: nowrap;
+  height: 34px; padding: 0 10px; border-bottom: 1px solid var(--bl-borda);
+  transition: box-shadow .12s ease;
+}
+[data-bl-root] .at-td[data-rolando="1"] .at-td__th { box-shadow: var(--bl-sombra-sm); }
+[data-bl-root] .at-td__th:first-child { border-top-left-radius: var(--bl-raio); }
+[data-bl-root] .at-td__th:last-child { border-top-right-radius: var(--bl-raio); }
+[data-bl-root] .at-td[data-rolando="1"] .at-td__th { border-radius: 0; }
+
+/* Título = botão (Enter/Espaço nativos) */
+[data-bl-root] .at-td__ordenar {
+  display: inline-flex; align-items: center; gap: 8px; max-width: 100%;   /* 8 px (19/11): a seta não encosta no título */
+  margin: 0 -4px; padding: 3px 4px; border: 0; border-radius: 4px; background: transparent;
+  color: inherit; font: inherit; cursor: pointer; white-space: nowrap;
+}
+[data-bl-root] .at-td__ordenar:hover { color: var(--bl-texto); background: var(--bl-borda); }
+[data-bl-root] .at-td__th[aria-sort="ascending"], [data-bl-root] .at-td__th[aria-sort="descending"] { color: var(--bl-texto); }
+/* indicador de ordenação (19/11): ícone de 13 px (não mais caractere de 9,5 px); não ativa = duas setas em cinza LEGÍVEL (sem a opacidade de .55);
+   ativa = uma seta na cor de destaque — a direção ativa fica clara sem engrossar o texto do título */
+[data-bl-root] .at-td__seta { display: inline-flex; align-items: center; flex: none; line-height: 0; margin: 0 2px; }   /* respiro dos dois lados: nas colunas numéricas a seta fica à esquerda e não encosta no título vizinho */
+[data-bl-root] .at-td__seta svg { display: block; }
+[data-bl-root] .at-td__seta--ativa { color: var(--bl-verde-forte, var(--bl-verde)); }
+[data-bl-root] .at-td__seta--inativa { color: var(--bl-texto-3); }
+[data-bl-root] .at-td__ordenar:hover .at-td__seta--inativa { color: var(--bl-texto-2); }
+[data-bl-root] .at-td--direita .at-td__ordenar { flex-direction: row-reverse; }
+
+/* Células */
+[data-bl-root] .at-td__tabela td { padding: 7px 10px; border-bottom: 1px solid var(--bl-borda); vertical-align: middle; }
+[data-bl-root] .at-td__tabela tbody:last-child tr:last-child td { border-bottom: 0; }
+[data-bl-root] .at-td--direita { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Célula curta (ex.: tipo, situação): não quebra no meio da palavra */
+[data-bl-root] .at-td__tabela td.at-td--curta { white-space: nowrap; overflow-wrap: normal; }
+/* Texto em palavras (ex.: grupo): quebra entre palavras, nunca no meio */
+[data-bl-root] .at-td__tabela td.at-td--palavras { overflow-wrap: normal; min-width: 120px; }
+[data-bl-root] .at-td__th.at-td--direita { text-align: right; }
+[data-bl-root] .at-td--centro { text-align: center; }
+[data-bl-root] .at-td__th.at-td--centro { text-align: center; }
+
+/* Zebra bem suave + hover (tokens; nada de cor fixa) */
+[data-bl-root] .at-td__linha--par { background: color-mix(in srgb, var(--bl-superficie-2) 45%, transparent); }
+[data-bl-root] .at-td__linha:hover { background: color-mix(in srgb, var(--bl-verde-suave) 55%, var(--bl-superficie-2)); }
+[data-bl-root] .at-td__linha--clicavel { cursor: pointer; }
+[data-bl-root] .at-td__linha--clicavel:focus-visible { outline: 2px solid var(--bl-verde-borda); outline-offset: -2px; background: var(--bl-superficie-2); }
+
+/* Grupos: linha de cabeçalho do grupo (título + contagem), não gruda */
+[data-bl-root] .at-td__grupo th {
+  padding: 12px 10px 6px; text-align: left; background: var(--bl-superficie); color: var(--bl-texto);
+  font-size: 12.5px; font-weight: 650; border-bottom: 1px solid var(--bl-borda); white-space: normal;
+}
+[data-bl-root] .at-td__grupo-n { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; background: var(--bl-superficie-2); color: var(--bl-texto-2); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+[data-bl-root] .at-td__vazio { color: var(--bl-texto-3); font-style: italic; }
+
+/* Linha expansível: a <tr> de detalhe fica logo abaixo da linha, com a mesma zebra; sem hover; recuo para ler como "dentro" da linha */
+[data-bl-root] .at-td__linha--aberta td { border-bottom-color: transparent; }
+[data-bl-root] .at-td__expansao-cel { padding: 4px 10px 12px 44px !important; background: color-mix(in srgb, var(--bl-superficie-2) 60%, transparent); }
+[data-bl-root] .at-td__gatilho {
+  all: unset; box-sizing: border-box; display: inline-flex; align-items: baseline; gap: 6px; max-width: 100%;
+  cursor: pointer; color: var(--bl-texto); font-weight: 600; border-radius: 4px;
+}
+[data-bl-root] .at-td__gatilho:hover { color: var(--bl-info); text-decoration: underline; text-underline-offset: 2px; }
+[data-bl-root] .at-td__gatilho:focus-visible { outline: 2px solid var(--bl-verde-borda); outline-offset: 2px; }
+[data-bl-root] .at-td__gatilho-seta { flex: none; width: 10px; font-size: 9.5px; color: var(--bl-texto-3); transition: transform .12s ease; }
+[data-bl-root] .at-td__gatilho[aria-expanded="true"] .at-td__gatilho-seta { transform: rotate(90deg); color: var(--bl-verde); }
+
+/* Faixa da tabela (busca, filtros, contagem e ações acima da tabela; ver TabelaDados.md "Faixa fixa") */
+[data-bl-root] .at-td-faixa { display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; }
+[data-bl-root] .at-td-faixa__linha { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+[data-bl-root] .at-td-faixa__contagem { font-size: 12px; color: var(--bl-texto-3); font-variant-numeric: tabular-nums; }
+[data-bl-root] .at-td-faixa__acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid var(--bl-verde-borda); border-radius: var(--bl-raio-sm); background: color-mix(in srgb, var(--bl-verde-suave) 40%, var(--bl-superficie)); }
+[data-bl-root] .at-td-faixa__acoes strong { font-size: 12.5px; color: var(--bl-texto); margin-right: 4px; }
+[data-bl-root] .at-td__caixa { width: 15px; height: 15px; margin: 0; cursor: pointer; accent-color: var(--bl-verde); vertical-align: middle; }
+/* Linha marcada (caixa de seleção ligada) */
+[data-bl-root] .at-td__linha--marcada { background: color-mix(in srgb, var(--bl-verde-suave) 40%, transparent); }
+/* Etiquetas dentro da linha de detalhe: rótulo e origem na mesma linha */
+[data-bl-root] .at-td__expansao .at-tags li { display: inline-flex; align-items: center; gap: 6px; }
+[data-bl-root] .at-td__origem { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }

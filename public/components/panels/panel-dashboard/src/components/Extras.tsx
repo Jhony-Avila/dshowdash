@@ -5,7 +5,8 @@ import {
   ArrowRight, CalendarDays, Car, CheckSquare, Clock3, Lightbulb, Mail,
 } from 'lucide-react';
 import type { AgendaItem, Insight, ResumoEmails, ResumoTransito } from '../domain/types';
-import { ErroWidget, Secao, SeloSimulado, Skeleton, relTempo } from './ui';
+import { ErroWidget, ProblemaLinha, Secao, SeloSimulado, Skeleton, relTempo } from './ui';
+import { motivoTransito, transitoComProblema } from '../services/GeralService';
 
 // ── Agenda (§17) ────────────────────────────────────────────────────
 export function AgendaWidget({ itens, carregando }: { itens: AgendaItem[] | null; carregando: boolean }) {
@@ -72,8 +73,12 @@ export function TrafficWidget({ transito, carregando, erro, aoTentar, aoAbrir }:
       acoes={<Car size={15} aria-hidden />}>
       {carregando && !transito ? <Skeleton altura={130} /> : erro && !transito ? (
         <ErroWidget mensagem="Não foi possível consultar o trânsito." onTentar={aoTentar} />
+      ) : transito && transitoComProblema(transito) && transito.indice === null ? (
+        // COM PROBLEMA sem último valor válido: o que falhou + Tentar de novo — nunca traços que parecem "zero"
+        <ProblemaLinha motivo={motivoTransito(transito)} ultimoSucesso={null} onTentar={aoTentar} />
       ) : transito && (
         <>
+          {transitoComProblema(transito) && <ProblemaLinha motivo={motivoTransito(transito)} ultimoSucesso={transito.atualizadoEm} onTentar={aoTentar} desatualizado />}
           <div className={`ger-transito ger-transito-${transito.nivel}`}>
             <div className="ger-transito-indice">
               <strong>{transito.indice === null ? '—' : transito.indice}</strong>
@@ -82,7 +87,7 @@ export function TrafficWidget({ transito, carregando, erro, aoTentar, aoAbrir }:
             <div className="ger-transito-corpo">
               <strong>{NIVEL_ROTULO[transito.nivel]}</strong>
               <span>{transito.km === null ? 'sem estimativa de lentidão' : `${transito.km} km de lentidão`}</span>
-              <span>{transito.ocorrencias ?? 0} ocorrências · {transito.interdicoes} interdições</span>
+              <span>{transito.ocorrencias === null ? '—' : transito.ocorrencias} ocorrências · {transito.interdicoes === null ? '—' : transito.interdicoes} interdições</span>
             </div>
           </div>
           {transito.indice !== null && (

@@ -1,0 +1,218 @@
+/* v2/geral-v2.css — Geral V2 · Lançamento (CIMA, 23/11/2026). Tokens da Geral (--ger-*), claro e escuro.
+   Texto mínimo de 12 px em TUDO (regra do Jhony). Movimento: o mesmo vocabulário dos Estados (ger-entra, ger-num-entra, ger-osso). */
+[data-geral-react-root] .gv2 { max-width: 1840px; margin: 0 auto; padding: 22px 26px 40px; display: flex; flex-direction: column; gap: 22px; color: var(--ger-texto); font-size: 13px; }
+[data-geral-react-root] .gv2 * { box-sizing: border-box; }
+[data-geral-react-root] .gv2-topo { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+[data-geral-react-root] .gv2-h1 { margin: 0; font-size: 26px; font-weight: 500; letter-spacing: -.01em; }
+[data-geral-react-root] .gv2-sub { margin: 4px 0 0; font-size: 13px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .gv2-h2 { margin: 0; font-size: 19px; font-weight: 500; letter-spacing: -.005em; }
+[data-geral-react-root] .gv2-h3 { margin: 0; font-size: 15px; font-weight: 500; }
+[data-geral-react-root] .gv2-fraco { color: var(--ger-texto-dim); font-size: 12px; }
+[data-geral-react-root] .gv2-dir { margin-left: auto; }
+[data-geral-react-root] .gv2-reticencias { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* período */
+[data-geral-react-root] .gv2-periodos { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--ger-borda); border-radius: 10px; background: var(--ger-superficie2); }
+[data-geral-react-root] .gv2-periodo { border: 0; background: transparent; color: var(--ger-texto-dim); font: inherit; font-size: 13px; font-weight: 500; padding: 7px 14px; border-radius: 8px; cursor: pointer; transition: background-color 150ms, color 150ms; }
+[data-geral-react-root] .gv2-periodo.is-on { background: var(--ger-superficie); color: var(--ger-texto); font-weight: 500; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+[data-geral-react-root] .gv2-periodo:focus-visible, [data-geral-react-root] .gv2-link:focus-visible, [data-geral-react-root] .gv2-btn:focus-visible { outline: 2px solid var(--ger-azul); outline-offset: 2px; }
+
+/* cartões e seções */
+[data-geral-react-root] .gv2-cartao { background: var(--ger-superficie); border: 1px solid var(--ger-borda); border-radius: 12px; padding: 20px 26px; }
+[data-geral-react-root] .gv2-sec { display: flex; flex-direction: column; gap: 14px; }
+[data-geral-react-root] .gv2-sec-cab { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+[data-geral-react-root] .gv2-sec-cab > div { display: flex; flex-direction: column; gap: 3px; }
+[data-geral-react-root] .gv2-sec-cab--solto { padding: 0 2px; }
+[data-geral-react-root] .gv2-link { display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; padding: 3px 4px; border-radius: 6px; color: var(--ger-link); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+[data-geral-react-root] .gv2-link svg { transition: transform 150ms; }
+[data-geral-react-root] .gv2-link:hover svg { transform: translateX(2px); }
+[data-geral-react-root] .gv2-btn { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--ger-borda); background: var(--ger-superficie); color: var(--ger-link); border-radius: 8px; padding: 6px 11px; font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; text-decoration: none; white-space: nowrap; transition: border-color 150ms, background-color 150ms; }
+[data-geral-react-root] .gv2-btn:hover:not(:disabled) { border-color: color-mix(in srgb, var(--ger-azul) 45%, var(--ger-borda)); }
+[data-geral-react-root] .gv2-btn:disabled { opacity: .6; cursor: default; }
+[data-geral-react-root] .gv2-btn--mini { padding: 4px 9px; }
+
+/* selos de estado (sempre escritos) */
+[data-geral-react-root] .gv2-selo { display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 7px; font-size: 12px; font-weight: 500; white-space: nowrap; border: 1px solid transparent; }
+[data-geral-react-root] .gv2-selo--mini { height: 20px; margin-left: 8px; padding: 0 7px; }
+[data-geral-react-root] .gv2-selo--ok { color: var(--ger-ok); background: color-mix(in srgb, var(--ger-ok) 10%, transparent); border-color: color-mix(in srgb, var(--ger-ok) 30%, transparent); }
+[data-geral-react-root] .gv2-selo--aviso { color: var(--ger-warn); background: color-mix(in srgb, var(--ger-warn) 10%, transparent); border-color: color-mix(in srgb, var(--ger-warn) 30%, transparent); }
+[data-geral-react-root] .gv2-selo--erro { color: var(--ger-bad); background: color-mix(in srgb, var(--ger-bad) 9%, transparent); border-color: color-mix(in srgb, var(--ger-bad) 28%, transparent); }
+[data-geral-react-root] .gv2-selo--info { color: var(--ger-azul); background: color-mix(in srgb, var(--ger-azul) 9%, transparent); border-color: color-mix(in srgb, var(--ger-azul) 25%, transparent); }
+[data-geral-react-root] .gv2-selo--neutro { color: var(--ger-texto-dim); background: var(--ger-superficie2); border-color: var(--ger-borda); }
+
+/* 1. prioridades */
+[data-geral-react-root] .gv2-prioridades { display: flex; flex-direction: column; gap: 0; padding-top: 18px; padding-bottom: 8px; }
+[data-geral-react-root] .gv2-prioridades .gv2-sec-cab { padding-bottom: 14px; border-bottom: 1px solid var(--ger-borda); }
+[data-geral-react-root] .gv2-prio-lista { list-style: none; margin: 0; padding: 0; }
+[data-geral-react-root] .gv2-prio { display: grid; grid-template-columns: 4px minmax(0, 2.4fr) minmax(0, 1.2fr) minmax(0, .8fr) auto; align-items: center; gap: 18px; padding: 16px 0; border-bottom: 1px solid var(--ger-borda); }
+[data-geral-react-root] .gv2-prio:last-child { border-bottom: 0; }
+[data-geral-react-root] .gv2-prio-barra { width: 4px; height: 34px; border-radius: 2px; background: var(--ger-borda); }
+[data-geral-react-root] .gv2-prio--alta .gv2-prio-barra { background: var(--ger-bad); }
+[data-geral-react-root] .gv2-prio--media .gv2-prio-barra { background: var(--ger-warn); }
+[data-geral-react-root] .gv2-prio--baixa .gv2-prio-barra { background: color-mix(in srgb, var(--ger-azul) 55%, var(--ger-texto-dim)); }
+[data-geral-react-root] .gv2-prio-txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+[data-geral-react-root] .gv2-prio-txt strong { font-size: 14px; font-weight: 500; }
+[data-geral-react-root] .gv2-prio-meio { font-size: 13px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .gv2-prio-quando { font-size: 12px; color: var(--ger-texto-dim); white-space: nowrap; }
+[data-geral-react-root] .gv2-prio .gv2-link { justify-self: end; }
+[data-geral-react-root] .gv2-prio--osso .gv2-prio-txt { gap: 7px; }
+[data-geral-react-root] .gv2-ver-todas { align-self: flex-start; margin: 6px 0 4px; }
+[data-geral-react-root] .gv2-prioridades--vazio { flex-direction: row; align-items: center; gap: 14px; padding: 16px 26px; }
+[data-geral-react-root] .gv2-prioridades--vazio > div { display: flex; flex-direction: column; gap: 2px; }
+[data-geral-react-root] .gv2-prioridades--vazio strong { font-size: 14px; font-weight: 500; }
+[data-geral-react-root] .gv2-ok-ic { color: var(--ger-ok); flex: none; }
+[data-geral-react-root] .gv2-aviso-ic { color: var(--ger-warn); flex: none; }
+
+/* 2. resultado comercial */
+[data-geral-react-root] .gv2-tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+/* 116 (decisão de 25/11): 4 indicadores lado a lado, mesma altura (também em 1440, ~1080 px úteis); abaixo de 880 px úteis, 2×2 */
+[data-geral-react-root] [data-gv2-bloco="resultado"] { container-type: inline-size; }   /* o @container vale para os FILHOS: a grade fica dentro */
+[data-geral-react-root] .gv2-quatro { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+@container (max-width: 880px) { [data-geral-react-root] .gv2-quatro { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* marcador discreto de origem: Comercial · Pipedrive / Operação · Bling / Financeiro · Precifica (12 px: regra do Jhony, nada abaixo) */
+[data-geral-react-root] .gv2-marcador { font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--ger-texto-dim); line-height: 1.2; }
+[data-geral-react-root] .gv2-num { display: flex; flex-direction: column; gap: 8px; min-height: 182px; }
+[data-geral-react-root] .gv2-num-cab { display: flex; align-items: center; gap: 10px; }
+[data-geral-react-root] .gv2-num-cab .gv2-selo { margin-left: auto; }
+[data-geral-react-root] .gv2-num-ic { color: var(--ger-texto-dim); display: inline-flex; }
+[data-geral-react-root] .gv2-num-cab .gv2-selo + .gv2-num-ic { margin-left: 0; }
+[data-geral-react-root] .gv2-num-cab .gv2-h3 + .gv2-num-ic { margin-left: auto; }
+[data-geral-react-root] .gv2-num-valor { font-size: 34px; font-weight: 500; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.15; margin-top: 6px; }
+[data-geral-react-root] .gv2-num-valor.is-desatualizado { color: var(--ger-texto-dim); }
+[data-geral-react-root] .gv2-num-valor--vazio { color: var(--ger-texto-dim); }
+[data-geral-react-root] .gv2-num-linha { display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .gv2-nota { font-size: 12px; color: var(--ger-warn); }
+[data-geral-react-root] .gv2-num-sub { font-size: inherit; color: var(--ger-texto-dim); }   /* informação neutra (fotografia do funil), nunca cor de aviso */
+[data-geral-react-root] .gv2-num-estado { display: flex; min-height: 0; }
+[data-geral-react-root] .gv2-num-estado:empty { display: none; }
+[data-geral-react-root] .gv2-quatro .gv2-h3 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-geral-react-root] .gv2-quatro .gv2-num-rodape .gv2-fraco { white-space: normal; overflow: visible; }   /* rodapé inteiro, sem reticências */
+[data-geral-react-root] .gv2-aviso-linha { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ger-warn); margin: 0; }
+[data-geral-react-root] .gv2-num-rodape { display: flex; align-items: center; gap: 10px; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--ger-borda); min-width: 0; }
+[data-geral-react-root] .gv2-num-rodape .gv2-fraco { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-geral-react-root] .gv2-num-rodape .gv2-link { margin-left: auto; }
+
+/* 3. pedidos + agenda */
+[data-geral-react-root] .gv2-dupla { display: grid; grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr); gap: 18px; }
+[data-geral-react-root] .gv2-grafico, [data-geral-react-root] .gv2-agenda { display: flex; flex-direction: column; gap: 14px; }
+[data-geral-react-root] .gv2-barras-caixa { width: 100%; min-height: 236px; }
+[data-geral-react-root] .gv2-barras { display: block; }
+[data-geral-react-root] .gv2-barra { fill: color-mix(in srgb, var(--ger-azul) 42%, var(--ger-superficie)); transition: opacity 150ms; }
+[data-geral-react-root] .gv2-barras g:hover .gv2-barra { opacity: .8; }
+[data-geral-react-root] .gv2-grade { stroke: var(--ger-borda); stroke-width: 1; }
+[data-geral-react-root] .gv2-eixo { fill: var(--ger-texto-dim); font-size: 12px; font-family: inherit; }
+[data-geral-react-root] .gv2-grafico-rodape { margin: 0; }
+[data-geral-react-root] .gv2-grafico-rodape strong { color: var(--ger-texto); font-weight: 500; }
+[data-geral-react-root] .gv2-barras-osso { display: flex; align-items: flex-end; gap: 6%; height: 220px; padding: 0 4% 0 8%; }
+[data-geral-react-root] .gv2-barras-osso .ger-osso { flex: 1; border-radius: 4px 4px 0 0; }
+[data-geral-react-root] .gv2-eventos { list-style: none; margin: 0; padding: 0; }
+[data-geral-react-root] .gv2-evento { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 16px 0; border-top: 1px solid var(--ger-borda); }
+[data-geral-react-root] .gv2-evento-hora { font-size: 16px; font-weight: 500; font-variant-numeric: tabular-nums; }
+[data-geral-react-root] .gv2-evento-txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+[data-geral-react-root] .gv2-evento-txt strong { font-size: 14px; font-weight: 500; }
+[data-geral-react-root] .gv2-evento[data-gv2-conflito="1"] .gv2-evento-hora { color: var(--ger-bad); }
+[data-geral-react-root] .gv2-vazio { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--ger-texto-dim); font-size: 13px; }
+
+/* 4. fontes */
+[data-geral-react-root] .gv2-fontes { padding: 16px 22px; }
+[data-geral-react-root] .gv2-fontes-linha { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+[data-geral-react-root] .gv2-fontes-tit { font-size: 14px; padding-right: 16px; border-right: 1px solid var(--ger-borda); }
+[data-geral-react-root] .gv2-fontes-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+[data-geral-react-root] .gv2-fonte { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .gv2-fonte strong { color: var(--ger-texto); font-weight: 500; }
+[data-geral-react-root] .gv2-ponto { width: 7px; height: 7px; border-radius: 50%; background: var(--ger-texto-dim); flex: none; }
+[data-geral-react-root] .gv2-fonte--conectada .gv2-ponto { background: var(--ger-ok); }
+[data-geral-react-root] .gv2-fonte--desatualizada .gv2-ponto { background: var(--ger-warn); }
+[data-geral-react-root] .gv2-fonte--problema .gv2-ponto { background: var(--ger-bad); }
+[data-geral-react-root] .gv2-fonte--problema span:last-child { color: var(--ger-bad); }
+[data-geral-react-root] .gv2-fontes-det { margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--ger-borda); display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 8px 22px; font-size: 12px; }
+[data-geral-react-root] .gv2-fontes-det dt { font-weight: 500; }
+[data-geral-react-root] .gv2-fontes-det dd { margin: 0; color: var(--ger-texto-dim); }
+[data-geral-react-root] .gv2-gira90 { transform: rotate(90deg); }
+
+/* Com problema (o mesmo desenho dos Estados) */
+[data-geral-react-root] .gv2-problema { display: flex; align-items: flex-start; gap: 9px; border: 1px solid color-mix(in srgb, var(--ger-bad) 35%, var(--ger-borda)); background: color-mix(in srgb, var(--ger-bad) 6%, var(--ger-superficie)); border-radius: 10px; padding: 10px 12px; flex: 1 1 auto; }
+[data-geral-react-root] .gv2-problema-ic { color: var(--ger-bad); flex: none; margin-top: 2px; }
+[data-geral-react-root] .gv2-problema-corpo { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1; }
+[data-geral-react-root] .gv2-problema-motivo { font-size: 13px; font-weight: 500; }
+[data-geral-react-root] .gv2-problema-linha2 { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 10px; }
+[data-geral-react-root] .gv2-problema-linha2 .gv2-btn { margin-left: auto; }
+[data-geral-react-root] .gv2-girando { animation: ger-gira 800ms linear infinite; }
+[data-geral-react-root] .gv2-osso { display: block; }
+
+/* lista de uma prioridade */
+[data-geral-react-root] .gv2-lista { display: flex; flex-direction: column; gap: 14px; }
+[data-geral-react-root] .gv2-trilha { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .gv2-trilha .gv2-link { padding: 2px; }
+[data-geral-react-root] .gv2-filtros { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 18px; }
+[data-geral-react-root] .gv2-chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--ger-borda); background: var(--ger-superficie2); font-size: 12px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .gv2-chip--info { color: var(--ger-azul); background: color-mix(in srgb, var(--ger-azul) 8%, transparent); border-color: color-mix(in srgb, var(--ger-azul) 25%, transparent); }
+[data-geral-react-root] .gv2-chip select { border: 0; background: transparent; color: var(--ger-texto); font: inherit; font-size: 12px; cursor: pointer; }
+[data-geral-react-root] .gv2-lista-osso { display: flex; flex-direction: column; gap: 14px; }
+[data-geral-react-root] .gv2-lista-rodape { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 0 2px; }
+[data-geral-react-root] .gv2-paginas { display: inline-flex; gap: 6px; }
+[data-geral-react-root] .gv2-pilula { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 12px; font-variant-numeric: tabular-nums; border: 1px solid transparent; }
+[data-geral-react-root] .gv2-pilula--erro { color: var(--ger-bad); background: color-mix(in srgb, var(--ger-bad) 8%, transparent); border-color: color-mix(in srgb, var(--ger-bad) 28%, transparent); }
+[data-geral-react-root] .gv2-pilula--aviso { color: var(--ger-warn); background: color-mix(in srgb, var(--ger-warn) 9%, transparent); border-color: color-mix(in srgb, var(--ger-warn) 30%, transparent); }
+
+/* TabelaDados (cópia idêntica) dentro da Geral: raiz [data-bl-root] sem o "height:100%/flex" do módulo; linha de 36 px numa linha só,
+   reticências; cabeçalho e células ≥ 12 px (a cópia usa 11,5 px no <th> — ajuste só aqui, a cópia não muda) */
+[data-geral-react-root] .gv2-tabela-raiz[data-bl-root] { display: block; height: auto; background: var(--ger-superficie); padding: 0; overflow: hidden; font-size: 13px; }
+[data-geral-react-root] .gv2-tabela-raiz .at-td__th { font-size: 12px; height: 40px; }
+[data-geral-react-root] .gv2-tabela-raiz .at-td__tabela { font-size: 13px; table-layout: fixed; }
+[data-geral-react-root] .gv2-tabela-raiz .at-td__tabela td { height: 36px; padding: 0 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-geral-react-root] .gv2-tabela-raiz .at-td__tabela td > * { vertical-align: middle; }
+[data-geral-react-root] .gv2-tabela-raiz .gv2-td-id { width: 92px; }
+[data-geral-react-root] .gv2-tabela-raiz th[data-coluna="deal_id"] { width: 92px; }
+[data-geral-react-root] .gv2-tabela-raiz th[data-coluna="titulo"] { width: auto; }   /* o título fica com o resto (retorno do mockup: etapa inteira em 1440) */
+[data-geral-react-root] .gv2-tabela-raiz th[data-coluna="etapa"] { width: 176px; }
+[data-geral-react-root] .gv2-tabela-raiz th[data-coluna="responsavel"] { width: 136px; }
+[data-geral-react-root] .gv2-tabela-raiz th[data-coluna="acao"] { width: 150px; }
+[data-geral-react-root] .gv2-tabela-raiz th[data-coluna="prazo"] { width: 170px; }
+[data-geral-react-root] .gv2-tabela-raiz th[data-coluna="valor"] { width: 140px; }
+[data-geral-react-root] .gv2-td-destaque { color: var(--ger-link); }
+
+/* responsivo (1440) */
+@media (max-width: 1500px) {   /* 1440: densidade do mockup 01_GERAL_LANCAMENTO_1440x900 */
+  [data-geral-react-root] .gv2 { padding: 14px 16px 28px; gap: 14px; }
+  [data-geral-react-root] .gv2-cartao { padding: 14px 16px; }
+  [data-geral-react-root] .gv2-h1 { font-size: 22px; }
+  [data-geral-react-root] .gv2-h2 { font-size: 16px; }
+  [data-geral-react-root] .gv2-h3 { font-size: 13px; }
+  [data-geral-react-root] .gv2-periodo { padding: 6px 12px; }
+  [data-geral-react-root] .gv2-prioridades { padding-top: 12px; padding-bottom: 4px; }
+  [data-geral-react-root] .gv2-prioridades .gv2-sec-cab { padding-bottom: 10px; }
+  [data-geral-react-root] .gv2-prio { grid-template-columns: 4px minmax(0, 2.2fr) minmax(0, 1.2fr) minmax(0, .7fr) auto; gap: 12px; padding: 9px 0; }
+  [data-geral-react-root] .gv2-prio-txt strong { font-size: 13px; }
+  [data-geral-react-root] .gv2-prio-barra { height: 28px; }
+  [data-geral-react-root] .gv2-tres, [data-geral-react-root] .gv2-quatro { gap: 14px; }
+  [data-geral-react-root] .gv2-num { min-height: 140px; gap: 4px; }
+  [data-geral-react-root] .gv2-num-valor { font-size: 26px; margin-top: 4px; }
+  [data-geral-react-root] .gv2-num-linha { font-size: 12px; }
+  [data-geral-react-root] .gv2-num-rodape { padding-top: 9px; }
+  [data-geral-react-root] .gv2-dupla { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 14px; }
+  [data-geral-react-root] .gv2-evento { padding: 11px 0; grid-template-columns: 56px minmax(0, 1fr) auto; }
+  [data-geral-react-root] .gv2-evento-hora { font-size: 14px; }
+  [data-geral-react-root] .gv2-evento-txt strong { font-size: 13px; }
+}
+@media (max-width: 1100px) {
+  [data-geral-react-root] .gv2-tres, [data-geral-react-root] .gv2-dupla { grid-template-columns: 1fr; }
+  [data-geral-react-root] .gv2-quatro { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-geral-react-root] .gv2-girando, [data-geral-react-root] .gv2 .ger-osso { animation: none !important; }
+  [data-geral-react-root] .gv2-link svg, [data-geral-react-root] .gv2-periodo, [data-geral-react-root] .gv2-btn { transition: none; }
+}
+[data-geral-react-root] .gv2-fontes-osso { display: inline-flex; align-items: center; gap: 14px; }
+/* a seta do link nunca encolhe (no rodapé apertado de 1440 ela sumia) e o link não cede espaço ao texto */
+[data-geral-react-root] .gv2-link, [data-geral-react-root] .gv2-btn { flex: none; }
+[data-geral-react-root] .gv2-link svg, [data-geral-react-root] .gv2-btn svg { flex: none; }
+/* o quadro "Com problema" não estica para ocupar o bloco (em coluna ele crescia até o fim do gráfico) */
+[data-geral-react-root] .gv2-grafico .gv2-problema, [data-geral-react-root] .gv2-agenda .gv2-problema, [data-geral-react-root] .gv2-prioridades .gv2-problema, [data-geral-react-root] .gv2-num .gv2-problema { flex: 0 0 auto; }
+
+/* 1440 (retorno do mockup, 24/11): títulos de compromisso e nomes de fonte inteiros, sem aumentar os cartões —
+   o botão "Abrir evento" vira só o ícone (nome acessível no aria-label) quando o miolo é estreito. */
+@media (max-width: 1800px) {
+  .gv2-btn--evento { padding-left: 8px; padding-right: 8px; }
+  .gv2-btn--evento .gv2-btn-rotulo { display: none; }
+}

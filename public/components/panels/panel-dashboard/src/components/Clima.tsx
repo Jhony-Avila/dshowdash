@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import type { ClimaCompleto, ClimaDia, GrupoClima } from '../domain/types';
 import { GChart } from './GChart';
-import { Secao, Skeleton, relTempo } from './ui';
+import { ProblemaLinha, Secao, Skeleton, relTempo } from './ui';
 
 const ICONE_GRUPO: Record<GrupoClima, (size: number) => React.ReactNode> = {
   limpo: (s) => <Sun size={s} />,
@@ -25,7 +25,9 @@ const g = (v: number | null | undefined, suf = '') => (v === null || v === undef
 const hora = (iso: string | null) => (iso ? iso.slice(11, 16) : '—');
 
 // ── Clima atual (§8) ────────────────────────────────────────────────
-export function ClimaAtualCard({ clima }: { clima: ClimaCompleto | null }) {
+/** Falha do clima = COM PROBLEMA (antes: esqueleto para sempre, parecia carregamento travado). */
+export function ClimaAtualCard({ clima, erro = false, aoTentar }: { clima: ClimaCompleto | null; erro?: boolean; aoTentar?: () => void }) {
+  if (!clima && erro) return <section className="ger-clima" data-ger-estado="problema"><ProblemaLinha motivo="Não foi possível ler o clima agora." ultimoSucesso={null} onTentar={aoTentar ?? (() => undefined)} /></section>;
   if (!clima) return <Skeleton altura={172} />;
   const a = clima.atual;
   const alerta = a.grupo === 'tempestade' ? 'Tempestade prevista'
@@ -77,7 +79,7 @@ function rotuloDia(iso: string, i: number): string {
   return DIA_SEMANA[d.getDay()];
 }
 
-export function PrevisaoDezDias({ clima }: { clima: ClimaCompleto | null }) {
+export function PrevisaoDezDias({ clima, erro = false }: { clima: ClimaCompleto | null; erro?: boolean }) {
   const [sel, setSel] = useState(0);
   const dias = clima?.dias ?? [];
   const dia: ClimaDia | undefined = dias[sel];
@@ -87,6 +89,7 @@ export function PrevisaoDezDias({ clima }: { clima: ClimaCompleto | null }) {
     return clima.horas.filter((h) => h.hora.startsWith(dia.data));
   }, [clima, dia]);
 
+  if (!clima && erro) return null;   // o problema já aparece no cartão do clima (uma vez só), sem caixa vazia aqui
   if (!clima) return <Skeleton altura={280} />;
   if (dias.length === 0) return null;
 
