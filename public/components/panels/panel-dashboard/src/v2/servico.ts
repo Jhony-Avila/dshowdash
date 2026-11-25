@@ -20,7 +20,15 @@ export interface NegociosGanhos extends Base { quantidade: number | null; valor:
 export interface FunilAberto extends Base { quantidade: number | null; valor: number | null; sem_valor: number | null; fotografia_em?: string | null }
 /** Recebido no período · Precifica (decisão de 25/11). No 116 o cartão é SEMPRE "— · Aguardando conexão": não existe leitura de
  *  recebimentos do Precifica. Nunca Asaas, Bling ou Pipedrive. */
-export interface Recebido extends Base { valor: number | null }
+/** 25/11 (P15): recebido do Precifica — `valor` em TEXTO "1234.56" (centavos exatos) ou null; por empresa = CNPJ da parcela. */
+export interface RecebidoEmpresa { empresa_id: number | null; cnpj: string | null; nome: string | null; quantidade: number; valor: string | null }
+export interface Recebido extends Base { valor: string | number | null; quantidade?: number | null; por_empresa?: RecebidoEmpresa[] | null; sem_cnpj?: number | null }
+/** Valor monetário do serviço ("1234.56" ou número) → número; texto inválido = null (desconhecido, nunca 0). */
+export const numDe = (v: string | number | null | undefined): number | null => {
+  if (v === null || v === undefined) return null; if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+  return /^-?\d+(\.\d+)?$/.test(v) ? Number(v) : null;
+};
+export const fmtMoeda2 = (v: number | null) => (v === null ? '—' : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 export interface Resumo { periodo: Periodo; pedidos_bling: PedidosBling; negocios_ganhos: NegociosGanhos; funil_aberto: FunilAberto; recebido?: Recebido }
 
 export type IdPrioridade = 'atividade_vencida' | 'sem_proxima_atividade' | 'conflito_agenda';

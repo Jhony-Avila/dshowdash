@@ -7,7 +7,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AlertTriangle, ArrowRight, CalendarDays, CheckCircle2, ExternalLink, Layers, Package, PlugZap, TrendingUp, Wallet } from 'lucide-react';
 import {
-  ErroV2, fmtData, fmtDiaMes, fmtHora, fmtMoeda, fmtN, fmtQuando, hojeExtenso,
+  ErroV2, fmtData, fmtDiaMes, fmtHora, fmtMoeda, fmtMoeda2, fmtN, fmtQuando, hojeExtenso, numDe,
   lerPainel, type Painel,
   type Agenda, type EstadoBloco, type Fonte, type IdPrioridade, type PedidosBling, type PeriodoV2, type Prioridade, type Prioridades, type Resumo,
 } from './servico';
@@ -286,7 +286,7 @@ function contagemCompleta(e: Efetivo | undefined, lacunas: string[] | undefined,
 // ── 2. Indicadores do negócio (4 cartões, decisão de 25/11 — conceitos separados, nunca somados) ──
 function BlocoResultado({ b, fl }: { b: ReturnType<typeof useBloco<Resumo>>; fl: FontesLidas }) {
   const r = b.dados; const car = b.carregando && !r;
-  const ef = (id: IdIndicador, x: Resumo['pedidos_bling'] | Resumo['negocios_ganhos'] | Resumo['funil_aberto'] | undefined) => (x ? efetivo(id, x, fl, !!b.erro, b.okEm) : undefined);
+  const ef = (id: IdIndicador, x: Resumo['pedidos_bling'] | Resumo['negocios_ganhos'] | Resumo['funil_aberto'] | Resumo['recebido'] | undefined) => (x ? efetivo(id, x, fl, !!b.erro, b.okEm) : undefined);
   const p = r?.pedidos_bling, g = r?.negocios_ganhos, f = r?.funil_aberto;
   const ep = contagemCompleta(ef('pedidos_bling', p), p?.lacunas, ['sem_canal']);
   const eg = contagemCompleta(ef('negocios_ganhos', g), g?.lacunas, ['sem_valor', 'fora_brl']);
@@ -305,10 +305,16 @@ function BlocoResultado({ b, fl }: { b: ReturnType<typeof useBloco<Resumo>>; fl:
   };
   const plural = (n: number | null, um: string, varios: string) => `${fmtN(n)} ${n === 1 ? um : varios}`;
   const foto = f ? (f.fotografia_em ?? f.valor_em ?? f.ultimo_sucesso ?? null) : null;
-  // Recebido no período (Precifica): no 116 SEMPRE "— · Aguardando conexão" — não existe leitura de recebimentos. Nunca número, nunca R$ 0.
-  const recebido = (
+  // Recebido no período (Precifica, P15): estados REAIS do coletor. "aguardando" (sem leitura) = "— · Aguardando conexão"; parcial = "—" com o
+  // motivo (o serviço não soma parcial); erro = problema com o motivo; ok/zero/desatualizado = valor com centavos. Nunca R$ 0 por ausência.
+  const rc = r?.recebido; const er = ef('recebido', rc);
+  const vr = numDe(rc?.valor);
+  const aguardandoRecebido = (
     <><span className="gv2-num-valor gv2-num-valor--vazio" data-gv2-recebido-valor>—</span>
       <span className="gv2-num-linha">Aguardando conexão · valor desconhecido, não é R$ 0</span></>);
+  const problemaRecebido = falhaGeral ?? (!rc || rc.estado === 'aguardando' ? (car ? null : aguardandoRecebido) : porBloco(rc));
+  const empresas = (rc?.por_empresa ?? []).map((x) => `${x.nome ?? 'Sem empresa'}${x.cnpj ? ` (${x.cnpj})` : ''}: ${fmtMoeda2(numDe(x.valor))} · ${fmtN(x.quantidade)} ${x.quantidade === 1 ? 'baixa' : 'baixas'}`);
+  const dicaRecebido = `Recebido no período vem só do Precifica (fonte financeira oficial): baixas não estornadas, pela data do recebimento e pelo CNPJ da parcela.${empresas.length ? ` Por empresa — ${empresas.join(' · ')}.` : ''}${rc?.sem_cnpj ? ` ${fmtN(rc.sem_cnpj)} sem CNPJ (entram no total).` : ''}`;
   return (
     <section className="gv2-sec" data-gv2-bloco="resultado">
       <div className="gv2-sec-cab gv2-sec-cab--solto">
@@ -329,9 +335,11 @@ function BlocoResultado({ b, fl }: { b: ReturnType<typeof useBloco<Resumo>>; fl:
           valor={qtd(ep, p?.quantidade)} problema={porBloco(p)} dica={`Bling principal${p?.conta ? ` (conta ${p.conta})` : ''} · ${p?.universo ?? 'pedidos de venda lançados no período'}. Não é faturamento nem recebimento.`}
           linha={p && ep && linhaEstado(ep, <>Quantidade no período · não é faturamento{p.inclui_canceladas && <span className="gv2-nota">Inclui pedidos cancelados depois do lançamento.</span>}</>)}
           rodape="Bling · unidades de OS" link={{ rotulo: 'Ver registros', rota: '#/panel-bling' }} />
-        <CartaoNumero data="recebido" marcador="Financeiro · Precifica" titulo="Recebido no período" icone={<Wallet size={18} />} estado={car ? 'carregando' : falhaGeral ? (semAcesso(b.erro) ? 'semacesso' : 'erro') : 'aguardando'} carregando={car}
-          valor="—" problema={falhaGeral ?? recebido} linha={null}
-          rodape="Precifica · recebido" link={null} dica="Recebido no período vem só do Precifica (fonte financeira oficial). Ainda não conectado: valor desconhecido." />
+        <CartaoNumero data="recebido" marcador="Financeiro · Precifica" titulo="Recebido no período" icone={<Wallet size={18} />}
+          estado={car ? 'carregando' : falhaGeral ? (semAcesso(b.erro) ? 'semacesso' : 'erro') : !rc ? 'aguardando' : est(er)} carregando={car || !!er?.conferindo}
+          valor={er?.zeroNaoConfirmado || rc?.estado === 'parcial' ? '—' : fmtMoeda2(vr)} problema={problemaRecebido}
+          linha={rc && er && rc.estado !== 'aguardando' && linhaEstado(er, <>{plural(rc.quantidade ?? null, 'baixa recebida', 'baixas recebidas')} no período{rc.sem_cnpj ? ` · ${fmtN(rc.sem_cnpj)} sem CNPJ` : ''}</>, vr)}
+          rodape="Precifica · recebido" link={null} dica={dicaRecebido} />
       </div>
     </section>
   );
