@@ -4,13 +4,16 @@
 //   - CSRF: relê o token no /api/auth/check.php (o guardado fica velho quando a sessão renova) e manda X-CSRF-Token.
 //   - Espera a CONFIRMAÇÃO do servidor: só o ENVELOPE de sucesso do POST /api/auth/logout.php (ApiResponse::success = JSON com ok === true)
 //     é saída confirmada. 2xx ambíguo (HTML de proxy, JSON inválido, {ok:false}, 204) só vale se o check.php PROVAR authenticated:false;
-//     sem prova = falha 'desconhecido' (R7, DSHOW-115 — o mesmo critério da P9 8d10efbf). Falha de rede, timeout, 403 de CSRF ou 5xx = falha
+//     sem prova = falha 'desconhecido' (R7, DSHOW-115). Falha de rede, timeout, 403 de CSRF ou 5xx = falha
 //     (a tela mostra o erro e não finge que saiu).
-//   - Já sem sessão no servidor (check.php 200 diz authenticated:false — ex.: outra aba saiu antes) = sucesso: não há o que encerrar.
-//     Só essa resposta prova: 401 (que o check.php nunca emite) vem de proxy/WAF e não conta.
+//   - Já sem sessão no servidor (outra aba saiu antes) = sucesso: não há o que encerrar. A prova é SÓ o validador único
+//     core/auth/sessao-encerrada (Codex DSHOW-115B): 200 + JSON + envelope de sucesso do check.php (ok:true, error:null) + data.authenticated
+//     === false. {ok:false, authenticated:false}, 401 de proxy, HTML, JSON inválido = DESCONHECIDO, nunca saída.
 //   - Uma chamada por vez: cliques repetidos recebem a MESMA promessa.
 //   Quem navega para /login é quem chama, DEPOIS do sucesso (a navegação antes abortava o POST — achado de 23/11).
 // =====================================================
+
+import { lerRespostaCheck } from './sessao-encerrada.js';
 
 export interface ResultadoLogout {
   ok: boolean;
@@ -21,13 +24,6 @@ export interface ResultadoLogout {
 const ENDPOINT_CHECK = '/api/auth/check.php';
 const ENDPOINT_LOGOUT = '/api/auth/logout.php';
 let emCurso: Promise<ResultadoLogout> | null = null;
-
-function lerCsrf(d: Record<string, any>): { autenticado: boolean | null; csrf: string } {
-  const dados = (d && d.data) || d || {};
-  const sessao = dados.session || {};
-  const autenticado = typeof dados.authenticated === 'boolean' ? dados.authenticated : null;
-  return { autenticado, csrf: typeof sessao.csrf_token === 'string' ? sessao.csrf_token : '' };
-}
 
 /** Envelope de sucesso do POST /api/auth/logout.php (ApiResponse::success): 2xx + JSON com `ok === true`. Qualquer outra coisa não confirma. */
 export function envelopeDeSucesso(status: number, tipo: string | null, corpo: string): boolean {
@@ -41,12 +37,11 @@ async function executar(timeoutMs: number): Promise<ResultadoLogout> {
   const relogio = setTimeout(() => controle.abort(), timeoutMs);
   try {
     const c = await fetch(ENDPOINT_CHECK, { method: 'GET', credentials: 'include', cache: 'no-store', headers: { Accept: 'application/json' }, signal: controle.signal });
-    let csrf = '';
-    if (c.ok) {
-      const info = lerCsrf(await c.json().catch(() => ({})));
-      if (info.autenticado === false) return { ok: true, status: c.status, motivo: 'sem-sessao' };
-      csrf = info.csrf;
-    }
+    // Codex DSHOW-115B: o check é lido SÓ pelo validador único. 'encerrada' = já sem sessão; 'ativa' = relê o CSRF; 'desconhecido' = sem CSRF
+    // e sem conclusão (o POST segue e o servidor decide: sem CSRF ele recusa e a tela mostra "Erro ao sair").
+    const leitura = await lerRespostaCheck(c);
+    if (leitura.estado === 'encerrada') return { ok: true, status: c.status, motivo: 'sem-sessao' };
+    const csrf = leitura.estado === 'ativa' ? leitura.csrf : '';
     // 401 NÃO é prova de "sem sessão": o check.php só emite 200 (authenticated:true/false) ou 503; 401 vem de proxy/WAF (revisão da
     // ACIMA_ESQUERDA, DSHOW-115B). Sem prova, o logout segue para o servidor (sem CSRF ele recusa e a tela mostra "Erro ao sair").
     const headers: Record<string, string> = { 'Content-Type': 'application/json', Accept: 'application/json' };
@@ -61,7 +56,7 @@ async function executar(timeoutMs: number): Promise<ResultadoLogout> {
       // 2xx AMBÍGUO: só conta como saída se o check.php PROVAR que a sessão acabou; senão é desconhecido (nunca "saiu" sem prova)
       try {
         const p = await fetch(ENDPOINT_CHECK, { method: 'GET', credentials: 'include', cache: 'no-store', headers: { Accept: 'application/json' }, signal: controle.signal });
-        if (p.ok && lerCsrf(await p.json().catch(() => ({}))).autenticado === false) return { ok: true, status: p.status, motivo: 'sem-sessao' };
+        if ((await lerRespostaCheck(p)).estado === 'encerrada') return { ok: true, status: p.status, motivo: 'sem-sessao' };
       } catch { /* sem prova */ }
       return { ok: false, status: r.status, motivo: 'desconhecido' };
     }

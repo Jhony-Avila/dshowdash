@@ -12,7 +12,8 @@ let ok = 0, falhas = 0; const afirma = (n, c, x = '') => { if (c) { ok++; consol
 // resposta falsa com o que uma Response real do PHP tem (ApiResponse manda Content-Type: application/json) — R7: o cliente exige o envelope JSON
 const resp = (status, corpo) => ({ ok: status >= 200 && status < 300, status, headers: { get: (h) => (/content-type/i.test(h) ? 'application/json; charset=utf-8' : null) }, json: async () => corpo, text: async () => JSON.stringify(corpo) });
 const CSRF_FALSO = 'teste-' + randomUUID();   // gerado na hora: nenhum valor de token fixo no código
-const CHECK_AUT = { ok: true, data: { authenticated: true, session: { csrf_token: CSRF_FALSO } } };
+// envelopes EXATOS do api/auth/check.php (Codex DSHOW-115B: o validador único só aceita o envelope de sucesso com error:null)
+const CHECK_AUT = { ok: true, data: { authenticated: true, user: { id: 75 }, session: { token: 'tok-sintetico', csrf_token: CSRF_FALSO } }, error: null };
 function cenario(roteiro) { const pedidos = []; globalThis.fetch = async (url, op = {}) => { pedidos.push({ url, metodo: op.method || 'GET', csrf: (op.headers || {})['X-CSRF-Token'] }); return roteiro(url, op, pedidos); }; return pedidos; }
 
 let p = cenario((u) => u.includes('check') ? resp(200, CHECK_AUT) : resp(200, { ok: true }));
@@ -36,7 +37,7 @@ cenario((u) => u.includes('check') ? resp(200, CHECK_AUT) : resp(503, {}));
 r = await encerrarSessao();
 afirma('erro do servidor (5xx) → ok:false', r.ok === false && r.motivo === 'servidor');
 
-p = cenario((u) => u.includes('check') ? resp(200, { ok: true, data: { authenticated: false, session: { csrf_token: 'x' } } }) : resp(403, {}));
+p = cenario((u) => u.includes('check') ? resp(200, { ok: true, data: { authenticated: false, user: null, session: { csrf_token: 'x' } }, error: null }) : resp(403, {}));
 r = await encerrarSessao();
 afirma('já sem sessão no servidor (outra aba saiu) → ok:true sem POST', r.ok === true && r.motivo === 'sem-sessao' && !p.some((x) => x.metodo === 'POST'));
 

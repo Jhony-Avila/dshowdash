@@ -1,12 +1,7 @@
+import { lerRespostaCheck } from "./sessao-encerrada.js";
 const ENDPOINT_CHECK = "/api/auth/check.php";
 const ENDPOINT_LOGOUT = "/api/auth/logout.php";
 let emCurso = null;
-function lerCsrf(d) {
-  const dados = d && d.data || d || {};
-  const sessao = dados.session || {};
-  const autenticado = typeof dados.authenticated === "boolean" ? dados.authenticated : null;
-  return { autenticado, csrf: typeof sessao.csrf_token === "string" ? sessao.csrf_token : "" };
-}
 function envelopeDeSucesso(status, tipo, corpo) {
   if (status < 200 || status > 299) return false;
   if (!/application\/json/i.test(tipo ?? "")) return false;
@@ -22,12 +17,9 @@ async function executar(timeoutMs) {
   const relogio = setTimeout(() => controle.abort(), timeoutMs);
   try {
     const c = await fetch(ENDPOINT_CHECK, { method: "GET", credentials: "include", cache: "no-store", headers: { Accept: "application/json" }, signal: controle.signal });
-    let csrf = "";
-    if (c.ok) {
-      const info = lerCsrf(await c.json().catch(() => ({})));
-      if (info.autenticado === false) return { ok: true, status: c.status, motivo: "sem-sessao" };
-      csrf = info.csrf;
-    }
+    const leitura = await lerRespostaCheck(c);
+    if (leitura.estado === "encerrada") return { ok: true, status: c.status, motivo: "sem-sessao" };
+    const csrf = leitura.estado === "ativa" ? leitura.csrf : "";
     const headers = { "Content-Type": "application/json", Accept: "application/json" };
     if (csrf) headers["X-CSRF-Token"] = csrf;
     const r = await fetch(ENDPOINT_LOGOUT, { method: "POST", credentials: "include", cache: "no-store", headers, body: "{}", signal: controle.signal });
@@ -38,7 +30,7 @@ async function executar(timeoutMs) {
     {
       try {
         const p = await fetch(ENDPOINT_CHECK, { method: "GET", credentials: "include", cache: "no-store", headers: { Accept: "application/json" }, signal: controle.signal });
-        if (p.ok && lerCsrf(await p.json().catch(() => ({}))).autenticado === false) return { ok: true, status: p.status, motivo: "sem-sessao" };
+        if ((await lerRespostaCheck(p)).estado === "encerrada") return { ok: true, status: p.status, motivo: "sem-sessao" };
       } catch {
       }
       return { ok: false, status: r.status, motivo: "desconhecido" };

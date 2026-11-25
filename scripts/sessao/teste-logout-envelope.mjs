@@ -11,8 +11,9 @@ let ok = 0, falhas = 0; const afirma = (n, c, x = '') => { if (c) { ok++; consol
 const json = (status, corpo) => ({ status, ok: status >= 200 && status < 300, headers: { get: (h) => (/content-type/i.test(h) ? 'application/json; charset=utf-8' : null) }, json: async () => corpo, text: async () => JSON.stringify(corpo) });
 const html = (status, corpo) => ({ status, ok: status >= 200 && status < 300, headers: { get: (h) => (/content-type/i.test(h) ? 'text/html' : null) }, json: async () => { throw new SyntaxError('html'); }, text: async () => corpo });
 const bruto = (status, ct, corpo) => ({ status, ok: status >= 200 && status < 300, headers: { get: (h) => (/content-type/i.test(h) ? ct : null) }, json: async () => JSON.parse(corpo), text: async () => corpo });
-const logado = json(200, { ok: true, data: { authenticated: true, session: { csrf_token: 'csrf-sintetico-teste' } } });
-const saiu = json(200, { ok: true, data: { authenticated: false } });
+// envelopes EXATOS do api/auth/check.php (Codex DSHOW-115B)
+const logado = json(200, { ok: true, data: { authenticated: true, user: { id: 75 }, session: { token: 'tok-sintetico', csrf_token: 'csrf-sintetico-teste' } }, error: null });
+const saiu = json(200, { ok: true, data: { authenticated: false, user: null, session: { csrf_token: 'x' } }, error: null });
 async function cenario(nome, respostas, esperado) {
   const chamadas = []; let i = 0;
   globalThis.fetch = async (url, op = {}) => { chamadas.push(`${op.method || 'GET'} ${url}`); const r = respostas[i++]; if (r instanceof Error) throw r; if (!r) throw new Error('chamada a mais: ' + url); return r; };

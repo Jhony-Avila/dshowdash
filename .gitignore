@@ -2340,3 +2340,5 @@ dist/
 !/public/vite.lote3bc.config.js
 # DSHOW-110 (23/11): módulo NOVO de public/core gerado pela receita — versionado para o publicador aceitar (diff git × diff das releases)
 !/public/core/auth/logout-client.js
+# Codex DSHOW-115B (25/11): o validador ÚNICO de sessão encerrada (P7 + P9) — par .ts/.js versionado como o logout-client
+!/public/core/auth/sessao-encerrada.js
