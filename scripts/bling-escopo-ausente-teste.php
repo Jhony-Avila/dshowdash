@@ -274,6 +274,7 @@ try {
            'itens' => [['codigo' => 'A1', 'descricao' => 'Item 1', 'quantidade' => 1, 'valor' => 10], ['codigo' => 'A2', 'descricao' => 'Item 2', 'quantidade' => 2, 'valor' => 10]]];
     $api->responder('pedidos/vendas', new BlingResposta(200, ['data' => [$p2]]));
     $sync->sincronizar($conta, 'pedidos', 'reconciliacao', 'teste-13b');
+    $sync->gravarPedidoDetalhe($conta, $p2);   // Codex DSHOW-113 (2): itens só pelo DETALHE (contrato de coleção completa); a listagem não substitui itens
     $ped = static fn() => $pdo->query("SELECT id, sales_channel_id, payload_hash FROM bling_sales_orders WHERE bling_id = '9200'")->fetch();
     $itens = static fn() => $pdo->query("SELECT sku FROM bling_sales_order_items i JOIN bling_sales_orders o ON o.id = i.sales_order_id WHERE o.bling_id = '9200' ORDER BY sku")->fetchAll(PDO::FETCH_COLUMN);
     $c777 = (int) $pdo->query("SELECT id FROM bling_sales_channels WHERE bling_id = '777'")->fetchColumn();
@@ -287,7 +288,7 @@ try {
     $sync2->sincronizar($conta, 'pedidos', 'reconciliacao', 'teste-13d');
     ok('c) resolução falhou: a associação válida NÃO virou NULL', (int) $ped()['sales_channel_id'] === $c777, (string) $ped()['sales_channel_id']);
     $h0 = $ped()['payload_hash']; $w0 = $repo2->estadoSync($conta, 'pedidos')['watermark'];
-    $p2['loja']['id'] = 777; $p2['total'] = 32; $p2['itens'][1]['codigo'] = str_repeat('X', 200);   // 2º item NÃO cabe (sku 120) → falha DEPOIS do DELETE e do 1º item
+    $p2['loja']['id'] = 777; $p2['total'] = 32; $p2['situacao'] = ['valor' => 24]; $p2['transporte'] = ['transportador' => ['nome' => str_repeat('X', 300)]];   // 'enviado': cabeçalho e histórico GRAVAM, depois o envio NÃO cabe (VARCHAR(190)) → falha no MEIO do registro
     $api->responder('pedidos/vendas', new BlingResposta(200, ['data' => [$p2]]));
     $pdo->exec("UPDATE bling_sync_state SET watermark = UTC_TIMESTAMP() - INTERVAL 3 DAY WHERE recurso = 'pedidos'");
     $w0 = $repo2->estadoSync($conta, 'pedidos')['watermark'];
@@ -295,8 +296,25 @@ try {
     ok('d) item com falha: cabeçalho E itens ficam como estavam (nada pela metade)', $itens() === ['A1', 'A2'] && $ped()['payload_hash'] === $h0, implode(',', $itens()));
     ok('d) falha registrada', $r['erros'] === 1);
     ok('e) cursor NÃO avança com item em falha', $repo2->estadoSync($conta, 'pedidos')['watermark'] === $w0);
-    $p2['itens'][1]['codigo'] = 'A2'; $api->responder('pedidos/vendas', new BlingResposta(200, ['data' => [$p2]]));
+    $p2['transporte'] = ['transportador' => ['nome' => 'Correios']]; $api->responder('pedidos/vendas', new BlingResposta(200, ['data' => [$p2]]));
     $sync2->sincronizar($conta, 'pedidos', 'incremental', 'teste-13f');
+    // achado 1 da ACIMA_ESQUERDA (24/11): loja ausente ou 0 na listagem NUNCA apaga a loja conhecida (guarda igual à do situacao_bling_id)
+    $lojaDe = static fn() => $pdo->query("SELECT loja_bling_id FROM bling_sales_orders WHERE bling_id = '9200'")->fetchColumn();
+    $semLoja = $p2; unset($semLoja['loja']); $semLoja['total'] = 33;
+    $api->responder('pedidos/vendas', new BlingResposta(200, ['data' => [$semLoja]]));
+    $sync2->sincronizar($conta, 'pedidos', 'reconciliacao', 'teste-13g');
+    ok('f) listagem SEM loja.id: a loja conhecida (777) fica — não vira NULL', $lojaDe() === '777' && (float) $pdo->query("SELECT total FROM bling_sales_orders WHERE bling_id = '9200'")->fetchColumn() === 33.0, var_export($lojaDe(), true));
+    $zero = $p2; $zero['loja'] = ['id' => 0]; $zero['total'] = 34;
+    $api->responder('pedidos/vendas', new BlingResposta(200, ['data' => [$zero]]));
+    $sync2->sincronizar($conta, 'pedidos', 'reconciliacao', 'teste-13h');
+    ok('f) listagem com loja.id = 0: a loja conhecida fica — não vira "0"', $lojaDe() === '777', var_export($lojaDe(), true));
+    $outra = $p2; $outra['loja'] = ['id' => 888]; $outra['total'] = 35;
+    $api->responder('pedidos/vendas', new BlingResposta(200, ['data' => [$outra]]));
+    $sync2->sincronizar($conta, 'pedidos', 'reconciliacao', 'teste-13i');
+    ok('f) loja.id VÁLIDO e diferente: atualiza (a guarda só protege a ausência)', $lojaDe() === '888', var_export($lojaDe(), true));
+    $p2['loja']['id'] = 777;
+    $api->responder('pedidos/vendas', new BlingResposta(200, ['data' => [$p2]]));
+    $sync2->sincronizar($conta, 'pedidos', 'reconciliacao', 'teste-13j');
     ok('e) depois de corrigido: grava e o cursor avança', $repo2->estadoSync($conta, 'pedidos')['watermark'] !== $w0 && (float) $pdo->query("SELECT total FROM bling_sales_orders WHERE bling_id = '9200'")->fetchColumn() === 32.0);
     $d1 = (new BlingReal($repo2))->disponibilidade('pedidos');
     ok('f) última TENTATIVA e última sincronização CONCLUÍDA são campos separados', array_key_exists('ultima_tentativa', $d1) && array_key_exists('ultimo_sucesso', $d1));

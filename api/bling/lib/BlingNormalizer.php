@@ -52,6 +52,29 @@ final class BlingNormalizer
         return null;
     }
 
+    /**
+     * Codex DSHOW-115 (P6.1): id EXTERNO do Bling validado no valor BRUTO, antes de qualquer coerção — a MESMA regra estrita na sincronização normal,
+     * na releitura geral e na releitura de pedidos: só inteiro > 0 ou texto ^[1-9][0-9]{0,19}$. Booleano (true virava "1"), float, array, vazio,
+     * "0", "01", com espaço, com quebra de linha no início OU no fim etc. = não informado (null) → quem grava preserva o conhecido.
+     */
+    public static function idExterno(mixed $v): ?string
+    {
+        if (is_int($v)) { return $v > 0 ? (string) $v : null; }
+        // revisão da ACIMA_ESQUERDA (SEGURAR 25018fec): `$` no PHP aceita um "\n" no FIM ("205777\n" passava) → \z = fim ABSOLUTO do texto
+        return (is_string($v) && preg_match('/^[1-9][0-9]{0,19}\z/', $v)) ? $v : null;
+    }
+
+    /** Valor BRUTO de um caminho (sem trim, sem cast); null se ausente. */
+    private static function bruto(array $p, string $caminho): mixed
+    {
+        $atual = $p;
+        foreach (explode('.', $caminho) as $parte) {
+            if (!is_array($atual) || !array_key_exists($parte, $atual)) { return null; }
+            $atual = $atual[$parte];
+        }
+        return $atual;
+    }
+
     private static function texto(array $p, string ...$c): ?string
     {
         $v = self::campo($p, ...$c);
@@ -228,9 +251,10 @@ final class BlingNormalizer
             'situacao_bling' => self::texto($p, 'situacao.valor', 'situacao.id', 'situacao'),
             // PORTÃO BLING SITUAÇÃO (23/11/2026): o ID real da situação (o `situacao.valor` acima não distingue situação — todos os
             // pedidos desde 04/2025 vieram 0). Só o id, sem fallback: ausente = null (nunca o `valor` no lugar do id).
-            'situacao_bling_id' => self::texto($p, 'situacao.id'),
+            'situacao_bling_id' => self::idExterno(self::bruto($p, 'situacao.id')),   // Codex DSHOW-115: validado no BRUTO (true não vira "1")
             'contato_bling_id'  => self::texto($p, 'contato.id', 'cliente.id'),
-            'canal_bling_id'    => self::texto($p, 'loja.id', 'canal.id'),
+            // Codex DSHOW-115: loja validada no BRUTO; `canal.id` (grafia antiga) só quando `loja.id` está AUSENTE — loja.id inválido não cai no canal
+            'canal_bling_id'    => self::idExterno(self::bruto($p, 'loja.id') ?? self::bruto($p, 'canal.id')),
             'vendedor'    => self::texto($p, 'vendedor.nome', 'vendedor.id'),
             'forma_pagamento' => self::texto($p, 'formaPagamento.nome', 'formaPagamento.id'),
             'desconto'    => self::numero($p, 'desconto.valor', 'desconto'),

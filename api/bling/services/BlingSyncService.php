@@ -435,8 +435,8 @@ final class BlingSyncService
             'fornecedores' => $this->repo->upsert('bling_suppliers', $accountId, BlingNormalizer::fornecedor($bruto)),
             'produtos'     => $this->gravarProduto($accountId, $bruto),
             'estoque'      => $this->gravarEstoque($accountId, $bruto),
-            'pedidos'      => $this->gravarPedido($accountId, $bruto),
-            'compras'      => $this->gravarCompra($accountId, $bruto),
+            'pedidos'      => $this->gravarPedido($accountId, $bruto, self::ORIGEM_LISTAGEM),   // a sincronização (e a fila/webhook) lê a LISTAGEM
+            'compras'      => $this->gravarCompra($accountId, $bruto, self::ORIGEM_LISTAGEM),
             'notas'        => $this->gravarNota($accountId, $bruto),
             'receber'      => $this->gravarReceber($accountId, $bruto),
             'pagar'        => $this->gravarPagar($accountId, $bruto),
@@ -562,8 +562,12 @@ final class BlingSyncService
         return 'atualizado';
     }
 
-    private function gravarPedido(int $accountId, array $bruto): string
+    private function gravarPedido(int $accountId, array $bruto, string $origem): string
     {
+        // Codex DSHOW-113 (2): classificar ANTES de qualquer escrita — lista inválida rejeita o pedido inteiro (o SAVEPOINT do laço devolve o
+        // estado anterior e o erro vai para bling_sync_errors; o watermark não avança → o incremental relê).
+        $estadoItens = self::classificarItens($bruto, $origem);
+        if ($estadoItens === 'invalida') { throw new UnexpectedValueException('itens do pedido inválidos ou incoerentes com o cabeçalho — substituição rejeitada, pedido não gravado'); }
         $d = BlingNormalizer::pedidoVenda($bruto);
         $itens = $d['itens'];
         $contatoBling = $d['contato_bling_id'];
@@ -575,13 +579,21 @@ final class BlingSyncService
         $d['sales_channel_id'] = $this->repo->idPorBlingId('bling_sales_channels', $accountId, $canalBling);
         // DSHOW-106 (2): guarda o identificador EXTERNO da loja (coluna criada pela migração 20261123; sem ela, segue sem gravar)
         if ($this->repo->temColuna('bling_sales_orders', 'loja_bling_id')) {
-            $d['loja_bling_id'] = $canalBling;
+            // revisão da ACIMA_ESQUERDA (achado 1, 24/11): a MESMA guarda do situacao_bling_id — loja.id ausente, 0 ou ilegível na resposta
+            // NUNCA apaga a loja já conhecida (antes: o upsert gravava NULL ou "0" por cima do que a releitura preencheu com COALESCE)
+            $loja = ($canalBling !== null && preg_match('/^[1-9][0-9]{0,19}\z/', (string) $canalBling)) ? (string) $canalBling : null;
+            if ($loja === null) {
+                $conhecida = $this->repo->consultar('SELECT loja_bling_id FROM bling_sales_orders WHERE account_id = ? AND bling_id = ?',
+                    [$accountId, $d['bling_id']]);
+                $loja = ($conhecida[0]['loja_bling_id'] ?? null) !== null ? (string) $conhecida[0]['loja_bling_id'] : null;
+            }
+            $d['loja_bling_id'] = $loja;
         }
         // PORTÃO BLING SITUAÇÃO: sem a coluna (antes da migração 20261123-situacao), simplesmente não grava; id ausente na resposta
         // nunca apaga um id já conhecido.
         if (!$this->repo->temColuna('bling_sales_orders', 'situacao_bling_id')) {
             unset($d['situacao_bling_id']);
-        } elseif ($d['situacao_bling_id'] === null) {
+        } elseif (($d['situacao_bling_id'] = self::idPositivo($d['situacao_bling_id'])) === null) {   // 0/"0"/ilegível = não informado (mesma regra da releitura)
             $conhecido = $this->repo->consultar('SELECT situacao_bling_id FROM bling_sales_orders WHERE account_id = ? AND bling_id = ?',
                 [$accountId, $d['bling_id']]);
             if (($conhecido[0]['situacao_bling_id'] ?? null) !== null) { $d['situacao_bling_id'] = (string) $conhecido[0]['situacao_bling_id']; }
@@ -597,17 +609,32 @@ final class BlingSyncService
 
         // Subtotal e custo saem dos ITENS, não do cabeçalho: o Bling nem sempre
         // manda os dois, e a coerência com o grid depende de bater com a soma.
-        $subtotal = 0.0;
-        $custo = 0.0;
-        foreach ($itens as $i) {
-            $subtotal += $i['valor_total'];
-            $custo += $i['custo_unitario'] * $i['quantidade'];
-        }
-        $d['subtotal'] = round($subtotal, 2);
-        $d['custo_total'] = round($custo, 2);
-        $d['qtd_itens'] = count($itens);
-        if ($d['total'] <= 0) {
-            $d['total'] = round($subtotal - $d['desconto'] + $d['frete'], 2);
+        // RESPOSTA SEM ITENS (23/11 noite, risco da 711fcedc:700): a listagem do Bling não traz itens. Sem itens na resposta, NÃO se apaga
+        // item gravado nem se zera subtotal/custo/qtd_itens: essas colunas ficam fora do UPDATE (o upsert só grava as chaves enviadas) e o
+        // total do cabeçalho não é recalculado a partir de uma soma vazia. Ausência de itens = "não informado", nunca "zero itens".
+        // Codex DSHOW-112: "campo ausente" ≠ "lista vazia" (aceite próprio). Ausente → nada muda; vazia confirmada → zero itens.
+        $temItens = $estadoItens === 'com_itens';
+        if ($estadoItens === 'vazia') {
+            $d['subtotal'] = 0.0; $d['custo_total'] = 0.0; $d['qtd_itens'] = 0;    // o Bling CONFIRMOU: pedido sem itens
+            if ($d['total'] <= 0) { unset($d['total']); }
+        } elseif ($temItens) {
+            $subtotal = 0.0;
+            $custo = 0.0;
+            foreach ($itens as $i) {
+                $subtotal += $i['valor_total'];
+                $custo += $i['custo_unitario'] * $i['quantidade'];
+            }
+            $d['subtotal'] = round($subtotal, 2);
+            $d['custo_total'] = round($custo, 2);
+            $d['qtd_itens'] = count($itens);
+            if ($d['total'] <= 0) {
+                $d['total'] = round($subtotal - $d['desconto'] + $d['frete'], 2);
+            }
+        } else {
+            unset($d['subtotal'], $d['custo_total'], $d['qtd_itens']);
+            if ($d['total'] <= 0) {
+                unset($d['total']);   // cabeçalho sem total e sem itens: mantém o total já gravado (pedido novo fica com o padrão da tabela)
+            }
         }
 
         // Situação mudou? Registra na timeline (§21.1) antes de sobrescrever.
@@ -635,7 +662,9 @@ final class BlingSyncService
                      VALUES (?, ?, ?, ?, ?, UTC_TIMESTAMP())'
                 )->execute([$accountId, $pedidoId, $situacaoAntes, $d['situacao'], 'sync']);
             }
-            $this->gravarItens($accountId, $pedidoId, $itens);
+            if ($estadoItens === 'com_itens' || $estadoItens === 'vazia') {   // só coleção COMPLETA substitui; ausente/preservar = nenhum DELETE
+                $this->gravarItens($accountId, $pedidoId, $itens, $estadoItens === 'vazia');
+            }
             $this->gravarEnvio($accountId, $pedidoId, $bruto, $d);
         }
 
@@ -699,20 +728,99 @@ final class BlingSyncService
     }
 
     /**
-     * Itens: apaga e regrava.
+     * Itens: apaga e regrava — SÓ com uma lista NÃO VAZIA de itens na resposta.
      *
      * Merge item a item exigiria id estável do item, que nem todo endpoint do
      * Bling devolve. Apagar e regravar dentro da transação do pedido é mais
      * simples e não deixa item fantasma de uma versão anterior do pedido.
+     * Lista vazia = resposta SEM itens (a listagem não os traz): nada é apagado (23/11 noite).
      */
-    private function gravarItens(int $accountId, int $pedidoId, array $itens): void
+    public const ORIGEM_LISTAGEM = 'listagem';
+    public const ORIGEM_DETALHE = 'detalhe';
+
+    /**
+     * Codex DSHOW-113 (2) — classificador CONSERVADOR de completude dos itens (substitui o estadoItens do DSHOW-112).
+     * Contrato (OpenAPI oficial do Bling v3, conferido em 24/11/2026): a LISTAGEM (`GET pedidos/vendas`, `VendasDadosBaseDTO`) NUNCA traz itens;
+     * só o DETALHE (`GET pedidos/vendas/{id}`, `VendasDadosDTO`) traz a coleção `itens` COMPLETA. Por isso só a origem 'detalhe' prova completude.
+     *  'ausente'   = o campo não veio → preserva.
+     *  'preservar' = veio, mas não há contrato de coleção completa (qualquer coisa vinda da listagem; null; `[]` sem prova) → preserva.
+     *                A ausência de totalProdutos não prova nada.
+     *  'invalida'  = DETALHE com lista que não é lista, com algum item inválido (parcialmente inválida) ou `[]` contradizendo totalProdutos > 0
+     *                → rejeita a substituição (o pedido não é gravado; erro registrado).
+     *  'com_itens' = DETALHE com lista completa e TODOS os itens válidos → atualiza (apaga e regrava).
+     *  'vazia'     = DETALHE com `[]` E totalProdutos presente e = 0 (o contrato justifica) → esvazia.
+     * @return 'ausente'|'preservar'|'invalida'|'com_itens'|'vazia'
+     */
+    public static function classificarItens(array $bruto, string $origem): string
     {
+        if ($origem !== self::ORIGEM_LISTAGEM && $origem !== self::ORIGEM_DETALHE) { throw new InvalidArgumentException('origem de itens desconhecida'); }
+        $chave = array_key_exists('itens', $bruto) ? 'itens' : (array_key_exists('items', $bruto) ? 'items' : null);
+        if ($chave === null) { return 'ausente'; }
+        if ($origem !== self::ORIGEM_DETALHE) { return 'preservar'; }      // sem contrato de coleção completa, nada substitui
+        $lista = $bruto[$chave];
+        if ($lista === null) { return 'preservar'; }
+        if (!is_array($lista) || !array_is_list($lista)) { return 'invalida'; }
+        if ($lista === []) {
+            $tp = $bruto['totalProdutos'] ?? null;
+            if (!self::numeroValido($tp)) { return 'preservar'; }            // sem total de produtos, [] não prova "zero itens"
+            return (float) $tp == 0.0 ? 'vazia' : 'invalida';               // [] com totalProdutos > 0: contradição
+        }
+        foreach ($lista as $i) {
+            if (!self::itemValido($i)) { return 'invalida'; }                // parcialmente inválida = nenhuma substituição
+        }
+        return 'com_itens';
+    }
+
+    private static function numeroValido(mixed $v): bool
+    {
+        return is_int($v) || (is_float($v) && is_finite($v)) || (is_string($v) && is_numeric(trim($v)));
+    }
+
+    /** Item legível do detalhe: quantidade > 0, valor unitário ≥ 0 e alguma identificação (produto.id, código ou descrição). */
+    private static function itemValido(mixed $i): bool
+    {
+        if (!is_array($i)) { return false; }
+        $q = $i['quantidade'] ?? null;
+        if (!self::numeroValido($q) || (float) $q <= 0) { return false; }
+        $u = $i['valor'] ?? $i['valorUnitario'] ?? $i['preco'] ?? null;
+        if (!self::numeroValido($u) || (float) $u < 0) { return false; }
+        $pid = $i['produto']['id'] ?? $i['idProduto'] ?? null;
+        $temId = (is_int($pid) && $pid > 0) || (is_string($pid) && ctype_digit($pid) && $pid !== '0');
+        $texto = static fn($x) => is_string($x) && trim($x) !== '';
+        return $temId || $texto($i['codigo'] ?? null) || $texto($i['descricao'] ?? null);
+    }
+
+    /**
+     * Grava UM pedido vindo do DETALHE (`GET pedidos/vendas/{id}`) — o único contrato que prova coleção de itens completa.
+     * Transação própria: lista inválida/incoerente → nada gravado, erro em bling_sync_errors (recurso 'pedidos', código DETALHE) e exceção.
+     * Nenhum caminho de produção chama isto hoje (a sincronização lê a listagem); é o ponto de entrada do contrato completo.
+     * @return 'criado'|'atualizado'|'ignorado'
+     */
+    public function gravarPedidoDetalhe(int $accountId, array $detalhe): string
+    {
+        $pdo = $this->repo->pdo();
+        $pdo->beginTransaction();
+        try {
+            $r = $this->gravarPedido($accountId, $detalhe, self::ORIGEM_DETALHE);
+            $pdo->commit();
+            return $r;
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) { $pdo->rollBack(); }
+            $id = $detalhe['id'] ?? null;
+            $this->repo->registrarErroSync($accountId, 'pedidos', (is_int($id) || (is_string($id) && ctype_digit($id))) ? (string) $id : null,
+                'DETALHE', $e->getMessage(), null, 1, 'detalhe');
+            throw $e;
+        }
+    }
+
+    private function gravarItens(int $accountId, int $pedidoId, array $itens, bool $vaziaConfirmada = false): void
+    {
+        if ($itens === [] && !$vaziaConfirmada) {
+            return;   // nunca apaga sem ter o que gravar no lugar, salvo lista vazia CONFIRMADA (Codex DSHOW-112)
+        }
         $this->repo->pdo()->prepare('DELETE FROM bling_sales_order_items WHERE sales_order_id = ?')
             ->execute([$pedidoId]);
 
-        if ($itens === []) {
-            return;
-        }
         $st = $this->repo->pdo()->prepare(
             'INSERT INTO bling_sales_order_items
                (account_id, sales_order_id, product_id, bling_id, sku, descricao,
@@ -729,8 +837,10 @@ final class BlingSyncService
         }
     }
 
-    private function gravarCompra(int $accountId, array $bruto): string
+    private function gravarCompra(int $accountId, array $bruto, string $origem): string
     {
+        $estadoItens = self::classificarItens($bruto, $origem);   // mesma regra conservadora dos pedidos de venda (Codex DSHOW-113)
+        if ($estadoItens === 'invalida') { throw new UnexpectedValueException('itens da compra inválidos ou incoerentes — substituição rejeitada, compra não gravada'); }
         $d = BlingNormalizer::pedidoCompra($bruto);
         $itens = $d['itens'];
         $fornBling = $d['fornecedor_bling_id'];
@@ -739,14 +849,17 @@ final class BlingSyncService
 
         $d['supplier_id'] = $this->repo->idPorBlingId('bling_suppliers', $accountId, $fornBling);
         $d['situacao'] = BlingVersionAdapter::situacaoCompra($situacaoBling);
-        $d['qtd_itens'] = count($itens);
-        $d['qtd_total'] = array_sum(array_column($itens, 'quantidade'));
+        $substitui = $estadoItens === 'com_itens' || $estadoItens === 'vazia';
+        if ($substitui) {
+            $d['qtd_itens'] = count($itens);
+            $d['qtd_total'] = array_sum(array_column($itens, 'quantidade'));
+        }
         $d['qtd_recebida'] = 0;
 
         $r = $this->repo->upsert('bling_purchase_orders', $accountId, $d);
         $compraId = $this->repo->idPorBlingId('bling_purchase_orders', $accountId, $d['bling_id']);
 
-        if ($compraId !== null) {
+        if ($compraId !== null && $substitui) {
             $this->repo->pdo()->prepare('DELETE FROM bling_purchase_order_items WHERE purchase_order_id = ?')
                 ->execute([$compraId]);
             $st = $this->repo->pdo()->prepare(
@@ -891,8 +1004,108 @@ final class BlingSyncService
         $concluida = !$parou && ($r['estado'] ?? '') === 'concluida';
         $this->repo->salvarEstadoSync($accountId, self::RECURSO_RELEITURA, ['situacao' => $concluida ? 'ok' : 'parcial',
             'watermark' => $concluida ? gmdate('Y-m-d H:i:s') : null]);
-        return ['situacao' => $concluida ? 'concluida' : ($parou ? 'interrompida' : (string) ($r['estado'] ?? 'parcial')),
+        // PARA-STATUS §132 (P2): terminar a passada com erro NÃO é "concluida" — o script sai com rc 1 e não contradiz o fechamento do portão.
+        // O checkpoint fica 'ok' (a passada terminou; rodar de novo NÃO retoma, releria tudo) — os afetados vão pelo modo --pedidos.
+        // Codex DSHOW-113 (P2): parada a pedido DEPOIS de erro nesta execução também não é sucesso → 'interrompida_com_erros' (o script sai com rc 1);
+        // o checkpoint continua 'parcial' (rodar de novo retoma da página gravada) e os erros já estão em bling_sync_errors.
+        return ['situacao' => $concluida ? ($c['erros'] > 0 ? 'concluida_com_erros' : 'concluida')
+                                         : ($parou ? ($c['erros'] > 0 ? 'interrompida_com_erros' : 'interrompida') : (string) ($r['estado'] ?? 'parcial')),
                 'paginas' => $paginas, 'pagina_inicial' => $paginaInicial] + $c;
+    }
+
+    /**
+     * Revisão da ACIMA_ESQUERDA (achado 4, 24/11): escolhe a conta da releitura SÓ LENDO o banco (nada é gravado, nada vai ao Bling).
+     * --conta=N precisa ser uma conta ATIVA e CONECTADA; sem --conta, exatamente 1 ativa; modos que chamam o Bling exigem token guardado.
+     * @return array{conta:int}|array{erro:string}
+     */
+    public function contaParaReleitura(?int $pedida, bool $precisaToken): array
+    {
+        $ativas = $this->repo->contasAtivas();
+        if ($pedida !== null && !in_array($pedida, $ativas, true)) {
+            return ['erro' => "a conta $pedida não é uma conta Bling ativa e conectada (ativas: " . ($ativas !== [] ? implode(',', $ativas) : 'nenhuma') . ')'];
+        }
+        $contas = $pedida !== null ? [$pedida] : $ativas;
+        if (count($contas) !== 1) { return ['erro' => 'esperava exatamente 1 conta Bling ativa (achei ' . count($contas) . '); use --conta=<id>']; }
+        if ($precisaToken) {
+            try { $tok = $this->repo->tokens($contas[0]); } catch (Throwable $e) { $tok = false; }
+            // BlingCrypto::decifrar devolve null (não lança) para blob ilegível: sem access E sem refresh legíveis não há como falar com o Bling
+            if (is_array($tok) && ($tok['access_token'] ?? null) === null && ($tok['refresh_token'] ?? null) === null) { $tok = false; }
+            if ($tok === null) { return ['erro' => "a conta {$contas[0]} não tem token guardado — reconecte a conta no painel do Bling"]; }
+            if ($tok === false) { return ['erro' => "o token guardado da conta {$contas[0]} está ilegível — reconecte a conta no painel do Bling"]; }
+        }
+        return ['conta' => $contas[0]];
+    }
+
+    public const RECURSO_REPROCESSO = 'releitura_situacao_pedidos';
+    public const MAX_PEDIDOS_REPROCESSO = 1000;
+
+    /**
+     * Codex DSHOW-112 (4) / PARA-STATUS §132: relê SÓ os pedidos indicados — um GET pedidos/vendas/{id} por pedido, um por vez, com pausa —
+     * e grava pelo MESMO gravarSituacaoLoja da releitura (só situacao_bling_id e loja_bling_id, COALESCE; pedido ausente não é criado).
+     * - NÃO lê nem grava o checkpoint da releitura inteira (RECURSO_RELEITURA): o resultado desta execução fica em RECURSO_REPROCESSO.
+     * - Erros vão para bling_sync_errors com recurso RECURSO_RELEITURA (é por ali que o fechamento do portão lista os afetados).
+     * - Falha fechada: 404, HTTP ≠ 2xx, corpo sem `data` ou `data.id` diferente do pedido pedido = ERRO daquele pedido (nada gravado nele).
+     * @param list<string> $ids  ids do Bling, só dígitos, sem repetição, 1..MAX_PEDIDOS_REPROCESSO
+     * @return array{situacao:string, pedidos:int, consultados:int, atualizados:int, ignorados:int, ausentes:int, erros:int, afetados_com_erro:list<string>}
+     */
+    public function releituraPedidosIds(int $accountId, array $ids, Closure $parar, Closure $dormir, int $pausaMs = 1500): array
+    {
+        $ids = array_values($ids);
+        if ($ids === [] || count($ids) > self::MAX_PEDIDOS_REPROCESSO || count(array_unique($ids)) !== count($ids)) {
+            throw new InvalidArgumentException('lista de pedidos vazia, repetida ou acima de ' . self::MAX_PEDIDOS_REPROCESSO);
+        }
+        foreach ($ids as $id) {
+            if (!is_string($id) || !preg_match('/^[1-9][0-9]{0,19}\z/', $id)) { throw new InvalidArgumentException('id de pedido inválido'); }
+        }
+        $c = ['pedidos' => count($ids), 'consultados' => 0, 'atualizados' => 0, 'ignorados' => 0, 'ausentes' => 0, 'erros' => 0];
+        if (!$this->repo->temColuna('bling_sales_orders', 'situacao_bling_id') || !$this->repo->temColuna('bling_sales_orders', 'loja_bling_id')) {
+            return ['situacao' => 'sem_coluna', 'afetados_com_erro' => []] + $c;
+        }
+        $cliente = $this->auth->cliente($accountId);
+        $endpoint = self::RECURSOS['pedidos']['endpoint'];
+        $this->repo->salvarEstadoSync($accountId, self::RECURSO_REPROCESSO, ['estrategia' => 'carga_inicial', 'situacao' => 'parcial', 'pagina_atual' => 0,
+            'registros_consultados' => 0, 'registros_atualizados' => 0, 'registros_ignorados' => 0, 'erros' => 0, 'ultima_execucao_em' => gmdate('Y-m-d H:i:s')]);
+        $comErro = []; $parou = false;
+        foreach ($ids as $i => $id) {
+            if ($i > 0) {
+                if ($parar()) { $parou = true; break; }
+                $dormir($pausaMs);
+            }
+            $c['consultados']++;
+            $erro = null; $http = null;
+            try {
+                $r = $cliente->get($endpoint . '/' . $id);
+                $http = $r->status;
+                $d = is_array($r->corpo) ? ($r->corpo['data'] ?? null) : null;
+                if ($r->status === 404) { $erro = 'pedido não encontrado no Bling (404)'; }
+                elseif (!$r->ok()) { $erro = 'Bling respondeu HTTP ' . $r->status; }
+                elseif (!is_array($d) || (string) ($d['id'] ?? '') !== $id) { $erro = 'resposta sem o pedido pedido (data.id ausente ou diferente)'; }
+                else {
+                    $this->repo->pdo()->beginTransaction();
+                    try {
+                        $res = $this->gravarSituacaoLoja($accountId, $d);
+                        $this->repo->pdo()->commit();
+                        $c[match ($res) { 'atualizado' => 'atualizados', 'ausente' => 'ausentes', default => 'ignorados' }]++;
+                    } catch (Throwable $e) {
+                        if ($this->repo->pdo()->inTransaction()) { $this->repo->pdo()->rollBack(); }
+                        $erro = $e->getMessage();
+                    }
+                }
+            } catch (Throwable $e) {
+                $erro = 'falha ao consultar o Bling: ' . $e->getMessage();
+            }
+            if ($erro !== null) {
+                $c['erros']++; $comErro[] = $id;
+                $this->repo->registrarErroSync($accountId, self::RECURSO_RELEITURA, $id, 'REPROCESSO', $erro, $http, 1, 'releitura-pedidos');
+            }
+            $this->repo->salvarEstadoSync($accountId, self::RECURSO_REPROCESSO, ['pagina_atual' => $c['consultados'], 'registros_consultados' => $c['consultados'],
+                'registros_atualizados' => $c['atualizados'], 'registros_ignorados' => $c['ignorados'], 'erros' => $c['erros']]);
+        }
+        // Codex DSHOW-113 (P2): erro seguido de parada voluntária = 'interrompida_com_erros' (falha), com o estado do reprocesso em 'erro'
+        $situacao = $parou ? ($c['erros'] > 0 ? 'interrompida_com_erros' : 'interrompida') : ($c['erros'] > 0 ? 'concluida_com_erros' : 'concluida');
+        $this->repo->salvarEstadoSync($accountId, self::RECURSO_REPROCESSO, ['situacao' => $situacao === 'concluida' ? 'ok' : ($situacao === 'interrompida' ? 'parcial' : 'erro'),
+            'watermark' => $situacao === 'concluida' ? gmdate('Y-m-d H:i:s') : null]);
+        return ['situacao' => $situacao, 'afetados_com_erro' => $comErro] + $c;
     }
 
     /**
@@ -902,14 +1115,21 @@ final class BlingSyncService
      * Valor ausente na resposta nunca apaga o conhecido (COALESCE).
      * @return 'atualizado'|'ignorado'|'ausente'
      */
+    /** Id externo do Bling só se for inteiro POSITIVO (int ou texto de dígitos sem zero à esquerda); 0, "0", vazio, ilegível ou ausente → null. */
+    private static function idPositivo(mixed $v): ?string
+    {
+        return BlingNormalizer::idExterno($v);   // Codex DSHOW-115: a MESMA regra estrita dos três caminhos (int > 0 ou texto ^[1-9][0-9]{0,19}$)
+    }
+
     private function gravarSituacaoLoja(int $accountId, array $bruto): string
     {
         $blingId = isset($bruto['id']) && (is_int($bruto['id']) || (is_string($bruto['id']) && ctype_digit($bruto['id']))) ? (string) $bruto['id'] : null;
         if ($blingId === null) { throw new InvalidArgumentException('pedido sem id na listagem'); }
-        $sit = $bruto['situacao']['id'] ?? null;
-        $sit = (is_int($sit) || (is_string($sit) && ctype_digit($sit))) ? (string) $sit : null;
-        $loja = $bruto['loja']['id'] ?? null;
-        $loja = (is_int($loja) || (is_string($loja) && ctype_digit($loja))) ? (string) $loja : null;
+        // revisão da ACIMA_ESQUERDA (P6.1, 24/11): situação e loja pela MESMA regra — ausente, ilegível, 0 ou "0" = não informado
+        // (COALESCE mantém o conhecido). Antes `ctype_digit` aceitava "0" na situação e a releitura trocava uma situação conhecida por 0.
+        $sit = self::idPositivo($bruto['situacao']['id'] ?? null);
+        // Codex DSHOW-114: a MESMA validação de id positivo da sincronização normal (gravarPedido) — 0, "0", ilegível ou ausente = sem loja informada.
+        $loja = self::idPositivo($bruto['loja']['id'] ?? null);
         $existe = $this->repo->consultar('SELECT situacao_bling_id, loja_bling_id FROM bling_sales_orders WHERE account_id = ? AND bling_id = ?', [$accountId, $blingId]);
         if ($existe === []) { return 'ausente'; }
         $novoSit = $sit ?? $existe[0]['situacao_bling_id']; $novaLoja = $loja ?? $existe[0]['loja_bling_id'];
@@ -940,14 +1160,14 @@ final class BlingSyncService
             return ['situacao' => 'modulo_nao_encontrado', 'modulos' => array_map(static fn($x) => ['id' => (string) ($x['id'] ?? ''), 'nome' => (string) ($x['nome'] ?? '')], $modulos)];
         }
         $idModulo = (string) ($vendas['id'] ?? '');
-        if (!preg_match('/^[0-9]{1,20}$/', $idModulo)) { return ['situacao' => 'erro', 'etapa' => 'id do módulo inválido']; }
+        if (!preg_match('/^[0-9]{1,20}\z/', $idModulo)) { return ['situacao' => 'erro', 'etapa' => 'id do módulo inválido']; }
         $s = $cliente->get('situacoes/modulos/' . $idModulo);
         if ($s->status === 403) { return ['situacao' => 'escopo_ausente', 'etapa' => 'situacoes/modulos/{id}', 'http' => 403]; }
         if (!$s->ok() || !is_array($s->corpo['data'] ?? null)) { return ['situacao' => 'erro', 'etapa' => 'situacoes/modulos/{id}', 'http' => $s->status]; }
         $lista = [];
         foreach ($s->corpo['data'] as $x) {
             $id = (string) ($x['id'] ?? '');
-            if (!preg_match('/^[0-9]{1,20}$/', $id)) { continue; }
+            if (!preg_match('/^[0-9]{1,20}\z/', $id)) { continue; }
             $lista[] = ['id' => $id, 'nome' => mb_substr((string) ($x['nome'] ?? ''), 0, 120),
                         'id_herdado' => isset($x['idHerdado']) ? (string) $x['idHerdado'] : null, 'cor' => isset($x['cor']) ? mb_substr((string) $x['cor'], 0, 16) : null];
         }
