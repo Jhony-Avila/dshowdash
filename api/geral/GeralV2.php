@@ -145,6 +145,7 @@ final class GeralV2
             $f = ['estado' => 'indisponivel', 'atualizado_em' => null, 'detalhe' => 'erro_leitura'];
         }
         $f = ['id' => $id] + $f + ['corte' => $this->agora->format(DATE_ATOM), 'detalhe' => null];
+        if ($id === 'bling') $f['conta'] = $this->contaBling;   // 116 (Jhony 25/11): a conta da fonte (a padrão, 44) — os pedidos contam SÓ ela
         $f['conexao'] ??= match (true) {
             $f['estado'] === 'aguardando_conexao' => ['estado' => 'aguardando', 'detalhe' => $f['detalhe']],
             in_array($f['detalhe'], ['sem_conexao_banco', 'erro_leitura'], true) => ['estado' => 'problema', 'detalhe' => $f['detalhe']],
@@ -235,6 +236,8 @@ final class GeralV2
                 'conexao' => $conectadas > 0 ? ['estado' => 'conectada', 'detalhe' => null] : ['estado' => 'problema', 'detalhe' => 'reautorizar']];
     }
 
+    private ?int $contaBling = null;
+
     private function fonteBling(): array
     {
         if ($this->bling === null) return ['estado' => 'indisponivel', 'atualizado_em' => null, 'detalhe' => 'sem_conexao_banco'];
@@ -244,6 +247,7 @@ final class GeralV2
                LEFT JOIN `{$this->p}bling_sync_state` s ON s.account_id = a.id AND s.recurso = 'pedidos'
               WHERE a.is_ativo = 1 ORDER BY a.is_padrao DESC, a.id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
         if ($r === false || $r['estado_conexao'] === 'nao_configurado') return ['estado' => 'aguardando_conexao', 'atualizado_em' => null, 'detalhe' => 'sem_conta_conectada'];
+        $this->contaBling = (int) $r['account_id'];
         $con = $r['estado_conexao'] === 'conectado' ? ['estado' => 'conectada', 'detalhe' => null] : ['estado' => 'problema', 'detalhe' => 'conexao_' . $r['estado_conexao']];
         if ($r['ultima_execucao_em'] === null) return ['conexao' => $con, 'estado' => 'parcial', 'atualizado_em' => null, 'detalhe' => 'pedidos_nunca_sincronizados'];
         $conta = (int) $r['account_id'];
@@ -377,12 +381,15 @@ final class GeralV2
         // won_time é UTC: o dia de Brasília [de 00:00, ate+1 00:00) vira o intervalo UTC equivalente
         $ini = $de->setTimezone($this->utc)->format('Y-m-d H:i:s');
         $fim = $ate->modify('+1 day')->setTimezone($this->utc)->format('Y-m-d H:i:s');
-        return $this->negocios('ganhos', "status = 'won' AND won_time >= ? AND won_time < ?", [$ini, $fim]);
+        // 116 (Jhony 25/11): o cartão de ganhos é a QUANTIDADE — negócio sem valor/fora de BRL não deixa o bloco parcial (a contagem não depende do valor)
+        return $this->negocios('ganhos', "status = 'won' AND won_time >= ? AND won_time < ?", [$ini, $fim], false);
     }
 
     private function funil(): array
     {
-        return $this->negocios('funil', "status = 'open'", []);
+        $r = $this->negocios('funil', "status = 'open'", []);
+        // 116: a "fotografia" do funil = o instante da leitura dos negócios somada (o último sucesso completo deles); sem número, null
+        return $r + ['fotografia_em' => $r['quantidade'] !== null ? $r['atualizado_em'] : null];
     }
 
     /**
@@ -391,7 +398,7 @@ final class GeralV2
      *    Conjunto vazio de verdade → "0.00" (e `zero` só com a fonte em dia e a leitura completa).
      *  - `sem_valor > 0` ou `fora_brl > 0` → `parcial` (a tela mostra "Dados parciais · Soma dos valores informados · X negócios sem valor").
      */
-    private function negocios(string $nome, string $cond, array $par): array
+    private function negocios(string $nome, string $cond, array $par, bool $valorFazParcial = true): array
     {
         $f = $this->fonte('pipedrive_negocios');
         $out = ['quantidade' => null, 'valor' => null, 'sem_valor' => null, 'fora_brl' => null, 'atualizado_em' => $f['atualizado_em']];
@@ -413,8 +420,8 @@ final class GeralV2
                     'estado' => 'indisponivel', 'lacunas' => []];
         }
         $lacunas = $this->lacunasFonte($f);
-        if ($out['sem_valor'] > 0) $lacunas[] = 'sem_valor';
-        if ($out['fora_brl'] > 0) $lacunas[] = 'fora_brl';
+        if ($valorFazParcial && $out['sem_valor'] > 0) $lacunas[] = 'sem_valor';
+        if ($valorFazParcial && $out['fora_brl'] > 0) $lacunas[] = 'fora_brl';
         $estado = $this->estadoCartao($f, $out['quantidade']);
         if ($lacunas !== [] && in_array($estado, ['ok', 'zero_confirmado'], true)) $estado = 'parcial';
         return $out + ['estado' => $estado, 'lacunas' => $lacunas];
@@ -526,14 +533,17 @@ final class GeralV2
     {
         $f = $this->fonte('bling');
         $dias = [];
-        for ($d = $de; $d <= $ate; $d = $d->modify('+1 day')) $dias[$d->format('Y-m-d')] = ['dia' => $d->format('Y-m-d'), 'quantidade' => null, 'valor' => null];
-        $out = ['quantidade' => null, 'valor' => null, 'por_dia' => array_values($dias), 'inclui_cancelados' => null, 'inclui_teste_ml' => null, 'sem_canal' => null,
-                'atualizado_em' => $f['atualizado_em']];
+        // 116 (decisões do Jhony, 25/11): Pedidos/OS em QUANTIDADE (o valor de pedido da conta 44 não é financeiro → nenhum R$ aqui), SÓ a conta da
+        // fonte (a padrão, 44), por pedido distinto. Pedido sem canal continua informado (sem_canal), mas NÃO deixa o bloco parcial.
+        for ($d = $de; $d <= $ate; $d = $d->modify('+1 day')) $dias[$d->format('Y-m-d')] = ['dia' => $d->format('Y-m-d'), 'quantidade' => null];
+        $out = ['quantidade' => null, 'por_dia' => array_values($dias), 'inclui_cancelados' => null, 'inclui_teste_ml' => null, 'sem_canal' => null,
+                'conta' => $f['conta'] ?? null, 'atualizado_em' => $f['atualizado_em']];
         if ($this->semNumero($f)) return $out + ['estado' => $f['estado'], 'lacunas' => []];
         try {
+            if (!is_int($f['conta'] ?? null)) throw new RuntimeException('conta da fonte Bling desconhecida');
             $p = $this->p; $b = $this->bling;
-            $where = ["o.deletado_em IS NULL", "o.data_pedido >= :de", "o.data_pedido <= :ate"];
-            $par = [':de' => $de->format('Y-m-d'), ':ate' => $ate->format('Y-m-d')];
+            $where = ["o.account_id = :conta", "o.deletado_em IS NULL", "o.data_pedido >= :de", "o.data_pedido <= :ate"];
+            $par = [':conta' => $f['conta'], ':de' => $de->format('Y-m-d'), ':ate' => $ate->format('Y-m-d')];
             // cancelados: só dá para tirar quando o pedido tem o id REAL da situação e a lista de situações existe
             $temSit = $this->colunaExiste($b, 'bling_sales_orders', 'situacao_bling_id') && $this->tabelaExiste($b, 'bling_situacoes');
             if ($temSit) {
@@ -546,16 +556,16 @@ final class GeralV2
                 $par[':loja_teste'] = self::LOJA_TESTE;
             }
             $w = implode(' AND ', $where);
-            $st = $b->prepare("SELECT o.data_pedido AS dia, COUNT(*) AS n, SUM(o.total) AS v FROM `{$p}bling_sales_orders` o WHERE $w GROUP BY o.data_pedido");
+            $st = $b->prepare("SELECT o.data_pedido AS dia, COUNT(DISTINCT o.id) AS n FROM `{$p}bling_sales_orders` o WHERE $w GROUP BY o.data_pedido");
             $st->execute($par);
-            $n = 0; $v = '0.00';
+            $n = 0;
             // dia sem linha = 0 de verdade SÓ com a fonte em dia; fonte velha/parcial: o dia sem pedido fica null (pode ser só atraso da sincronização)
-            if ($f['estado'] === 'ok') foreach ($dias as $k => $_) { $dias[$k]['quantidade'] = 0; $dias[$k]['valor'] = '0.00'; }
+            if ($f['estado'] === 'ok') foreach ($dias as $k => $_) { $dias[$k]['quantidade'] = 0; }
             foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
                 $k = substr((string) $r['dia'], 0, 10);
                 if (!isset($dias[$k])) continue;
-                $dias[$k] = ['dia' => $k, 'quantidade' => (int) $r['n'], 'valor' => $this->dinheiro($r['v'], (int) $r['n'])];
-                $n += (int) $r['n']; $v = $this->somar($v, $dias[$k]['valor']);
+                $dias[$k] = ['dia' => $k, 'quantidade' => (int) $r['n']];
+                $n += (int) $r['n'];
             }
             // pedidos sem o id da situação/loja ainda entram: a resposta diz isso (nota "inclui vendas depois canceladas")
             $semId = function (string $col) use ($b, $p, $par, $w): bool {
@@ -565,24 +575,22 @@ final class GeralV2
             };
             $out['inclui_cancelados'] = !$temSit || $semId('situacao_bling_id');
             $out['inclui_teste_ml'] = !$temLoja || $semId('loja_bling_id');
-            // Decisão do Jhony (24/11): pedido SEM canal identificado → lacuna "sem_canal" ("Dados parciais · N pedido(s) ainda sem identificação de canal").
-            // Sem a coluna loja_bling_id (antes da migração do portão BLING LOJA), nenhum pedido tem canal identificado.
+            // Pedido SEM canal identificado: só INFORMAÇÃO (116, Jhony 25/11: deixa de marcar "Dados parciais"). Sem a coluna loja_bling_id, nenhum tem canal.
             if ($temLoja) {
-                $st = $b->prepare("SELECT COUNT(*) FROM `{$p}bling_sales_orders` o WHERE $w AND (o.loja_bling_id IS NULL OR o.loja_bling_id IN ('', '0'))");
+                $st = $b->prepare("SELECT COUNT(DISTINCT o.id) FROM `{$p}bling_sales_orders` o WHERE $w AND (o.loja_bling_id IS NULL OR o.loja_bling_id IN ('', '0'))");
                 $st->execute($par);
                 $out['sem_canal'] = (int) $st->fetchColumn();
             } else {
                 $out['sem_canal'] = $n;
             }
-            $out['quantidade'] = $n; $out['valor'] = $v; $out['por_dia'] = array_values($dias);
+            $out['quantidade'] = $n; $out['por_dia'] = array_values($dias);
         } catch (Throwable $e) {
             error_log('[geral-v2] pedidos: ' . get_class($e));
-            $out['por_dia'] = array_map(fn($d) => ['dia' => $d['dia'], 'quantidade' => null, 'valor' => null], array_values($dias));
-            return array_merge($out, ['quantidade' => null, 'valor' => null, 'inclui_cancelados' => null, 'inclui_teste_ml' => null, 'sem_canal' => null,
+            $out['por_dia'] = array_map(fn($d) => ['dia' => $d['dia'], 'quantidade' => null], array_values($dias));
+            return array_merge($out, ['quantidade' => null, 'inclui_cancelados' => null, 'inclui_teste_ml' => null, 'sem_canal' => null,
                                       'estado' => 'indisponivel', 'lacunas' => []]);
         }
-        $lacunas = $this->lacunasFonte($f);
-        if ($out['sem_canal'] > 0) $lacunas[] = 'sem_canal';
+        $lacunas = $this->lacunasFonte($f);   // só a leitura incompleta da fonte; sem_canal não é lacuna (116)
         $estado = $this->estadoCartao($f, $out['quantidade']);
         if ($lacunas !== [] && in_array($estado, ['ok', 'zero_confirmado'], true)) $estado = 'parcial';
         return $out + ['estado' => $estado, 'lacunas' => $lacunas];

@@ -203,15 +203,15 @@ $pedido('2026-11-20', '70.00', ['loja_bling_id' => '555']);              // loja
 $pedido('2026-11-21', '10.00', ['deletado_em' => '2026-11-21 10:00:00']); // apagado: fora
 $pedido('2026-11-15', '1.00'); $pedido('2026-11-23', '1.00');            // fora do período
 $r = $sv()->resumo('7d');
-check('pedidos 7d: 3 / 638441.19 (fora cancelado, loja teste, apagado e dias fora)', $r['pedidos']['quantidade'] === 3 && $r['pedidos']['valor'] === '638441.19', json_encode($r['pedidos']));
-check('por_dia: os 7 dias; dia sem pedido = 0 com a fonte em dia', count($r['pedidos']['por_dia']) === 7 && $r['pedidos']['por_dia'][1] === ['dia' => '2026-11-17', 'quantidade' => 0, 'valor' => '0.00']
-    && $r['pedidos']['por_dia'][0]['quantidade'] === 2 && $r['pedidos']['por_dia'][0]['valor'] === '100.10');
+check('pedidos 7d: 3 (fora cancelado, loja teste, apagado e dias fora) e NENHUM valor (116: o valor de pedido da conta 44 não é financeiro)', $r['pedidos']['quantidade'] === 3 && !array_key_exists('valor', $r['pedidos']), json_encode($r['pedidos']));
+check('por_dia: os 7 dias, só {dia, quantidade}; dia sem pedido = 0 com a fonte em dia', count($r['pedidos']['por_dia']) === 7 && $r['pedidos']['por_dia'][1] === ['dia' => '2026-11-17', 'quantidade' => 0]
+    && $r['pedidos']['por_dia'][0] === ['dia' => '2026-11-16', 'quantidade' => 2]);
 check('com os ids presentes: não inclui cancelados nem a loja teste', $r['pedidos']['inclui_cancelados'] === false && $r['pedidos']['inclui_teste_ml'] === false && $r['pedidos']['estado'] === 'ok');
 $pedido('2026-11-22', '5.00', ['situacao_bling_id' => null, 'loja_bling_id' => null]);
 $r = $sv()->resumo('7d');
 check('pedido sem id da situação/loja: entra e a resposta avisa', $r['pedidos']['quantidade'] === 4 && $r['pedidos']['inclui_cancelados'] === true && $r['pedidos']['inclui_teste_ml'] === true);
 $o = $sv()->resumo('ontem');
-check('ontem: 1 pedido de 5.00', $o['pedidos']['quantidade'] === 1 && $o['pedidos']['valor'] === '5.00' && count($o['pedidos']['por_dia']) === 1);
+check('ontem: 1 pedido (sem valor)', $o['pedidos']['quantidade'] === 1 && !array_key_exists('valor', $o['pedidos']) && count($o['pedidos']['por_dia']) === 1);
 
 // ---------- Google Calendar (frescor por calendário) + conflitos ----------
 $ins('gcal_accounts', ['id' => 42, 'user_id' => 75, 'google_account_id' => 'g1', 'email' => 'x@exemplo.test', 'scopes' => 's', 'is_active' => 1, 'connection_status' => 'connected']);
@@ -256,8 +256,8 @@ $pdo->exec("UPDATE `{$P}pipe_accounts` SET status='connected'");
 $r = (new GeralV2(null, $pdo, $pdo, 75, $AGORA, $provDe($cf), $P))->resumo('7d');
 check('banco do Pipedrive fora → indisponivel, números null; Bling e agenda seguem', $nulos($r) && $r['ganhos']['estado'] === 'indisponivel' && $r['pedidos']['quantidade'] === 4 && $prio($r, 'conflito_agenda')['total'] === 1);
 $r = (new GeralV2($pdo, $pdo, null, 75, $AGORA, $provDe($cf), $P))->resumo('7d');
-check('banco do Bling fora → pedidos null em todos os dias (nunca 0)', $r['pedidos']['quantidade'] === null && $r['pedidos']['valor'] === null && $r['pedidos']['estado'] === 'indisponivel'
-    && count(array_filter($r['pedidos']['por_dia'], fn($d) => $d['quantidade'] !== null || $d['valor'] !== null)) === 0);
+check('banco do Bling fora → pedidos null em todos os dias (nunca 0)', $r['pedidos']['quantidade'] === null && $r['pedidos']['estado'] === 'indisponivel'
+    && count(array_filter($r['pedidos']['por_dia'], fn($d) => $d['quantidade'] !== null)) === 0);
 $pdo->exec("UPDATE `{$P}bling_accounts` SET estado_conexao='nao_configurado'");
 $r = $sv(cf: $cf)->resumo('7d');
 check('Bling sem conta → aguardando_conexao, números null', $r['pedidos']['estado'] === 'aguardando_conexao' && $r['pedidos']['quantidade'] === null && $r['pedidos']['por_dia'][0]['quantidade'] === null);
@@ -285,13 +285,13 @@ check('erro na leitura das atividades → P1 e P2 indisponíveis com total null;
 $pdo->exec("RENAME TABLE `{$P}pipe_activities_x` TO `{$P}pipe_activities`");
 $pdo->exec("RENAME TABLE `{$P}bling_sales_orders` TO `{$P}bling_sales_orders_x`");
 $r = $sv(cf: $cf)->resumo('7d');
-check('erro na leitura dos pedidos → quantidade, valor e TODOS os dias null (nunca 0); o resto segue', $r['pedidos']['quantidade'] === null && $r['pedidos']['estado'] === 'indisponivel'
-    && count(array_filter($r['pedidos']['por_dia'], fn($d) => $d['quantidade'] !== null || $d['valor'] !== null)) === 0 && count($r['pedidos']['por_dia']) === 7 && $r['funil']['quantidade'] !== null);
+check('erro na leitura dos pedidos → quantidade e TODOS os dias null (nunca 0); o resto segue', $r['pedidos']['quantidade'] === null && $r['pedidos']['estado'] === 'indisponivel'
+    && count(array_filter($r['pedidos']['por_dia'], fn($d) => $d['quantidade'] !== null)) === 0 && count($r['pedidos']['por_dia']) === 7 && $r['funil']['quantidade'] !== null);
 $pdo->exec("RENAME TABLE `{$P}bling_sales_orders_x` TO `{$P}bling_sales_orders`");
 // moeda fora de BRL
 $deal(300, 'won', ['won_time' => '2026-11-20 15:00:00', 'currency' => 'USD', 'value' => 10]);
 $r = $sv(cf: $cf)->resumo('7d');
-check('ganho em USD: conta na quantidade, fica fora do valor e o cartão vira parcial', $r['ganhos']['quantidade'] === 3 && $r['ganhos']['valor'] === '300.35' && $r['ganhos']['fora_brl'] === 1 && $r['ganhos']['estado'] === 'parcial');
+check('ganho em USD: conta na quantidade, fica fora do valor e NÃO deixa o cartão parcial (116: o cartão é a quantidade)', $r['ganhos']['quantidade'] === 3 && $r['ganhos']['valor'] === '300.35' && $r['ganhos']['fora_brl'] === 1 && $r['ganhos']['estado'] === 'ok' && $r['ganhos']['lacunas'] === []);
 check('período inválido recusado', (function () use ($sv) { try { $sv()->resumo('ano'); return false; } catch (GeralV2Erro) { return true; } })());
 check('prefixo inválido recusado', (function () use ($pdo) { try { new GeralV2($pdo, $pdo, $pdo, 75, null, null, 'x; DROP'); return false; } catch (InvalidArgumentException) { return true; } })());
 
@@ -309,17 +309,17 @@ $cf2 = fn(string $de, string $ate): array => $conf2;
 $K = fn(?Closure $cf = null) => new GeralV2Contrato($sv(cf: $cf ?? $cf2));
 $E = ['ok', 'zero', 'parcial', 'desatualizado', 'aguardando', 'erro'];
 $c = $K()->resumo('7d');
-check('contrato · resumo: chaves da tela', array_keys($c) === ['gerado_em', 'periodo', 'pedidos_bling', 'negocios_ganhos', 'funil_aberto'], implode(',', array_keys($c)));
+check('contrato · resumo: chaves da tela', array_keys($c) === ['gerado_em', 'periodo', 'pedidos_bling', 'negocios_ganhos', 'funil_aberto', 'recebido'], implode(',', array_keys($c)));
 check('contrato · período com rótulo "16 a 22/11/2026 · 7 dias completos"', $c['periodo'] === ['id' => '7d', 'de' => '2026-11-16', 'ate' => '2026-11-22', 'rotulo' => '16 a 22/11/2026 · 7 dias completos'], json_encode($c['periodo']));
 check('contrato · rótulos ontem e mês', $K()->resumo('ontem')['periodo']['rotulo'] === '22/11/2026 · ontem' && $K()->resumo('mes')['periodo']['rotulo'] === '01 a 22/11/2026 · mês até ontem');
 check('contrato · rótulo cruzando meses', (new GeralV2Contrato($sv(ag: new DateTimeImmutable('2026-12-03 10:00', $BR))))->resumo('7d')['periodo']['rotulo'] === '26/11 a 02/12/2026 · 7 dias completos');
 foreach (['pedidos_bling', 'negocios_ganhos', 'funil_aberto'] as $b)
     check("contrato · $b: estado do enum + ultimo_sucesso + motivo", in_array($c[$b]['estado'], $E, true) && array_key_exists('ultimo_sucesso', $c[$b]) && array_key_exists('motivo', $c[$b]));
 $somaQ = array_sum(array_column($c['pedidos_bling']['por_dia'], 'quantidade'));
-$somaV = array_sum(array_map(fn($d) => (int) round(((float) $d['valor']) * 100), $c['pedidos_bling']['por_dia']));
-check('contrato · por_dia soma EXATAMENTE quantidade e valor', $somaQ === $c['pedidos_bling']['quantidade'] && $somaV === (int) round(((float) $c['pedidos_bling']['valor']) * 100));
+check('contrato · por_dia soma EXATAMENTE a quantidade; nenhum valor no bloco nem nos dias', $somaQ === $c['pedidos_bling']['quantidade'] && !array_key_exists('valor', $c['pedidos_bling'])
+    && array_filter($c['pedidos_bling']['por_dia'], fn($d) => array_keys($d) !== ['dia', 'quantidade']) === []);
 check('contrato · inclui_canceladas presente', is_bool($c['pedidos_bling']['inclui_canceladas']));
-check('contrato · ganhos com moeda estrangeira: parcial + motivo em português', $c['negocios_ganhos']['estado'] === 'parcial' && $c['negocios_ganhos']['motivo'] === '1 negócio em outra moeda ficou fora do valor.' && $c['negocios_ganhos']['sem_valor'] === 0, json_encode($c['negocios_ganhos']));
+check('contrato · ganhos com moeda estrangeira (116): ok, sem motivo nem aviso; fora_brl continua exposto', $c['negocios_ganhos']['estado'] === 'ok' && $c['negocios_ganhos']['motivo'] === null && $c['negocios_ganhos']['aviso'] === null && $c['negocios_ganhos']['fora_brl'] === 1 && $c['negocios_ganhos']['sem_valor'] === 0, json_encode($c['negocios_ganhos']));
 check('contrato · funil: sem_valor e valor em texto', $c['funil_aberto']['sem_valor'] === 1 && is_string($c['funil_aberto']['valor']));
 $pr = $K()->prioridades();
 $pi = array_column($pr['itens'], null, 'id');
@@ -349,8 +349,8 @@ check('contrato · agenda: só os próximos de hoje (sem o que já passou, sem c
 $agN = (new GeralV2Contrato(new GeralV2($pdo, $pdo, $pdo, 75, $AGORA, null, $P)))->agenda();
 check('contrato · agenda sem provedor: erro e itens null (nunca lista vazia)', $agN['estado'] === 'erro' && $agN['itens'] === null && is_string($agN['motivo']));
 $fo = array_column($K()->fontes(), null, 'fonte');
-check('contrato · fontes: as 6 da tela, com estados do enum', array_keys($fo) === ['pipedrive', 'bling', 'calendar', 'asaas', 'mercadolivre', 'lojaintegrada']
-    && $fo['pipedrive']['estado'] === 'conectada' && $fo['asaas']['estado'] === 'aguardando' && $fo['asaas']['ultimo_sucesso'] === null);
+check('contrato · fontes (116): pipedrive, bling, calendar, precifica — nessa ordem; Precifica aguardando', array_keys($fo) === ['pipedrive', 'bling', 'calendar', 'precifica']
+    && $fo['pipedrive']['estado'] === 'conectada' && $fo['precifica']['estado'] === 'aguardando' && $fo['precifica']['ultimo_sucesso'] === null, implode(',', array_keys($fo)));
 // estados e motivos
 $pdo->exec("UPDATE `{$P}pipe_accounts` SET status='not_configured'");
 $c = $K()->resumo('7d'); $pr = array_column($K()->prioridades()['itens'], null, 'id');
@@ -481,18 +481,18 @@ check('IND · visão normal coerente, com os campos novos em todos os indicadore
 $c = $K()->resumo('7d');
 check('IND · funil com 1 negócio sem valor → parcial, lacuna sem_valor, motivo "1 negócio sem valor", soma dos informados', $c['funil_aberto']['estado'] === 'parcial'
     && $c['funil_aberto']['lacunas'] === ['sem_valor'] && $c['funil_aberto']['motivo'] === '1 negócio sem valor' && $c['funil_aberto']['consulta_completa'] === true, json_encode($c['funil_aberto']));
-check('IND · ganhos em USD: fora_brl exposto e lacuna fora_brl', $c['negocios_ganhos']['fora_brl'] === 1 && $c['negocios_ganhos']['lacunas'] === ['fora_brl']);
+check('IND · ganhos em USD: fora_brl exposto, SEM lacuna (116)', $c['negocios_ganhos']['fora_brl'] === 1 && $c['negocios_ganhos']['lacunas'] === []);
 check('IND · fonte e hora por indicador', $c['pedidos_bling']['fonte'] === 'bling' && $c['negocios_ganhos']['fonte'] === 'pipedrive'
     && $c['pedidos_bling']['fonte_atualizada_em'] === '2026-11-23T09:40:00-03:00' && $c['negocios_ganhos']['valor_em'] === '2026-11-23T09:50:00-03:00');
 // G1 · todos sem valor nunca vira R$ 0,00; parte sem valor = soma dos informados + parcial
 $deal(400, 'won', ['won_time' => '2026-11-05 15:00:00', 'value' => null]);
 $deal(401, 'won', ['won_time' => '2026-11-05 16:00:00', 'value' => 0]);
 $g = $Kag('2026-11-06 10:00')->resumo('ontem')['negocios_ganhos'];
-check('G1 · 2 ganhos, TODOS sem valor → valor null (nunca "0.00"), parcial, "2 negócios sem valor"', $g['quantidade'] === 2 && $g['valor'] === null && $g['sem_valor'] === 2
-    && $g['estado'] === 'parcial' && $g['motivo'] === '2 negócios sem valor' && $g['valor_em'] !== null, json_encode($g));
+check('G1 · 2 ganhos, TODOS sem valor → valor null (nunca "0.00"); o cartão (quantidade 2) NÃO fica parcial (116)', $g['quantidade'] === 2 && $g['valor'] === null && $g['sem_valor'] === 2
+    && $g['estado'] === 'ok' && $g['motivo'] === null && $g['valor_em'] !== null, json_encode($g));
 $deal(402, 'won', ['won_time' => '2026-11-05 17:00:00', 'value' => 100]); $deal(403, 'won', ['won_time' => '2026-11-05 18:00:00', 'value' => 50.5]);
 $g = $Kag('2026-11-06 10:00')->resumo('ontem')['negocios_ganhos'];
-check('G1 · 2 com valor + 2 sem → soma SÓ dos informados (150.50), parcial', $g['quantidade'] === 4 && $g['valor'] === '150.50' && $g['estado'] === 'parcial' && $g['sem_valor'] === 2, json_encode($g));
+check('G1 · 2 com valor + 2 sem → soma SÓ dos informados (150.50); cartão ok (116)', $g['quantidade'] === 4 && $g['valor'] === '150.50' && $g['estado'] === 'ok' && $g['sem_valor'] === 2, json_encode($g));
 // G2 · zero só com a consulta completa
 $z = fn() => $Kag('2026-11-03 10:00')->resumo('ontem');
 check('G2 · base: ontem (02/11) sem ganhos e sem pedidos, tudo em dia → zero nos dois', $z()['negocios_ganhos']['estado'] === 'zero' && $z()['pedidos_bling']['estado'] === 'zero'
@@ -530,29 +530,29 @@ check('G2 · ESCOPO AUSENTE com leitura completa anterior → desatualizado (úl
     && $pb['ultimo_sucesso'] === '2026-11-23T08:00:00-03:00' && str_starts_with((string) $pb['motivo'], 'O acesso ao Bling não inclui os pedidos') && $pb['consulta_completa'] === false, json_encode($pb));
 $pdo->exec("UPDATE `{$P}bling_sync_jobs` SET situacao='falhou' WHERE situacao='concluido'");
 $pb = $K()->resumo('7d')['pedidos_bling'];
-check('G2 · ESCOPO AUSENTE sem nenhuma leitura completa → erro e números null (nunca 0)', $pb['estado'] === 'erro' && $pb['quantidade'] === null && $pb['valor'] === null, json_encode($pb));
+check('G2 · ESCOPO AUSENTE sem nenhuma leitura completa → erro e números null (nunca 0)', $pb['estado'] === 'erro' && $pb['quantidade'] === null && !array_key_exists('valor', $pb), json_encode($pb));
 check('G2 · coerência com escopo ausente', ($e = $coerente($K())) === '', $e);
 $pdo->exec("UPDATE `{$P}bling_sync_state` SET situacao='ok'"); $pdo->exec("DELETE FROM `{$P}bling_sync_jobs`"); $pdo->exec("DELETE FROM `{$P}bling_sync_errors`");   // tabelas do próprio teste
 $pb = $K()->resumo('7d')['pedidos_bling'];
-check('G2 · Bling de volta ao normal: só a lacuna do pedido SEM canal (22/11) → parcial "1 pedido ainda sem identificação de canal"', $pb['estado'] === 'parcial'
-    && $pb['lacunas'] === ['sem_canal'] && $pb['sem_canal'] === 1 && $pb['motivo'] === '1 pedido ainda sem identificação de canal' && $pb['consulta_completa'] === true, json_encode($pb));
+check('G2 · Bling de volta ao normal: o pedido SEM canal (22/11) é só informação → ok, sem lacuna nem motivo (116)', $pb['estado'] === 'ok'
+    && $pb['lacunas'] === [] && $pb['sem_canal'] === 1 && $pb['motivo'] === null && $pb['consulta_completa'] === true, json_encode($pb));
 // SEM CANAL (decisão do Jhony, 24/11): "Dados parciais" quando há pedido sem canal identificado
 $cOk = $Kag('2026-11-20 10:00')->resumo('ontem')['pedidos_bling'];   // 19/11: 1 pedido com loja 556
 check('CANAL · todos os pedidos com canal → ok, sem_canal 0, sem lacuna', $cOk['estado'] === 'ok' && $cOk['sem_canal'] === 0 && $cOk['lacunas'] === [], json_encode($cOk));
 $pdo->exec("UPDATE `{$P}bling_sales_orders` SET loja_bling_id='0' WHERE data_pedido='2026-11-19'");
 $c0 = $Kag('2026-11-20 10:00')->resumo('ontem')['pedidos_bling'];
-check('CANAL · loja "0" antiga conta como sem canal → parcial, número mantido', $c0['estado'] === 'parcial' && $c0['sem_canal'] === 1 && $c0['quantidade'] === 1 && $c0['valor'] === '638341.09', json_encode($c0));
+check('CANAL · loja "0" antiga conta como sem canal → informado, NÃO parcial (116), número mantido', $c0['estado'] === 'ok' && $c0['sem_canal'] === 1 && $c0['quantidade'] === 1 && $c0['lacunas'] === [], json_encode($c0));
 $pdo->exec("UPDATE `{$P}bling_sales_orders` SET loja_bling_id='556' WHERE data_pedido='2026-11-19'");
 $pdo->exec("ALTER TABLE `{$P}bling_sales_orders` RENAME COLUMN loja_bling_id TO loja_bling_id_x");   // tabela do próprio teste: como a produção antes da migração BLING LOJA
 $cs = $K()->resumo('7d')['pedidos_bling'];
-check('CANAL · sem a coluna da loja: nenhum pedido tem canal identificado → sem_canal = quantidade, parcial', $cs['sem_canal'] === $cs['quantidade'] && $cs['quantidade'] > 0 && $cs['estado'] === 'parcial', json_encode([$cs['sem_canal'], $cs['quantidade'], $cs['estado']]));
+check('CANAL · sem a coluna da loja: nenhum pedido tem canal identificado → sem_canal = quantidade, NÃO parcial (116)', $cs['sem_canal'] === $cs['quantidade'] && $cs['quantidade'] > 0 && $cs['estado'] === 'ok', json_encode([$cs['sem_canal'], $cs['quantidade'], $cs['estado']]));
 $pdo->exec("ALTER TABLE `{$P}bling_sales_orders` RENAME COLUMN loja_bling_id_x TO loja_bling_id");
 $cz = $Kag('2026-11-03 10:00')->resumo('ontem')['pedidos_bling'];
 check('CANAL · 0 pedidos com a fonte em dia continua zero (sem_canal 0)', $cz['estado'] === 'zero' && $cz['sem_canal'] === 0, json_encode($cz));
 // G3 · fonte POR INDICADOR: atividades atrasadas não derrubam ganhos e funil
 $pdo->exec("UPDATE `{$P}pipe_sync_runs` SET finished_at='2026-11-23 07:00:00' WHERE entity='activities'");
 $c = $K()->resumo('7d'); $pi = array_column($K()->prioridades()['itens'], null, 'id'); $fp = array_column($K()->fontes(), null, 'fonte')['pipedrive'];
-check('G3 · atividades há 3 h: ganhos e funil seguem com a hora dos NEGÓCIOS; prioridades desatualizadas', $c['negocios_ganhos']['estado'] === 'parcial' && $c['negocios_ganhos']['fonte_atualizada_em'] === '2026-11-23T09:59:00-03:00'
+check('G3 · atividades há 3 h: ganhos e funil seguem com a hora dos NEGÓCIOS; prioridades desatualizadas', $c['negocios_ganhos']['estado'] === 'ok' && $c['negocios_ganhos']['fonte_atualizada_em'] === '2026-11-23T09:59:00-03:00'
     && $pi['atividade_vencida']['estado'] === 'desatualizado' && $pi['atividade_vencida']['fonte_atualizada_em'] === '2026-11-23T07:00:00-03:00', json_encode([$c['negocios_ganhos']['estado'], $pi['atividade_vencida']['estado']]));
 check('G3 · linha de fontes = o PIOR (desatualizada, 07:00) e diz qual indicador', $fp['estado'] === 'desatualizada' && $fp['ultimo_sucesso'] === '2026-11-23T07:00:00-03:00'
     && array_column($fp['indicadores'], 'estado', 'id') === ['negocios_ganhos' => 'ok', 'funil_aberto' => 'ok', 'atividade_vencida' => 'desatualizado', 'sem_proxima_atividade' => 'desatualizado'], json_encode($fp));
@@ -650,25 +650,25 @@ check('MOCK 2 · Google sem autorização coerente', ($e = $coerente($K())) === 
 $stG = $pdo->prepare("UPDATE `{$P}gcal_accounts` SET connection_status = ? WHERE id = ?"); foreach ($antesG as $id => $cs) $stG->execute([$cs, $id]);
 // 2d · lacuna do DADO não derruba a fonte: Bling com pedido sem canal = "Dados parciais" no cartão, fonte conectada, consulta ok
 $fb = array_column($K()->fontes(), null, 'fonte')['bling']; $pb = $K()->resumo('7d')['pedidos_bling'];
-check('MOCK 2 · pedido sem canal: cartão parcial, consulta ok, fonte "conectada"', $pb['estado'] === 'parcial' && $fb['estado'] === 'conectada' && $fb['parte_afetada'] === []
+check('MOCK 2 · pedido sem canal: cartão ok (116: sem canal é informação), consulta ok, fonte "conectada"', $pb['estado'] === 'ok' && $pb['sem_canal'] > 0 && $fb['estado'] === 'conectada' && $fb['parte_afetada'] === []
     && $fb['conexao']['estado'] === 'conectada', json_encode([$pb['estado'], $fb]));
 // 4 · evidências: ZERO REAL positivo e "Dados parciais · N pedidos sem canal"
 $z = $Kag('2026-11-03 10:00'); $zr = $z->resumo('ontem'); $zf = array_column($z->fontes('ontem'), null, 'fonte');
 check('MOCK 4 · ZERO REAL: ontem sem pedidos e sem ganhos, consulta completa, fonte atualizada → zero, 0 e "0.00", linha Bling e Pipedrive "conectada"',
-    $zr['pedidos_bling']['estado'] === 'zero' && $zr['pedidos_bling']['quantidade'] === 0 && $zr['pedidos_bling']['valor'] === '0.00' && $zr['pedidos_bling']['consulta_completa'] === true
+    $zr['pedidos_bling']['estado'] === 'zero' && $zr['pedidos_bling']['quantidade'] === 0 && !array_key_exists('valor', $zr['pedidos_bling']) && $zr['pedidos_bling']['consulta_completa'] === true
     && $zr['negocios_ganhos']['estado'] === 'zero' && $zr['negocios_ganhos']['quantidade'] === 0 && $zr['negocios_ganhos']['valor'] === '0.00'
     && $zf['bling']['estado'] === 'conectada' && $zf['pipedrive']['consultas'][0] === ['id' => 'ganhos', 'rotulo' => 'Ganhos', 'estado' => 'ok', 'ultimo_sucesso' => $zr['negocios_ganhos']['ultimo_sucesso'], 'motivo' => null, 'indicadores' => ['negocios_ganhos']]
     && $zr['pedidos_bling']['aviso'] === null, json_encode([$zr['pedidos_bling'], $zf['bling']['estado'], $zf['pipedrive']['consultas'][0]]));
 check('MOCK 4 · zero real coerente', ($e = $coerente($z, 'ontem')) === '', $e);
 $pb = $K()->resumo('7d')['pedidos_bling'];
-check('MOCK 4 · 1 pedido sem canal → aviso "Dados parciais · 1 pedido sem canal"', $pb['aviso'] === 'Dados parciais · 1 pedido sem canal', json_encode($pb['aviso']));
+check('MOCK 4 · 1 pedido sem canal → SEM aviso de "Dados parciais" (116), sem_canal informado', $pb['aviso'] === null && $pb['sem_canal'] === 1 && $pb['estado'] === 'ok', json_encode([$pb['aviso'], $pb['sem_canal'], $pb['estado']]));
 $pdo->exec("ALTER TABLE `{$P}bling_sales_orders` RENAME COLUMN loja_bling_id TO loja_bling_id_x");
 $pb = $K()->resumo('7d')['pedidos_bling'];
-check('MOCK 4 · N pedidos sem canal → aviso "Dados parciais · N pedidos sem canal" (plural, N = sem_canal)', $pb['sem_canal'] > 1 && $pb['aviso'] === "Dados parciais · {$pb['sem_canal']} pedidos sem canal", json_encode([$pb['sem_canal'], $pb['aviso']]));
+check('MOCK 4 · N pedidos sem canal → SEM aviso, ok, sem_canal = N (116)', $pb['sem_canal'] > 1 && $pb['aviso'] === null && $pb['estado'] === 'ok', json_encode([$pb['sem_canal'], $pb['aviso']]));
 $pdo->exec("ALTER TABLE `{$P}bling_sales_orders` RENAME COLUMN loja_bling_id_x TO loja_bling_id");
 $c = $K()->resumo('7d');
 check('MOCK 4 · ganhos/funil: aviso pronto da lacuna de valor', $c['funil_aberto']['aviso'] === 'Dados parciais · Soma dos valores informados · 1 negócio sem valor'
-    && $c['negocios_ganhos']['aviso'] === 'Dados parciais · Soma dos valores informados · 1 negócio em outra moeda', json_encode([$c['funil_aberto']['aviso'], $c['negocios_ganhos']['aviso']]));
+    && $c['negocios_ganhos']['aviso'] === null, json_encode([$c['funil_aberto']['aviso'], $c['negocios_ganhos']['aviso']]));   // 116: no funil o valor faltando continua parcial; nos ganhos, não
 $pdo->exec("UPDATE `{$P}bling_sync_state` SET situacao='atencao'");
 check('MOCK 4 · lacuna da LEITURA (não do dado) → aviso null, o motivo explica', $K()->resumo('7d')['pedidos_bling']['aviso'] === null);
 $pdo->exec("UPDATE `{$P}bling_sync_state` SET situacao='ok'");
@@ -840,6 +840,46 @@ $g = $CASOS['ok|conflitos_falham']; $gf = array_column($g['fontes'], null, 'font
 // (a agenda de hoje marca os eventos em conflito com a MESMA consulta: se ela falha, a agenda também sai erro — nada fica "Atualizado")
 check('R3 P1 · os conflitos falham: "Google Calendar · Com problema (agenda de hoje, prioridades)", cada parte com o próprio estado', $gf['rotulo_estado'] === 'Com problema'
     && array_column($gf['afetado'], 'rotulo') === ['agenda de hoje', 'prioridades'] && array_column($gf['consultas'], 'estado', 'id') === ['agenda' => 'erro', 'conflitos' => 'erro'], json_encode([$gf['rotulo_estado'], $gf['afetado']], JSON_UNESCAPED_UNICODE));
+
+// ---------- GERAL V2 DO 116 (decisões do Jhony, 25/11; lista exata da CIMA 13:5x) ----------
+// massa: uma 2ª conta Bling ATIVA (id 7, não padrão) com pedidos no período, inclusive sem canal — nunca pode entrar na contagem nem no sem_canal
+$ins('bling_accounts', ['id' => 7, 'nome' => 'Outra conta', 'estado_conexao' => 'conectado', 'is_padrao' => 0, 'is_ativo' => 1]);
+$ins('bling_sync_state', ['account_id' => 7, 'recurso' => 'pedidos', 'situacao' => 'ok', 'ultima_execucao_em' => '2026-11-23 12:40:00']);
+foreach (['2026-11-16', '2026-11-18', '2026-11-18'] as $i => $dia) $ins('bling_sales_orders', ['account_id' => 7, 'bling_id' => (string) (97000 + $i), 'data_pedido' => $dia, 'situacao' => 'x', 'total' => '999.00', 'loja_bling_id' => null]);
+$c116 = $K()->resumo('7d'); $pb116 = $c116['pedidos_bling'];
+$soConta = (int) $pdo->query("SELECT COUNT(*) FROM `{$P}bling_sales_orders` WHERE account_id = 1 AND deletado_em IS NULL AND data_pedido BETWEEN '2026-11-16' AND '2026-11-22' AND COALESCE(situacao_bling_id,'') <> '12' AND COALESCE(loja_bling_id,'') <> '555'")->fetchColumn();
+$semCanalConta = (int) $pdo->query("SELECT COUNT(*) FROM `{$P}bling_sales_orders` WHERE account_id = 1 AND deletado_em IS NULL AND data_pedido BETWEEN '2026-11-16' AND '2026-11-22' AND COALESCE(situacao_bling_id,'') <> '12' AND (loja_bling_id IS NULL OR loja_bling_id IN ('','0'))")->fetchColumn();
+check('116 · pedidos contam SÓ a conta da fonte (a padrão): os 3 pedidos da conta 7 ficam fora; conta = 1 (na produção, 44)', $pb116['quantidade'] === $soConta && $pb116['conta'] === 1, json_encode([$pb116['quantidade'], $soConta, $pb116['conta']]));
+check('116 · sem_canal também só da conta da fonte (a conta 7 tem 3 sem canal e não entram)', $pb116['sem_canal'] === $semCanalConta, json_encode([$pb116['sem_canal'], $semCanalConta]));
+check('116 · pedidos_bling: sem `valor` (bloco e dias), com `conta` e o `universo` exato; nada da conta 7 (R$ 999) aparece', !array_key_exists('valor', $pb116) && array_filter($pb116['por_dia'], fn($d) => array_keys($d) !== ['dia', 'quantidade']) === []
+    && $pb116['universo'] === 'pedidos de venda da conta principal, sem cancelados e sem a loja de teste do Mercado Livre' && !str_contains(json_encode($pb116), '999'), json_encode($pb116, JSON_UNESCAPED_UNICODE));
+check('116 · sem_canal > 0 NÃO é lacuna, NÃO deixa parcial, sem motivo/aviso de canal', $pb116['sem_canal'] > 0 && $pb116['lacunas'] === [] && $pb116['estado'] === 'ok' && $pb116['motivo'] === null && $pb116['aviso'] === null, json_encode($pb116));
+check('116 · funil: fotografia_em = a hora da leitura dos negócios somados (o último sucesso deles); o parcial por valor faltando continua', $c116['funil_aberto']['fotografia_em'] === $c116['funil_aberto']['ultimo_sucesso']
+    && $c116['funil_aberto']['fotografia_em'] !== null && $c116['funil_aberto']['estado'] === 'parcial' && $c116['funil_aberto']['lacunas'] === ['sem_valor'], json_encode($c116['funil_aberto']));
+check('116 · ganhos: sem_valor/fora_brl expostos, mas fora das lacunas (o cartão é a quantidade)', $c116['negocios_ganhos']['lacunas'] === [] && $c116['negocios_ganhos']['fora_brl'] === 1, json_encode($c116['negocios_ganhos']));
+$REC = ['fonte' => 'precifica', 'estado' => 'aguardando', 'valor' => null, 'quantidade' => null, 'ultimo_sucesso' => null, 'consulta_completa' => false, 'lacunas' => [], 'motivo' => 'Precifica ainda não conectado para recebimentos.'];
+check('116 · recebido: o bloco EXATO da CIMA (Precifica aguardando, sem número)', $c116['recebido'] === $REC, json_encode($c116['recebido'], JSON_UNESCAPED_UNICODE));
+// recebido SEM consulta: um PDO que registra cada SQL — nenhuma consulta a asaas/receb/pagamento; e o bloco é o MESMO sem banco nenhum
+$pdoReg = new class ($pdo) extends PDO {
+    public array $q = [];
+    public function __construct(private PDO $real) {}
+    public function prepare(string $q, array $o = []): PDOStatement|false { $this->q[] = $q; return $this->real->prepare($q, $o); }
+    public function query(string $q, ?int $m = null, mixed ...$a): PDOStatement|false { $this->q[] = $q; return $this->real->query($q); }
+    public function exec(string $q): int|false { $this->q[] = $q; return $this->real->exec($q); }
+};
+$paR = (new GeralV2Contrato(new GeralV2($pdoReg, $pdoReg, $pdoReg, 75, $AGORA, $provDe($cf2), $P)))->painel('7d');
+$qRec = array_values(array_filter($pdoReg->q, fn($q) => preg_match('/asaas|receb|pagament|precifica/i', $q) === 1));
+check('116 · recebido sem NENHUMA consulta de recebimento (asaas/receb/pagament/precifica): 0 no painel inteiro', $qRec === [] && $paR['resumo']['recebido'] === $REC, json_encode($qRec));
+$paSem = (new GeralV2Contrato(new GeralV2(null, null, null, 75, $AGORA, null, $P)))->painel('7d');
+check('116 · recebido igual com TODOS os bancos fora (não depende de nada lido)', $paSem['resumo']['recebido'] === $REC);
+$fo116 = $paR['fontes']; $fP = array_column($fo116, null, 'fonte')['precifica'] ?? [];
+check('116 · fontes: pipedrive, bling, calendar, precifica — e NUNCA asaas, mercadolivre ou lojaintegrada', array_column($fo116, 'fonte') === ['pipedrive', 'bling', 'calendar', 'precifica']
+    && !preg_match('/asaas|mercadolivre|lojaintegrada/i', json_encode($fo116)), implode(',', array_column($fo116, 'fonte')));
+check('116 · fonte precifica: o objeto da CIMA (aguardando, "Aguardando conexão", afetado = recebimentos)', ($fP['estado'] ?? null) === 'aguardando' && ($fP['rotulo_estado'] ?? null) === 'Aguardando conexão'
+    && array_key_exists('ultimo_sucesso', $fP) && $fP['ultimo_sucesso'] === null && ($fP['motivo'] ?? null) === 'Precifica ainda não conectado para recebimentos.'
+    && ($fP['afetado'] ?? null) === [['id' => 'recebido', 'rotulo' => 'recebimentos', 'estado' => 'aguardando', 'rotulo_estado' => 'Aguardando conexão']], json_encode($fP, JSON_UNESCAPED_UNICODE));
+check('116 · painel coerente com tudo isso', ($e = $coerentePainel($paR)) === '', $e);
+$pdo->exec("DELETE FROM `{$P}bling_sales_orders` WHERE account_id = 7"); $pdo->exec("DELETE FROM `{$P}bling_sync_state` WHERE account_id = 7"); $pdo->exec("DELETE FROM `{$P}bling_accounts` WHERE id = 7");   // tabelas do próprio teste
 
 // ---------- VALIDAÇÃO DO TEXTO BRUTO (DSHOW-116): `\z`, nunca `$` (no PHP o `$` aceita um "\n" no fim) ----------
 $casosUrl = ['1' => 1, '50' => 50, "1\n" => null, "1\r\n" => null, "\n1" => null, ' 1' => null, '1 ' => null, '01' => null, '0' => null, '-1' => null, '1.0' => null, '' => null, '123456' => null];

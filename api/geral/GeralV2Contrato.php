@@ -55,12 +55,12 @@ final class GeralV2Contrato
         'bling' => ['pedidos' => ['Pedidos', ['pedidos_bling']]],
         'google_calendar' => ['agenda' => ['Agenda de hoje', ['agenda']], 'conflitos' => ['Conflitos', ['conflito_agenda']]],
     ];
-    /** fontes que ainda não têm conector publicado no Dash: o que falta (mesmos textos da Geral, confirmados pelo Jhony) */
-    private const SEM_CONECTOR = [
-        'asaas'         => 'Asaas em auditoria; faltam as chaves.',
-        'mercadolivre'  => 'Falta criar o aplicativo do Mercado Livre (Walter).',
-        'lojaintegrada' => 'Dono da conta ainda indefinido.',
-    ];
+    /** 116 (Jhony 25/11): a linha da Geral = as fontes dos blocos do lançamento. Asaas, Mercado Livre e Loja Integrada saem (entram na expansão). */
+    public const UNIVERSO_PEDIDOS = 'pedidos de venda da conta principal, sem cancelados e sem a loja de teste do Mercado Livre';
+    private const MOTIVO_PRECIFICA = 'Precifica ainda não conectado para recebimentos.';
+    /** "Recebido no período" (116): fixo, sem consulta. */
+    private const RECEBIDO = ['fonte' => 'precifica', 'estado' => 'aguardando', 'valor' => null, 'quantidade' => null, 'ultimo_sucesso' => null,
+                              'consulta_completa' => false, 'lacunas' => [], 'motivo' => self::MOTIVO_PRECIFICA];
 
     private DateTimeImmutable $agora;
 
@@ -75,11 +75,14 @@ final class GeralV2Contrato
         return [
             'gerado_em' => $r['gerado_em'],
             'periodo' => ['id' => $periodo, 'de' => $r['periodo']['de'], 'ate' => $r['periodo']['ate'], 'rotulo' => $this->rotuloPeriodo($periodo, $r['periodo']['de'], $r['periodo']['ate'])],
+            // 116 (Jhony 25/11): Pedidos/OS em QUANTIDADE, só a conta da fonte (44); nenhum `valor` (o valor de pedido da 44 não é financeiro);
+            // pedido sem canal = informação (`sem_canal`), não "Dados parciais"
             'pedidos_bling' => [
-                'estado' => self::ESTADO[$p['estado']], 'quantidade' => $p['quantidade'], 'valor' => $p['valor'], 'por_dia' => $p['por_dia'],
+                'estado' => self::ESTADO[$p['estado']], 'quantidade' => $p['quantidade'], 'por_dia' => $p['por_dia'],
                 'inclui_canceladas' => $p['inclui_cancelados'], 'inclui_teste_ml' => $p['inclui_teste_ml'], 'sem_canal' => $p['sem_canal'],
-                'ultimo_sucesso' => $p['atualizado_em'], 'motivo' => $this->motivo('bling', $p['estado'], $fb, $this->lacunaCanal($p)),
-                'aviso' => $this->aviso($p, $this->avisoCanal($p)),
+                'conta' => $p['conta'], 'universo' => self::UNIVERSO_PEDIDOS,
+                'ultimo_sucesso' => $p['atualizado_em'], 'motivo' => $this->motivo('bling', $p['estado'], $fb),
+                'aviso' => null,
             ] + $this->meta('bling', $p['estado'], $p['quantidade'] !== null, $p['lacunas']),
             'negocios_ganhos' => [
                 'estado' => self::ESTADO[$w['estado']], 'quantidade' => $w['quantidade'], 'valor' => $w['valor'], 'sem_valor' => $w['sem_valor'],
@@ -89,8 +92,10 @@ final class GeralV2Contrato
             'funil_aberto' => [
                 'estado' => self::ESTADO[$f['estado']], 'quantidade' => $f['quantidade'], 'valor' => $f['valor'], 'sem_valor' => $f['sem_valor'],
                 'fora_brl' => $f['fora_brl'], 'ultimo_sucesso' => $f['atualizado_em'], 'motivo' => $this->motivo('pipedrive_negocios', $f['estado'], $fp, $this->lacunaDado($f)),
-                'aviso' => $this->aviso($f, $this->avisoValor($f)),
+                'aviso' => $this->aviso($f, $this->avisoValor($f)), 'fotografia_em' => $f['fotografia_em'],
             ] + $this->meta('pipedrive_negocios', $f['estado'], $f['quantidade'] !== null, $f['lacunas']),
+            // 116 (Jhony 25/11): "Recebido no período" FIXO em aguardando — fonte Precifica, ainda sem conector. Nenhuma consulta (nunca Asaas/Bling/Pipedrive).
+            'recebido' => self::RECEBIDO,
         ];
     }
 
@@ -226,9 +231,13 @@ final class GeralV2Contrato
                 'afetado' => array_values(array_map(fn($i) => ['id' => $i['id'], 'rotulo' => self::ROTULO_IND[$i['id']], 'estado' => $i['estado'],
                     'rotulo_estado' => $this->rotuloParte($i['id'], $i['estado'])], array_filter($inds, fn($i) => $i['estado'] !== 'ok')))];
         }
-        foreach (self::SEM_CONECTOR as $id => $txt) $out[] = ['fonte' => $id, 'estado' => 'aguardando', 'ultimo_sucesso' => null, 'motivo' => $txt,
-            'conexao' => ['estado' => 'aguardando', 'motivo' => $txt], 'consultas' => [], 'parte_afetada' => [], 'indicadores' => [],
-            'rotulo_estado' => 'Aguardando conexão', 'afetado' => []];
+        // 116: Precifica (recebimentos) aguardando conexão — a ÚNICA fonte do "Recebido"; nunca o Asaas
+        $t = self::MOTIVO_PRECIFICA;
+        $out[] = ['fonte' => 'precifica', 'estado' => 'aguardando', 'rotulo_estado' => 'Aguardando conexão', 'ultimo_sucesso' => null, 'motivo' => $t,
+            'conexao' => ['estado' => 'aguardando', 'motivo' => $t],
+            'consultas' => [['id' => 'recebido', 'rotulo' => 'Recebimentos', 'estado' => 'aguardando', 'ultimo_sucesso' => null, 'motivo' => $t, 'indicadores' => ['recebido']]],
+            'parte_afetada' => ['recebido'], 'indicadores' => [['id' => 'recebido', 'estado' => 'aguardando']],
+            'afetado' => [['id' => 'recebido', 'rotulo' => 'recebimentos', 'estado' => 'aguardando', 'rotulo_estado' => 'Aguardando conexão']]];
         return $out;
     }
 
@@ -301,11 +310,6 @@ final class GeralV2Contrato
         return $texto !== null && $b['estado'] === 'parcial' && $b['lacunas'] !== [] && array_diff($b['lacunas'], self::LACUNA_DADO) === [] ? $texto : null;
     }
 
-    private function avisoCanal(array $p): ?string
-    {
-        $n = (int) ($p['sem_canal'] ?? 0);
-        return $n > 0 ? 'Dados parciais · ' . $n . ($n === 1 ? ' pedido sem canal' : ' pedidos sem canal') : null;
-    }
 
     private function avisoValor(array $b): ?string
     {
@@ -335,12 +339,6 @@ final class GeralV2Contrato
         return $f['estado'] === 'parcial' ? ['sync_incompleta'] : [];
     }
 
-    /** Lacuna do DADO nos pedidos (decisão do Jhony, 24/11): "1 pedido ainda sem identificação de canal", como na prancha. */
-    private function lacunaCanal(array $p): ?string
-    {
-        $n = (int) ($p['sem_canal'] ?? 0);
-        return $n > 0 ? $n . ($n === 1 ? ' pedido ainda sem identificação de canal' : ' pedidos ainda sem identificação de canal') : null;
-    }
 
     /** Texto da lacuna do DADO em ganhos/funil (a fonte em si está bem): "3 negócios sem valor" — a tela compõe "Dados parciais · Soma dos valores informados · …". */
     private function lacunaDado(array $b): ?string
