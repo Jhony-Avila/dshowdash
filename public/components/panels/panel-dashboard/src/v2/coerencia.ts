@@ -9,24 +9,24 @@
 // ACIMA_ESQUERDA (`fonte`, `consulta_completa`), que passam a valer quando chegam.
 import type { EstadoBloco, Fonte, IdFonte, IdPrioridade } from './servico';
 
-export type IdIndicador = 'pedidos_bling' | 'negocios_ganhos' | 'funil_aberto' | IdPrioridade | 'agenda';
+export type IdIndicador = 'pedidos_bling' | 'negocios_ganhos' | 'funil_aberto' | 'recebido' | IdPrioridade | 'agenda';
 
 export const FONTE_DO_INDICADOR: Record<IdIndicador, IdFonte> = {
-  pedidos_bling: 'bling', negocios_ganhos: 'pipedrive', funil_aberto: 'pipedrive',
+  pedidos_bling: 'bling', negocios_ganhos: 'pipedrive', funil_aberto: 'pipedrive', recebido: 'precifica',
   atividade_vencida: 'pipedrive', sem_proxima_atividade: 'pipedrive', conflito_agenda: 'calendar', agenda: 'calendar',
 };
 export const NOME_INDICADOR: Record<IdIndicador, string> = {
-  pedidos_bling: 'Pedidos lançados no Bling', negocios_ganhos: 'Negócios ganhos', funil_aberto: 'Funil aberto agora',
+  pedidos_bling: 'Pedidos / OS lançados', negocios_ganhos: 'Negócios ganhos', funil_aberto: 'Funil aberto agora', recebido: 'Recebido no período',
   atividade_vencida: 'Atividades vencidas', sem_proxima_atividade: 'Sem próxima atividade', conflito_agenda: 'Conflitos na agenda', agenda: 'Próximos compromissos',
 };
 /** Rótulo CURTO da parte afetada na linha de fontes: "Pipedrive · Com problema (funil)". */
 export const PARTE_INDICADOR: Record<IdIndicador, string> = {
-  pedidos_bling: 'pedidos', negocios_ganhos: 'negócios ganhos', funil_aberto: 'funil',
+  pedidos_bling: 'pedidos/OS', negocios_ganhos: 'negócios ganhos', funil_aberto: 'funil', recebido: 'recebimentos',
   atividade_vencida: 'atividades vencidas', sem_proxima_atividade: 'próxima atividade', conflito_agenda: 'conflitos', agenda: 'agenda',
 };
 /** Nome COMPLETO da fonte (em 1440 também: "Google Calendar", nunca "Calendar"). */
 export const NOME_FONTE: Record<IdFonte, string> = {
-  pipedrive: 'Pipedrive', bling: 'Bling', calendar: 'Google Calendar', asaas: 'Asaas', mercadolivre: 'Mercado Livre', lojaintegrada: 'Loja Integrada',
+  pipedrive: 'Pipedrive', bling: 'Bling', calendar: 'Google Calendar', precifica: 'Precifica', asaas: 'Asaas', mercadolivre: 'Mercado Livre', lojaintegrada: 'Loja Integrada',
 };
 
 export interface IndicadorBruto {

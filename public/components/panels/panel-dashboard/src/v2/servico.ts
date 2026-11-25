@@ -12,10 +12,16 @@ export interface Periodo { id: PeriodoV2; de: string; ate: string; rotulo: strin
  * "zero" com a fonte em dia no fontes.php (ver v2/coerencia.ts).
  */
 interface Base { estado: EstadoBloco; ultimo_sucesso: string | null; motivo: string | null; lacunas?: string[]; fonte?: IdFonte; consulta_completa?: boolean; fonte_atualizada_em?: string | null; valor_em?: string | null }
-export interface PedidosBling extends Base { quantidade: number | null; valor: number | null; por_dia: { dia: string; quantidade: number | null; valor: number | null }[]; inclui_canceladas: boolean }
+/** Pedidos / OS do Bling principal (decisão de 25/11): SÓ QUANTIDADE. Nenhum valor em R$ entra na tela — nem se o serviço mandar
+ *  (`normalizarResumo` descarta). `conta` = a conta da fonte (44); `universo` = o que é contado (texto do serviço). */
+export interface PedidosBling extends Base { quantidade: number | null; por_dia: { dia: string; quantidade: number | null }[]; inclui_canceladas: boolean; conta?: number | null; universo?: string | null; sem_canal?: number | null }
 export interface NegociosGanhos extends Base { quantidade: number | null; valor: number | null; sem_valor: number | null }
-export interface FunilAberto extends Base { quantidade: number | null; valor: number | null; sem_valor: number | null }
-export interface Resumo { periodo: Periodo; pedidos_bling: PedidosBling; negocios_ganhos: NegociosGanhos; funil_aberto: FunilAberto }
+/** `fotografia_em` (serviço, 116): horário da leitura dos negócios usada na soma — o funil é fotografia, não movimento do período. */
+export interface FunilAberto extends Base { quantidade: number | null; valor: number | null; sem_valor: number | null; fotografia_em?: string | null }
+/** Recebido no período · Precifica (decisão de 25/11). No 116 o cartão é SEMPRE "— · Aguardando conexão": não existe leitura de
+ *  recebimentos do Precifica. Nunca Asaas, Bling ou Pipedrive. */
+export interface Recebido extends Base { valor: number | null }
+export interface Resumo { periodo: Periodo; pedidos_bling: PedidosBling; negocios_ganhos: NegociosGanhos; funil_aberto: FunilAberto; recebido?: Recebido }
 
 export type IdPrioridade = 'atividade_vencida' | 'sem_proxima_atividade' | 'conflito_agenda';
 export interface Prioridade extends Base { id: IdPrioridade; quantidade: number | null; gravidade: 1 | 2 | 3; desde: string | null; responsaveis: number | null; detalhe: string | null }
@@ -37,7 +43,7 @@ export interface FiltrosLista { pagina: number; ordem: OrdemLista; dir: 'asc' | 
 export interface Compromisso { inicio: string; fim: string | null; titulo: string; duracao_min: number | null; url_evento: string | null; conflito: boolean }
 export interface Agenda extends Base { itens: Compromisso[]; url_agenda: string | null }
 
-export type IdFonte = 'pipedrive' | 'bling' | 'calendar' | 'asaas' | 'mercadolivre' | 'lojaintegrada';
+export type IdFonte = 'pipedrive' | 'bling' | 'calendar' | 'precifica' | 'asaas' | 'mercadolivre' | 'lojaintegrada';
 export interface Fonte {
   fonte: IdFonte; estado: 'conectada' | 'desatualizada' | 'problema' | 'aguardando'; ultimo_sucesso: string | null; motivo: string | null;
   indicadores?: { id: string; estado: EstadoBloco }[];
@@ -74,7 +80,8 @@ const contagem = (v: unknown): number | null => (typeof v === 'number' && Number
 function normalizarResumo(r: Resumo): Resumo {
   const p = r.pedidos_bling, g = r.negocios_ganhos, f = r.funil_aberto;
   return { ...r,
-    pedidos_bling: { ...p, quantidade: contagem(p.quantidade), valor: dinheiro(p.valor), por_dia: (p.por_dia ?? []).map((d) => ({ dia: d.dia, quantidade: contagem(d.quantidade), valor: dinheiro(d.valor) })) },
+    // 116: Pedidos/OS sem R$ — qualquer `valor` que ainda venha do serviço é DESCARTADO aqui (nunca chega à tela)
+    pedidos_bling: (({ valor: _v, ...resto }) => ({ ...resto, quantidade: contagem(p.quantidade), por_dia: (p.por_dia ?? []).map((d) => ({ dia: d.dia, quantidade: contagem(d.quantidade) })) }))(p as PedidosBling & { valor?: unknown }),
     negocios_ganhos: { ...g, quantidade: contagem(g.quantidade), valor: dinheiro(g.valor), sem_valor: contagem(g.sem_valor) },
     funil_aberto: { ...f, quantidade: contagem(f.quantidade), valor: dinheiro(f.valor), sem_valor: contagem(f.sem_valor) } };
 }

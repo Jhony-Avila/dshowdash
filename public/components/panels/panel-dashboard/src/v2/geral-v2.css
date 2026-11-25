@@ -65,6 +65,12 @@
 
 /* 2. resultado comercial */
 [data-geral-react-root] .gv2-tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+/* 116 (decisão de 25/11): 4 indicadores lado a lado, mesma altura (também em 1440, ~1080 px úteis); abaixo de 880 px úteis, 2×2 */
+[data-geral-react-root] [data-gv2-bloco="resultado"] { container-type: inline-size; }   /* o @container vale para os FILHOS: a grade fica dentro */
+[data-geral-react-root] .gv2-quatro { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+@container (max-width: 880px) { [data-geral-react-root] .gv2-quatro { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* marcador discreto de origem: Comercial · Pipedrive / Operação · Bling / Financeiro · Precifica (12 px: regra do Jhony, nada abaixo) */
+[data-geral-react-root] .gv2-marcador { font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--ger-texto-dim); line-height: 1.2; }
 [data-geral-react-root] .gv2-num { display: flex; flex-direction: column; gap: 8px; min-height: 182px; }
 [data-geral-react-root] .gv2-num-cab { display: flex; align-items: center; gap: 10px; }
 [data-geral-react-root] .gv2-num-cab .gv2-selo { margin-left: auto; }
@@ -76,6 +82,11 @@
 [data-geral-react-root] .gv2-num-valor--vazio { color: var(--ger-texto-dim); }
 [data-geral-react-root] .gv2-num-linha { display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: var(--ger-texto-dim); }
 [data-geral-react-root] .gv2-nota { font-size: 12px; color: var(--ger-warn); }
+[data-geral-react-root] .gv2-num-sub { font-size: inherit; color: var(--ger-texto-dim); }   /* informação neutra (fotografia do funil), nunca cor de aviso */
+[data-geral-react-root] .gv2-num-estado { display: flex; min-height: 0; }
+[data-geral-react-root] .gv2-num-estado:empty { display: none; }
+[data-geral-react-root] .gv2-quatro .gv2-h3 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-geral-react-root] .gv2-quatro .gv2-num-rodape .gv2-fraco { white-space: normal; overflow: visible; }   /* rodapé inteiro, sem reticências */
 [data-geral-react-root] .gv2-aviso-linha { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ger-warn); margin: 0; }
 [data-geral-react-root] .gv2-num-rodape { display: flex; align-items: center; gap: 10px; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--ger-borda); min-width: 0; }
 [data-geral-react-root] .gv2-num-rodape .gv2-fraco { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -174,7 +185,7 @@
   [data-geral-react-root] .gv2-prio { grid-template-columns: 4px minmax(0, 2.2fr) minmax(0, 1.2fr) minmax(0, .7fr) auto; gap: 12px; padding: 9px 0; }
   [data-geral-react-root] .gv2-prio-txt strong { font-size: 13px; }
   [data-geral-react-root] .gv2-prio-barra { height: 28px; }
-  [data-geral-react-root] .gv2-tres { gap: 14px; }
+  [data-geral-react-root] .gv2-tres, [data-geral-react-root] .gv2-quatro { gap: 14px; }
   [data-geral-react-root] .gv2-num { min-height: 140px; gap: 4px; }
   [data-geral-react-root] .gv2-num-valor { font-size: 26px; margin-top: 4px; }
   [data-geral-react-root] .gv2-num-linha { font-size: 12px; }
@@ -186,6 +197,7 @@
 }
 @media (max-width: 1100px) {
   [data-geral-react-root] .gv2-tres, [data-geral-react-root] .gv2-dupla { grid-template-columns: 1fr; }
+  [data-geral-react-root] .gv2-quatro { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
   [data-geral-react-root] .gv2-girando, [data-geral-react-root] .gv2 .ger-osso { animation: none !important; }

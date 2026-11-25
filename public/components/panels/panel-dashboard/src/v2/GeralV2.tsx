@@ -5,9 +5,9 @@
 // (não mudam com o período), no máximo 3, por gravidade e depois antiguidade; pedidos, ganhos e funil são conceitos SEPARADOS
 // (nunca somados); sem "Comparação: período anterior"; texto mínimo de 12 px; falha nunca vira zero; estado sempre escrito.
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { AlertTriangle, ArrowRight, CalendarDays, CheckCircle2, ExternalLink, Layers, Package, PlugZap, TrendingUp } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CalendarDays, CheckCircle2, ExternalLink, Layers, Package, PlugZap, TrendingUp, Wallet } from 'lucide-react';
 import {
-  ErroV2, fmtData, fmtDiaMes, fmtHora, fmtMoeda, fmtMoedaCurta, fmtN, fmtQuando, hojeExtenso,
+  ErroV2, fmtData, fmtDiaMes, fmtHora, fmtMoeda, fmtN, fmtQuando, hojeExtenso,
   lerPainel, type Painel,
   type Agenda, type EstadoBloco, type Fonte, type IdPrioridade, type PedidosBling, type PeriodoV2, type Prioridade, type Prioridades, type Resumo,
 } from './servico';
@@ -240,13 +240,16 @@ function BlocoPrioridades({ b, fl, aoAbrir }: { b: ReturnType<typeof useBloco<Pr
 }
 
 // ── 2. Resultado comercial (3 cartões — conceitos separados, nunca somados) ──
-function CartaoNumero({ titulo, icone, estado, carregando, valor, linha, rodape, link, problema, data }: {
-  titulo: string; icone: ReactNode; estado: EstadoBloco | 'carregando' | 'semacesso'; carregando: boolean; valor: string; linha: ReactNode;
-  rodape: string; link: { rotulo: string; rota: string } | null; problema: ReactNode; data: string;
+function CartaoNumero({ titulo, marcador, icone, estado, carregando, valor, linha, rodape, link, problema, data, dica }: {
+  titulo: string; marcador: string; icone: ReactNode; estado: EstadoBloco | 'carregando' | 'semacesso'; carregando: boolean; valor: string; linha: ReactNode;
+  rodape: string; link: { rotulo: string; rota: string } | null; problema: ReactNode; data: string; dica?: string;
 }) {
   return (
-    <article className="gv2-cartao gv2-num ger-entra" data-gv2-cartao={data} data-gv2-estado={estado}>
-      <header className="gv2-num-cab"><h3 className="gv2-h3">{titulo}</h3><SeloEstado estado={estado} /><span className="gv2-num-ic" aria-hidden>{icone}</span></header>
+    <article className="gv2-cartao gv2-num ger-entra" data-gv2-cartao={data} data-gv2-estado={estado} title={dica}>
+      <span className="gv2-marcador" data-gv2-marcador>{marcador}</span>
+      <header className="gv2-num-cab"><h3 className="gv2-h3">{titulo}</h3><span className="gv2-num-ic" aria-hidden>{icone}</span></header>
+      {/* 116: o selo fica numa linha PRÓPRIA (com 4 cartões em 1440 ele empurrava o título para 2 linhas) */}
+      <div className="gv2-num-estado"><SeloEstado estado={estado} /></div>
       {carregando ? <><Osso l="62%" a={34} /><Osso l="44%" /></> : problema ?? (
         <>
           <span key={valor} className={`gv2-num-valor ger-num-entra${estado === 'desatualizado' ? ' is-desatualizado' : ''}`}>{valor}</span>
@@ -271,12 +274,26 @@ function linhaEstado(e: Efetivo, normal: ReactNode, valor: number | null = 0): R
   if (e.estado === 'parcial') return <>{normal}<span className="gv2-aviso-linha">{e.motivo || 'Leitura incompleta.'}</span></>;
   return normal;
 }
+/**
+ * Contagem completa apesar de `parcial` (decisões de 25/11): a QUANTIDADE não depende do valor dos negócios ganhos (sem valor / outra
+ * moeda) nem do canal dos pedidos/OS (OS lançada à mão não tem canal). Só essas lacunas "conhecidas"; qualquer outra mantém o parcial.
+ */
+function contagemCompleta(e: Efetivo | undefined, lacunas: string[] | undefined, deValor: readonly string[]): Efetivo | undefined {
+  if (!e || e.estado !== 'parcial') return e;
+  const l = lacunas ?? (e.semValor !== null ? ['sem_valor'] : []);
+  return l.length > 0 && l.every((x) => deValor.includes(x)) ? { ...e, estado: 'ok', semValor: null, motivo: null } : e;
+}
+// ── 2. Indicadores do negócio (4 cartões, decisão de 25/11 — conceitos separados, nunca somados) ──
 function BlocoResultado({ b, fl }: { b: ReturnType<typeof useBloco<Resumo>>; fl: FontesLidas }) {
   const r = b.dados; const car = b.carregando && !r;
-  const ef = (id: IdIndicador, x: Resumo['pedidos_bling'] | Resumo['negocios_ganhos'] | undefined) => (x ? efetivo(id, x, fl, !!b.erro, b.okEm) : undefined);
-  const ep = ef('pedidos_bling', r?.pedidos_bling), eg = ef('negocios_ganhos', r?.negocios_ganhos), eu = ef('funil_aberto', r?.funil_aberto);
+  const ef = (id: IdIndicador, x: Resumo['pedidos_bling'] | Resumo['negocios_ganhos'] | Resumo['funil_aberto'] | undefined) => (x ? efetivo(id, x, fl, !!b.erro, b.okEm) : undefined);
+  const p = r?.pedidos_bling, g = r?.negocios_ganhos, f = r?.funil_aberto;
+  const ep = contagemCompleta(ef('pedidos_bling', p), p?.lacunas, ['sem_canal']);
+  const eg = contagemCompleta(ef('negocios_ganhos', g), g?.lacunas, ['sem_valor', 'fora_brl']);
+  const eu = ef('funil_aberto', f);
   const est = (e: Efetivo | undefined): EstadoBloco | 'carregando' | 'semacesso' => (car || e?.conferindo ? 'carregando' : !r ? (semAcesso(b.erro) ? 'semacesso' : 'erro') : e!.estado);
-  const valorDe = (e: Efetivo | undefined, v: number | null | undefined) => (e?.zeroNaoConfirmado ? '—' : fmtMoeda(v ?? null));
+  const qtd = (e: Efetivo | undefined, v: number | null | undefined) => (e?.zeroNaoConfirmado || v === null || v === undefined ? '—' : fmtN(v));
+  const moeda = (e: Efetivo | undefined, v: number | null | undefined) => (e?.zeroNaoConfirmado ? '—' : fmtMoeda(v ?? null));
   const falhaGeral = !r && !car ? (semAcesso(b.erro) ? <p className="gv2-fraco">Seu nível de acesso não inclui este resultado.</p>
     : <Problema motivo="Não foi possível ler este resultado agora." quando={null} onTentar={b.recarregar} tentando={b.atualizando} />) : null;
   const porBloco = (e: { estado: EstadoBloco; ultimo_sucesso: string | null; motivo: string | null } | undefined): ReactNode => {
@@ -286,58 +303,65 @@ function BlocoResultado({ b, fl }: { b: ReturnType<typeof useBloco<Resumo>>; fl:
     if (e.estado === 'erro') return <Problema motivo={e.motivo || 'A leitura desta fonte falhou.'} quando={e.ultimo_sucesso} onTentar={b.recarregar} tentando={b.atualizando} />;
     return null;
   };
-  const p = r?.pedidos_bling, g = r?.negocios_ganhos, f = r?.funil_aberto;
   const plural = (n: number | null, um: string, varios: string) => `${fmtN(n)} ${n === 1 ? um : varios}`;
+  const foto = f ? (f.fotografia_em ?? f.valor_em ?? f.ultimo_sucesso ?? null) : null;
+  // Recebido no período (Precifica): no 116 SEMPRE "— · Aguardando conexão" — não existe leitura de recebimentos. Nunca número, nunca R$ 0.
+  const recebido = (
+    <><span className="gv2-num-valor gv2-num-valor--vazio" data-gv2-recebido-valor>—</span>
+      <span className="gv2-num-linha">Aguardando conexão · valor desconhecido, não é R$ 0</span></>);
   return (
     <section className="gv2-sec" data-gv2-bloco="resultado">
       <div className="gv2-sec-cab gv2-sec-cab--solto">
-        <h2 className="gv2-h2">Resultado comercial</h2>
-        <span className="gv2-fraco gv2-dir">{r ? r.periodo.rotulo : car ? 'Carregando o período…' : 'Período indisponível'}</span>
+        <h2 className="gv2-h2">Indicadores do negócio</h2>
+        <span className="gv2-fraco gv2-dir">{r ? `${r.periodo.rotulo} · funil é fotografia atual` : car ? 'Carregando o período…' : 'Período indisponível'}</span>
       </div>
       {r && b.erro && <Problema motivo="A atualização falhou; os cartões mostram a última leitura válida." quando={b.okEm} onTentar={b.recarregar} tentando={b.atualizando} />}
-      <div className="gv2-tres">
-        <CartaoNumero data="pedidos" titulo="Pedidos lançados no Bling" icone={<Package size={18} />} estado={est(ep)} carregando={car || !!ep?.conferindo}
-          valor={valorDe(ep, p?.valor)} problema={porBloco(p)}
-          linha={p && ep && linhaEstado(ep, <>{plural(p.quantidade, 'pedido', 'pedidos')} · pela data do pedido{p.inclui_canceladas && <span className="gv2-nota">Inclui vendas canceladas depois do lançamento.</span>}</>)}
-          rodape="Bling · não é recebimento" link={{ rotulo: 'Ver pedidos', rota: '#/panel-bling' }} />
-        <CartaoNumero data="ganhos" titulo="Negócios ganhos" icone={<TrendingUp size={18} />} estado={est(eg)} carregando={car || !!eg?.conferindo}
-          valor={valorDe(eg, g?.valor)} problema={porBloco(g)}
-          linha={g && eg && linhaEstado(eg, <>{plural(g.quantidade, 'negócio ganho', 'negócios ganhos')} · no período</>, g.valor)}
-          rodape="Pipedrive · data do ganho" link={{ rotulo: 'Ver negócios', rota: '#/panel-pipedrive' }} />
-        <CartaoNumero data="funil" titulo="Funil aberto agora" icone={<Layers size={18} />} estado={est(eu)} carregando={car || !!eu?.conferindo}
-          valor={valorDe(eu, f?.valor)} problema={porBloco(f)}
-          linha={f && eu && linhaEstado(eu, <>{plural(f.quantidade, 'negócio aberto', 'negócios abertos')}</>, f.valor)}
-          rodape="Pipedrive · funil atual" link={{ rotulo: 'Abrir funil', rota: '#/panel-pipedrive' }} />
+      <div className="gv2-quatro">
+        <CartaoNumero data="ganhos" marcador="Comercial · Pipedrive" titulo="Negócios ganhos" icone={<TrendingUp size={18} />} estado={est(eg)} carregando={car || !!eg?.conferindo}
+          valor={qtd(eg, g?.quantidade)} problema={porBloco(g)}
+          linha={g && eg && linhaEstado(eg, <>Fechados no período{typeof g.sem_valor === 'number' && g.sem_valor > 0 ? ` · ${fmtN(g.sem_valor)} sem valor` : ''}</>)}
+          rodape="Pipedrive · contagem" link={{ rotulo: 'Ver ganhos', rota: '#/panel-pipedrive' }} dica="Quantidade de negócios ganhos no período. Não é receita." />
+        <CartaoNumero data="funil" marcador="Comercial · Pipedrive" titulo="Funil aberto agora" icone={<Layers size={18} />} estado={est(eu)} carregando={car || !!eu?.conferindo}
+          valor={moeda(eu, f?.valor)} problema={porBloco(f)}
+          linha={f && eu && linhaEstado(eu, <>{plural(f.quantidade, 'negócio aberto', 'negócios abertos')}{foto && <span className="gv2-num-sub" data-gv2-fotografia>Fotografia de {fmtQuando(foto)}</span>}</>, f.valor)}
+          rodape="Pipedrive · valor potencial" link={{ rotulo: 'Abrir funil', rota: '#/panel-pipedrive' }} dica="Soma dos valores informados nos negócios abertos agora. Fotografia atual: não filtra pelo período." />
+        <CartaoNumero data="pedidos" marcador="Operação · Bling" titulo="Pedidos / OS lançados" icone={<Package size={18} />} estado={est(ep)} carregando={car || !!ep?.conferindo}
+          valor={qtd(ep, p?.quantidade)} problema={porBloco(p)} dica={`Bling principal${p?.conta ? ` (conta ${p.conta})` : ''} · ${p?.universo ?? 'pedidos de venda lançados no período'}. Não é faturamento nem recebimento.`}
+          linha={p && ep && linhaEstado(ep, <>Quantidade no período · não é faturamento{p.inclui_canceladas && <span className="gv2-nota">Inclui pedidos cancelados depois do lançamento.</span>}</>)}
+          rodape="Bling · unidades de OS" link={{ rotulo: 'Ver registros', rota: '#/panel-bling' }} />
+        <CartaoNumero data="recebido" marcador="Financeiro · Precifica" titulo="Recebido no período" icone={<Wallet size={18} />} estado={car ? 'carregando' : falhaGeral ? (semAcesso(b.erro) ? 'semacesso' : 'erro') : 'aguardando'} carregando={car}
+          valor="—" problema={falhaGeral ?? recebido} linha={null}
+          rodape="Precifica · recebido" link={null} dica="Recebido no período vem só do Precifica (fonte financeira oficial). Ainda não conectado: valor desconhecido." />
       </div>
     </section>
   );
 }
 
-// ── 3a. Pedidos no período (barras por dia; soma = cartão) ──────────
+// ── 3a. Pedidos / OS no período (barras = QUANTIDADE por dia; soma = cartão; nenhum R$ — decisão de 25/11) ──
 function Barras({ p }: { p: PedidosBling }) {
   // desenhado na LARGURA REAL do bloco (sem escalar o SVG): rótulos sempre com 12 px de verdade, em 2200 e em 1440
   const caixa = useRef<HTMLDivElement>(null); const [W, setW] = useState(0);
   useEffect(() => { const el = caixa.current; if (!el) return; const ro = new ResizeObserver(([e]) => setW(Math.round(e.contentRect.width))); ro.observe(el); return () => ro.disconnect(); }, []);
-  const dias = p.por_dia; const max = Math.max(1, ...dias.map((d) => d.valor ?? 0));
-  const passo = [25_000, 50_000, 100_000, 250_000, 500_000, 1_000_000, 2_500_000, 5_000_000].find((s) => s * 4 >= max) ?? Math.ceil(max / 4);
-  const topo = passo * 4; const H = 210, E = 78, B = 26, T = 18;   // E = margem do eixo; B = rótulos embaixo; T = folga em cima
+  const dias = p.por_dia; const max = Math.max(1, ...dias.map((d) => d.quantidade ?? 0));
+  const passo = [1, 2, 5, 10, 20, 25, 50, 100, 250, 500, 1000].find((s) => s * 4 >= max) ?? Math.ceil(max / 4);
+  const topo = passo * 4; const H = 210, E = 64, B = 26, T = 18;   // E = margem do eixo; B = rótulos embaixo; T = folga em cima
   const larg = (W - E) / Math.max(1, dias.length);
   const cabe = Math.max(1, Math.ceil(46 / Math.max(1, larg)));   // um rótulo de dia a cada N barras (≥ 46 px entre rótulos)
-  const valorEmCima = larg >= 44;
+  const numEmCima = larg >= 28;
   return (
     <div ref={caixa} className="gv2-barras-caixa">
       {W > 0 && (
-        <svg className="gv2-barras" width={W} height={H + B} viewBox={`0 0 ${W} ${H + B}`} role="img" aria-label={`Pedidos por dia: ${dias.map((d) => `${fmtDiaMes(d.dia)} ${fmtMoeda(d.valor)}`).join('; ')}`}>
+        <svg className="gv2-barras" width={W} height={H + B} viewBox={`0 0 ${W} ${H + B}`} role="img" aria-label={`Pedidos e OS por dia: ${dias.map((d) => `${fmtDiaMes(d.dia)} ${d.quantidade === null ? 'sem dado' : fmtN(d.quantidade)}`).join('; ')}`}>
           {[0, 1, 2, 3, 4].map((k) => { const y = H - (k * passo / topo) * (H - T); return (
-            <g key={k}><line x1={E} x2={W} y1={y} y2={y} className="gv2-grade" /><text x={E - 10} y={y + 4} textAnchor="end" className="gv2-eixo">{k === 0 ? '0' : `R$ ${fmtMoedaCurta(k * passo)}`}</text></g>); })}
+            <g key={k}><line x1={E} x2={W} y1={y} y2={y} className="gv2-grade" /><text x={E - 10} y={y + 4} textAnchor="end" className="gv2-eixo">{k === 0 ? '0' : `${fmtN(k * passo)} OS`}</text></g>); })}
           {dias.map((d, i) => {
-            const v = d.valor; const h = v === null ? 0 : Math.max(v > 0 ? 3 : 0, (v / topo) * (H - T)); const w = Math.min(84, larg * 0.6); const x = E + i * larg + (larg - w) / 2;
+            const q = d.quantidade; const h = q === null ? 0 : Math.max(q > 0 ? 3 : 0, (q / topo) * (H - T)); const w = Math.min(84, larg * 0.6); const x = E + i * larg + (larg - w) / 2;
             return (
               <g key={d.dia} data-gv2-dia={d.dia}>
-                <title>{`${fmtData(d.dia)}: ${v === null ? 'sem dado' : `${fmtN(d.quantidade)} pedido(s) · ${fmtMoeda(v)}`}`}</title>
-                {v === null ? <text x={x + w / 2} y={H - 4} textAnchor="middle" className="gv2-eixo">sem dado</text>
+                <title>{`${fmtData(d.dia)}: ${q === null ? 'sem dado' : `${fmtN(q)} ${q === 1 ? 'pedido/OS' : 'pedidos/OS'}`}`}</title>
+                {q === null ? <text x={x + w / 2} y={H - 4} textAnchor="middle" className="gv2-eixo">sem dado</text>
                   : <rect x={x} y={H - h} width={w} height={h} rx={4} className="gv2-barra" />}
-                {v !== null && v > 0 && valorEmCima && <text x={x + w / 2} y={H - h - 6} textAnchor="middle" className="gv2-eixo">{fmtMoedaCurta(v)}</text>}
+                {q !== null && q > 0 && numEmCima && <text x={x + w / 2} y={H - h - 6} textAnchor="middle" className="gv2-eixo">{fmtN(q)}</text>}
                 {i % cabe === 0 && <text x={x + w / 2} y={H + 18} textAnchor="middle" className="gv2-eixo">{fmtDiaMes(d.dia)}</text>}
               </g>
             );
@@ -348,35 +372,35 @@ function Barras({ p }: { p: PedidosBling }) {
   );
 }
 function BlocoPedidosGrafico({ b, fl }: { b: ReturnType<typeof useBloco<Resumo>>; fl: FontesLidas }) {
-  const p0 = b.dados?.pedidos_bling; const e = p0 ? efetivo('pedidos_bling', p0, fl, !!b.erro, b.okEm) : null;
+  const p0 = b.dados?.pedidos_bling; const e = p0 ? contagemCompleta(efetivo('pedidos_bling', p0, fl, !!b.erro, b.okEm), p0.lacunas, ['sem_canal']) : null;
   const car = (b.carregando && !b.dados) || !!e?.conferindo;
   // o gráfico usa o estado EFETIVO (zero com o Bling atrasado não é "zero"; valor com o Bling atrasado é "Desatualizado")
   const p = p0 && e ? { ...p0, estado: e.estado } : p0;
-  // soma dos dias COM dado (dia sem dado = null fica de fora e é contado à parte; ACIMA_DIREITA: "no desatualizado, 2 + 1 + 1 = 4 = cartão")
-  const comDado = p ? p.por_dia.filter((d) => d.valor !== null) : [];
+  // soma dos dias COM dado (dia sem dado = null fica de fora e é contado à parte)
+  const comDado = p ? p.por_dia.filter((d) => d.quantidade !== null) : [];
   const semDado = p ? p.por_dia.length - comDado.length : 0;
-  const soma = comDado.length ? comDado.reduce((s, d) => s + (d.valor as number), 0) : null;
-  const confere = p && soma !== null && p.valor !== null && Math.abs(soma - p.valor) < 0.5;
+  const soma = comDado.length ? comDado.reduce((s, d) => s + (d.quantidade as number), 0) : null;
+  const confere = p && soma !== null && p.quantidade !== null && soma === p.quantidade;
   return (
     <section className="gv2-cartao gv2-grafico" data-gv2-bloco="grafico" data-gv2-estado={car ? 'carregando' : p?.estado ?? 'erro'}>
       <div className="gv2-sec-cab">
-        <div><h2 className="gv2-h2">Pedidos no período</h2><span className="gv2-fraco">Bling · pedidos lançados por dia, pela data do pedido</span></div>
-        {p && p.quantidade !== null && p.estado !== 'aguardando' && p.estado !== 'erro' && !e?.zeroNaoConfirmado && <span className="gv2-selo gv2-selo--info gv2-dir">{fmtN(p.quantidade)} {p.quantidade === 1 ? 'pedido' : 'pedidos'}</span>}
+        <div><h2 className="gv2-h2">Pedidos / OS no período</h2><span className="gv2-fraco">Bling · quantidade lançada por dia · sem valor monetário</span></div>
+        {p && p.quantidade !== null && p.estado !== 'aguardando' && p.estado !== 'erro' && !e?.zeroNaoConfirmado && <span className="gv2-selo gv2-selo--info gv2-dir">{fmtN(p.quantidade)} {p.quantidade === 1 ? 'registro' : 'registros'}</span>}
         {(car || !p || p.estado === 'aguardando' || p.estado === 'erro' || p.estado === 'parcial' || p.estado === 'desatualizado') && <span className="gv2-dir"><SeloEstado estado={car ? 'carregando' : p?.estado ?? 'erro'} /></span>}
       </div>
       {car ? <div className="gv2-barras-osso" aria-hidden>{Array.from({ length: 7 }, (_, k) => <span key={k} className="ger-osso" style={{ height: `${30 + ((k * 37) % 60)}%` }} />)}</div>
-        : !p ? <Problema motivo="Não foi possível ler os pedidos agora." quando={null} onTentar={b.recarregar} tentando={b.atualizando} />
+        : !p ? <Problema motivo="Não foi possível ler os pedidos/OS agora." quando={null} onTentar={b.recarregar} tentando={b.atualizando} />
         : p.estado === 'aguardando' ? <p className="gv2-vazio"><PlugZap size={15} aria-hidden /> Bling ainda não conectado · nenhum número assumido.</p>
         : p.estado === 'erro' ? <Problema motivo={p.motivo || 'A leitura do Bling falhou.'} quando={p.ultimo_sucesso} onTentar={b.recarregar} tentando={b.atualizando} />
         : e?.zeroNaoConfirmado ? <p className="gv2-vazio" data-gv2-zero-nao-confirmado>{e.motivo}{e.quando ? ` · último sucesso ${fmtQuando(e.quando)}` : ''}. Nenhum zero assumido.</p>
-        : p.estado === 'zero' ? <p className="gv2-vazio" data-gv2-zero><CheckCircle2 size={15} aria-hidden className="gv2-ok-ic" /> Zero pedidos lançados no período — consulta completa, com a fonte em dia.</p>
+        : p.estado === 'zero' ? <p className="gv2-vazio" data-gv2-zero><CheckCircle2 size={15} aria-hidden className="gv2-ok-ic" /> Zero pedidos/OS lançados no período — consulta completa, com a fonte em dia.</p>
         : (
           <>
             <Barras p={p} />
             <p className="gv2-fraco gv2-grafico-rodape">
-              Valor total: <strong>{fmtMoeda(p.valor)}</strong>{confere ? (semDado ? ' · soma dos dias com dado igual ao cartão' : ' · soma igual ao cartão acima') : ' · ⚠ a soma dos dias não confere com o cartão'}
+              Total: <strong>{fmtN(p.quantidade)} {p.quantidade === 1 ? 'pedido/OS' : 'pedidos/OS'}</strong>{confere ? (semDado ? ' · soma dos dias com dado igual ao cartão' : ' · soma igual ao cartão acima') : ' · ⚠ a soma dos dias não confere com o cartão'}
               {semDado > 0 && ` · ${semDado} ${semDado === 1 ? 'dia' : 'dias'} sem dado`}
-              {p.inclui_canceladas && ' · inclui vendas canceladas depois do lançamento'}
+              {p.inclui_canceladas && ' · inclui pedidos cancelados depois do lançamento'}
             </p>
           </>
         )}
