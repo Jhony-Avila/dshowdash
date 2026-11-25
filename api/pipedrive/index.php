@@ -173,6 +173,10 @@ switch ($segments[0] ?? '') {
         PipeAnalyticsController::summary($method, $pdo);
         break;
 
+    case 'alerts-app':
+        PipeAnalyticsController::alertsApp($method, $pdo);
+        break;
+
     case 'overview-blocks':
         PipeAnalyticsController::overviewBlocks($method, $pdo);
         break;

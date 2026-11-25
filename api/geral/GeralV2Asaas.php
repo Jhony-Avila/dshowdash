@@ -47,6 +47,29 @@ final class GeralV2Asaas
         ];
     }
 
+    /**
+     * 25/11 noite · alerta "cobranças vencidas acima de R$ X" POR EMPRESA, no formato AlertOut do app (o mesmo dos alertas do Pipedrive).
+     * Só empresas com leitura 'ok' entram (desatualizada/divergente/erro: alerta 'asaas_sem_leitura' info, nunca "sem vencidas").
+     * critical quando o vencido passa de 2×X.
+     */
+    public function alertas(array $rotulos, DateTimeImmutable $agora, int $limiteCentavos): array
+    {
+        $c = $this->cartao($rotulos, $agora); $quando = gmdate('Y-m-d\TH:i:s\Z', $agora->getTimestamp()); $out = [];
+        $a = static fn(string $tipo, string $conta, string $sev, string $titulo, ?string $msg) => ['id' => "asaas:$tipo:$conta", 'type' => "asaas_$tipo",
+            'severity' => $sev, 'status' => 'active', 'title' => $titulo, 'message' => $msg, 'target_type' => 'asaas_conta', 'target_id' => $conta,
+            'connection' => null, 'environment' => null, 'occurrences' => 1, 'first_seen_at' => null, 'last_seen_at' => $quando, 'acknowledged_at' => null, 'resolved_at' => null];
+        foreach ($c['empresas'] as $e) {
+            $nome = $e['nome'] ?? $e['conta'];
+            if ($e['estado'] !== 'ok') { $out[] = $a('sem_leitura', $e['conta'], 'info', "Asaas: $nome sem leitura atual", 'Motivo: ' . $e['motivo'] . '. Vencidas desconhecidas (não é zero).'); continue; }
+            $v = AsaasValor::centavos($e['valores']['vencidas']);
+            if ($v > $limiteCentavos) {
+                $out[] = $a('vencidas_acima', $e['conta'], $v > 2 * $limiteCentavos ? 'critical' : 'warning', "Asaas: $nome com vencidas acima de R$ " . number_format($limiteCentavos / 100, 2, ',', '.'),
+                    $e['valores']['vencidas_qtd'] . ' cobrança(s) vencida(s), R$ ' . number_format($v / 100, 2, ',', '.') . ' (valor bruto, sem juros/multa).');
+            }
+        }
+        return ['gerado_em' => $c['gerado_em'], 'limiar' => AsaasValor::deCentavos($limiteCentavos), 'alertas' => $out, 'contagem' => array_count_values(array_column($out, 'type'))];
+    }
+
     private function empresa(string $r, DateTimeImmutable $agora, string $hoje, string $fim7): array
     {
         $st = $this->pdo->prepare("SELECT `nome`,`estado`,`erro_codigo`,`geracao_ativa`,`ultima_sync_ok` FROM `{$this->p}asaas_contas` WHERE `conta`=?");
