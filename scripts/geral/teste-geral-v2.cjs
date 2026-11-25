@@ -28,6 +28,10 @@ function resumo(periodo, m) {
     negocios_ganhos: { ...base, estado: periodo === 'ontem' ? 'zero' : 'ok', quantidade: periodo === 'ontem' ? 0 : 9, valor: periodo === 'ontem' ? 0 : 351000, sem_valor: periodo === 'ontem' ? 0 : 1 },
     funil_aberto: { ...base, estado: 'ok', quantidade: 86, valor: 4830000, sem_valor: 5 },
   };
+  if (m.fontesContrato) {
+    for (const k of ['pedidos_bling', 'negocios_ganhos']) r[k] = { ...r[k], consulta_completa: true };
+    r.funil_aberto = { estado: 'erro', quantidade: null, valor: null, sem_valor: null, ultimo_sucesso: null, motivo: 'O funil não pôde ser lido.', consulta_completa: false };
+  }
   if (m.semCanal) r.pedidos_bling = { ...r.pedidos_bling, estado: 'parcial', lacunas: ['sem_canal'], consulta_completa: true, motivo: '1 pedido ainda sem identificação de canal' };
   if (m.ganhosSemValor) r.negocios_ganhos = { ...r.negocios_ganhos, estado: 'parcial', quantidade: 3, valor: null, sem_valor: 3, motivo: '3 negócios sem valor ficaram fora da soma.' };
   if (m.estados) {   // prancha 02_GERAL_ESTADOS: zero real · desatualizado · aguardando
@@ -53,25 +57,34 @@ function fontes(m) {
     { fonte: 'mercadolivre', estado: 'aguardando', ultimo_sucesso: null, motivo: 'Aplicativo em criação.' },
     { fonte: 'lojaintegrada', estado: 'aguardando', ultimo_sucesso: null, motivo: 'Falta definir o dono da conta.' },
   ];
+  // contrato novo (CIMA → ACIMA_ESQUERDA, 24/11 20:0x): rótulo do estado e partes afetadas decididos pelo SERVIÇO
+  if (m.fontesContrato) { f[0] = { ...f[0], estado: 'problema', rotulo_estado: 'Com problema', afetado: [{ id: 'funil_aberto', rotulo: 'funil', estado: 'erro' }], motivo: 'O funil não pôde ser lido na última sincronização.' }; }
   return f;
 }
+// verificação das prioridades decidida pelo SERVIÇO (bloqueio 2 do mockup P10, 2ª rodada); 'ausente' = serviço antigo, sem o campo
+function verificacao(m) {
+  if (m.verif === 'ausente') return undefined;
+  const ok = (fonte, rotulo) => ({ fonte, rotulo, estado: 'ok', rotulo_estado: 'Atualizado' });
+  if (m.verif === 'parcial') return { estado: 'parcial', fontes: [ok('pipedrive', 'Pipedrive'), { fonte: 'calendar', rotulo: 'Google Calendar', estado: 'desatualizado', rotulo_estado: 'Desatualizado' }] };
+  if (m.verif === 'nao_verificada') return { estado: 'nao_verificada', fontes: [{ fonte: 'pipedrive', rotulo: 'Pipedrive', estado: 'erro', rotulo_estado: 'Com problema' }, { fonte: 'calendar', rotulo: 'Google Calendar', estado: 'aguardando', rotulo_estado: 'Aguardando conexão' }] };
+  return { estado: 'completa', fontes: [ok('pipedrive', 'Pipedrive'), ok('calendar', 'Google Calendar')] };
+}
 function simulador() {
-  const m = { atraso: 0, falhaResumo: false, falhaPrio: false, estados: false, semPendencias: false, prioNula: false, pipeVelho: false, ganhosSemValor: false, semCanal: false, calls: {}, ultimaLista: null };
+  const m = { verif: 'completa', fontesContrato: false, atraso: 0, falhaResumo: false, falhaPrio: false, estados: false, semPendencias: false, prioNula: false, pipeVelho: false, ganhosSemValor: false, semCanal: false, calls: {}, ultimaLista: null };
   m.rotear = async (ctx) => {
-    await ctx.route('**/api/geral/v2/**', async (r) => {
-      const u = new URL(r.request().url()); const rota = u.pathname.replace('/api/geral/v2', '').replace(/\.php$/, ''); m.calls[rota] = (m.calls[rota] || 0) + 1;
-      if (m.atraso) await dorme(m.atraso);
-      if (rota === '/resumo') { if (m.falhaResumo) return r.fulfill(falha(502)); const x = resumo(u.searchParams.get('periodo'), m); const t = (v) => (v === null ? null : Number(v).toFixed(2));
+    const responder = (u, rota) => {
+      if (rota === '/resumo') { if (m.falhaResumo) return (falha(502)); const x = resumo(u.searchParams.get('periodo'), m); const t = (v) => (v === null ? null : Number(v).toFixed(2));
         x.pedidos_bling = { ...x.pedidos_bling, valor: t(x.pedidos_bling.valor), por_dia: x.pedidos_bling.por_dia.map((d) => ({ ...d, valor: t(d.valor) })) };
-        x.negocios_ganhos.valor = t(x.negocios_ganhos.valor); x.funil_aberto.valor = t(x.funil_aberto.valor); return r.fulfill(env(x)); }
+        x.negocios_ganhos.valor = t(x.negocios_ganhos.valor); x.funil_aberto.valor = t(x.funil_aberto.valor); return (env(x)); }
       if (rota === '/prioridades') {
-        if (m.falhaPrio) return r.fulfill(falha(502));
+        if (m.falhaPrio) return (falha(502));
         const z = m.semPendencias;
-        return r.fulfill(env({ gerado_em: agoraIso(), itens: [
+        if (m.prioVazia) return (env({ gerado_em: agoraIso(), itens: [], verificacao: verificacao(m) }));   // o serviço não devolveu nenhum item
+        return (env({ gerado_em: agoraIso(), verificacao: verificacao(m), sem_pendencias: m.verif === 'completa' && z && !m.prioNula, itens: [
           { id: 'sem_proxima_atividade', estado: z ? 'zero' : 'ok', quantidade: z ? 0 : 120, gravidade: 2, desde: diaBr(9), responsaveis: 3, detalhe: null, ultimo_sucesso: agoraIso(), motivo: null },
           { id: 'conflito_agenda', estado: z ? 'zero' : 'ok', quantidade: z ? 0 : 1, gravidade: 3, desde: new Date(Date.now() + 2 * 3600e3).toISOString(), responsaveis: null, detalhe: null, ultimo_sucesso: agoraIso(), motivo: null },
           { id: 'atividade_vencida', estado: z ? 'zero' : 'ok', quantidade: m.prioNula ? null : z ? 0 : 6, gravidade: 1, desde: diaBr(4), responsaveis: 3, detalhe: null, ultimo_sucesso: agoraIso(), motivo: null },
-        ] }));
+        ].map((x) => (m.fontesContrato ? { ...x, consulta_completa: true } : x)) }));
       }
       if (rota === '/prioridades/lista') {
         const id = u.searchParams.get('id'); const pag = Number(u.searchParams.get('pagina')); const pp = Number(u.searchParams.get('por_pagina')); const resp = u.searchParams.get('responsavel');
@@ -80,16 +93,27 @@ function simulador() {
         if (resp) todos = todos.filter((i) => i.responsavel === RESP.find((x) => String(x.id) === resp)?.nome);
         const ordem = u.searchParams.get('ordem'), dir = u.searchParams.get('dir') === 'desc' ? -1 : 1;
         todos.sort((a, b) => (ordem === 'valor' ? ((a.valor ?? -1) - (b.valor ?? -1)) : String(a[ordem] ?? '').localeCompare(String(b[ordem] ?? ''))) * dir || a.deal_id - b.deal_id);
-        return r.fulfill(env({ id, total: todos.length, total_sem_filtro: semFiltro, sem_responsavel: id === 'atividade_vencida' ? 1 : 0, pagina: pag, por_pagina: pp, responsaveis: RESP,
+        return (env({ id, total: todos.length, total_sem_filtro: semFiltro, sem_responsavel: id === 'atividade_vencida' ? 1 : 0, pagina: pag, por_pagina: pp, responsaveis: RESP,
           criterios: { texto: id === 'atividade_vencida' ? `atividade vencida até ${diaBr(0).split('-').reverse().join('/')} · negócio aberto` : 'sem atividade futura · fechamento até hoje + 7 dias (inclui vencidos) · aberto' },
           itens: todos.slice((pag - 1) * pp, pag * pp).map((i) => ({ ...i, valor: i.valor === null ? null : i.valor.toFixed(2) })) }));
       }
-      if (rota === '/agenda') return r.fulfill(env({ estado: 'ok', ultimo_sucesso: agoraIso(), url_agenda: '#/panel-google-calendar', itens: [
+      if (rota === '/agenda') return (env({ estado: 'ok', ultimo_sucesso: agoraIso(), url_agenda: '#/panel-google-calendar', itens: [
         { inicio: new Date(Date.now() + 2 * 3600e3).toISOString(), fim: null, titulo: 'Revisão de proposta com Eduardo Martins', duracao_min: 45, url_evento: 'https://calendar.exemplo.invalid/e1', conflito: true },
         { inicio: new Date(Date.now() + 2.25 * 3600e3).toISOString(), fim: null, titulo: 'Alinhamento comercial', duracao_min: 30, url_evento: 'https://calendar.exemplo.invalid/e2', conflito: true },
         { inicio: new Date(Date.now() + 4 * 3600e3).toISOString(), fim: null, titulo: 'Briefing semanal de mercado LED', duracao_min: 30, url_evento: null, conflito: false }] }));
-      if (rota === '/fontes') return r.fulfill(env(fontes(m)));
-      return r.fulfill(falha(404));
+      if (rota === '/fontes') return (env(fontes(m)));
+      return falha(404);
+    };
+    await ctx.route('**/api/geral/v2/**', async (r) => {
+      const u = new URL(r.request().url()); const rota = u.pathname.replace('/api/geral/v2', '').replace(/\.php$/, ''); m.calls[rota] = (m.calls[rota] || 0) + 1;
+      if (m.atraso) await dorme(m.atraso);
+      if (rota === '/painel') {   // leitura única (9c0f45b3): os mesmos blocos das rotas separadas, numa resposta só
+        const per = u.searchParams.get('periodo'); const partes = {};
+        for (const [k, rt, q] of [['resumo', '/resumo', `periodo=${per}`], ['prioridades', '/prioridades', ''], ['agenda', '/agenda', ''], ['fontes', '/fontes', '']]) {
+          const x = responder(new URL(`http://x/api/geral/v2${rt}.php?${q}`), rt); if (x.status !== 200) return r.fulfill(x); partes[k] = JSON.parse(x.body).data; }
+        return r.fulfill(env({ leitura_em: agoraIso(), periodo: partes.resumo.periodo, ...partes }));
+      }
+      return r.fulfill(responder(u, rota));
     });
   };
   return m;
@@ -163,12 +187,38 @@ function simulador() {
     const fo = await txt(pg, '[data-gv2-bloco="fontes"]');
     afirma('Fontes e atualização: Pipedrive/Bling/Calendar "Atualizado às HH:MM"; Asaas, Mercado Livre e Loja Integrada "Aguardando conexão"', (fo.match(/Atualizado às \d\d:\d\d/g) || []).length === 3 && (fo.match(/Aguardando conexão/g) || []).length === 3, fo);
     const nan = /NaN|undefined|null|Invalid/.test(await txt(pg, '.gv2')); afirma('nenhum "NaN/undefined/null" na tela', !nan);
+    // ITEM 1 (mockup P10, 2ª rodada): na rolagem normal o título "Geral", o seletor de período e "Prioridades de hoje" ficam VISÍVEIS,
+    // sem nada da barra fixa por cima (elementFromPoint no centro de cada um cai nele mesmo) e com a página no topo.
+    const topo = await pg.evaluate(() => { const vis = (el) => { if (!el) return 'ausente'; const r = el.getBoundingClientRect(); if (r.bottom <= 0 || r.top >= innerHeight) return 'fora';
+        const x = r.left + Math.min(r.width / 2, 40), y = r.top + r.height / 2; const h = document.elementFromPoint(x, y); return h && (el === h || el.contains(h)) ? 'visivel' : `coberto:${h?.className}`.slice(0, 80); };
+      let rolagem = window.scrollY; for (let n = document.querySelector('.gv2')?.parentElement; n; n = n.parentElement) rolagem += n.scrollTop || 0;
+      return { titulo: vis(document.querySelector('.gv2 h1')), periodos: vis(document.querySelector('.gv2-periodos')), prioridades: vis(document.querySelector('[data-gv2-bloco="prioridades"] .gv2-h2')), rolagem }; });
+    afirma('ITEM 1 · topo: título "Geral", seletor de período e "Prioridades de hoje" visíveis, nada da barra fixa por cima, rolagem 0', topo.titulo === 'visivel' && topo.periodos === 'visivel' && topo.prioridades === 'visivel' && topo.rolagem === 0, JSON.stringify(topo));
+    // ITEM 4: contraste dos links de ações secundárias no tema ESCURO (o claro não muda) — medido e registrado
+    const contraste = await pg.evaluate(() => {
+      const rgb = (c) => (c.match(/[\d.]+/g) || []).slice(0, 3).map(Number); const lum = (c) => { const v = rgb(c).map((x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
+      const razao = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return Math.round(((x + 0.05) / (y + 0.05)) * 100) / 100; };
+      const fundo = (el) => { for (let n = el; n; n = n.parentElement) { const c = getComputedStyle(n).backgroundColor; if (c && !/rgba\(.*,\s*0\)|transparent/.test(c)) return c; } return 'rgb(0,0,0)'; };
+      const medir = () => [...document.querySelectorAll('.gv2 .gv2-link, .gv2 .gv2-btn')].filter((x) => x.getBoundingClientRect().width).map((x) => ({ t: x.textContent.trim().slice(0, 18), c: getComputedStyle(x).color, f: fundo(x), r: razao(getComputedStyle(x).color, fundo(x)) }));
+      const semAnim = document.createElement('style'); semAnim.textContent = '*,*::before,*::after{transition:none!important;animation:none!important}'; document.head.appendChild(semAnim);
+      const de = document.documentElement; const antes = { tema: de.getAttribute('data-theme'), claro: de.classList.contains('theme-light') };
+      de.setAttribute('data-theme', 'dark'); de.classList.remove('theme-light'); const escuro = medir();
+      de.setAttribute('data-theme', 'light'); const claro = medir();
+      if (antes.tema === null) de.removeAttribute('data-theme'); else de.setAttribute('data-theme', antes.tema); if (antes.claro) de.classList.add('theme-light');
+      semAnim.remove();
+      return { escuro, claro };
+    });
+    fs.writeFileSync(`${CAP}/contraste-links-${W}.json`, JSON.stringify(contraste, null, 1));
+    const minE = Math.min(...contraste.escuro.map((x) => x.r)), minC = Math.min(...contraste.claro.map((x) => x.r));
+    console.log(`      contraste dos links: escuro mínimo ${minE}:1 (${contraste.escuro.length} links) · claro mínimo ${minC}:1 · cor escuro ${contraste.escuro[0]?.c} · claro ${contraste.claro[0]?.c}`);
+    afirma('ITEM 4 · links de ações secundárias no ESCURO com contraste ≥ 4,5:1 (medido)', contraste.escuro.length > 3 && minE >= 4.5, `mínimo ${minE}`);
+    afirma('ITEM 4 · o CLARO não muda (links na cor de antes, rgb(79, 70, 229))', contraste.claro.every((x) => x.c === 'rgb(79, 70, 229)'), JSON.stringify(contraste.claro.slice(0, 2)));
     await cap(pg, '1-lancamento');
-    const p0 = m.calls['/prioridades'];
     await pg.click('.gv2-periodo:has-text("Ontem")'); await pg.waitForFunction(() => /ontem, dia completo/.test(document.querySelector('[data-gv2-bloco="resultado"]')?.textContent || ''), null, { timeout: 15000 }); await pg.waitForTimeout(400);
     const ontem = await pg.$$eval('.gv2 [data-gv2-cartao]', (xs) => xs.map((x) => [x.dataset.gv2Estado, x.querySelector('.gv2-num-valor')?.textContent]));
-    afirma('período "Ontem": pedidos e ganhos ZERO REAL (escrito "Zero real", R$ 0 confirmado); funil igual (fotografia); prioridades NÃO recarregam',
-      ontem[0][0] === 'zero' && /Zero real/.test(await txt(pg, '[data-gv2-cartao="pedidos"]')) && ontem[1][0] === 'zero' && /4\.830\.000/.test(ontem[2][1]) && m.calls['/prioridades'] === p0, JSON.stringify({ ontem, p: [p0, m.calls['/prioridades']] }));
+    afirma('período "Ontem": pedidos e ganhos ZERO REAL (escrito "Zero real", R$ 0 confirmado); funil igual (fotografia); prioridades sem esqueleto na troca',
+      ontem[0][0] === 'zero' && /Zero real/.test(await txt(pg, '[data-gv2-cartao="pedidos"]')) && ontem[1][0] === 'zero' && /4\.830\.000/.test(ontem[2][1]) && (await pg.$$('[data-gv2-prio]')).length === 3, JSON.stringify({ ontem }));
+    afirma('LEITURA ÚNICA: a Geral lê só o painel.php (nenhuma rota separada de resumo, prioridades, agenda ou fontes)', (m.calls['/painel'] || 0) >= 2 && !m.calls['/resumo'] && !m.calls['/prioridades'] && !m.calls['/agenda'] && !m.calls['/fontes'], JSON.stringify(m.calls));
     await cap(pg, '1b-periodo-ontem');
     await pg.click('.gv2-periodo:has-text("Mês até ontem")'); await pg.waitForFunction(() => document.querySelectorAll('[data-gv2-dia]').length > 7, null, { timeout: 15000 }).catch(() => {}); await pg.waitForTimeout(400);
     const mes = { g: (await txt(pg, '[data-gv2-bloco="grafico"]')).slice(-140), n: await pg.$$eval('[data-gv2-dia]', (xs) => xs.length), esperado: Number(new Date(Date.now() - 3 * 3600e3).toISOString().slice(8, 10)) - 1 };
@@ -184,6 +234,11 @@ function simulador() {
     afirma('lista sem filtro mostra quantos negócios estão sem responsável ("1 sem responsável")', /1 sem responsável/.test(rod), rod);
     afirma('linhas de 36 px, numa linha só (TabelaDados da casa)', linhas.every((h) => h === 36 || h === 37), JSON.stringify(linhas));
     const umaLinha = await pg.$$eval('.gv2-tabela-raiz tbody td', (xs) => xs.every((td) => getComputedStyle(td).whiteSpace === 'nowrap'));
+    // ITEM 5: etapa INTEIRA quando couber; se não couber, tooltip com o texto completo
+    const etapas = await pg.$$eval('.gv2-tabela-raiz tbody td', (xs) => xs.map((td) => td.querySelector('.gv2-reticencias')).filter((x) => x && /Proposta enviada|Aguardando retorno|Negociação/.test(x.textContent))
+      .map((x) => ({ t: x.textContent, inteira: x.scrollWidth <= x.clientWidth + 1 && x.closest('td').scrollWidth <= x.closest('td').clientWidth + 1, dica: x.title })));
+    afirma('ITEM 5 · etapas inteiras ("Proposta enviada", "Aguardando retorno") — ou, se não couber, tooltip com o texto completo', etapas.length >= 6 && etapas.every((e) => e.inteira || e.dica === e.t), JSON.stringify(etapas.filter((e) => !e.inteira).slice(0, 3)));
+    afirma('ITEM 5 · em 1440 e 2200 a etapa cabe inteira (sem "Propos…"/"Aguard…")', etapas.every((e) => e.inteira), JSON.stringify(etapas.filter((e) => !e.inteira).map((e) => e.t)));
     afirma('células com reticências (uma linha, sem quebra)', umaLinha);
     const a = await pg.$eval('.gv2-tabela-raiz tbody tr:first-child a', (x) => ({ t: x.target, h: x.href, r: x.rel }));
     afirma('"Abrir negócio" abre o Pipedrive em NOVA aba (target _blank, noopener) — sem página de negócio no Dash', a.t === '_blank' && /pipedrive/.test(a.h) && /noopener/.test(a.r), JSON.stringify(a));
@@ -220,7 +275,8 @@ function simulador() {
     afirma('SEM PENDÊNCIAS: bloco compacto de uma linha', /Sem pendências/.test(sp) && alt < 90, `${alt} · ${sp}`);
     const fl = await txt(pg, '[data-gv2-bloco="fontes"]');
     afirma('fonte desatualizada escrita na linha de fontes (Bling "Desatualizado")', /Bling\s*Desatualizado/.test(fl), fl);
-    afirma('COERÊNCIA: com "Negócios ganhos" desatualizado, o Pipedrive NÃO diz "Atualizado" → "Desatualizado · Negócios ganhos"', /Pipedrive\s*Desatualizado · Negócios ganhos/.test(fl) && !/Pipedrive\s*Atualizado/.test(fl), fl);
+    afirma('COERÊNCIA: com "Negócios ganhos" desatualizado, o Pipedrive NÃO diz "Atualizado" → "Desatualizado (negócios ganhos)"', /Pipedrive\s*Desatualizado \(negócios ganhos\)/.test(fl) && !/Pipedrive\s*Atualizado/.test(fl), fl);
+    afirma('SEM PENDÊNCIAS só com a verificação COMPLETA do serviço (data-gv2-verificacao="completa")', !!(await pg.$('[data-gv2-bloco="prioridades"][data-gv2-verificacao="completa"]')));
     await cap(pg, '3-estados');
     await pg.click('[data-gv2-bloco="fontes"] .gv2-link'); await pg.waitForTimeout(300);
     afirma('"Detalhes" das fontes mostra o motivo de cada uma (ex.: Asaas em auditoria)', /Asaas em auditoria/.test(await txt(pg, '.gv2-fontes-det')));
@@ -234,6 +290,27 @@ function simulador() {
     afirma('COERÊNCIA: ganhos e funil com o Pipedrive desatualizado → "Desatualizado" com o último valor válido (não "ok")', c[1][1] === 'desatualizado' && /351\.000/.test(c[1][2]) && c[2][1] === 'desatualizado', JSON.stringify(c));
     await cap(pg, '3c-pipedrive-desatualizado');
     await ctx.close(); }
+
+  // ── (3f) BLOQUEIO 2 · verificação PARCIAL: nenhum item, mas uma fonte em atraso → "Verificação parcial · Google Calendar" ──
+  { const m = simulador(); m.prioVazia = true; m.verif = 'parcial'; const { ctx, pg } = await nova(m); await abrir(pg);
+    const t = await txt(pg, '[data-gv2-bloco="prioridades"]');
+    afirma('BLOQUEIO 2 · parcial: "Prioridades de hoje · Verificação parcial · Google Calendar", nunca "Sem pendências"', /Verificação parcial · Google Calendar/.test(t) && !/Sem pendências/.test(t), t.slice(0, 200));
+    await cap(pg, '3f-verificacao-parcial'); await ctx.close(); }
+  // ── (3g) BLOQUEIO 2 · NÃO VERIFICADA: nenhum item porque nada foi lido → "Prioridades não verificadas · Pipedrive com problema" ──
+  { const m = simulador(); m.prioVazia = true; m.verif = 'nao_verificada'; const { ctx, pg } = await nova(m); await abrir(pg);
+    const t = await txt(pg, '[data-gv2-bloco="prioridades"]');
+    afirma('BLOQUEIO 2 · sem leitura válida: "Prioridades não verificadas · Pipedrive com problema, Google Calendar aguardando conexão", nunca "Sem pendências"', /Prioridades não verificadas · Pipedrive com problema, Google Calendar aguardando conexão/.test(t) && !/Sem pendências/.test(t), t.slice(0, 200));
+    await cap(pg, '3g-nao-verificada'); await ctx.close(); }
+  // ── (3h) BLOQUEIO 2 · serviço SEM o campo de verificação: a tela não decide sozinha → nunca "Sem pendências" ──
+  { const m = simulador(); m.semPendencias = true; m.verif = 'ausente'; const { ctx, pg } = await nova(m); await abrir(pg);
+    const t = await txt(pg, '[data-gv2-bloco="prioridades"]');
+    afirma('BLOQUEIO 2 · sem "verificacao" do serviço: "Prioridades não verificadas", nunca "Sem pendências" (nenhuma lógica própria na tela)', /Prioridades não verificadas/.test(t) && !/Sem pendências/.test(t), t.slice(0, 200));
+    await ctx.close(); }
+  // ── (3i) BLOQUEIO 3 · fonte com problema numa PARTE (contrato do serviço): "Pipedrive · Com problema (funil)" ──
+  { const m = simulador(); m.fontesContrato = true; const { ctx, pg } = await nova(m); await abrir(pg);
+    const fl = await txt(pg, '[data-gv2-bloco="fontes"]');
+    afirma('BLOQUEIO 3 · linha de fontes com o estado e a parte afetada do serviço: "Pipedrive Com problema (funil)"', /Pipedrive\s*Com problema \(funil\)/.test(fl) && !/Pipedrive\s*Atualizado/.test(fl), fl.slice(0, 220));
+    await cap(pg, '3i-fonte-com-problema'); await ctx.close(); }
 
   // ── (3d) TODOS sem valor (serviço da ACIMA_ESQUERDA: valor null + parcial): "—" e "Nenhum valor informado", nunca R$ 0 nem "soma" ──
   { const m = simulador(); m.ganhosSemValor = true; const { ctx, pg } = await nova(m); await abrir(pg);
@@ -258,18 +335,20 @@ function simulador() {
     const cards = await pg.$$eval('.gv2 [data-gv2-cartao]', (xs) => xs.map((x) => [x.dataset.gv2Estado, x.textContent]));
     afirma('resumo fora: os 3 cartões "Com problema" + Tentar de novo, sem número (nenhum R$ 0)', cards.every(([s, t]) => s === 'erro' && /Com problema/.test(t) && /Tentar de novo/.test(t) && !/R\$/.test(t)), JSON.stringify(cards.map((c) => c[0])));
     afirma('prioridades fora: "Não foi possível verificar as prioridades agora." (nunca "Sem pendências")', /Não foi possível verificar as prioridades agora/.test(await txt(pg, '[data-gv2-bloco="prioridades"]')) && !/Sem pendências/.test(await txt(pg, '[data-gv2-bloco="prioridades"]')));
+    const flp = await txt(pg, '[data-gv2-bloco="fontes"]');
+    // leitura única: se o painel não veio, a linha de fontes também não veio — "Com problema" escrito, NUNCA "Atualizado" ao lado de cartões com problema
+    afirma('BLOQUEIO 3 · cartões "Com problema" ⇒ a linha de fontes NUNCA diz "Atualizado" (mostra "Não foi possível ler o estado das fontes")', !/Atualizado/.test(flp) && /Não foi possível ler o estado das fontes/.test(flp), flp.slice(0, 300));
     const altP = await pg.$eval('[data-gv2-bloco="grafico"] .gv2-problema', (x) => Math.round(x.getBoundingClientRect().height));
     afirma('o quadro "Com problema" do gráfico não estica (altura de conteúdo)', altP < 120, String(altP));
     afirma('gráfico fora: problema escrito, sem barras', (await pg.$$('.gv2-barra')).length === 0 && /Não foi possível ler os pedidos/.test(await txt(pg, '[data-gv2-bloco="grafico"]')));
     await cap(pg, '4-com-problema');
-    m.falhaResumo = false; m.atraso = 1200;
+    m.falhaResumo = false; m.falhaPrio = false; m.atraso = 1200;   // leitura única: o painel volta inteiro
     await pg.click('[data-gv2-cartao="pedidos"] button:has-text("Tentar de novo")'); await pg.waitForTimeout(400);
     afirma('"Tentar de novo" mostra "Tentando…" enquanto busca', /Tentando…/.test(await txt(pg, '[data-gv2-bloco="resultado"]')));
     await pg.waitForFunction(() => document.querySelector('[data-gv2-cartao="pedidos"]')?.dataset.gv2Estado === 'ok', null, { timeout: 15000 }); await pg.waitForTimeout(400);
     afirma('recuperado: cartões voltam com os números', /284\.900/.test(await txt(pg, '[data-gv2-cartao="pedidos"]')));
-    m.falhaPrio = false; await pg.click('[data-gv2-bloco="prioridades"] button:has-text("Tentar de novo")');
     await pg.waitForSelector('[data-gv2-prio="atividade_vencida"]', { timeout: 15000 }); await pg.waitForTimeout(400);
-    afirma('prioridades recuperadas pelo "Tentar de novo"', (await pg.$$('[data-gv2-prio]')).length === 3);
+    afirma('prioridades recuperadas pelo MESMO "Tentar de novo" (leitura única: nada fica pela metade)', (await pg.$$('[data-gv2-prio]')).length === 3);
     await cap(pg, '4b-recuperado');
     // falha DEPOIS de sucesso: o último valor fica, com aviso
     m.falhaResumo = true; m.atraso = 0; await pg.click('.gv2-periodo:has-text("Mês até ontem")'); await pg.waitForTimeout(1200);

@@ -23,10 +23,10 @@
 [data-geral-react-root] .gv2-sec-cab { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 [data-geral-react-root] .gv2-sec-cab > div { display: flex; flex-direction: column; gap: 3px; }
 [data-geral-react-root] .gv2-sec-cab--solto { padding: 0 2px; }
-[data-geral-react-root] .gv2-link { display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; padding: 3px 4px; border-radius: 6px; color: var(--ger-azul); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+[data-geral-react-root] .gv2-link { display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; padding: 3px 4px; border-radius: 6px; color: var(--ger-link); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; }
 [data-geral-react-root] .gv2-link svg { transition: transform 150ms; }
 [data-geral-react-root] .gv2-link:hover svg { transform: translateX(2px); }
-[data-geral-react-root] .gv2-btn { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--ger-borda); background: var(--ger-superficie); color: var(--ger-azul); border-radius: 8px; padding: 6px 11px; font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; text-decoration: none; white-space: nowrap; transition: border-color 150ms, background-color 150ms; }
+[data-geral-react-root] .gv2-btn { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--ger-borda); background: var(--ger-superficie); color: var(--ger-link); border-radius: 8px; padding: 6px 11px; font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; text-decoration: none; white-space: nowrap; transition: border-color 150ms, background-color 150ms; }
 [data-geral-react-root] .gv2-btn:hover:not(:disabled) { border-color: color-mix(in srgb, var(--ger-azul) 45%, var(--ger-borda)); }
 [data-geral-react-root] .gv2-btn:disabled { opacity: .6; cursor: default; }
 [data-geral-react-root] .gv2-btn--mini { padding: 4px 9px; }
@@ -61,6 +61,7 @@
 [data-geral-react-root] .gv2-prioridades--vazio > div { display: flex; flex-direction: column; gap: 2px; }
 [data-geral-react-root] .gv2-prioridades--vazio strong { font-size: 14px; font-weight: 500; }
 [data-geral-react-root] .gv2-ok-ic { color: var(--ger-ok); flex: none; }
+[data-geral-react-root] .gv2-aviso-ic { color: var(--ger-warn); flex: none; }
 
 /* 2. resultado comercial */
 [data-geral-react-root] .gv2-tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
@@ -152,11 +153,13 @@
 [data-geral-react-root] .gv2-tabela-raiz .at-td__tabela td > * { vertical-align: middle; }
 [data-geral-react-root] .gv2-tabela-raiz .gv2-td-id { width: 92px; }
 [data-geral-react-root] .gv2-tabela-raiz th[data-coluna="deal_id"] { width: 92px; }
-[data-geral-react-root] .gv2-tabela-raiz th[data-coluna="titulo"] { width: 34%; }
+[data-geral-react-root] .gv2-tabela-raiz th[data-coluna="titulo"] { width: auto; }   /* o título fica com o resto (retorno do mockup: etapa inteira em 1440) */
+[data-geral-react-root] .gv2-tabela-raiz th[data-coluna="etapa"] { width: 176px; }
+[data-geral-react-root] .gv2-tabela-raiz th[data-coluna="responsavel"] { width: 136px; }
 [data-geral-react-root] .gv2-tabela-raiz th[data-coluna="acao"] { width: 150px; }
 [data-geral-react-root] .gv2-tabela-raiz th[data-coluna="prazo"] { width: 170px; }
 [data-geral-react-root] .gv2-tabela-raiz th[data-coluna="valor"] { width: 140px; }
-[data-geral-react-root] .gv2-td-destaque { color: var(--ger-azul); }
+[data-geral-react-root] .gv2-td-destaque { color: var(--ger-link); }
 
 /* responsivo (1440) */
 @media (max-width: 1500px) {   /* 1440: densidade do mockup 01_GERAL_LANCAMENTO_1440x900 */

@@ -5,17 +5,25 @@
 // (não mudam com o período), no máximo 3, por gravidade e depois antiguidade; pedidos, ganhos e funil são conceitos SEPARADOS
 // (nunca somados); sem "Comparação: período anterior"; texto mínimo de 12 px; falha nunca vira zero; estado sempre escrito.
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { ArrowRight, CalendarDays, CheckCircle2, ExternalLink, Layers, Package, PlugZap, TrendingUp } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CalendarDays, CheckCircle2, ExternalLink, Layers, Package, PlugZap, TrendingUp } from 'lucide-react';
 import {
   ErroV2, fmtData, fmtDiaMes, fmtHora, fmtMoeda, fmtMoedaCurta, fmtN, fmtQuando, hojeExtenso,
-  lerAgenda, lerFontes, lerPrioridades, lerResumo,
+  lerPainel, type Painel,
   type Agenda, type EstadoBloco, type Fonte, type IdPrioridade, type PedidosBling, type PeriodoV2, type Prioridade, type Prioridades, type Resumo,
 } from './servico';
 import { ListaPrioridade } from './ListaPrioridade';
 import { Problema, useBloco } from './comuns';
-import { NOME_FONTE, efetivo, fonteEfetiva, textoSemValor, type Efetivo, type FontesLidas, type IdIndicador } from './coerencia';
+import { FONTE_DO_INDICADOR, NOME_FONTE, efetivo, fonteEfetiva, textoSemValor, type Efetivo, type FontesLidas, type IdIndicador } from './coerencia';
 import './geral-v2.css';
 
+/** Leva ao topo o contêiner que de fato rola (o miolo do shell), sem alinhar nada por baixo da barra fixa. */
+function rolarAoTopo(el: HTMLElement | null) {
+  for (let n = el?.parentElement ?? null; n; n = n.parentElement) {
+    const o = getComputedStyle(n).overflowY;
+    if ((o === 'auto' || o === 'scroll') && n.scrollHeight > n.clientHeight) { n.scrollTop = 0; return; }
+  }
+  window.scrollTo(0, 0);
+}
 const semAcesso = (e: unknown) => e instanceof ErroV2 && e.semAcesso;
 function navegar(rota: string) { window.location.hash = rota; }
 const K_PERIODO = 'dshow.geral.v2.periodo';
@@ -38,12 +46,17 @@ export function GeralV2() {
   const [vista, setVista] = useState<{ tipo: 'geral' } | { tipo: 'lista'; id: IdPrioridade; quantidade: number | null }>({ tipo: 'geral' });
   const trocarPeriodo = (p: PeriodoV2) => { setPeriodo(p); try { localStorage.setItem(K_PERIODO, p); } catch { /* sem storage */ } };
 
-  const resumo = useBloco((s) => lerResumo(periodo, s), [periodo]);
-  const prioridades = useBloco((s) => lerPrioridades(s), []);
-  const agenda = useBloco((s) => lerAgenda(s), []);
-  const fontes = useBloco((s) => lerFontes(s), []);
+  // uma leitura só (painel.php): cada bloco é uma VISTA dela, com o mesmo erro, o mesmo "Tentar de novo" e o mesmo instante
+  const painel = useBloco((s) => lerPainel(periodo, s), [periodo]);
+  const vistaDe = <K extends 'resumo' | 'prioridades' | 'agenda' | 'fontes'>(k: K) =>
+    ({ dados: painel.dados ? painel.dados[k] : null, erro: painel.erro, carregando: painel.carregando, atualizando: painel.atualizando,
+       recarregar: painel.recarregar, okEm: painel.okEm }) as ReturnType<typeof useBloco<Painel[K]>>;
+  const resumo = vistaDe('resumo'), prioridades = vistaDe('prioridades'), agenda = vistaDe('agenda'), fontes = vistaDe('fontes');
   const topo = useRef<HTMLDivElement>(null);
-  useEffect(() => { topo.current?.scrollIntoView({ block: 'start' }); }, [vista.tipo]);
+  // Retorno do mockup (P10, 2ª rodada): NÃO rolar ao montar — o scrollIntoView alinhava a página ao topo da JANELA, por baixo da barra
+  // fixa do shell (título "Geral" e períodos escondidos em 1440). Ao trocar de vista (lista ↔ geral), o contêiner que rola volta ao topo.
+  const montou = useRef(false);
+  useEffect(() => { if (!montou.current) { montou.current = true; return; } rolarAoTopo(topo.current); }, [vista.tipo]);
   // coerência por indicador (24/11): a confirmação de "zero" e o estado das fontes vêm do fontes.php
   const fl: FontesLidas = fontes.carregando && !fontes.dados ? 'carregando' : fontes.dados ?? null;
   const efs = indicadoresEfetivos(resumo, prioridades, agenda, fl);
@@ -80,6 +93,14 @@ type B<T> = ReturnType<typeof useBloco<T>>;
 /** Todos os indicadores da página com o estado EFETIVO (para a linha de fontes não contradizer os cartões). */
 function indicadoresEfetivos(r: B<Resumo>, p: B<Prioridades>, a: B<Agenda>, fl: FontesLidas): { id: IdIndicador; e: Efetivo }[] {
   const out: { id: IdIndicador; e: Efetivo }[] = [];
+  // bloco que NÃO pôde ser lido nesta tela (sem leitura válida): a fonte dele não pode aparecer como "Atualizado"
+  const naoLido = (bl: B<unknown>, ids: IdIndicador[]) => {
+    if (bl.dados || !bl.erro || semAcesso(bl.erro)) return;
+    for (const id of ids) out.push({ id, e: { estado: 'erro', zeroNaoConfirmado: false, conferindo: false, semValor: null, motivo: 'Não lido nesta tela', quando: null, fonte: FONTE_DO_INDICADOR[id] } });
+  };
+  naoLido(r, ['pedidos_bling', 'negocios_ganhos', 'funil_aberto']);
+  naoLido(p, ['atividade_vencida', 'sem_proxima_atividade', 'conflito_agenda']);
+  naoLido(a, ['agenda']);
   if (r.dados) {
     const falhou = !!r.erro;
     out.push({ id: 'pedidos_bling', e: efetivo('pedidos_bling', r.dados.pedidos_bling, fl, falhou, r.okEm) });
@@ -116,6 +137,14 @@ function textoPrioridade(p: Prioridade): { titulo: string; sub: string; meio: st
     quando: p.desde ? `Hoje, ${fmtHora(p.desde)}` : 'Hoje', acao: 'Abrir agenda',
   };
 }
+/** Verificação decidida pelo serviço → texto. null = completa (nada a dizer). Nome da fonte pelo id, igual ao da linha de fontes. */
+function textoVerificacao(v: Prioridades['verificacao']): { estado: 'parcial' | 'nao-verificada'; texto: string } | null {
+  if (v?.estado === 'completa') return null;
+  const pend = (v?.fontes ?? []).filter((x) => x.estado !== 'ok');
+  const nome = (x: { fonte: string; rotulo: string }) => NOME_FONTE[x.fonte as keyof typeof NOME_FONTE] ?? x.rotulo;
+  if (v?.estado === 'parcial') return { estado: 'parcial', texto: `Verificação parcial · ${pend.map(nome).join(', ') || 'fonte não informada'}` };
+  return { estado: 'nao-verificada', texto: `Prioridades não verificadas · ${pend.length ? pend.map((x) => `${nome(x)} ${x.rotulo_estado.toLowerCase()}`).join(', ') : 'o serviço não informou a verificação'}` };
+}
 function BlocoPrioridades({ b, fl, aoAbrir }: { b: ReturnType<typeof useBloco<Prioridades>>; fl: FontesLidas; aoAbrir: (id: IdPrioridade, q: number | null) => void }) {
   const [todas, setTodas] = useState(false);
   // estado EFETIVO por prioridade: "zero" só vale com a fonte daquela prioridade em dia (senão aparece, como não confirmado)
@@ -145,17 +174,36 @@ function BlocoPrioridades({ b, fl, aoAbrir }: { b: ReturnType<typeof useBloco<Pr
         : <Problema motivo="Não foi possível verificar as prioridades agora." quando={null} onTentar={b.recarregar} tentando={b.atualizando || b.carregando} />}
     </section>
   );
-  if (itens.length === 0) return (   // SEM PENDÊNCIAS: bloco compacto de uma linha (só quando TODAS as fontes confirmaram zero)
-    <section className="gv2-cartao gv2-prioridades gv2-prioridades--vazio" data-gv2-bloco="prioridades" data-gv2-estado="zero">
-      <CheckCircle2 size={18} aria-hidden className="gv2-ok-ic" />
-      <div><strong>Prioridades de hoje · Sem pendências</strong>
-        <span className="gv2-fraco">Nenhuma pendência encontrada nas fontes consultadas e atualizadas{b.dados.gerado_em ? ` · ${fmtQuando(b.dados.gerado_em)}` : ''}</span></div>
-    </section>
-  );
+  if (itens.length === 0) {
+    // Nenhuma pendência na lista: o que a tela diz é a VERIFICAÇÃO decidida pelo serviço (retorno do mockup P10, 2ª rodada).
+    // Sem o campo (serviço antigo) a tela não afirma "Sem pendências": não há como saber se tudo foi verificado.
+    const v = b.dados.verificacao;
+    const tv = textoVerificacao(v);
+    if (!tv && b.dados.sem_pendencias !== false) return (
+      <section className="gv2-cartao gv2-prioridades gv2-prioridades--vazio" data-gv2-bloco="prioridades" data-gv2-estado="zero" data-gv2-verificacao="completa">
+        <CheckCircle2 size={18} aria-hidden className="gv2-ok-ic" />
+        <div><strong>Prioridades de hoje · Sem pendências</strong>
+          <span className="gv2-fraco">Nenhuma pendência encontrada nas fontes consultadas e atualizadas{b.dados.gerado_em ? ` · ${fmtQuando(b.dados.gerado_em)}` : ''}</span></div>
+      </section>
+    );
+    const parcial = tv?.estado === 'parcial';
+    const titulo = tv ? tv.texto : 'Prioridades não verificadas · o serviço não confirmou "sem pendências"';
+    return (
+      <section className="gv2-cartao gv2-prioridades gv2-prioridades--vazio" data-gv2-bloco="prioridades" data-gv2-estado={parcial ? 'parcial' : 'nao-verificada'} data-gv2-verificacao={v?.estado ?? 'ausente'}>
+        <AlertTriangle size={18} aria-hidden className="gv2-aviso-ic" />
+        <div><strong>Prioridades de hoje · {titulo}</strong>
+          <span className="gv2-fraco">{parcial ? 'Nenhuma pendência nas fontes verificadas; as demais não foram lidas por completo.' : 'Não dá para afirmar que não há pendências.'}{b.dados.gerado_em ? ` · ${fmtQuando(b.dados.gerado_em)}` : ''}</span></div>
+      </section>
+    );
+  }
   const vis = todas ? itens : itens.slice(0, 3);
   return (
     <section className="gv2-cartao gv2-prioridades" data-gv2-bloco="prioridades" data-gv2-estado={b.erro ? 'problema' : 'conectado'}>
-      {cab(<span className="gv2-selo gv2-selo--aviso">{acoes} {acoes === 1 ? 'ação' : 'ações'}</span>)}
+      {cab(<>
+        <span className="gv2-selo gv2-selo--aviso">{acoes} {acoes === 1 ? 'ação' : 'ações'}</span>
+        {/* verificação não completa: dita no cabeçalho mesmo com itens na lista (o que falta verificar não vira "só estas") */}
+        {(() => { const tv = textoVerificacao(b.dados!.verificacao); return tv && b.dados!.verificacao ? <span className="gv2-selo gv2-selo--aviso" data-gv2-verificacao={tv.estado}>{tv.texto}</span> : null; })()}
+      </>)}
       {b.erro && <Problema motivo="A atualização das prioridades falhou; abaixo, a última leitura válida." quando={b.okEm} onTentar={b.recarregar} tentando={b.atualizando} />}
       <ul className="gv2-prio-lista">
         {vis.map((p, k) => {
@@ -368,12 +416,11 @@ function BlocoAgenda({ b, fl }: { b: ReturnType<typeof useBloco<Agenda>>; fl: Fo
 
 // ── 4. Fontes e atualização ─────────────────────────────────────────
 /** Texto da fonte pelo estado EFETIVO: nunca "Atualizado" se um indicador dela está desatualizado ou com problema. */
-function textoFonte(f: Fonte, ef: { estado: Fonte['estado']; por: string[] }): string {
-  if (ef.estado === 'aguardando') return 'Aguardando conexão';
+function textoFonte(f: Fonte, ef: ReturnType<typeof fonteEfetiva>): string {
   const q = f.ultimo_sucesso ? `atualizado ${fmtQuando(f.ultimo_sucesso)}` : 'sem horário de atualização';
-  if (ef.estado !== f.estado && ef.por.length) return `${ef.estado === 'problema' ? 'Com problema' : 'Desatualizado'} · ${ef.por.join(', ')}`;
-  if (ef.estado === 'problema') return 'Com problema';
-  return ef.estado === 'desatualizada' ? `Desatualizado · ${q}` : q.charAt(0).toUpperCase() + q.slice(1);
+  if (ef.rotulo === 'Atualizado') return q.charAt(0).toUpperCase() + q.slice(1);
+  const partes = ef.partes.length ? ` (${ef.partes.join(', ')})` : '';
+  return `${ef.rotulo}${partes}${ef.estado === 'desatualizada' && f.ultimo_sucesso ? ` · último sucesso ${fmtQuando(f.ultimo_sucesso)}` : ''}`;
 }
 function BlocoFontes({ b, efs }: { b: ReturnType<typeof useBloco<Fonte[]>>; efs: { id: IdIndicador; e: Efetivo }[] }) {
   const [aberto, setAberto] = useState(false); const car = b.carregando && !b.dados;

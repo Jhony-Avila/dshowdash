@@ -11,6 +11,9 @@
   --ger-texto:      #e9e9f2;
   --ger-texto-dim:  #9a9ab2;
   --ger-azul:       #6366f1;   /* primária do dash (indigo do shell) */
+  /* links e ações secundárias (retorno do mockup P10, 2ª rodada): no ESCURO o #6366f1 dava 3,85:1 sobre o cartão #1a1a28 (< 4,5).
+     #818cf8 = 5,76:1 sobre #1a1a28 e 5,23:1 sobre #222234. O claro não muda (= --ger-azul do claro, 6,29:1 sobre #fff). */
+  --ger-link:       #818cf8;
   --ger-azul-ct:    #ffffff;
   --ger-roxo:       #8b5cf6;
   --ger-ok:         #22c55e;
@@ -35,6 +38,7 @@
   --ger-texto:      #1a1d29;
   --ger-texto-dim:  #5a6273;
   --ger-azul:       #4f46e5;
+  --ger-link:       #4f46e5;   /* igual ao de antes no claro */
   --ger-ok:         #15803d;
   --ger-warn:       #b45309;
   --ger-bad:        #dc2626;

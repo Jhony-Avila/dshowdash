@@ -19,6 +19,11 @@ export const NOME_INDICADOR: Record<IdIndicador, string> = {
   pedidos_bling: 'Pedidos lançados no Bling', negocios_ganhos: 'Negócios ganhos', funil_aberto: 'Funil aberto agora',
   atividade_vencida: 'Atividades vencidas', sem_proxima_atividade: 'Sem próxima atividade', conflito_agenda: 'Conflitos na agenda', agenda: 'Próximos compromissos',
 };
+/** Rótulo CURTO da parte afetada na linha de fontes: "Pipedrive · Com problema (funil)". */
+export const PARTE_INDICADOR: Record<IdIndicador, string> = {
+  pedidos_bling: 'pedidos', negocios_ganhos: 'negócios ganhos', funil_aberto: 'funil',
+  atividade_vencida: 'atividades vencidas', sem_proxima_atividade: 'próxima atividade', conflito_agenda: 'conflitos', agenda: 'agenda',
+};
 /** Nome COMPLETO da fonte (em 1440 também: "Google Calendar", nunca "Calendar"). */
 export const NOME_FONTE: Record<IdFonte, string> = {
   pipedrive: 'Pipedrive', bling: 'Bling', calendar: 'Google Calendar', asaas: 'Asaas', mercadolivre: 'Mercado Livre', lojaintegrada: 'Loja Integrada',
@@ -98,25 +103,33 @@ export function efetivo(id: IdIndicador, ind: IndicadorBruto, fontes: FontesLida
 }
 
 const PESO: Record<Fonte['estado'], number> = { conectada: 0, aguardando: 1, desatualizada: 2, problema: 3 };
+const TEXTO_ESTADO: Record<Fonte['estado'], string> = { conectada: 'Atualizado', desatualizada: 'Desatualizado', problema: 'Com problema', aguardando: 'Aguardando conexão' };
 
 /**
- * Estado da fonte na linha "Fontes e atualização" = o PIOR entre o estado declarado e o dos indicadores dela.
- * Devolve também quais indicadores pioraram a fonte (para o texto: "Desatualizado · Negócios ganhos").
+ * Linha "Fontes e atualização" (retorno do mockup P10, 2ª rodada): o estado e a parte afetada vêm do SERVIÇO
+ * (`rotulo_estado`, `afetado`); a tela só acrescenta o que ELA MESMA não conseguiu ler (um bloco que falhou aqui nunca deixa a
+ * fonte dele como "Atualizado"). Nunca melhora o estado do serviço.
+ * Formato: "Com problema (funil)" · "Desatualizado (negócios ganhos)" · "Atualizado às 18:42".
  */
-export function fonteEfetiva(f: Fonte, indicadores: { id: IdIndicador; e: Efetivo }[]): { estado: Fonte['estado']; por: string[] } {
-  let estado = f.estado; const por: string[] = [];
-  const dela = indicadores.filter((x) => x.e.fonte === f.fonte);
+export function fonteEfetiva(f: Fonte, indicadores: { id: IdIndicador; e: Efetivo }[]): { estado: Fonte['estado']; rotulo: string; partes: string[] } {
+  let estado = f.estado;
+  const partes: string[] = (f.afetado ?? []).map((a) => a.rotulo);
+  const ids = new Set((f.afetado ?? []).map((a) => a.id));
   const mapa = (e: EstadoBloco): Fonte['estado'] | null => (e === 'erro' ? 'problema' : e === 'desatualizado' ? 'desatualizada' : null);
-  for (const x of dela) {
-    const m = mapa(x.e.estado);
-    if (m && PESO[m] > PESO[estado] && estado !== 'aguardando') { estado = m; }
-    if (m && f.estado === 'conectada') por.push(NOME_INDICADOR[x.id]);
+  for (const x of indicadores.filter((y) => y.e.fonte === f.fonte)) {
+    const m = mapa(x.e.estado); if (!m) continue;
+    if (PESO[m] > PESO[estado] && estado !== 'aguardando') estado = m;
+    if (!ids.has(x.id)) { ids.add(x.id); partes.push(PARTE_INDICADOR[x.id]); }
   }
   for (const x of f.indicadores ?? []) {
-    const m = mapa(x.estado);
-    if (m && PESO[m] > PESO[estado] && estado !== 'aguardando') estado = m;
+    const m = mapa(x.estado); if (!m) continue;
+    if (PESO[m] > PESO[estado] && estado !== 'aguardando') estado = m;
+    if (!ids.has(x.id) && x.id in PARTE_INDICADOR) { ids.add(x.id); partes.push(PARTE_INDICADOR[x.id as IdIndicador]); }
   }
-  return { estado, por: [...new Set(por)] };
+  // o rótulo do serviço vale enquanto a tela não tiver piorado o estado; nunca "Atualizado" com parte afetada
+  let rotulo = estado === f.estado && f.rotulo_estado ? f.rotulo_estado : TEXTO_ESTADO[estado];
+  if (rotulo === 'Atualizado' && partes.length) rotulo = 'Dados parciais';
+  return { estado, rotulo, partes: [...new Set(partes)] };
 }
 
 /** "1 negócio sem valor" / "5 negócios sem valor" */

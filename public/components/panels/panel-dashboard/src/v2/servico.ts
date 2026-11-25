@@ -19,7 +19,13 @@ export interface Resumo { periodo: Periodo; pedidos_bling: PedidosBling; negocio
 
 export type IdPrioridade = 'atividade_vencida' | 'sem_proxima_atividade' | 'conflito_agenda';
 export interface Prioridade extends Base { id: IdPrioridade; quantidade: number | null; gravidade: 1 | 2 | 3; desde: string | null; responsaveis: number | null; detalhe: string | null }
-export interface Prioridades { gerado_em: string | null; itens: Prioridade[] }
+/** Verificação das prioridades, decidida pelo SERVIÇO (contrato com a ACIMA_ESQUERDA, retorno do mockup P10 2ª rodada).
+ *  A tela só exibe: completa → "Sem pendências"; parcial → "Verificação parcial · <fonte>"; não verificada → "Prioridades não verificadas". */
+export interface Verificacao {
+  estado: 'completa' | 'parcial' | 'nao_verificada';
+  fontes: { fonte: IdFonte; rotulo: string; estado: 'ok' | 'parcial' | 'desatualizado' | 'erro' | 'aguardando'; rotulo_estado: string }[];
+}
+export interface Prioridades { gerado_em: string | null; itens: Prioridade[]; verificacao?: Verificacao; /** pronto do serviço (9c0f45b3) */ sem_pendencias?: boolean }
 
 export interface ItemLista { deal_id: number; titulo: string; organizacao: string | null; responsavel: string | null; etapa: string | null; prazo: string | null; valor: number | null; url_pipedrive: string | null }
 /** total/responsaveis podem vir null quando a fonte não respondeu (aditivos do serviço 24e70e69: estado, motivo, paginas, ultimo_sucesso) */
@@ -32,7 +38,14 @@ export interface Compromisso { inicio: string; fim: string | null; titulo: strin
 export interface Agenda extends Base { itens: Compromisso[]; url_agenda: string | null }
 
 export type IdFonte = 'pipedrive' | 'bling' | 'calendar' | 'asaas' | 'mercadolivre' | 'lojaintegrada';
-export interface Fonte { fonte: IdFonte; estado: 'conectada' | 'desatualizada' | 'problema' | 'aguardando'; ultimo_sucesso: string | null; motivo: string | null; indicadores?: { id: string; estado: EstadoBloco }[] }
+export interface Fonte {
+  fonte: IdFonte; estado: 'conectada' | 'desatualizada' | 'problema' | 'aguardando'; ultimo_sucesso: string | null; motivo: string | null;
+  indicadores?: { id: string; estado: EstadoBloco }[];
+  /** do serviço (aditivo): o texto do estado ("Com problema", "Desatualizado", "Dados parciais", "Atualizado", "Aguardando conexão") */
+  rotulo_estado?: string;
+  /** do serviço (aditivo): só as partes que não estão ok, com o rótulo curto ("funil") */
+  afetado?: { id: string; rotulo: string; estado: EstadoBloco }[];
+}
 
 export class ErroV2 extends Error { constructor(public http: number, msg: string) { super(msg); } get semAcesso() { return this.http === 401 || this.http === 403; } }
 
@@ -66,6 +79,11 @@ function normalizarResumo(r: Resumo): Resumo {
     funil_aberto: { ...f, quantidade: contagem(f.quantidade), valor: dinheiro(f.valor), sem_valor: contagem(f.sem_valor) } };
 }
 // caminhos com .php (rota sem .php exigiria bloco novo no nginx = portão; ajuste 1 aceito da ACIMA_DIREITA)
+/** LEITURA ÚNICA (decisão do Jhony; serviço 74ea03ae/9c0f45b3 da ACIMA_ESQUERDA): cartões, prioridades, agenda e fontes da MESMA
+ *  leitura — a linha de fontes nunca diverge dos cartões. As rotas separadas ficam só para compatibilidade (e a lista paginada). */
+export interface Painel { leitura_em: string | null; periodo: Resumo['periodo']; resumo: Resumo; prioridades: Prioridades; agenda: Agenda; fontes: Fonte[] }
+export const lerPainel = (p: PeriodoV2, s?: AbortSignal) => ler<Painel>(`/painel.php?periodo=${p}`, s)
+  .then((x) => ({ ...x, resumo: normalizarResumo({ ...x.resumo, periodo: x.resumo?.periodo ?? x.periodo }) }));
 export const lerResumo = (p: PeriodoV2, s?: AbortSignal) => ler<Resumo>(`/resumo.php?periodo=${p}`, s).then(normalizarResumo);
 export const lerPrioridades = (s?: AbortSignal) => ler<Prioridades>('/prioridades.php', s);
 export const lerAgenda = (s?: AbortSignal) => ler<Agenda>('/agenda.php', s);
