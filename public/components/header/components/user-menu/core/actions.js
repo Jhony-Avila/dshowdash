@@ -56,12 +56,12 @@ function handleMenuAction(action, context) {
   const store = context.store;
   const onLogout = context.onLogout;
   store.setState({ isOpen: false });
-  emitUIAction(action, { action });
   if (logger && logger.debug) logger.debug(`Action: ${action}`);
   if (action === "logout" && onLogout) {
     onLogout();
     return;
   }
+  emitUIAction(action, { action });
   const route = ACTION_ROUTES[action];
   if (route) {
     navigateToRoute(route, MODULE_ID);

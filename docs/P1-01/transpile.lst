@@ -331,6 +331,7 @@ public/core/auth/bridges/auth-ready-dom-bridge.js
 public/core/auth/bridges/auth-redirect-controller.js
 public/core/auth/contracts/auth-contracts.js
 public/core/auth/index.js
+public/core/auth/logout-client.js
 public/core/auth/permissions/permissions-guard-enterprise.js
 public/core/auth/policies/security-policies-enterprise.js
 public/core/index.js

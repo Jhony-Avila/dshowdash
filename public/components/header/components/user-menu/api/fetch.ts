@@ -26,8 +26,9 @@
 'use strict';
 
 import { createUiPorts } from '/core/runtime/ports-profiles.js';
+import { encerrarSessao, type ResultadoLogout } from '/core/auth/logout-client.js';
 
-const VERSION = '7.8.0-NONFATAL-WARN';
+const VERSION = '7.7.0-ES6';
 const MODULE_ID = 'header.user-menu.api.fetch';
 
 const Ports = createUiPorts({ moduleId: MODULE_ID });
@@ -87,15 +88,14 @@ FetchAdapter.prototype.fetchCurrentUser = function() {
 };
 
 FetchAdapter.prototype.logout = function() {
+  // DSHOW-110: o cliente ÚNICO de logout (CSRF relido, espera a confirmação do servidor; falha de rede/CSRF = false, nunca sucesso)
   const self = this;
   self._metrics.requestCount++;
   self._metrics.lastRequestAt = Date.now();
-  const getToken = self._csrfToken ? Promise.resolve() : fetch('/api/auth/check.php', { method: 'GET', credentials: 'include' }).then(resp => { if (resp.ok) return resp.json(); return {}; }).then((data: Record<string, Record<string, Record<string, string>>>) => { if (data.data && data.data.session && data.data.session.csrf_token) self._csrfToken = data.data.session.csrf_token; else if (data.session && data.session.csrf_token) self._csrfToken = data.session.csrf_token; });
-  return getToken.then(() => {
-    const headers = { 'Content-Type': 'application/json' };
-    if (self._csrfToken) (headers as Record<string,unknown>)['X-CSRF-Token'] = self._csrfToken;
-    return fetch('/api/auth/logout.php', { method: 'POST', credentials: 'include', headers });
-  }).then(response => { self._metrics.successCount++; return response.ok; }).catch(error => { self._metrics.errorCount++; _log('warn', 'Logout error:', error.message); return false; });
+  return encerrarSessao().then((r: ResultadoLogout) => {
+    if (r.ok) self._metrics.successCount++; else { self._metrics.errorCount++; _log('warn', 'Logout não confirmado pelo servidor:', r.motivo); }
+    return r.ok;
+  });
 };
 
 FetchAdapter.prototype.get = function(endpoint: string) {

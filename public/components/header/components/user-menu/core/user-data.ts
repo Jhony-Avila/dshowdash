@@ -180,19 +180,21 @@ export function handleLogout(component: Record<string,unknown>) {
 
   // @ts-expect-error TS migration - TS2349
   component._announce('Saindo da conta...');
-  emitUIAction('logout', { confirmed: true });
 
-  const eb = getPort('eventBus');
-  if (eb && eb.emit) {
-    eb.emit(UI_EVENTS.ACTION, {
-      action: 'logout',
-      source: COMPONENT_MODULE_ID,
-      timestamp: Date.now()
-    });
-  }
-
+  // DSHOW-110: encerra NO SERVIDOR primeiro e espera a confirmação. Antes, a ação 'logout' saía antes da chamada; o roteador navegava
+  // para /login em 100 ms e o navegador abortava o POST /api/auth/logout.php (a sessão continuava viva no servidor).
   // @ts-expect-error TS migration - TS2339
-  return component.circuitBreaker.execute(() => component.api.logout()).then(() => {
+  return component.circuitBreaker.execute(() => component.api.logout()).then((confirmado: boolean) => {
+    if (!confirmado) throw new Error('logout não confirmado pelo servidor');
+    emitUIAction('logout', { confirmed: true });
+    const eb = getPort('eventBus');
+    if (eb && eb.emit) {
+      eb.emit(UI_EVENTS.ACTION, {
+        action: 'logout',
+        source: COMPONENT_MODULE_ID,
+        timestamp: Date.now()
+      });
+    }
     clearUser(component);
     const hns = getHardNavService();
     hns.redirect('/login', 'logout', COMPONENT_MODULE_ID);
