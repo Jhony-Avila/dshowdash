@@ -164,7 +164,7 @@ export interface PipeDailyMetric {
   date: string; deals_created: number; deals_won: number; deals_lost: number;
   value_won: number; value_created: number;
 }
-export interface PipeHourlyMetric { hour: string; api_calls: number; api_errors: number; token_cost: number; }
+export interface PipeHourlyMetric { hour: string; api_calls: number; api_errors: number; token_cost: number; /** Fase 0: 404/410 (registro apagado); null = hora ainda não recalculada */ api_errors_404?: number | null; }
 export interface PipeTopProduct {
   product_id: number | null; name: string; deals: number; qty: number;
   valor_total: number; valor_ganho: number;
@@ -177,6 +177,8 @@ export interface PipeMetrics {
   top_products: PipeTopProduct[]; owners: PipeOwnerRow[];
   coverage: { deals_com_produtos: number; itens: number; deals_ativos: number };
   days: number;
+  /** Fase 0: janela do ranking de vendedores (o período global; sem `periodo`, todo o histórico). */
+  owners_periodo?: { id: PipePeriodoId | null; de: string | null; ate: string | null; rotulo: string };
 }
 
 // Envelope generico de listagem paginada (persons/organizations/activities).
@@ -389,6 +391,8 @@ export interface PipeConversion {
     count: number; avg_dias: number | null; max_dias: number | null;
     buckets: { ate_7: number; d8_30: number; d31_90: number; mais_90: number };
   };
+  /** Fase 0: janela do ciclo (com `periodo`, os ganhos dela; sem, todo o histórico). */
+  periodo_ciclo?: { id: PipePeriodoId | null; de: string | null; ate: string | null; rotulo: string };
   stage_aging: PipeStageAging[];
   pipelines: { id: number; name: string | null }[];
   pipeline_id: number | null;

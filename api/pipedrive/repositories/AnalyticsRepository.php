@@ -254,7 +254,17 @@ final class PipeAnalyticsRepository
     // taxa etapa->etapa. Entregamos o que a base sustenta de forma honesta:
     // win-rate (fechados), ciclo add->won (com distribuicao) e idade dos
     // negocios abertos por etapa (estagnacao).
-    public function conversionCycle(?int $pipelineId = null): array
+    /**
+     * Fase 0 (25/11): a janela [de, ate] do período GLOBAL da tela, pela MESMA resolução do /summary
+     * (uma fonte de datas para KPIs, gráficos e rótulos). Devolve [de, ate, rotulo] — datas Y-m-d inclusive.
+     */
+    public function janelaDoPeriodo(?string $periodo): array
+    {
+        [$de, $ate, , , $rotulo] = $this->resolverPeriodo($periodo !== null && in_array($periodo, self::PERIODOS, true) ? $periodo : 'd30');
+        return [$de, $ate, $rotulo];
+    }
+
+    public function conversionCycle(?int $pipelineId = null, ?string $de = null, ?string $ate = null): array
     {
         $where = "d.is_deleted = 0";
         $params = [];
@@ -277,15 +287,23 @@ final class PipeAnalyticsRepository
 
         // Ciclo de vendas add_time -> won_time (dias) com distribuicao.
         $dd = "DATEDIFF(d.won_time, d.add_time)";
+        // Fase 0: com a janela do período global, MESMA regra do KPI "Ciclo médio" (metricasJanela): ganhos com
+        // won_time na janela (limite superior exclusivo), add_time presente e won_time >= add_time.
+        $janela = ''; $pc = $params;
+        if ($de !== null && $ate !== null) {
+            $janela = " AND d.won_time >= :ini AND d.won_time < :fim";
+            $pc[':ini'] = $de . ' 00:00:00';
+            $pc[':fim'] = date('Y-m-d', strtotime($ate . ' +1 day')) . ' 00:00:00';
+        }
         $stc = $this->pdo->prepare(
             "SELECT COUNT(*) n, ROUND(AVG({$dd})) avg_d, ROUND(MAX({$dd})) max_d,
                     SUM({$dd}<=7) b0, SUM({$dd} BETWEEN 8 AND 30) b1,
                     SUM({$dd} BETWEEN 31 AND 90) b2, SUM({$dd}>90) b3
                FROM pipe_deals d
               WHERE {$where} AND d.status='won'
-                    AND d.won_time IS NOT NULL AND d.add_time IS NOT NULL AND d.won_time >= d.add_time"
+                    AND d.won_time IS NOT NULL AND d.add_time IS NOT NULL AND d.won_time >= d.add_time{$janela}"
         );
-        $stc->execute($params);
+        $stc->execute($pc);
         $cy = $stc->fetch(PDO::FETCH_ASSOC) ?: [];
 
         // Idade media dos negocios ABERTOS por etapa (estagnacao).

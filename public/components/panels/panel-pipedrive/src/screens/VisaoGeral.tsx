@@ -136,11 +136,11 @@ export function VisaoGeral({ status, onConfig, onNegocios, onFunis, onAlertas }:
           <>
             <FaixaIndicadores periodo={periodo} onNegocios={onNegocios} />
 
-            <BlocoTendencia />
+            <BlocoTendencia periodo={periodo} />
 
-            <BlocoOperacao onNegocios={onNegocios} onFunis={onFunis} onAlertas={onAlertas} />
+            <BlocoOperacao periodo={periodo} onNegocios={onNegocios} onFunis={onFunis} onAlertas={onAlertas} />
 
-            <BlocoRankings />
+            <BlocoRankings periodo={periodo} />
 
             {/* Base sincronizada + uso da API */}
             <div className="pp-g12">
@@ -245,10 +245,10 @@ function FaixaIndicadores({ periodo, onNegocios }: {
           onClick={onNegocios ? () => onNegocios({ status: 'open' }) : undefined} />
       </div>
 
+      {/* Fase 0 (25/11): UMA fonte de datas — o mesmo texto do topo (per.comparacao, calculado no servidor).
+          Antes o rodapé refazia as datas com new Date('AAAA-MM-DD'), que é meia-noite UTC = véspera em Brasília. */}
       <p className="pp-cc-rodape" style={{ margin: '-8px 0 16px' }}>
-        Comparação com {data.periodo.dias} dias imediatamente anteriores
-        ({fmtData(data.periodo.de_anterior).slice(0, 10)} a {fmtData(data.periodo.ate_anterior).slice(0, 10)}).
-        “Em aberto agora” é a foto do momento e por isso não tem variação.
+        Variação contra {per.comparacao}. “Em aberto agora” é a foto do momento e por isso não tem variação.
       </p>
     </>
   );
@@ -273,6 +273,13 @@ function semanaKey(iso: string): string {
   const dd = String(dt.getDate()).padStart(2, '0');
   return `${dt.getFullYear()}-${mm}-${dd}`;
 }
+/** Fase 0: dias Y-m-d da janela [de, ate] por aritmética de calendário em UTC (sem fuso: 'AAAA-MM-DD' é dia civil). */
+function diasDaJanela(de: string, ate: string): string[] {
+  const out: string[] = [];
+  const t = new Date(`${de}T00:00:00Z`); const fim = new Date(`${ate}T00:00:00Z`);
+  while (t <= fim && out.length < 400) { out.push(t.toISOString().slice(0, 10)); t.setUTCDate(t.getUTCDate() + 1); }
+  return out;
+}
 function agrupar(daily: PipeDailyMetric[], gran: Gran, campo: 'value_won' | 'deals_won'): PontoXY[] {
   if (gran === 'dia') return daily.map((x) => ({ label: fmtDiaCurto(x.date), valor: x[campo] }));
   const acc = new Map<string, number>();
@@ -285,32 +292,42 @@ function agrupar(daily: PipeDailyMetric[], gran: Gran, campo: 'value_won' | 'dea
   return ordem.map((k) => ({ label: gran === 'mes' ? fmtMesCurto(k) : fmtDiaCurto(k), valor: acc.get(k) as number }));
 }
 
-function BlocoTendencia() {
+function BlocoTendencia({ periodo }: { periodo: PipePeriodoId }) {
   const pal = usePaleta();
   const [gran, setGran] = useState<Gran>('dia');
-  const { data, isLoading } = useQuery<PipeMetrics>({
-    queryKey: [...chaves.metrics, 365],
-    queryFn: ({ signal }) => apiGet<PipeMetrics>('/metrics', { days: 365 }, signal),
+  // Fase 0 (25/11): segue o período GLOBAL. A série vem do MESMO /summary dos KPIs (séries diárias densas da janela,
+  // lidas de pipe_deals) — a soma do gráfico é o KPI "Valor ganho", e o desfecho é "Negócios ganhos" × "perdidos".
+  const { data, isLoading } = useQuery<PipeSummary>({
+    queryKey: [...chaves.summary, periodo],
+    queryFn: ({ signal }) => apiGet<PipeSummary>('/summary', { periodo }, signal),
     refetchInterval: 120_000,
   });
-
-  const hoje = new Date().toISOString().slice(0, 10);
-  const daily = useMemo(() => (data?.daily ?? []).filter((x) => x.date <= hoje), [data, hoje]);
+  const per = data?.periodo;
+  const serie = (k: string) => data?.kpis.find((x) => x.chave === k)?.serie ?? [];
+  const daily: PipeDailyMetric[] = useMemo(() => {
+    if (!per) return [];
+    const vg = serie('valor_ganho'); const g = serie('ganhos'); const p = serie('perdidos');
+    return diasDaJanela(per.de, per.ate).map((d, i) => ({
+      date: d, value_won: vg[i] ?? 0, deals_won: g[i] ?? 0, deals_lost: p[i] ?? 0, deals_created: 0, value_created: 0,
+    }) as PipeDailyMetric);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
   const pontos = useMemo(() => agrupar(daily, gran, 'value_won'), [daily, gran]);
-  const totalValor = daily.reduce((a, x) => a + x.value_won, 0);
-  const totalGanhos = daily.reduce((a, x) => a + x.deals_won, 0);
+  const kpi = (k: string) => data?.kpis.find((x) => x.chave === k)?.valor;
+  const totalValor = kpi('valor_ganho') ?? 0;
+  const totalGanhos = kpi('ganhos') ?? 0;
 
-  // Desfecho do ano: ganhos x perdidos, os dois medidos na mesma janela da série.
   const desfecho: PontoXY[] = [
-    { label: 'Ganhos', valor: daily.reduce((a, x) => a + x.deals_won, 0) },
-    { label: 'Perdidos', valor: daily.reduce((a, x) => a + x.deals_lost, 0) },
+    { label: 'Ganhos', valor: Number(kpi('ganhos') ?? 0) },
+    { label: 'Perdidos', valor: Number(kpi('perdidos') ?? 0) },
   ];
   const totalDesfecho = desfecho[0].valor + desfecho[1].valor;
+  const rotulo = per?.rotulo ?? '';
 
   return (
     <div className="pp-g12">
       <EChartCard className="pp-c-8" titulo="Ganhos ao longo do tempo" altura={300}
-        subtitulo={`${fmtNum(totalGanhos)} ganhos · ${fmtBRL(totalValor)} nos últimos 12 meses`}
+        subtitulo={`${fmtNum(Number(totalGanhos))} ganhos · ${fmtBRL(Number(totalValor))} em valor ganho · ${rotulo}`}
         carregando={isLoading} vazio={pontos.length === 0}
         vazioMsg="Sem valor ganho registrado. A série se preenche conforme negócios são marcados como ganhos."
         acoes={
@@ -325,7 +342,7 @@ function BlocoTendencia() {
         aria={`Valor ganho por ${rotuloGran(gran).toLowerCase()}`} />
 
       <EChartCard className="pp-c-4" titulo="Desfecho dos fechados" altura={300}
-        subtitulo="Últimos 12 meses"
+        subtitulo={`Ganhos × perdidos fechados · ${rotulo}`}
         carregando={isLoading} vazio={totalDesfecho === 0}
         opcao={totalDesfecho > 0 ? optDonut(pal, desfecho, {
           formato: 'num', cores: [pal.ok, pal.danger],
@@ -338,8 +355,8 @@ function BlocoTendencia() {
 
 // ── Operação: etapas, ciclo e o que pede atenção ─────────────────────────────
 
-function BlocoOperacao({ onNegocios, onFunis, onAlertas }: {
-  onNegocios?: (f?: Record<string, string>) => void; onFunis?: () => void; onAlertas?: () => void;
+function BlocoOperacao({ periodo, onNegocios, onFunis, onAlertas }: {
+  periodo: PipePeriodoId; onNegocios?: (f?: Record<string, string>) => void; onFunis?: () => void; onAlertas?: () => void;
 }) {
   const pal = usePaleta();
 
@@ -349,8 +366,9 @@ function BlocoOperacao({ onNegocios, onFunis, onAlertas }: {
     refetchInterval: 120_000,
   });
   const { data: conv, isLoading: carregandoConv } = useQuery<PipeConversion>({
-    queryKey: chaves.conversion,
-    queryFn: ({ signal }) => apiGet<PipeConversion>('/conversion', undefined, signal),
+    // Fase 0: o ciclo segue o período GLOBAL, com a MESMA regra do KPI "Ciclo médio" (ganhos na janela).
+    queryKey: [...chaves.conversion, periodo],
+    queryFn: ({ signal }) => apiGet<PipeConversion>('/conversion', { periodo }, signal),
     refetchInterval: 120_000,
   });
   const { data: resumo } = useQuery<PipeSummary>({
@@ -399,7 +417,7 @@ function BlocoOperacao({ onNegocios, onFunis, onAlertas }: {
         aria="Valor em aberto por etapa do funil" />
 
       <EChartCard className="pp-c-4" titulo="Ciclo de vendas" altura={270}
-        subtitulo={conv?.cycle.avg_dias != null ? `Média de ${conv.cycle.avg_dias} dias entre criar e ganhar` : 'Dias entre criar e ganhar'}
+        subtitulo={`${conv?.cycle.avg_dias != null ? `Média de ${conv.cycle.avg_dias} dias entre criar e ganhar` : 'Dias entre criar e ganhar'}${conv?.periodo_ciclo ? ` · ganhos em ${conv.periodo_ciclo.rotulo}` : ''}`}
         carregando={carregandoConv} vazio={(conv?.cycle.count ?? 0) === 0}
         vazioMsg="Nenhum negócio ganho com datas completas para medir o ciclo."
         opcao={ciclo.length ? optColunas(pal, ciclo, { formato: 'num', cores: [pal.ok, pal.primary, pal.warn, pal.danger] }) : null}
@@ -438,11 +456,11 @@ function ItemAtencao({ rotulo, valor, cor, onClick }: { rotulo: string; valor: n
 
 // ── Rankings (GET /metrics) ──────────────────────────────────────────────────
 
-function BlocoRankings() {
+function BlocoRankings({ periodo }: { periodo: PipePeriodoId }) {
   const pal = usePaleta();
   const { data, isLoading } = useQuery<PipeMetrics>({
-    queryKey: [...chaves.metrics, 365],
-    queryFn: ({ signal }) => apiGet<PipeMetrics>('/metrics', { days: 365 }, signal),
+    queryKey: [...chaves.metrics, 365, periodo],
+    queryFn: ({ signal }) => apiGet<PipeMetrics>('/metrics', { days: 365, periodo }, signal),
     refetchInterval: 120_000,
   });
 
@@ -452,7 +470,7 @@ function BlocoRankings() {
   return (
     <div className="pp-g12">
       <EChartCard className="pp-c-6" titulo="Ranking de vendedores" altura={280}
-        subtitulo="Valor ganho acumulado"
+        subtitulo={`Valor ganho (não é faturamento) · ${data?.owners_periodo?.rotulo ?? ''}`}
         carregando={isLoading} vazio={owners.length === 0}
         vazioMsg="Nenhum vendedor com valor ganho registrado."
         opcao={owners.length ? optBarras(pal, owners.map((o) => ({ label: o.name, valor: o.valor_ganho })), { formato: 'brl', cor: pal.ok }) : null}
@@ -460,6 +478,11 @@ function BlocoRankings() {
 
       <div className="pp-card pp-c-6">
         <h3>Top produtos por valor</h3>
+        {/* Fase 0: o ranking soma os itens de produto dos negócios (pipe_deal_products) — SÓ os negócios com produtos
+            sincronizados, histórico inteiro; "Valor total" inclui abertos e perdidos, "Ganho" só os ganhos. */}
+        <p className="pp-cc-rodape" style={{ margin: '0 0 8px' }}>
+          Todo o histórico · só negócios com produtos lançados ({fmtNum(data?.coverage?.deals_com_produtos)} de {fmtNum(data?.coverage?.deals_ativos)} ativos) · “Valor total” inclui abertos e perdidos
+        </p>
         {produtos.length === 0 ? (
           <p className="pp-placeholder">
             Nenhum produto de negócio sincronizado ainda ({fmtNum(data?.coverage?.deals_com_produtos)} de {fmtNum(data?.coverage?.deals_ativos)} negócios ativos).
@@ -473,7 +496,11 @@ function BlocoRankings() {
               <tbody>
                 {produtos.map((p) => (
                   <tr key={p.product_id ?? p.name}>
-                    <td className="pp-td-title">{p.name}</td>
+                    {/* um item por linha: nome com vários itens (quebras de linha, ";" ou " + ") vira uma lista */}
+                    <td className="pp-td-title" style={{ whiteSpace: 'normal' }}>
+                      {String(p.name ?? '').split(/\r?\n|;\s*|\s\+\s/).map((x) => x.trim()).filter(Boolean)
+                        .map((x, i) => <div key={i}>{x}</div>)}
+                    </td>
                     <td className="ta-r">{fmtNum(p.deals)}</td>
                     <td className="ta-r">{fmtNum(p.qty)}</td>
                     <td className="ta-r">{fmtBRL(p.valor_total)}</td>
@@ -503,10 +530,14 @@ function UsoApi() {
   const pontos: PontoXY[] = hourly.map((h) => ({ label: (h.hour ?? '').slice(5, 16), valor: h.api_calls }));
   const chamadas = hourly.reduce((a, h) => a + h.api_calls, 0);
   const erros = hourly.reduce((a, h) => a + h.api_errors, 0);
+  // Fase 0: 404/410 = registro apagado no Pipedrive (tratado como exclusão local). Só mostra a separação se TODAS as
+  // horas já têm a contagem (null = hora ainda não recalculada; ausência não vira zero).
+  const temSep = hourly.length > 0 && hourly.every((h) => typeof h.api_errors_404 === 'number');
+  const e404 = temSep ? hourly.reduce((a, h) => a + (h.api_errors_404 as number), 0) : null;
 
   return (
     <EChartCard className="pp-c-5" titulo="Uso da API — últimas 72h" altura={220}
-      subtitulo={`${fmtNum(chamadas)} chamadas · ${fmtNum(erros)} erros`}
+      subtitulo={`${fmtNum(chamadas)} chamadas · ${fmtNum(erros)} erros${e404 !== null ? ` (${fmtNum(e404)} são 404 de registro apagado no Pipedrive, já tratados; ${fmtNum(erros - e404)} outros)` : ''}`}
       carregando={isLoading} vazio={pontos.length === 0}
       vazioMsg="Sem chamadas registradas nas últimas 72 horas."
       opcao={pontos.length ? optArea(pal, pontos, { formato: 'num', cor: erros > 0 ? pal.warn : pal.primary, nomeSerie: 'Chamadas' }) : null}

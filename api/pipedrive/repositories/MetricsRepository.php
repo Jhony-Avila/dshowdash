@@ -69,6 +69,9 @@ final class PipeMetricsRepository
         $blocos = [
             ['api_calls',  'COUNT(*)'],
             ['api_errors', "SUM(result='error')"],
+            // Fase 0: dos erros, os 404/410 = registro apagado no Pipedrive (lead/negócio excluído que chega por webhook;
+            // o QueueService já trata como exclusão local). Contados À PARTE para a tela não os confundir com falha.
+            ['api_errors_404', "SUM(result='error' AND http_status IN (404, 410))"],
             ['token_cost', 'COALESCE(SUM(token_cost),0)'],
         ];
         $total = 0;
@@ -127,7 +130,8 @@ final class PipeMetricsRepository
         $porHora = [];
         foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
             $h = $r['metric_hour'];
-            if (!isset($porHora[$h])) { $porHora[$h] = ['hour' => $h, 'api_calls' => 0.0, 'api_errors' => 0.0, 'token_cost' => 0.0]; }
+            // api_errors_404 = null quando a hora ainda não foi recalculada com essa chave (ausência ≠ zero)
+            if (!isset($porHora[$h])) { $porHora[$h] = ['hour' => $h, 'api_calls' => 0.0, 'api_errors' => 0.0, 'token_cost' => 0.0, 'api_errors_404' => null]; }
             $porHora[$h][$r['metric_key']] = (float)$r['metric_value'];
         }
         return array_values($porHora);
@@ -161,13 +165,21 @@ final class PipeMetricsRepository
     }
 
     /** Ranking de vendedores por valor ganho (live a partir de pipe_deals). */
-    public function ownerLeaderboard(int $limit = 10): array
+    public function ownerLeaderboard(int $limit = 10, ?string $de = null, ?string $ate = null): array
     {
         $limit = max(1, min($limit, 50));
-        $st = $this->pdo->query(
+        // Fase 0: com a janela do período global, "ganho" = won_time na janela (mesma regra do KPI Valor ganho).
+        // Sem janela, o histórico inteiro (comportamento antigo). valor_aberto é sempre a foto do agora.
+        $w = "d.status='won'"; $args = [];
+        if ($de !== null && $ate !== null) {
+            $w = "d.status='won' AND d.won_time >= ? AND d.won_time < ?";
+            $args = [$de . ' 00:00:00', date('Y-m-d', strtotime($ate . ' +1 day')) . ' 00:00:00'];
+            $args = array_merge($args, $args);
+        }
+        $st = $this->pdo->prepare(
             "SELECT d.owner_id, COALESCE(u.name, CONCAT('#', d.owner_id)) AS name,
-                    SUM(d.status='won')  AS ganhos,
-                    COALESCE(SUM(CASE WHEN d.status='won' THEN d.value END),0) AS valor_ganho,
+                    SUM({$w})  AS ganhos,
+                    COALESCE(SUM(CASE WHEN {$w} THEN d.value END),0) AS valor_ganho,
                     COALESCE(SUM(CASE WHEN d.status='open' THEN d.value END),0) AS valor_aberto
                FROM pipe_deals d
           LEFT JOIN pipe_users u ON u.pipedrive_id = d.owner_id
@@ -176,6 +188,7 @@ final class PipeMetricsRepository
            ORDER BY valor_ganho DESC
               LIMIT {$limit}"
         );
+        $st->execute($args);
         return array_map(static fn($r) => [
             'owner_id'     => $r['owner_id'] !== null ? (int)$r['owner_id'] : null,
             'name'         => $r['name'],

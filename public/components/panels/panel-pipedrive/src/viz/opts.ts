@@ -59,9 +59,11 @@ export function compacto(v: number, f: Formato): string {
   if (f === 'pct') return `${Math.round(v)}%`;
   const abs = Math.abs(v);
   const pre = f === 'brl' ? 'R$ ' : '';
-  if (abs >= 1e9) return `${pre}${(v / 1e9).toFixed(1).replace('.', ',')} bi`;
-  if (abs >= 1e6) return `${pre}${(v / 1e6).toFixed(1).replace('.', ',')} mi`;
-  if (abs >= 1e3) return `${pre}${Math.round(v / 1e3)} mil`;
+  // Fase 0 (25/11): até 2 casas, sem zeros à direita — 2.500 e 3.000 eram ambos "3 mil" (ticks repetidos no eixo).
+  const n = (x: number) => String(Number(x.toFixed(2))).replace('.', ',');
+  if (abs >= 1e9) return `${pre}${n(v / 1e9)} bi`;
+  if (abs >= 1e6) return `${pre}${n(v / 1e6)} mi`;
+  if (abs >= 1e3) return `${pre}${n(v / 1e3)} mil`;
   return `${pre}${fmtNum(v)}`;
 }
 

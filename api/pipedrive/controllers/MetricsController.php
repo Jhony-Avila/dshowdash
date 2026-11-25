@@ -13,16 +13,21 @@ final class PipeMetricsController
     public static function metrics(string $method, PDO $pdo): void
     {
         requireMethod(['GET']);
-        $q = pipe_query(['days']);
+        $q = pipe_query(['days', 'periodo']);
         $days = isset($q['days']) && is_numeric($q['days']) ? (int)$q['days'] : 90;
         $days = max(7, min($days, 365));
+
+        $per = isset($q['periodo']) && in_array($q['periodo'], PipeAnalyticsRepository::PERIODOS, true) ? (string)$q['periodo'] : null;
+        [$de, $ate, $rotulo] = $per !== null ? (new PipeAnalyticsRepository($pdo))->janelaDoPeriodo($per) : [null, null, 'Todo o histórico'];
 
         $m = new PipeMetricsRepository($pdo);
         ApiResponse::success([
             'daily'        => $m->readDaily($days),
             'hourly'       => $m->readHourly(72),
             'top_products' => $m->topProducts(15),
-            'owners'       => $m->ownerLeaderboard(10),
+            // Fase 0: o ranking segue o período GLOBAL (mesma resolução de datas do /summary)
+            'owners'       => $m->ownerLeaderboard(10, $de, $ate),
+            'owners_periodo' => ['id' => $per, 'de' => $de, 'ate' => $ate, 'rotulo' => $rotulo],
             'coverage'     => $m->productsCoverage(),
             'days'         => $days,
         ], ['ts' => date('c')]);

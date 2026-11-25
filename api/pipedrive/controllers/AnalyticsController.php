@@ -67,7 +67,12 @@ final class PipeAnalyticsController
             ? (int)$_GET['pipeline_id'] : null;
 
         $repo = new PipeAnalyticsRepository($pdo);
-        $cc = $repo->conversionCycle($pl);
+        // Fase 0: `periodo` (mesma allow-list do /summary) recorta o CICLO na janela global; sem ele, histórico inteiro.
+        $q = pipe_query(['periodo']);
+        $per = isset($q['periodo']) && in_array($q['periodo'], PipeAnalyticsRepository::PERIODOS, true) ? (string)$q['periodo'] : null;
+        [$de, $ate, $rotulo] = $per !== null ? $repo->janelaDoPeriodo($per) : [null, null, 'Todo o histórico'];
+        $cc = $repo->conversionCycle($pl, $de, $ate);
+        $cc['periodo_ciclo'] = ['id' => $per, 'de' => $de, 'ate' => $ate, 'rotulo' => $rotulo];
         $cc['pipelines']   = $repo->pipelinesList();
         $cc['pipeline_id'] = $pl;
         ApiResponse::success($cc, ['ts' => date('c')]);
