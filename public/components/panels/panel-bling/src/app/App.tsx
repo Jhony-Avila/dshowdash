@@ -13,6 +13,7 @@ import { api, ResumoHeader } from '../services/api';
 import { useTelaAtiva, useCarga, useFiltros, salvarFiltros, Filtros, FILTROS_INICIAIS } from './estado';
 import { ProvedorSelecao, BarraSelecao, useSelecao, Destino } from './selecao';
 import { baixar } from '../lib/exportar';
+import { useForaDoBling } from '../lib/foraDoBling';
 
 export function App() {
   return (
@@ -145,6 +146,7 @@ function Corpo() {
             subtitulo={tela.subtitulo}
             ultimaSync={resumo.meta?.ultima_sync ?? null}
           />
+          <AvisoForaDoBling />
 
           {customFaltando ? (
             <EstadoErro
@@ -163,6 +165,20 @@ function Corpo() {
           )}
         </main>
       </div>
+    </div>
+  );
+}
+
+/** Pedidos apagados no Bling ficam fora das vendas: a faixa diz quantos e quanto (valor desconhecido = "valor não informado"). */
+function AvisoForaDoBling() {
+  const f = useForaDoBling();
+  if (!f) return null;
+  const v = f.valor === null ? 'valor não informado' : f.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return (
+    <div role="status" data-bl-aviso="pedidos-fora-do-bling" style={{ margin: '0 0 12px', padding: '8px 12px', fontSize: 12.5, borderRadius: 'var(--bl-raio-sm)',
+      background: 'var(--bl-aviso-bg, transparent)', color: 'var(--bl-texto)', border: '1px solid var(--bl-aviso, currentColor)' }}>
+      {f.pedidos === 1 ? '1 pedido foi apagado no Bling' : `${f.pedidos.toLocaleString('pt-BR')} pedidos foram apagados no Bling`} ({v}) e
+      {f.pedidos === 1 ? ' fica' : ' ficam'} fora das vendas, da cobertura e dos agregados deste painel.
     </div>
   );
 }

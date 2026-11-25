@@ -12,14 +12,18 @@ import { PropsTela } from '../generic/TelaCatalogo';
 import { Grafico, tokens, opcaoWaterfall, opcaoPareto, opcaoBarras } from '../../viz/Echarts';
 import { MatrizQuadrantes } from '../../viz/D3';
 import { useSelecao } from '../../app/selecao';
+import { somaOuNulo, margemOuNulo, desconhecido, TOOLTIP_DESCONHECIDO, TEXTO_INDISPONIVEL, motivoIndisponivel } from '../../lib/ausencia';
 
 const GRID_INICIAL: EstadoGrid = { ordenar: '', direcao: 'desc', pagina: 1, limite: 50, busca: '' };
 
-function kpi(id: string, rotulo: string, valor: number, formato: string,
+function kpi(id: string, rotulo: string, valor: number | null, formato: string,
   semantica: 'ok' | 'atencao' | 'critico' = 'ok', tooltip: string | null = null): Kpi {
+  // null = desconhecido (pacote B): "—" com a explicação no tooltip — nunca zero.
   return {
     id, rotulo, valor, formato: formato as any, variacao: null, tendencia: 'estavel',
-    sparkline: null, drilldown: null, semantica, tooltip,
+    sparkline: null, drilldown: null, semantica: valor === null ? 'ok' : semantica,
+    tooltip: valor === null ? (tooltip ?? TOOLTIP_DESCONHECIDO) : tooltip,
+    rotuloNulo: valor === null ? '—' : undefined,
   };
 }
 
@@ -52,9 +56,22 @@ export function Rentabilidade({ filtros, aoMudarFiltros, larguraPainel }: PropsT
   const wf: any[] = carga.dados?.waterfall ?? [];
   const prejuizo: any[] = carga.dados?.prejuizo ?? [];
 
-  const soma = (c: string) => itens.reduce((s, i) => s + (Number(i[c]) || 0), 0);
+  // Ausência ≠ zero: total com qualquer linha desconhecida é desconhecido. Com `indisponivel` da API, o que depende
+  // dele é desconhecido mesmo com a lista vazia (somar nada daria R$ 0,00 — e não é zero).
+  const motivo = motivoIndisponivel(carga.dados?.indisponivel);
+  const DEPENDE_DO_CUSTO = new Set(['custo', 'lucro', 'margem_pct']);
+  const soma = (c: string) => (motivo === 'itens_desconhecidos' || (motivo === 'custo_desconhecido' && DEPENDE_DO_CUSTO.has(c))
+    ? null : somaOuNulo(itens.map(i => i[c])));
   const receita = soma('receita');
   const lucro = soma('lucro');
+  const deducoes = somaOuNulo([soma('comissao'), soma('taxas'), soma('impostos'), soma('frete')]);
+  const margemTotal = margemOuNulo(receita, receita !== null && lucro !== null ? receita - lucro : null);
+  const custoDesconhecido = motivo !== null || itens.some(i => desconhecido(i.custo)) || wf.some((p: any) => desconhecido(p.valor));
+  const motivoMatriz = motivoIndisponivel(matriz.dados?.indisponivel);
+  // Matriz: produto sem margem conhecida não tem posição — sai da matriz e é contado à parte.
+  const itensMatriz: any[] = (matriz.dados?.itens ?? []).filter((i: any) => !desconhecido(i.margem_pct) && !desconhecido(i.receita));
+  const semMargem = Number(matriz.dados?.sem_margem ?? 0) + ((matriz.dados?.itens ?? []).length - itensMatriz.length);
+  const prejuizoConhecido = prejuizo.filter((p: any) => !desconhecido(p.lucro));
 
   const colunas: ColunaGrid[] = [
     { id: 'rotulo', rotulo: DIMENSOES_RENT.find(d => d.id === dimensao)?.rotulo ?? 'Item', tipo: 'texto', largura: 250 },
@@ -75,6 +92,9 @@ export function Rentabilidade({ filtros, aoMudarFiltros, larguraPainel }: PropsT
     if (grid.ordenar) {
       arr.sort((a, b) => {
         const va = a[grid.ordenar]; const vb = b[grid.ordenar];
+        // Desconhecido vai para o fim nas duas direções (nunca é ordenado como zero).
+        const na = va === null || va === undefined, nb = vb === null || vb === undefined;
+        if (na || nb) return na === nb ? 0 : na ? 1 : -1;
         const cmp = typeof va === 'number' && typeof vb === 'number'
           ? va - vb : String(va).localeCompare(String(vb));
         return grid.direcao === 'asc' ? cmp : -cmp;
@@ -115,13 +135,15 @@ export function Rentabilidade({ filtros, aoMudarFiltros, larguraPainel }: PropsT
       <GradeKpis kpis={[
         kpi('receita', 'Receita líquida', receita, 'moeda'),
         kpi('custo', 'Custo', soma('custo'), 'moeda'),
-        kpi('deducoes', 'Deduções', soma('comissao') + soma('taxas') + soma('impostos') + soma('frete'), 'moeda',
+        kpi('deducoes', 'Deduções', deducoes, 'moeda',
           'ok', 'Comissões, taxas, impostos estimados e frete.'),
-        kpi('lucro', 'Lucro', lucro, 'moeda', lucro < 0 ? 'critico' : 'ok'),
-        kpi('margem', 'Margem', receita > 0 ? (lucro / receita) * 100 : 0, 'percentual',
-          lucro < 0 ? 'critico' : 'ok'),
-        kpi('prejuizo', 'Itens com prejuízo', prejuizo.length, 'inteiro',
-          prejuizo.length > 0 ? 'atencao' : 'ok'),
+        kpi('lucro', 'Lucro', lucro, 'moeda', lucro !== null && lucro < 0 ? 'critico' : 'ok'),
+        kpi('margem', 'Margem', margemTotal, 'percentual',
+          lucro !== null && lucro < 0 ? 'critico' : 'ok'),
+        // com o lucro indisponível para o conjunto (API `indisponivel`), não dá para contar prejuízo: "—", nunca 0
+        kpi('prejuizo', 'Itens com prejuízo', motivo ? null : prejuizoConhecido.length, 'inteiro',
+          prejuizoConhecido.length > 0 ? 'atencao' : 'ok',
+          custoDesconhecido ? 'Conta só os itens com custo conhecido; os de custo desconhecido não entram.' : null),
       ]} />
 
       <Secao titulo="Da receita ao lucro"
@@ -129,6 +151,11 @@ export function Rentabilidade({ filtros, aoMudarFiltros, larguraPainel }: PropsT
         <div className="bl-cartao" style={{ padding: '12px 14px', minWidth: 0 }}>
           <Grafico altura={larguraPainel < 980 ? 250 : 290} opcao={opcaoWaterfall(t, wf)}
             descricao="Waterfall da receita bruta até o lucro, passando por descontos, custo, comissões, taxas, impostos e frete." />
+          {custoDesconhecido && (
+            <p data-bl-aviso="custo-desconhecido" style={{ fontSize: 12, color: 'var(--bl-texto-2)', margin: '8px 0 0' }}>
+              {motivo ? TEXTO_INDISPONIVEL[motivo] : 'Há pedidos com custo de produto desconhecido: custo, lucro e margem aparecem como "—" e não são calculados.'}
+            </p>
+          )}
           <p style={{ fontSize: 10.5, color: 'var(--bl-texto-3)', margin: '8px 0 0' }}>
             {carga.dados.nota}
           </p>
@@ -138,11 +165,19 @@ export function Rentabilidade({ filtros, aoMudarFiltros, larguraPainel }: PropsT
       <Secao titulo="Matriz margem × volume"
         descricao="Onde está o resultado e onde está o esforço sem retorno. Corte pela mediana.">
         <div className="bl-cartao" style={{ padding: '12px 14px', minWidth: 0 }}>
-          {matriz.dados ? (
+          {matriz.dados && semMargem > 0 && (
+            <p data-bl-aviso="sem-margem" style={{ fontSize: 12, color: 'var(--bl-texto-2)', margin: '0 0 8px' }}>
+              {semMargem} {semMargem === 1 ? 'item ficou' : 'itens ficaram'} fora da matriz por não ter custo conhecido.
+            </p>
+          )}
+          {matriz.dados && (itensMatriz.length === 0 || desconhecido(matriz.dados.cortes?.margem_pct)) ? (
+            <EstadoVazio titulo="Sem itens com margem conhecida"
+              descricao={motivoMatriz ? TEXTO_INDISPONIVEL[motivoMatriz] : 'A matriz precisa do custo de produto para posicionar cada item.'} />
+          ) : matriz.dados ? (
             <MatrizQuadrantes
               itens={(quadrante
-                ? matriz.dados.itens.filter((i: any) => i.quadrante === quadrante)
-                : matriz.dados.itens
+                ? itensMatriz.filter((i: any) => i.quadrante === quadrante)
+                : itensMatriz
               ).map((i: any) => ({
                 id: i.id, sku: i.rotulo, produto: i.rotulo,
                 // A matriz é genérica: eixo X = giro, eixo Y = margem. Aqui o
@@ -166,14 +201,14 @@ export function Rentabilidade({ filtros, aoMudarFiltros, larguraPainel }: PropsT
         </div>
       </Secao>
 
-      {prejuizo.length > 0 && (
+      {prejuizoConhecido.length > 0 && (
         <Secao titulo="Itens com prejuízo"
           descricao="Onde a venda custa mais do que traz. Prioridade de revisão de preço ou custo.">
           <div className="bl-cartao" style={{ padding: '12px 14px', minWidth: 0 }}>
             <Grafico altura={Math.max(160, Math.min(300, prejuizo.length * 26 + 40))}
-              opcao={opcaoBarras(t, prejuizo.slice(0, 12).map((p: any) =>
+              opcao={opcaoBarras(t, prejuizoConhecido.slice(0, 12).map((p: any) =>
                 ({ rotulo: p.rotulo, valor: p.lucro })), 'moeda')}
-              descricao={`${prejuizo.length} itens com resultado negativo.`} />
+              descricao={`${prejuizoConhecido.length} itens com resultado negativo.`} />
           </div>
         </Secao>
       )}
@@ -231,7 +266,9 @@ export function CurvaAbc({ filtros, aoMudarFiltros, larguraPainel }: PropsTela) 
   if (!carga.dados) return <BlocoCarregando linhas={8} rotulo="Calculando curva ABC" />;
 
   const itens: any[] = carga.dados.itens ?? [];
-  const classes: any[] = carga.dados.classes ?? [];
+  // Pacote B: com `indisponivel`, as classes vêm zeradas por falta de dado — não mostrar "0 item(ns) · R$ 0" como se fosse zero.
+  const motivoAbc = motivoIndisponivel(carga.dados.indisponivel);
+  const classes: any[] = motivoAbc ? [] : carga.dados.classes ?? [];
   const formato = metrica === 'unidades' || metrica === 'frequencia' ? 'inteiro' : 'moeda';
 
   const filtrados = classe ? itens.filter(i => i.classe === classe) : itens;
@@ -313,7 +350,9 @@ export function CurvaAbc({ filtros, aoMudarFiltros, larguraPainel }: PropsTela) 
       <Secao titulo="Curva de concentração">
         <div className="bl-cartao" style={{ padding: '12px 14px', minWidth: 0 }}>
           {itens.length === 0 ? (
-            <EstadoVazio titulo="Sem itens no recorte" descricao="Ajuste o período ou a dimensão." />
+            motivoAbc
+              ? <EstadoVazio titulo="Curva indisponível nesta métrica" descricao={TEXTO_INDISPONIVEL[motivoAbc]} />
+              : <EstadoVazio titulo="Sem itens no recorte" descricao="Ajuste o período ou a dimensão." />
           ) : (
             <Grafico altura={larguraPainel < 980 ? 250 : 300}
               opcao={opcaoPareto(t, itens.slice(0, 30).map(i => ({ rotulo: i.rotulo, valor: i.valor })), formato)}

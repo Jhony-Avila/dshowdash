@@ -17,6 +17,7 @@ import { TelaSpec, GraficoSpec } from '../catalog';
 import { api, RespostaRecurso, Evolucao } from '../../services/api';
 import { Filtros, useCarga, useDebounce } from '../../app/estado';
 import { useSelecao, CampoSelecao, Destino } from '../../app/selecao';
+import { numOuNulo, somaOuNulo, mediaOuNulo } from '../../lib/ausencia';
 import {
   Grafico, tokens, opcaoLinhaTempo, opcaoBarras, opcaoPizza,
   opcaoFunil, opcaoPareto, opcaoDispersao,
@@ -255,14 +256,15 @@ function RenderGrafico({ spec, t, linhas, evolucao, aoSelecionar }: {
         descricao={`Participação de ${limitado.length} itens.`} />;
     case 'funil':
       return <Grafico altura={230}
-        opcao={opcaoFunil(t, limitado.map(i => ({ rotulo: i.rotulo, quantidade: i.valor })))}
+        opcao={opcaoFunil(t, limitado.filter(i => i.valor !== null).map(i => ({ rotulo: i.rotulo, quantidade: i.valor as number })))}
         aoClicar={clique}
         descricao={`Distribuição em ${limitado.length} etapas.`} />;
     case 'pareto':
       return <Grafico altura={250} opcao={opcaoPareto(t, limitado, formato)} aoClicar={clique}
         descricao={`Concentração acumulada entre ${limitado.length} itens.`} />;
     case 'dispersao': {
-      const pontos = limitado.map(i => ({ rotulo: i.rotulo, x: i.valor, y: i.secundario ?? 0, tamanho: i.valor }));
+      // Sem margem conhecida o ponto não tem altura: sai do gráfico (nunca vai para 0%).
+      const pontos = limitado.map(i => ({ rotulo: i.rotulo, x: i.valor, y: i.secundario ?? null, tamanho: i.valor ?? 1 }));
       return <Grafico altura={240}
         opcao={opcaoDispersao(t, pontos, 'Valor', 'Margem %', 'moeda', 'percentual')}
         descricao={`Dispersão de ${pontos.length} itens.`} />;
@@ -284,23 +286,27 @@ function agregarPor(
   linhas: Record<string, unknown>[],
   campo: string,
   campoValor?: string,
-): { rotulo: string; valor: number; secundario?: number }[] {
+): { rotulo: string; valor: number | null; secundario?: number | null }[] {
   if (!campo) return [];
-  const m = new Map<string, { valor: number; margem: number; n: number }>();
+  // Ausência ≠ zero: um grupo com QUALQUER valor desconhecido tem valor desconhecido (null);
+  // a margem média do grupo idem. Nunca soma parcial, nunca 0 no lugar do desconhecido.
+  const m = new Map<string, { valores: unknown[]; margens: unknown[] }>();
   for (const l of linhas) {
     const chave = String(l[campo] ?? '');
     if (!chave || chave === 'null' || chave === 'undefined') continue;
-    const v = campoValor ? Number(l[campoValor] ?? 0) : 1;
-    if (!Number.isFinite(v)) continue;
-    const atual = m.get(chave) ?? { valor: 0, margem: 0, n: 0 };
-    atual.valor += v;
-    atual.margem += Number(l.margem_pct ?? 0);
-    atual.n += 1;
+    const atual = m.get(chave) ?? { valores: [], margens: [] };
+    atual.valores.push(campoValor ? l[campoValor] : 1);
+    if ('margem_pct' in l) atual.margens.push(l.margem_pct);
     m.set(chave, atual);
   }
+  const chaveOrd = (v: number | null) => (v === null ? -Infinity : v);
   return [...m.entries()]
-    .map(([rotulo, d]) => ({ rotulo, valor: Math.round(d.valor * 100) / 100, secundario: d.n ? d.margem / d.n : 0 }))
-    .sort((a, b) => b.valor - a.valor);
+    .map(([rotulo, d]) => ({
+      rotulo,
+      valor: somaOuNulo(d.valores),
+      secundario: d.margens.length ? mediaOuNulo(d.margens) : null,
+    }))
+    .sort((a, b) => chaveOrd(b.valor) - chaveOrd(a.valor));
 }
 
 /* ── KPIs derivados ───────────────────────────────────────── */
@@ -308,29 +314,31 @@ function agregarPor(
 function montarKpis(
   tela: TelaSpec,
   linhas: Record<string, unknown>[],
-  totais: Record<string, number>,
+  totais: Record<string, number | null>,
   total: number,
 ): Kpi[] {
   if (!tela.kpis?.length) return [];
 
   return tela.kpis.map(k => {
-    let valor = 0;
+    // Ausência ≠ zero: total do servidor null, ou qualquer linha null na página, deixa o KPI desconhecido.
+    let valor: number | null = 0;
 
     if (k.agregacao === 'total') {
       valor = total;
     } else if (k.campo && totais[k.campo] !== undefined && k.agregacao === 'soma') {
       // O totalizador vem do SERVIDOR e cobre o conjunto filtrado inteiro —
-      // é sempre preferível a somar a página.
-      valor = totais[k.campo];
+      // é sempre preferível a somar a página. null do servidor continua null.
+      valor = numOuNulo(totais[k.campo]);
     } else if (k.campo) {
-      const vals = linhas.map(l => Number(l[k.campo!] ?? 0)).filter(Number.isFinite);
-      if (k.agregacao === 'soma') valor = vals.reduce((s, v) => s + v, 0);
-      if (k.agregacao === 'media') valor = vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : 0;
+      const vals = linhas.map(l => l[k.campo!]);
+      if (k.agregacao === 'soma') valor = somaOuNulo(vals);
+      if (k.agregacao === 'media') valor = mediaOuNulo(vals);
     }
 
     // Ticket médio é derivado, não somado.
     if (k.id === 'ticket' && k.agregacao === 'media' && totais[k.campo ?? ''] !== undefined && total > 0) {
-      valor = totais[k.campo!] / total;
+      const t = numOuNulo(totais[k.campo!]);
+      valor = t === null ? null : t / total;
     }
 
     const soPagina = k.agregacao === 'media' && (!k.campo || totais[k.campo] === undefined);
@@ -338,7 +346,8 @@ function montarKpis(
     return {
       id: k.id,
       rotulo: k.rotulo,
-      valor: Math.round(valor * 100) / 100,
+      valor: valor === null ? null : Math.round(valor * 100) / 100,
+      rotuloNulo: valor === null ? '—' : undefined,
       formato: k.formato as TipoFormato,
       variacao: null,
       tendencia: 'estavel',

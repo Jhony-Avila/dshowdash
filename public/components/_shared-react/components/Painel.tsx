@@ -14,7 +14,12 @@ export interface Kpi {
   formato: TipoFormato;
   variacao?: number | null;
   tendencia?: 'alta' | 'baixa' | 'estavel';
-  sparkline?: { data: string; valor: number }[] | null;
+  sparkline?: { data: string; valor: number | null }[] | null;
+  /**
+   * Texto quando `valor` é null. Padrão "Indisponível" (DSHOW-012: fonte fora do ar).
+   * Use "—" quando o valor é DESCONHECIDO com a fonte no ar (ex.: margem sem custo de produto).
+   */
+  rotuloNulo?: string;
   drilldown?: string | null;
   semantica?: 'ok' | 'atencao' | 'critico';
   tooltip?: string | null;
@@ -23,22 +28,29 @@ export interface Kpi {
 }
 
 /** Sparkline em SVG puro: 40 pontos não justificam carregar biblioteca. */
-function Sparkline({ pontos, cor }: { pontos: { valor: number }[]; cor: string }) {
+function Sparkline({ pontos, cor }: { pontos: { valor: number | null }[]; cor: string }) {
   if (!pontos || pontos.length < 2) return null;
-  const vals = pontos.map(p => p.valor);
-  const min = Math.min(...vals);
-  const max = Math.max(...vals);
+  // null = ponto desconhecido: a linha é interrompida ali (nunca desce a zero).
+  const vals = pontos.map(p => (typeof p.valor === 'number' && Number.isFinite(p.valor) ? p.valor : null));
+  const conhecidos = vals.filter((v): v is number => v !== null);
+  if (conhecidos.length < 2) return null;
+  const min = Math.min(...conhecidos);
+  const max = Math.max(...conhecidos);
   const amp = max - min || 1;
   const L = 100, A = 26;
+  let novoTrecho = true;
   const d = vals.map((v, i) => {
+    if (v === null) { novoTrecho = true; return ''; }
     const x = (i / (vals.length - 1)) * L;
     const y = A - ((v - min) / amp) * (A - 3) - 1.5;
-    return `${i === 0 ? 'M' : 'L'}${x.toFixed(2)},${y.toFixed(2)}`;
-  }).join(' ');
+    const cmd = novoTrecho ? 'M' : 'L'; novoTrecho = false;
+    return `${cmd}${x.toFixed(2)},${y.toFixed(2)}`;
+  }).filter(Boolean).join(' ');
+  const semLacuna = vals.every(v => v !== null);
   return (
     <svg viewBox={`0 0 ${L} ${A}`} preserveAspectRatio="none" aria-hidden
       style={{ width: '100%', height: 26, display: 'block', overflow: 'visible' }}>
-      <path d={`${d} L${L},${A} L0,${A} Z`} fill={cor} opacity={.1} />
+      {semLacuna && <path d={`${d} L${L},${A} L0,${A} Z`} fill={cor} opacity={.1} />}
       <path d={d} fill="none" stroke={cor} strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
     </svg>
   );
@@ -96,7 +108,7 @@ export function CartaoKpi({ kpi, aoAbrir }: {
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>
         {kpi.valor === null
-          ? <span style={{ color: 'var(--bl-texto-3)', fontWeight: 550 }} title={kpi.tooltip ?? undefined}>Indisponível</span>
+          ? <span style={{ color: 'var(--bl-texto-3)', fontWeight: 550 }} title={kpi.tooltip ?? undefined}>{kpi.rotuloNulo ?? 'Indisponível'}</span>
           : porTipo(kpi.valor, kpi.formato, true)}
       </div>
 

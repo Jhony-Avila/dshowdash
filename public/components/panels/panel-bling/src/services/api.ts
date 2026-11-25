@@ -1,3 +1,4 @@
+import { registrarMetaForaDoBling } from '../lib/foraDoBling';
 // panel-bling/src/services/api.ts — cliente da API interna
 // @version 1.0.0  @created 2026-07-30
 //
@@ -66,6 +67,7 @@ async function desembrulhar<T>(res: Response): Promise<Resposta<T>> {
     );
   }
 
+  registrarMetaForaDoBling(corpo.meta);
   return { dados: corpo.data as T, meta: corpo.meta as MetaResposta };
 }
 
@@ -132,7 +134,8 @@ export interface ColunaApi {
 export interface RespostaRecurso {
   itens: Record<string, unknown>[];
   colunas: ColunaApi[];
-  totais: Record<string, number>;
+  /** Totais do conjunto filtrado inteiro. null = alguma linha é desconhecida (pacote B: ausência ≠ zero). */
+  totais: Record<string, number | null>;
   facetas: Record<string, { valor: string; quantidade: number }[]>;
 }
 
@@ -140,7 +143,7 @@ export interface KpiApi {
   id: string; rotulo: string; valor: number | null; formato: string;   // null = fonte indisponível (DSHOW-012)
   disponibilidade?: { estado: string; motivo?: string; fonte?: string } | null;
   variacao: number | null; tendencia: string;
-  sparkline: { data: string; valor: number }[] | null;
+  sparkline: { data: string; valor: number | null }[] | null;
   drilldown: string | null; semantica: 'ok' | 'atencao' | 'critico';
   tooltip: string | null; definicao?: string;
 }
@@ -158,19 +161,25 @@ export interface Ocorrencia {
 
 export interface SerieEvolucao {
   id: string; rotulo: string; formato: string;
-  eixo: 'esquerda' | 'direita'; pontos: { data: string; valor: number }[];
+  eixo: 'esquerda' | 'direita';
+  /** valor null = desconhecido (ex.: margem de dia com custo desconhecido): lacuna, nunca zero. */
+  pontos: { data: string; valor: number | null }[];
+  /** Série de apoio: insumo de cálculo (ex.: custo para a margem acumulada), não é desenhada. */
+  apoio?: boolean;
 }
 
 export interface Evolucao {
   granularidade: string;
   series: SerieEvolucao[];
-  media_movel: Record<string, { data: string; valor: number }[]>;
+  media_movel: Record<string, { data: string; valor: number | null }[]>;
 }
 
 export interface Sankey {
   nos: { id: string; nome: string; tipo?: string }[];
   links: { origem: string; destino: string; valor: number; quantidade?: number }[];
   nota?: string;
+  /** Pacote B: o custo de produto é desconhecido em parte do conjunto; o nó de custo foi omitido. */
+  custo_desconhecido?: boolean;
 }
 
 export interface RespostaOverview {

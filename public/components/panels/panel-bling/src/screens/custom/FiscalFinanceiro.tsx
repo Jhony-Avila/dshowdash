@@ -5,7 +5,7 @@ import React from 'react';
 import {
   DataGrid, EstadoGrid, ColunaGrid, GradeKpis, Kpi, Secao, BarraFiltros,
   EstadoErro, BlocoCarregando, Drawer, Badge, LinhaDoTempo, EtapaLinha,
-  moeda, inteiro, data as fmtData,
+  EstadoVazio, moeda, inteiro, data as fmtData,
 } from '@shared';
 import { api, RespostaRecurso } from '../../services/api';
 import { useCarga, useDebounce } from '../../app/estado';
@@ -13,6 +13,7 @@ import { PropsTela } from '../generic/TelaCatalogo';
 // A tela financeira reusa o MESMO componente D3 do fluxo empresarial —
 // não existe um segundo Sankey no projeto.
 import { SankeyD3 as SankeyFinanceiro } from '../../viz/D3';
+import { numOuNulo, TEXTO_INDISPONIVEL, motivoIndisponivel } from '../../lib/ausencia';
 import { Grafico, tokens, opcaoFunil } from '../../viz/Echarts';
 
 const GRID_INICIAL: EstadoGrid = { ordenar: '', direcao: 'desc', pagina: 1, limite: 50, busca: '' };
@@ -114,7 +115,8 @@ export function NotasFiscais({ filtros, aoMudarFiltros, larguraPainel }: PropsTe
         kpi('rejeitadas', 'Rejeitadas', conta('rejeitada'), 'inteiro', conta('rejeitada') > 0 ? 'critico' : 'ok'),
         kpi('canceladas', 'Canceladas', conta('cancelada'), 'inteiro'),
         kpi('inutilizadas', 'Inutilizadas', conta('inutilizada'), 'inteiro'),
-        kpi('valor', 'Valor emitido', totais.valor ?? 0, 'moeda'),
+        // Ausência ≠ zero: total desconhecido é "—" (a fonte está no ar), nunca R$ 0,00.
+        { ...kpi('valor', 'Valor emitido', numOuNulo(totais.valor), 'moeda'), rotuloNulo: '—' },
       ]} />
 
       <div style={{ display: 'grid', gridTemplateColumns: duas ? '1fr 1fr' : '1fr', gap: 14, marginTop: 18 }}>
@@ -441,8 +443,33 @@ export function FluxoCaixa({ filtros, aoMudarFiltros, larguraPainel }: PropsTela
         <div className="bl-cartao" style={{ padding: '12px 14px', minWidth: 0 }}>
           {sankey.dados ? (
             <>
-              <SankeyFinanceiro dados={sankey.dados} altura={larguraPainel < 980 ? 260 : 320} />
-              {sankey.dados.prejuizo_total > 0 && (
+              {/* DSHOW-115: "indisponível" SÓ pelo campo explícito do backend (`indisponivel` com motivo). Sem nós e sem `indisponivel` =
+                  período com valores CONHECIDOS e zerados — tela própria, nunca "indisponível" deduzido de zeros. */}
+              {sankey.dados.nos.length === 0 && fluxoMarcadoIndisponivel(sankey.dados)
+                ? <span data-bl-fluxo="indisponivel"><EstadoVazio titulo="Fluxo indisponível" descricao={textoFluxoIndisponivel(sankey.dados)} /></span>
+                : sankey.dados.nos.length === 0
+                  ? <span data-bl-fluxo="zerado"><EstadoVazio titulo="Nenhum valor no período" descricao="As vendas do período foram lidas por completo e somam zero: não há valor para distribuir (zero conhecido, não é falta de dado)." /></span>
+                  : <SankeyFinanceiro dados={sankey.dados} altura={larguraPainel < 980 ? 260 : 320} />}
+              {sankey.dados.nos.length > 0 && (sankey.dados.custo_desconhecido || motivoIndisponivel((sankey.dados as any).indisponivel)) && (
+              <p data-bl-aviso="fluxo-custo-desconhecido" style={{ fontSize: 12, color: 'var(--bl-texto-2)', margin: '8px 0 0' }}>
+                {motivoIndisponivel((sankey.dados as any).indisponivel) === 'valores_desconhecidos'
+                  ? TEXTO_INDISPONIVEL.valores_desconhecidos
+                  : 'Parte dos pedidos tem custo de produto desconhecido: o fluxo não mostra custo nem margem (não é zero).'}
+              </p>
+              )}
+              {sankey.dados.nos.length > 0 && Array.isArray((sankey.dados as any).links_zero) && (sankey.dados as any).links_zero.length > 0 && (
+              <p data-bl-aviso="fluxo-links-zero" style={{ fontSize: 12, color: 'var(--bl-texto-3)', margin: '6px 0 0' }}>
+                Zero no período (valor conhecido): {(sankey.dados as any).links_zero.map((l: { origem: string; destino: string }) => `${l.origem} → ${l.destino}`).join(' · ')}.
+              </p>
+              )}
+              {/* 32e46b62: ligações com valor desconhecido NUNCA somem em silêncio — cada uma é listada (não é zero) */}
+              {Array.isArray((sankey.dados as any).links_desconhecidos) && (sankey.dados as any).links_desconhecidos.length > 0 && (
+              <p data-bl-aviso="fluxo-links-desconhecidos" style={{ fontSize: 12, color: 'var(--bl-texto-2)', margin: '6px 0 0' }}>
+                Valor desconhecido (fora do desenho, não é zero): {(sankey.dados as any).links_desconhecidos
+                  .map((l: { origem: string; destino: string }) => `${l.origem} → ${l.destino}`).join(' · ')}.
+              </p>
+              )}
+              {!sankey.dados.custo_desconhecido && !(sankey.dados as any).indisponivel && sankey.dados.prejuizo_total > 0 && (
                 <div style={{
                   marginTop: 10, padding: '7px 10px', fontSize: 11.5,
                   borderRadius: 'var(--bl-raio-sm)', background: 'var(--bl-erro-bg)',
@@ -461,4 +488,25 @@ export function FluxoCaixa({ filtros, aoMudarFiltros, larguraPainel }: PropsTela
       </Secao>
     </div>
   );
+}
+
+/** Fluxo "indisponível" SÓ pelos indicadores EXPLÍCITOS do backend (DSHOW-115, B a03ec6cd): `fluxo_indisponivel` / `fluxo_zerado`.
+ *  Backend sem esses campos (anterior ao a03ec6cd): `indisponivel` com qualquer valor, ou ligações desconhecidas. Nunca deduzido de zeros. */
+function fluxoMarcadoIndisponivel(d: unknown): boolean {
+  const x = d as { indisponivel?: unknown; links_desconhecidos?: unknown; fluxo_indisponivel?: unknown; fluxo_zerado?: unknown };
+  if (x.fluxo_indisponivel === true) return true;
+  if (x.fluxo_zerado === true) return false;
+  if (typeof x.fluxo_indisponivel === 'boolean') return false;   // contrato novo: false explícito = não indisponível
+  return (x.indisponivel !== null && x.indisponivel !== undefined && x.indisponivel !== '')
+    || (Array.isArray(x.links_desconhecidos) && x.links_desconhecidos.length > 0);
+}
+/** Texto do fluxo indisponível: o motivo do backend quando vem (`motivo_indisponivel`, ex.: leitura sem cobertura do período). */
+function textoFluxoIndisponivel(d: unknown): string {
+  const x = d as { indisponivel?: unknown; motivo_indisponivel?: unknown };
+  const m = motivoIndisponivel(x.indisponivel);
+  if (m) return TEXTO_INDISPONIVEL[m];
+  if (x.indisponivel === 'leitura_sem_cobertura') {
+    return `A leitura dos pedidos do Bling não cobre o período inteiro${typeof x.motivo_indisponivel === 'string' && x.motivo_indisponivel ? ` (${x.motivo_indisponivel})` : ''}: o fluxo não é desenhado e não é zero.`;
+  }
+  return 'O Bling não informou todos os valores do período: o fluxo não é desenhado (não é zero).';
 }
