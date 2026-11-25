@@ -109,7 +109,11 @@ export function NotasFiscais({ filtros, aoMudarFiltros, larguraPainel }: PropsTe
         aoLimpar={() => aoMudarFiltros({ periodo: '30d', situacao: '' })} />
 
       <GradeKpis kpis={[
-        kpi('emitidas', 'Emitidas', carga.meta?.total ?? 0, 'inteiro'),
+        // 115C trilha B (P10.1): "Emitidas" é a contagem FISCAL do servidor (b8e4309b), não o meta.total da paginação — com o filtro
+        // "situação não mapeada" as não mapeadas viravam "Emitidas". Campo ausente ou não numérico → null ("Indisponível", a convenção do
+        // GradeKpis para ausência), nunca 0 nem meta.total.
+        kpi('emitidas', 'Emitidas', emitidasFiscais(carga.dados), 'inteiro', 'ok',
+          emitidasFiscais(carga.dados) === null && carga.dados ? 'A resposta não trouxe a contagem fiscal de notas emitidas' : null),
         kpi('autorizadas', 'Autorizadas', conta('autorizada'), 'inteiro'),
         kpi('pendentes', 'Pendentes', conta('pendente'), 'inteiro', conta('pendente') > 0 ? 'atencao' : 'ok'),
         kpi('rejeitadas', 'Rejeitadas', conta('rejeitada'), 'inteiro', conta('rejeitada') > 0 ? 'critico' : 'ok'),
@@ -296,6 +300,12 @@ function Campo({ rotulo, valor }: { rotulo: string; valor: React.ReactNode }) {
       <div style={{ fontSize: 12.5 }}>{valor}</div>
     </div>
   );
+}
+
+/** 115C (P10.1): contagem fiscal "Emitidas" da resposta de /resources/invoices; ausência → null ("Indisponível"), nunca 0. */
+function emitidasFiscais(dados: RespostaRecurso | null | undefined): number | null {
+  const v = dados?.contagem_fiscal?.emitidas;
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 
 function kpi(id: string, rotulo: string, valor: number | null, formato: string,

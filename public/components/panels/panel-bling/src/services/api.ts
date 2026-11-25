@@ -137,6 +137,8 @@ export interface RespostaRecurso {
   /** Totais do conjunto filtrado inteiro. null = alguma linha é desconhecida (pacote B: ausência ≠ zero). */
   totais: Record<string, number | null>;
   facetas: Record<string, { valor: string; quantidade: number }[]>;
+  /** 115C (P10.1, b8e4309b): só em /resources/invoices — contagem fiscal do conjunto filtrado (meta.total é só a paginação). */
+  contagem_fiscal?: { emitidas: number; fora_das_emitidas: number };
 }
 
 export interface KpiApi {
