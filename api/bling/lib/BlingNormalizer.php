@@ -55,12 +55,13 @@ final class BlingNormalizer
     /**
      * Codex DSHOW-115 (P6.1): id EXTERNO do Bling validado no valor BRUTO, antes de qualquer coerção — a MESMA regra estrita na sincronização normal,
      * na releitura geral e na releitura de pedidos: só inteiro > 0 ou texto ^[1-9][0-9]{0,19}$. Booleano (true virava "1"), float, array, vazio,
-     * "0", "01", com espaço etc. = não informado (null) → quem grava preserva o conhecido.
+     * "0", "01", com espaço, com quebra de linha no início OU no fim etc. = não informado (null) → quem grava preserva o conhecido.
      */
     public static function idExterno(mixed $v): ?string
     {
         if (is_int($v)) { return $v > 0 ? (string) $v : null; }
-        return (is_string($v) && preg_match('/^[1-9][0-9]{0,19}$/', $v)) ? $v : null;
+        // revisão da ACIMA_ESQUERDA (SEGURAR 25018fec): `$` no PHP aceita um "\n" no FIM ("205777\n" passava) → \z = fim ABSOLUTO do texto
+        return (is_string($v) && preg_match('/^[1-9][0-9]{0,19}\z/', $v)) ? $v : null;
     }
 
     /** Valor BRUTO de um caminho (sem trim, sem cast); null se ausente. */

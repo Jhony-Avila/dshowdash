@@ -100,7 +100,7 @@ function bling_correlation_id(): string
         return $id;
     }
     $vindo = $_SERVER['HTTP_X_CORRELATION_ID'] ?? '';
-    if (is_string($vindo) && preg_match('/^[A-Za-z0-9\-]{8,64}$/', $vindo)) {
+    if (is_string($vindo) && preg_match('/^[A-Za-z0-9\-]{8,64}\z/', $vindo)) {
         return $id = $vindo;
     }
     return $id = 'bl-' . bin2hex(random_bytes(8));
@@ -134,7 +134,7 @@ function bling_filtros(): array
 {
     $periodo = bling_str('periodo', '30d', 12);
     $fim     = bling_str('ate', date('Y-m-d'), 10);
-    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fim)) {
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}\z/', $fim)) {   // \z: `$` aceitaria "\n" no fim (revisão da ACIMA_ESQUERDA, 24/11)
         $fim = date('Y-m-d');
     }
 
@@ -148,7 +148,7 @@ function bling_filtros(): array
     };
 
     $inicio = bling_str('de', '', 10);
-    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $inicio)) {
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}\z/', $inicio)) {
         $inicio = date('Y-m-d', strtotime("$fim -" . ($dias - 1) . " days"));
     }
 
