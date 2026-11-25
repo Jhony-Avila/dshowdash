@@ -29,7 +29,7 @@ export function mensagemSessao(codigo: string): string {
 /** Entrar de novo resolve? (sim para sessão revogada/expirada; não para usuário desativado). */
 export const sessaoReentravel = (codigo: string) => codigo !== 'USER_DISABLED';
 /** Codex DSHOW-114 (P9): TRÊS estados de sessão. Só a saída CONFIRMADA vale; o resto é DESCONHECIDO e nunca vira saída nem entrada.
- *  - encerrada: logout 2xx confirmado, ou check 200 `authenticated:false` (a sessão anterior já tinha acabado);
+ *  - encerrada: logout 2xx com o envelope `ok:true`, ou check 200 `authenticated:false` (a sessão acabou);
  *  - desconhecido: check 503 SESSION_CHECK_UNAVAILABLE, rede, timeout, 403 de CSRF, 5xx. */
 export type SaidaSessao = { estado: 'encerrada'; sessaoAntiga: string | null } | { estado: 'desconhecido'; motivo: string };
 type Checagem = { estado: 'autenticado'; token: string | null; csrf: string } | { estado: 'nao_autenticado' } | { estado: 'desconhecido'; motivo: string };
@@ -50,7 +50,7 @@ export async function checarSessao(): Promise<Checagem> {
 }
 
 /** Encerra a sessão do Dash pelo mesmo caminho do menu → Sair (check.php → POST /api/auth/logout.php com o CSRF) e SÓ devolve "encerrada"
- *  com prova: logout 2xx, ou check confirmando que não havia sessão. Mesma regra do cliente único `core/auth/logout-client` (`ok:true`). */
+ *  com prova: logout 2xx COM o envelope `ok:true`, ou check confirmando que a sessão acabou. 2xx ambíguo = desconhecido (DSHOW-115). */
 export async function encerrarSessaoDoDash(): Promise<SaidaSessao> {
   const c = await checarSessao();
   if (c.estado === 'nao_autenticado') return { estado: 'encerrada', sessaoAntiga: null };
@@ -59,9 +59,23 @@ export async function encerrarSessaoDoDash(): Promise<SaidaSessao> {
   try {
     const s = await fetch('/api/auth/logout.php', { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: p.sinal,
       headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(c.csrf ? { 'X-CSRF-Token': c.csrf } : {}) }, body: '{}' });
-    await s.text().catch(() => '');
-    return s.ok ? { estado: 'encerrada', sessaoAntiga: c.token } : { estado: 'desconhecido', motivo: `logout ${s.status}` };
+    const corpo = await s.text().catch(() => '');
+    if (!s.ok) return { estado: 'desconhecido', motivo: `logout ${s.status}` };
+    // DSHOW-115 (NO-GO da P9): 2xx sozinho NÃO confirma. Só o envelope de sucesso que o logout.php define (ApiResponse::success →
+    // `{"ok":true,…}` em JSON) é saída confirmada. 2xx com HTML, JSON inválido ou `ok:false` é AMBÍGUO = desconhecido, a não ser que
+    // o check.php PROVE que a sessão acabou (authenticated:false). Nada de /login sem prova.
+    if (envelopeDeSucesso(s, corpo)) return { estado: 'encerrada', sessaoAntiga: c.token };
+    const prova = await checarSessao();
+    if (prova.estado === 'nao_autenticado') return { estado: 'encerrada', sessaoAntiga: c.token };
+    return { estado: 'desconhecido', motivo: `logout ${s.status} sem confirmação` };
   } catch { return { estado: 'desconhecido', motivo: 'rede ou tempo esgotado' }; } finally { p.fim(); }
+}
+
+/** Envelope de sucesso do POST /api/auth/logout.php (ApiResponse::success): JSON com `ok === true`. Qualquer outra coisa não confirma. */
+export function envelopeDeSucesso(r: { status: number; headers: { get(n: string): string | null } }, corpo: string): boolean {
+  if (r.status < 200 || r.status > 299) return false;
+  if (!/application\/json/i.test(r.headers.get('content-type') ?? '')) return false;
+  try { const j = JSON.parse(corpo); return !!j && typeof j === 'object' && j.ok === true; } catch { return false; }
 }
 
 /** "Entrar novamente": encerra a sessão (acima) e, SÓ com a saída confirmada, abre a entrada do Dash (/login) em OUTRA aba — a fila de fotos e

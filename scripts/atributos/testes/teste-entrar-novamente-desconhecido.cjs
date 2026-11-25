@@ -90,6 +90,36 @@ const ABRIR = `window.__abertos = []; window.open = (u, t) => { const reg = { u:
       afirma('B. sessão antiga ainda ativa (mesmo token): "Continuar" NÃO retoma e avisa "A sessão anterior ainda está ativa"', s.leituras === l1 && /sessão anterior ainda está ativa/.test(t) && (await token(pg)) === tok0, t);
       await pg.context().close(); }
 
+    // ── D. (DSHOW-115, NO-GO da P9) logout 2xx AMBÍGUO — HTML, JSON inválido, ok:false — com a sessão antiga ATIVA: não é saída confirmada.
+    //    O aviso fica, "Tentar de novo" disponível, nenhuma navegação a /login (a aba do clique é fechada), nenhuma foto gravada.
+    const AMBIGUOS = [
+      ['HTML', { status: 200, contentType: 'text/html; charset=utf-8', body: '<!doctype html><html><body>Sessão encerrada</body></html>' }],
+      ['JSON inválido', { status: 200, contentType: 'application/json', body: '{"ok":tru' }],
+      ['ok:false', { status: 200, contentType: 'application/json', body: '{"ok":false,"data":null,"error":"LOGOUT_FAILED"}' }],
+    ];
+    for (const [nome, resp] of AMBIGUOS) {
+      const pg = await nova(); const s = await simular(pg, 'revogada'); await abrir(pg);
+      await pg.click('.at-fixo button[role="tab"]:has-text("Fotos")'); await pg.waitForSelector(`${AV} button:has-text("Entrar novamente")`, { timeout: 15000 });
+      const tok0 = await token(pg); const navs = []; pg.on('framenavigated', (f) => { if (f === pg.mainFrame()) navs.push(new URL(f.url()).pathname); });
+      await pg.route('**/api/auth/logout.php', (r) => r.fulfill(resp));   // 2xx que não encerrou nada no servidor
+      await pg.click(`${AV} button:has-text("Entrar novamente")`); await pg.waitForSelector(`${AV} [data-at-entrar-nao-saiu]`, { timeout: 20000 }).catch(() => {});
+      const ab = await pg.evaluate(() => window.__abertos); const t = await pg.textContent(AV).catch(() => '');
+      afirma(`D. logout 200 com ${nome} e sessão antiga ATIVA: saída DESCONHECIDA — aviso fica com "Tentar de novo", sem "Continuar"`,
+        (await fase(pg, AV)) === 'nao_saiu' && !!(await pg.$(`${AV} button:has-text("Tentar de novo")`)) && !(await pg.$(`${AV} button:has-text("Continuar")`)), t.slice(0, 200));
+      afirma(`D. ${nome}: nenhuma navegação a /login (aba do clique FECHADA sem destino; esta aba não navegou), nenhuma foto gravada, sessão antiga ainda ativa`,
+        ab.length === 1 && ab[0].fechada === true && ab[0].foi === null && !navs.some((x) => x.startsWith('/login')) && s.posts.length === 0
+          && sql(`SELECT is_active FROM app_user_sessions WHERE session_token='${tok0}'`) === '1' && (await token(pg)) === tok0, JSON.stringify({ ab, navs, posts: s.posts.length }));
+      if (nome === 'HTML') {   // tentar de novo com o logout de verdade: agora confirmado (envelope ok:true) → só então /login
+        await pg.unroute('**/api/auth/logout.php');
+        await pg.click(`${AV} button:has-text("Tentar de novo")`); await pg.waitForSelector(`${AV} [data-at-entrar-retomar]`, { timeout: 20000 }).catch(() => {});
+        const ab2 = await pg.evaluate(() => window.__abertos);
+        afirma('D. "Tentar de novo" com o logout real (envelope ok:true): só então /login na outra aba e a sessão antiga encerrada no banco',
+          ab2.length === 2 && ab2[1].foi === '/login' && sql(`SELECT CONCAT(is_active,'|',IFNULL(logout_reason,'NULL')) FROM app_user_sessions WHERE session_token='${tok0}'`) === '0|logout', JSON.stringify(ab2));
+        await pg.screenshot({ path: `${CAP}/D-logout-ambiguo-${W}.png` });
+      }
+      await pg.context().close();
+    }
+
     // ── C. fila: foto INCERTA (resposta perdida) + foto recusada por sessão; saída desconhecida e depois real; a incerta NÃO é reenviada ──
     { const pg = await nova(); const s = await simular(pg, 'ok'); await abrir(pg);
       s.plano = ['perdida', 'revogada'];
