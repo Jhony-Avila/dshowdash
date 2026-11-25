@@ -443,9 +443,15 @@ export function FluxoCaixa({ filtros, aoMudarFiltros, larguraPainel }: PropsTela
         <div className="bl-cartao" style={{ padding: '12px 14px', minWidth: 0 }}>
           {sankey.dados ? (
             <>
-              {sankey.dados.nos.length === 0
-                ? <EstadoVazio titulo="Fluxo indisponível" descricao={TEXTO_INDISPONIVEL[motivoIndisponivel((sankey.dados as any).indisponivel) ?? 'itens_desconhecidos']} />
-                : <SankeyFinanceiro dados={sankey.dados} altura={larguraPainel < 980 ? 260 : 320} />}
+              {/* DSHOW-115: "indisponível" SÓ pelo campo explícito do backend (`indisponivel` com motivo). Sem nós e sem `indisponivel` =
+                  período com valores CONHECIDOS e zerados — tela própria, nunca "indisponível" deduzido de zeros. */}
+              {sankey.dados.nos.length === 0 && fluxoMarcadoIndisponivel(sankey.dados)
+                ? <span data-bl-fluxo="indisponivel"><EstadoVazio titulo="Fluxo indisponível" descricao={motivoIndisponivel((sankey.dados as any).indisponivel)
+                    ? TEXTO_INDISPONIVEL[motivoIndisponivel((sankey.dados as any).indisponivel)!]
+                    : 'O Bling não informou todos os valores do período: o fluxo não é desenhado (não é zero).'} /></span>
+                : sankey.dados.nos.length === 0
+                  ? <span data-bl-fluxo="zerado"><EstadoVazio titulo="Nenhum valor no período" descricao="As vendas do período foram lidas por completo e somam zero: não há valor para distribuir (zero conhecido, não é falta de dado)." /></span>
+                  : <SankeyFinanceiro dados={sankey.dados} altura={larguraPainel < 980 ? 260 : 320} />}
               {sankey.dados.nos.length > 0 && (sankey.dados.custo_desconhecido || motivoIndisponivel((sankey.dados as any).indisponivel)) && (
               <p data-bl-aviso="fluxo-custo-desconhecido" style={{ fontSize: 12, color: 'var(--bl-texto-2)', margin: '8px 0 0' }}>
                 {motivoIndisponivel((sankey.dados as any).indisponivel) === 'valores_desconhecidos'
@@ -479,4 +485,12 @@ export function FluxoCaixa({ filtros, aoMudarFiltros, larguraPainel }: PropsTela
       </Secao>
     </div>
   );
+}
+
+/** Fluxo "indisponível" SÓ pelos campos explícitos do backend (DSHOW-115): `indisponivel` com qualquer valor, ou ligações desconhecidas.
+ *  Nunca deduzido de zeros: sem nós e sem esses campos = período zerado e conhecido. */
+function fluxoMarcadoIndisponivel(d: unknown): boolean {
+  const x = d as { indisponivel?: unknown; links_desconhecidos?: unknown };
+  return (x.indisponivel !== null && x.indisponivel !== undefined && x.indisponivel !== '')
+    || (Array.isArray(x.links_desconhecidos) && x.links_desconhecidos.length > 0);
 }
