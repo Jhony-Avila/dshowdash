@@ -678,7 +678,17 @@ try {
     $pendAntes = $pend($res('situacoesFiscais')); $pendFacetaAntes = $pendFaceta($res('notas'));
     $casos = ['733004' => ['autorizada', '4'], '733005' => ['cancelada', '5'], '733007' => ['pendente', '7'], '733011' => ['pendente', '11'],
               '733099' => ['pendente', '99'], '733098' => ['pendente', 'travada']];
+    // revisão da ACIMA_ESQUERDA (SEGURAR 7fbbf687): "Notas emitidas" e TODO total sem as não mapeadas — fotografia ANTES dos casos
+    $tot = static function (array $d): array { $v = array_key_exists('valor', $d['totais'] ?? []) ? $d['totais']['valor'] : 'ausente';
+        return [(int) ($d['_meta']['total'] ?? -1), is_numeric($v) ? round((float) $v, 2) : $v]; };
+    $lista = static function (array $get, string $rec) use ($endpoint): array { [$rcL, $dL, $txtL] = $endpoint('ResourceController', 'listar', $get, 'real', $rec);
+        $j = json_decode($txtL, true); return ($j['data'] ?? []) + ['_meta' => $j['meta'] ?? [], '_rc' => $rcL]; };
+    $emit = static fn() => $kpi($real()->kpis($F), 'notas_emitidas')['valor'] ?? null;
+    $funilFluxo = static fn() => [$real()->funilFiscal($F), $real()->fluxoEmpresarial($F)];
+    $emitAntes = $emit(); $invAntes = $tot($lista([], 'invoices')); $docAntes = $tot($lista([], 'documents'));
+    $sfTotAntes = $lista([], 'fiscal-status')['totais'] ?? [];
     foreach ($casos as $b => [$sv, $c]) { $insN->execute([$conta, (string) $b, (string) $b, $hojeN, $sv, $c, 'saida']); }
+    $pdo->exec("UPDATE bling_invoices SET valor = 100, url_danfe = 'https://exemplo.invalid/danfe' WHERE bling_id IN ('" . implode("','", array_keys($casos)) . "')");
     $pdo->exec("UPDATE bling_invoices SET atualizado_em = '2026-11-01 00:00:00' WHERE bling_id IN ('" . implode("','", array_keys($casos)) . "')");
     $lidasC = []; $codC = [];
     foreach ($real()->colecao('notas') as $x) { $bx = (string) v($pdo, 'SELECT bling_id FROM bling_invoices WHERE id = ?', [$x['id']]);
@@ -689,9 +699,11 @@ try {
     ok('Codex 115B: código ORIGINAL preservado e exposto (situacao_codigo) — 4, 5, 7, 11, 99, "travada"', $codC === ['733004' => '4', '733005' => '5',
         '733007' => '7', '733011' => '11', '733098' => 'travada', '733099' => '99'], json_encode($codC));
     $rN = $res('notas'); $sfC = $res('situacoesFiscais');
-    $linhaCod = []; foreach ($rN['linhas'] as $l) { if (in_array($l['numero'], ['733007', '733011', '733099', '733098'], true)) { $linhaCod[$l['numero']] = [$l['situacao'], $l['situacao_codigo'] ?? '(sem)']; } }
+    $rNm = (static function () use ($real, $F): array { $m = new ReflectionMethod(ResourceController::class, 'notas'); $m->setAccessible(true);
+        return $m->invoke(null, $real(), $F + ['situacao' => 'nao_mapeada', 'canal' => '', 'vendedor' => '', 'busca' => '', 'fornecedor' => '']); })();
+    $linhaCod = []; foreach ($rNm['linhas'] as $l) { if (in_array($l['numero'], ['733007', '733011', '733099', '733098'], true)) { $linhaCod[$l['numero']] = [$l['situacao'], $l['situacao_codigo'] ?? '(sem)']; } }
     ksort($linhaCod);
-    ok('Codex 115B: na lista de Notas Fiscais as 4 não mapeadas saem como nao_mapeada com o código original', $linhaCod === ['733007' => ['nao_mapeada', '7'],
+    ok('Codex 115B: na lista de Notas Fiscais (filtro "Situação não mapeada") as 4 saem como nao_mapeada com o código original', $linhaCod === ['733007' => ['nao_mapeada', '7'],
         '733011' => ['nao_mapeada', '11'], '733098' => ['nao_mapeada', 'travada'], '733099' => ['nao_mapeada', '99']], json_encode($linhaCod));
     ok('Codex 115B: NÃO contadas como pendentes — "pendente" igual antes e depois (Situações fiscais e faceta da lista), apesar de gravadas "pendente"',
         $pend($sfC) === $pendAntes && $pendFaceta($rN) === $pendFacetaAntes, json_encode([$pendAntes, $pend($sfC), $pendFacetaAntes, $pendFaceta($rN)]));
@@ -700,6 +712,49 @@ try {
     $esperC = []; foreach ($casos as $b => [$sv, $c]) { $esperC[$b] = [$sv, $c, '2026-11-01 00:00:00']; }
     ok('Codex 115B: a CONSULTA não regrava nota antiga — situação gravada, código cru e atualizado_em intactos depois de lista, situações, evolução e KPIs',
         $gravC === $esperC, json_encode($gravC));
+    ok('ACIMA_ESQUERDA: KPI "Notas emitidas" sobe só 2 (as contáveis 4 e 5), nunca 6 — as 4 não mapeadas ficam fora', $emitAntes !== null && $emit() === $emitAntes + 2,
+        json_encode([$emitAntes, $emit()]));
+    $invDep = $lista([], 'invoices');
+    ok('ACIMA_ESQUERDA: lista de Notas Fiscais (visão padrão) — "Emitidas" (meta.total) +2 e "Valor emitido" (totais.valor) +200, sem as não mapeadas',
+        $tot($invDep) === [$invAntes[0] + 2, is_numeric($invAntes[1]) ? round((float) $invAntes[1] + 200, 2) : 'antes não numérico'], json_encode([$invAntes, $tot($invDep)]));
+    $fNm = array_values(array_filter($invDep['facetas']['situacao'] ?? [], static fn($x) => (string) $x['valor'] === 'nao_mapeada'))[0]['quantidade'] ?? null;
+    ok('ACIMA_ESQUERDA: as não mapeadas continuam VISÍVEIS — faceta "nao_mapeada" = 4 na visão padrão', $fNm === 4, json_encode($invDep['facetas']['situacao'] ?? null));
+    $invNm = $lista(['situacao' => 'nao_mapeada'], 'invoices');
+    ok('ACIMA_ESQUERDA: filtro "nao_mapeada" lista as 4, marcadas fora_dos_totais, e o total de valor NÃO se aplica (null, nunca R$ 0)',
+        $tot($invNm) === [4, null] && array_unique(array_column($invNm['itens'] ?? [], 'fora_dos_totais')) === [true], json_encode([$tot($invNm), array_column($invNm['itens'] ?? [], 'fora_dos_totais')]));
+    $sfD = $lista([], 'fiscal-status'); $lnm = array_values(array_filter($sfD['itens'] ?? [], static fn($l) => $l['situacao'] === 'nao_mapeada'))[0] ?? [];
+    $somaPart = round(array_sum(array_map(static fn($l) => (float) ($l['participacao'] ?? 0), array_filter($sfD['itens'] ?? [], static fn($l) => $l['situacao'] !== 'nao_mapeada'))), 1);
+    ok('ACIMA_ESQUERDA: Situações fiscais — linha própria (4, visível) FORA dos totais (quantidade +2, valor +200) e da participação (null; as outras somam 100 %)',
+        ($lnm['quantidade'] ?? null) === 4 && ($lnm['fora_dos_totais'] ?? null) === true && array_key_exists('participacao', $lnm) && $lnm['participacao'] === null
+        && ($sfD['totais']['quantidade'] ?? null) == ($sfTotAntes['quantidade'] ?? 0) + 2 && ($sfD['totais']['valor'] ?? null) == round((float) ($sfTotAntes['valor'] ?? 0) + 200, 2)
+        && abs($somaPart - 100.0) <= 0.3, json_encode([$lnm, $sfD['totais'] ?? null, $sfTotAntes, $somaPart]));
+    ok('ACIMA_ESQUERDA: Documentos — só as 2 contáveis com DANFE entram (contagem +2), as não mapeadas fora', $tot($lista([], 'documents'))[0] === $docAntes[0] + 2,
+        json_encode([$docAntes, $tot($lista([], 'documents'))]));
+    // funil/fluxo/conciliação: um pedido FATURADO do período SEM nota ganha só a nota não mapeada 733007 → nada pode mudar
+    $alvoP = (int) v($pdo, "SELECT o.id FROM bling_sales_orders o WHERE o.data_pedido >= ? AND o.data_pedido <= ? AND o.deletado_em IS NULL
+                             AND NOT EXISTS (SELECT 1 FROM bling_invoices i WHERE i.sales_order_id = o.id) ORDER BY o.id LIMIT 1", [$F['de'], $F['ate']]);
+    $sitP = $alvoP > 0 ? v($pdo, 'SELECT situacao FROM bling_sales_orders WHERE id = ?', [$alvoP]) : null;
+    if ($alvoP > 0) { $pdo->prepare("UPDATE bling_sales_orders SET situacao = 'faturado' WHERE id = ?")->execute([$alvoP]); }
+    $concDe = static fn() => array_values(array_filter($lista([], 'reconciliation')['itens'] ?? [], static fn($l) => (string) ($l['id'] ?? '') === 'conc-' . $alvoP))[0] ?? null;
+    $ffAntes = $funilFluxo(); $concAntesP = $concDe();
+    $pdo->prepare("UPDATE bling_invoices SET sales_order_id = ? WHERE bling_id = '733007'")->execute([$alvoP]);
+    $ffDepois = $funilFluxo(); $concDepoisP = $concDe();
+    // 2º cenário: o pedido tem a nota AUTORIZADA 733005 (contável) e TAMBÉM a não mapeada 733007 (gravada depois) → a não mapeada não substitui a autorizada
+    $pdo->prepare("UPDATE bling_invoices SET sales_order_id = NULL WHERE bling_id = '733007'")->execute();
+    $pdo->prepare("UPDATE bling_invoices SET sales_order_id = ? WHERE bling_id = '733005'")->execute([$alvoP]);
+    $ffSoAut = $funilFluxo();
+    $pdo->prepare("UPDATE bling_invoices SET sales_order_id = ? WHERE bling_id = '733007'")->execute([$alvoP]);
+    $ffAutMaisNm = $funilFluxo();
+    $temEtapaNota = in_array('Nota fiscal', array_column($ffSoAut[1]['nos'] ?? [], 'id'), true) || str_contains(json_encode($ffSoAut[1]), 'Nota fiscal');
+    $pdo->exec("UPDATE bling_invoices SET sales_order_id = NULL WHERE bling_id IN ('733005','733007')");
+    if ($alvoP > 0) { $pdo->prepare('UPDATE bling_sales_orders SET situacao = ? WHERE id = ?')->execute([$sitP, $alvoP]); }
+    $pdo->exec("UPDATE bling_invoices SET sales_order_id = NULL WHERE bling_id = '733007'");
+    ok('ACIMA_ESQUERDA: funil fiscal e fluxo empresarial IGUAIS quando um pedido faturado sem nota ganha só uma nota não mapeada (não vira "gerada" nem etapa de nota)',
+        $alvoP > 0 && $concAntesP !== null && $ffDepois === $ffAntes, json_encode([$alvoP, $ffAntes[0], $ffDepois[0]]));
+    ok('ACIMA_ESQUERDA: pedido com nota AUTORIZADA + nota não mapeada → funil e fluxo IGUAIS aos de só a autorizada (a não mapeada não substitui; a etapa "Nota fiscal" fica)',
+        $temEtapaNota && $ffAutMaisNm === $ffSoAut, json_encode([$temEtapaNota, $ffSoAut[0], $ffAutMaisNm[0]]));
+    ok('ACIMA_ESQUERDA: Conciliação desse pedido IGUAL — o valor da nota não mapeada (100) não entra em valor_nota/delta', $concAntesP !== null && $concDepoisP === $concAntesP,
+        json_encode([$concAntesP, $concDepoisP]));
     $pdo->exec("DELETE FROM bling_invoices WHERE bling_id IN ('" . implode("','", array_keys($casos)) . "')");
     $pdo->exec("DELETE FROM bling_invoices WHERE bling_id IN ('730005','730004','731005','731004','731002','731099','731098','732005')");
 
