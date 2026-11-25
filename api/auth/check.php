@@ -72,6 +72,15 @@ $authenticated = SessionGate::validate();
 
 if (!$authenticated) {
     session_write_close();
+    // P2-1 (revisão da ACIMA_DIREITA, 24/11): com a CONSULTA do registro falhando (banco fora) a sessão NÃO foi encerrada — responder
+    // "não autenticado" faria o "Sair" achar que já saiu (logout-client: authenticated:false = sem-sessao) com a sessão viva no servidor.
+    // 503 SESSION_CHECK_UNAVAILABLE: o logout-client segue para o POST, que falha → "Erro ao sair"; o menu trata ≠ 2xx como erro, não como saída.
+    if (SessionGate::ultimaSituacaoRegistro() === SessaoRegistro::FALHA) {
+        http_response_code(503);
+        header('Retry-After: 5');
+        echo json_encode(['ok' => false, 'data' => null, 'error' => 'SESSION_CHECK_UNAVAILABLE']);
+        exit;
+    }
     echo json_encode([
         'ok' => true,
         'data' => [

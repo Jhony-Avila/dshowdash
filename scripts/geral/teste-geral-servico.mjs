@@ -14,7 +14,7 @@ globalThis.fetch = async (url) => {
 };
 const S = await import(process.argv[2]);
 let falhas = 0, total = 0; const ok = (n, c, d = '') => { total++; if (!c) falhas++; console.log((c ? 'ok    ' : 'FALHA ') + n + (d ? `  (${d})` : '')); };
-const PD = { ok: true, data: { overview: { deals: { abertos: 324, valor_aberto: 13612618, taxa_conversao: 18.7 }, atividades: { atrasadas: 201 } },
+const PD = { ok: true, data: { overview: { deals: { abertos: 324, valor_aberto: 13612618, taxa_conversao: 18.7 }, atividades: { atrasadas: 201, negocios_abertos_com_vencida: 48 } },
   runs: [{ status: 'completed', finished_at: '2026-11-23 13:00:32' }] } };
 const BASE = { '/api/traffic/summary.php': { status: 200, body: { ok: true, data: {} } }, '/api/ads/status': { status: 200, body: { ok: true, data: { provider: 'mock', accounts: [] } } },
   '/api/anuncios/stats.php': { status: 200, body: { ok: true, data: {} } }, '/api/google-calendar/header/summary': { status: 200, body: { ok: true, data: {} } } };
@@ -25,13 +25,15 @@ const v = Object.fromEntries(p.metricas.map((m) => [m.rotulo, m.valor]));
 ok('A · Pipedrive SEM selo simulado', p.simulado === false);
 ok('A · negócios abertos = 324', v['Negócios abertos'] === (324).toLocaleString('pt-BR'), v['Negócios abertos']);
 ok('A · valor do funil = R$ 13.612.618', /13\.612\.618/.test(v['Valor do funil']), v['Valor do funil']);
-ok('A · atividades atrasadas = 201 (em vermelho)', v['Ativ. atrasadas'] === '201' && p.metricas.find((m) => m.rotulo === 'Ativ. atrasadas').ruim === true);
+ok('1.1 · conta NEGÓCIOS abertos com atividade vencida = 48 (não as 201 atividades), em vermelho',
+  v['Negócios c/ ativ. vencida'] === '48' && p.metricas.find((m) => m.rotulo === 'Negócios c/ ativ. vencida').ruim === true && !p.metricas.some((m) => m.valor === '201'), v['Negócios c/ ativ. vencida']);
+ok('1.1 · rótulo antigo "Ativ. atrasadas" saiu', !('Ativ. atrasadas' in v));
 ok('A · conversão = 18,7%', v['Conversão'] === '18,7%', v['Conversão']);
 ok('A · atualizado = a última sincronização (13:00:32 −03:00)', p.atualizadoEm === new Date('2026-11-23T13:00:32-03:00').toISOString(), p.atualizadoEm);
-ok('A · status atenção com atrasadas', p.status === 'atencao' && /201/.test(p.statusRotulo), p.statusRotulo);
+ok('1.1 · status: "48 negócio(s) com atividade vencida"', p.status === 'atencao' && p.statusRotulo === '48 negócio(s) com atividade vencida', p.statusRotulo);
 const al = await S.getAlertas();
 const alp = al.find((a) => a.modulo === 'Pipedrive');
-ok('A · alerta do Pipedrive REAL (201), sem o "6 atividades" de demonstração', alp && alp.simulado === false && /201/.test(alp.descricao) && !al.some((a) => /^6 atividades/.test(a.descricao)), alp && alp.descricao);
+ok('1.1 · alerta: "48 negócio(s) aberto(s) com atividade vencida" (sem 201, sem demonstração)', alp && alp.simulado === false && alp.descricao === '48 negócio(s) aberto(s) com atividade vencida' && !al.some((a) => /201|^6 atividades/.test(a.descricao)), alp && alp.descricao);
 const integ = await S.getIntegracoes();
 const ip = integ.find((i) => i.nome === 'Pipedrive');
 ok('A · integração Pipedrive = conectada, com a última sincronização', ip && ip.estado === 'conectada' && ip.ultimaSync !== null, ip && ip.estado);
@@ -43,6 +45,23 @@ ok('A · sem permissão: nenhum alerta do Pipedrive', !(await S.getAlertas()).so
 rotas = { ...BASE, '/api/pipedrive/overview': { status: 500, body: {} } };
 const p500 = await S.getResumoModulo('pipedrive', '30d');
 ok('A · fonte fora (500): "Indisponível", nenhum número', p500.statusRotulo === 'Indisponível' && p500.metricas.length === 0);
+// ── Geral 1.1: ausência de dado NUNCA vira zero ──
+const PDsem = { ok: true, data: { overview: { deals: { abertos: 324, valor_aberto: 13612618, taxa_conversao: 18.7 }, atividades: { atrasadas: 201 } }, runs: PD.data.runs } };
+rotas = { ...BASE, '/api/pipedrive/overview': { status: 200, body: PDsem } };
+const pOld = await S.getResumoModulo('pipedrive', '30d'); const vOld = Object.fromEntries(pOld.metricas.map((m) => [m.rotulo, m.valor]));
+ok('1.1 · servidor sem o campo novo: "—" e estado "Sem dado de atividades", nunca 0', vOld['Negócios c/ ativ. vencida'] === '—' && pOld.status === 'indisponivel' && pOld.statusRotulo === 'Sem dado de atividades', JSON.stringify(vOld));
+ok('1.1 · servidor sem o campo novo: os outros números reais continuam', vOld['Negócios abertos'] === '324');
+ok('1.1 · servidor sem o campo novo: nenhum alerta (nem com as 201 atividades)', !(await S.getAlertas()).some((a) => a.modulo === 'Pipedrive'));
+rotas = { ...BASE, '/api/pipedrive/overview': { status: 200, body: { ok: true, data: {} } } };
+const pVaz = await S.getResumoModulo('pipedrive', '30d');
+ok('1.1 · resposta sem dados: estado "Sem dados", nenhuma métrica, nenhum 0', pVaz.status === 'indisponivel' && pVaz.statusRotulo === 'Sem dados' && pVaz.metricas.length === 0, JSON.stringify(pVaz));
+const iVaz = (await S.getIntegracoes()).find((i) => i.nome === 'Pipedrive');
+ok('1.1 · integração sem dados: sem "0 negócios abertos"', iVaz && !/\b0 negócios/.test(iVaz.detalhe), iVaz && iVaz.detalhe);
+rotas = { ...BASE, '/api/pipedrive/overview': { status: 200, body: { ok: true, data: { overview: { deals: { abertos: 'x', valor_aberto: null }, atividades: { negocios_abertos_com_vencida: 0 } }, runs: [] } } } };
+const pZero = await S.getResumoModulo('pipedrive', '30d'); const vZ = Object.fromEntries(pZero.metricas.map((m) => [m.rotulo, m.valor]));
+ok('1.1 · zero CONFIRMADO aparece como 0 e "Em dia"', vZ['Negócios c/ ativ. vencida'] === '0' && pZero.status === 'ok' && pZero.statusRotulo === 'Em dia', JSON.stringify(vZ));
+ok('1.1 · valor não numérico ou nulo vira "—", não 0', vZ['Negócios abertos'] === '—' && vZ['Valor do funil'] === '—', JSON.stringify(vZ));
+ok('1.1 · zero confirmado: nenhum alerta', !(await S.getAlertas()).some((a) => a.modulo === 'Pipedrive'));
 // (B) cartões sem fonte real
 for (const id of ['metaads', 'mercadolivre', 'ecommerce', 'compras', 'financeiro', 'datatables']) {
   const r = await S.getResumoModulo(id, '30d');

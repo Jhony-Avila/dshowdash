@@ -111,16 +111,18 @@ function handleMenuAction(action: string, context: Record<string,unknown>) {
   
   // @ts-expect-error TS migration - TS2339
   store.setState({ isOpen: false });
-  emitUIAction(action, { action });
   
   // @ts-expect-error TS migration - TS2339
   if (logger && logger.debug) logger.debug(`Action: ${action}`);
   
   if (action === 'logout' && onLogout) {
+    // DSHOW-110: a ação 'logout' NÃO sai aqui — o handleLogout a emite só DEPOIS da confirmação do servidor (antes, ela saía no clique,
+    // o roteador navegava para /login e abortava o POST /api/auth/logout.php)
     // @ts-expect-error TS migration - TS2349
     onLogout();
     return;
   }
+  emitUIAction(action, { action });
   
   const route = (ACTION_ROUTES as Record<string,unknown>)[action as string];
   if (route) {

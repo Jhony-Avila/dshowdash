@@ -58,7 +58,7 @@ function _validateResponseContract(response: Response) {
 }
 
 function _createFallback(reason: string) {
-  return { received_today: 0, unread: 0, status: 'unavailable', _fallback: true, _reason: reason };
+  return { unread_count: 0, status: 'unavailable', _fallback: true, _reason: reason };
 }
 
 export function IntegrationAPI(this: any, options?: { baseURL?: string; timeout?: number; headers?: Record<string, string> }) {
@@ -140,7 +140,7 @@ IntegrationAPI.prototype.fetchStatus = function() {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => { controller.abort(); }, self.timeout);
   
-  const url = '/api/outlook/header-counter';
+  const url = `${self.baseURL}.php?action=status`;
   
   return fetch(url, { 
     signal: controller.signal, 
@@ -173,10 +173,7 @@ IntegrationAPI.prototype.fetchStatus = function() {
       self._metrics.successCount++;
       return response.json();
     })
-    .then(data => {
-      if (data && data._fallback) return data;
-      { const d = data && data.data ? data.data : data; return { received_today: d.received_today || 0, unread: d.unread || 0, updated_at: d.updated_at || null, status: 'ok' }; }
-    })
+    .then(data => data && data._fallback ? data : { unread_count: data.unread_count || data.count || 0, status: 'ok' })
     .catch(error => {
       clearTimeout(timeoutId);
       self._metrics.errorCount++;

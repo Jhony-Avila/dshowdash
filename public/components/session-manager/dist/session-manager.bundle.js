@@ -1,3 +1,4 @@
+import { encerrarSessao as __encerrarSessao } from "/core/auth/logout-client.js";
 import { createCorePorts as B } from "/core/runtime/ports-profiles.js";
 import { isStrict as pt, recordViolation as Pr } from "/core/runtime/enterprise/strict-mode.js";
 import { SESSION_EVENTS as pe, AUTH_STATES as ft, AUTH_EVENTS as m } from "/core/runtime/events/catalog/dist/events-catalog.bundle.js";
@@ -797,7 +798,7 @@ function ws(e, t, r) {
 function bs(e) {
   e || (e = {}), f.logoutRequests++;
   const t = Je();
-  return t.track && t.track("session:api:logout:start"), Ke(N.endpoints.logout, { method: "POST", headers: { Accept: "application/json" } }, e.timeout).then(() => (f.successfulRequests++, t.track && t.track("session:api:logout:complete"), { ok: !0 })).catch((r) => (f.failedRequests++, t.track && t.track("session:api:logout:error", { error: r.message }), { ok: !0, serverError: r.message }));
+  return t.track && t.track("session:api:logout:start"), __encerrarSessao(e.timeout || 1e4).then((r) => r.ok ? (f.successfulRequests++, t.track && t.track("session:api:logout:complete"), { ok: !0 }) : (f.failedRequests++, t.track && t.track("session:api:logout:error", { error: r.motivo }), { ok: !1, error: r.motivo || "falha", status: r.status }));
 }
 function Ds(e) {
   e || (e = {}), f.refreshRequests++;
@@ -1054,12 +1055,12 @@ function Zs(e, t, r) {
 function Xs(e) {
   e || (e = {}), b.logouts++;
   const t = i.isAuthenticated(), r = i.getSessionId();
-  return ce.logout(e).then(() => (i.clear(), E.clearAll(), zt(), t && K(m.LOGOUT_SUCCESS, { sessionId: r }), { ok: !0 }));
+  return ce.logout(e).then((n) => n && n.ok ? (i.clear(), E.clearAll(), zt(), t && K(m.LOGOUT_SUCCESS, { sessionId: r }), { ok: !0 }) : { ok: !1, error: n && n.error || "logout não confirmado" });
 }
 function Qs(e) {
   return e || (e = {}), b.sessionChecks++, ce.checkSession(e).then((t) => {
     if (!t.ok)
-      return K(m.SESSION_CHECKED, { authenticated: !1, error: t.error }), { ok: !1, error: t.error };
+      return b.sessionChecksUnknown = (b.sessionChecksUnknown || 0) + 1, { ok: !1, estado: "desconhecido", error: t.error };
     if (t.authenticated && t.user) {
       const r = Kt(t.user), n = Et(t.expiresIn || 604800);
       return i.update({ authenticated: !0, user: r, userId: r ? r.id : null, roles: r ? r.roles : [], level: r ? r.level : null, expiresAt: n, lastActivity: Date.now() }), t.token && (E.setToken(t.token), i.setToken(t.token)), t.csrf && E.setCsrf(t.csrf), K(m.SESSION_CHECKED, { authenticated: !0, user: r }), { ok: !0, authenticated: !0, user: r };

@@ -40,7 +40,7 @@ function _validateResponseContract(response) {
   };
 }
 function _createFallback(reason) {
-  return { received_today: 0, unread: 0, status: "unavailable", _fallback: true, _reason: reason };
+  return { unread_count: 0, status: "unavailable", _fallback: true, _reason: reason };
 }
 function IntegrationAPI(options) {
   if (!options) options = {};
@@ -109,7 +109,7 @@ IntegrationAPI.prototype.fetchStatus = function() {
   const timeoutId = setTimeout(() => {
     controller.abort();
   }, self.timeout);
-  const url = "/api/outlook/header-counter";
+  const url = `${self.baseURL}.php?action=status`;
   return fetch(url, {
     signal: controller.signal,
     credentials: "include",
@@ -134,11 +134,7 @@ IntegrationAPI.prototype.fetchStatus = function() {
     }
     self._metrics.successCount++;
     return response.json();
-  }).then((data) => {
-    if (data && data._fallback) return data;
-    const d = data && data.data ? data.data : data;
-    return { received_today: d.received_today || 0, unread: d.unread || 0, updated_at: d.updated_at || null, status: "ok" };
-  }).catch((error) => {
+  }).then((data) => data && data._fallback ? data : { unread_count: data.unread_count || data.count || 0, status: "ok" }).catch((error) => {
     clearTimeout(timeoutId);
     self._metrics.errorCount++;
     const reason = error.name === "AbortError" ? "timeout" : "network-error";

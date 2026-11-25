@@ -15,6 +15,7 @@ require_once __DIR__ . '/CookieParamsFactory.php';
 require_once __DIR__ . '/SessionRecovery.php';
 require_once __DIR__ . '/storage/FileSessionStorage.php';
 require_once __DIR__ . '/traits/LoggerTrait.php';
+require_once __DIR__ . '/SessaoRegistro.php';   // DSHOW-110: registro obrigatório em app_user_sessions
 
 class SessionGate {
     
@@ -36,6 +37,8 @@ class SessionGate {
     private static bool $_initialized = false;
     private static array $_readOnlyCache = [];
     private static ?string $_requestId = null;
+    // P2-1 (revisão da ACIMA_DIREITA, 24/11): situação do registro na última validate() desta requisição (null = não chegou a consultar)
+    private static ?string $_ultimaSituacaoRegistro = null;
     
     // Storage abstraction
     private static ?FileSessionStorage $_storage = null;
@@ -120,6 +123,11 @@ class SessionGate {
                 return [];
             }
             
+            // DSHOW-110: leitura (inclusive a RECUPERADA do backup) só vale com registro ativo, do mesmo titular, mesmo id e vigente.
+            if (!empty($result['user_id']) && SessaoRegistro::situacao($sessionId, (int) $result['user_id']) !== SessaoRegistro::OK) {
+                return [];
+            }
+            
             self::$_readOnlyCache[$sessionId] = $result;
             return $result;
             
@@ -166,12 +174,22 @@ class SessionGate {
         self::$_initialized = true;
     }
     
+    /**
+     * P2-1: situação do registro (SessaoRegistro::OK|AUSENTE|...|FALHA) vista pela última validate() desta requisição; null se ela não consultou
+     * (sem user_id, expirada, impressão digital). Quem responde ao cliente usa para distinguir "sem sessão" de "não deu para conferir" (FALHA).
+     */
+    public static function ultimaSituacaoRegistro(): ?string {
+        return self::$_ultimaSituacaoRegistro;
+    }
+    
     public static function validate(): ?array {
         self::start();
         
         if (self::$_sessionCache !== null) {
             return self::$_sessionCache;
         }
+        
+        self::$_ultimaSituacaoRegistro = null;
         
         if (empty($_SESSION['user_id'])) {
             return null;
@@ -212,10 +230,28 @@ class SessionGate {
             }
         }
         
+        // DSHOW-110: sessão do PHP válida + registro existente, ativo, do mesmo titular, com o mesmo id e dentro da validade.
+        // Falha de consulta NÃO autoriza (nega sem destruir); sem registro, revogada, expirada ou de outro titular → encerra (novo login).
+        $situacao = SessaoRegistro::situacao(session_id(), (int) $_SESSION['user_id']);
+        self::$_ultimaSituacaoRegistro = $situacao;
+        if ($situacao !== SessaoRegistro::OK) {
+            self::logSecurity('SessionGate', 'session_registro_' . $situacao, [
+                'user_id' => $_SESSION['user_id'] ?? null,
+                'request_id' => self::getRequestId()
+            ]);
+            if ($situacao !== SessaoRegistro::FALHA) {
+                self::destroy();
+            }
+            return null;
+        }
+        
         if (isset($_SESSION['last_activity'])) {
             $idleTime = time() - $_SESSION['last_activity'];
             if ($idleTime > self::SESSION_REFRESH_THRESHOLD) {
                 self::refresh();
+                if (empty($_SESSION['user_id'])) {
+                    return null;   // a troca de id não foi registrada → a sessão foi encerrada
+                }
             }
         }
         
@@ -335,8 +371,16 @@ class SessionGate {
         $userId = $_SESSION['user_id'] ?? null;
         $sessionId = session_id();
         
-        // Criar backup antes de destruir (para recovery se necessário)
-        if (self::ENABLE_AUTO_RECOVERY && !empty($sessionId)) {
+        // DSHOW-110: sessão encerrada no servidor = registro inativo também (a recuperação do backup não a revive: readOnly confere o registro)
+        $registroEncerrado = true;
+        if ($userId && !empty($sessionId)) {
+            $registroEncerrado = SessaoRegistro::encerrar($sessionId, (int) $userId, 'sessao_encerrada');
+        }
+        
+        // Criar backup antes de destruir (para recovery se necessário).
+        // Codex DSHOW-113: se o registro NÃO pôde ser encerrado (banco fora), não deixa backup — com o banco de volta o registro ainda
+        // ativo + o backup reviveriam pela recuperação uma sessão que o servidor já destruiu.
+        if (self::ENABLE_AUTO_RECOVERY && !empty($sessionId) && $registroEncerrado) {
             SessionRecovery::createBackup($sessionId);
         }
         
@@ -388,6 +432,7 @@ class SessionGate {
         self::start();
         
         $sessionData = $_SESSION;
+        $tokenAntigo = session_id();
         
         session_regenerate_id(true);
         
@@ -397,6 +442,14 @@ class SessionGate {
         
         self::$_sessionCache = null;
         self::$_readOnlyCache = [];
+        
+        // DSHOW-110: o MESMO registro troca de id (titular + id anterior, ativo e vigente; exatamente 1 linha). Revogada, expirada, já trocada
+        // por outra renovação ou falha de gravação → a sessão renovada NÃO fica válida sem registro: encerra.
+        $userId = (int) ($sessionData['user_id'] ?? 0);
+        if ($userId > 0 && !SessaoRegistro::trocar($tokenAntigo, session_id(), $userId)) {
+            self::logSecurity('SessionGate', 'session_refresh_sem_registro', ['user_id' => $userId, 'request_id' => self::getRequestId()]);
+            self::destroy();
+        }
     }
     
     public static function create(array $userData): bool {

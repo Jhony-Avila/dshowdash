@@ -226,6 +226,9 @@ final class BlingNormalizer
             'numero'      => self::texto($p, 'numero', 'numeroPedidoLoja'),
             'data_pedido' => self::data($p, 'data', 'dataSaida') ?? date('Y-m-d'),
             'situacao_bling' => self::texto($p, 'situacao.valor', 'situacao.id', 'situacao'),
+            // PORTÃO BLING SITUAÇÃO (23/11/2026): o ID real da situação (o `situacao.valor` acima não distingue situação — todos os
+            // pedidos desde 04/2025 vieram 0). Só o id, sem fallback: ausente = null (nunca o `valor` no lugar do id).
+            'situacao_bling_id' => self::texto($p, 'situacao.id'),
             'contato_bling_id'  => self::texto($p, 'contato.id', 'cliente.id'),
             'canal_bling_id'    => self::texto($p, 'loja.id', 'canal.id'),
             'vendedor'    => self::texto($p, 'vendedor.nome', 'vendedor.id'),

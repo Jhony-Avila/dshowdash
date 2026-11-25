@@ -46,15 +46,17 @@ return [
     // Cache Redis (prefixo 'traffic:'). Trânsito é "ao vivo" → TTL curto.
     'cache' => [
         // TTL do payload compartilhado (governa a frequência de chamadas EXTERNAS).
-        // 300s = 5 min → prudente p/ o plano gratuito: cada refresh = ~13 chamadas TomTom (12 flow + 1
-        // incidents). ~12h de uso contínuo ≈ 1.900 chamadas/dia (< 2.500 do free tier). O cache é
-        // COMPARTILHADO (server-side) → nº de usuários NÃO multiplica as chamadas. Baixe se o plano permitir.
-        'ttl_summary'   => 300,
-        'ttl_dashboard' => 300,
-        'ttl_incidents' => 300,
-        'ttl_flow'      => 300,
-        'ttl_health'    => 300,  // s
-        'ttl_stale'     => 1800, // s — quanto tempo um dado "velho" ainda serve em fallback
+        // 900s = 15 min (aprovado pelo Jhony em 23/11/2026). Com 300s o consumo real era ~4.000
+        // chamadas/dia (o app amostra 24 h por dia, não 12 h) e a cota diária estourava desde 09/11.
+        // Agora: 96 refresh/dia × 13 (12 flow + 1 incidents) = 1.248 + 96 do health = ~1.350/dia,
+        // abaixo das 2.500 do plano gratuito mesmo 24 h por dia. O cache é COMPARTILHADO (server-side)
+        // → nº de usuários NÃO multiplica as chamadas. Não baixe sem rever o orçamento (README).
+        'ttl_summary'   => 900,
+        'ttl_dashboard' => 900,
+        'ttl_incidents' => 900,
+        'ttl_flow'      => 900,
+        'ttl_health'    => 900,  // s — o health também faz 1 chamada TomTom por renovação
+        'ttl_stale'     => 3600, // s — dado "velho" em fallback (≥ 2 ciclos de 15 min + margem)
         'key_prefix'    => 'traffic:sao-paulo:',
     ],
 

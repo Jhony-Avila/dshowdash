@@ -131,12 +131,14 @@ export async function getAnuncios(): Promise<ResumoAnuncios> {
 }
 
 // ── Pipedrive (REAL, 23/11/2026): /api/pipedrive/overview — base local sincronizada (PIPE_DSHOW), nível ≥ 50 no servidor ──
+// Geral 1.1: campo ausente ou não numérico = null (SEM DADO) — nunca 0. Zero só quando o servidor disse zero.
 export interface ResumoPipedrive {
-  abertos: number; valorAberto: number; atrasadas: number; conversao: number | null; atualizadoEm: string | null;
+  abertos: number | null; valorAberto: number | null; negociosVencidos: number | null; conversao: number | null; atualizadoEm: string | null;
 }
+const numOuNull = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 export async function getPipedrive(): Promise<ResumoPipedrive> {
   interface Bruto {
-    overview?: { deals?: { abertos?: number; valor_aberto?: number; taxa_conversao?: number | null }; atividades?: { atrasadas?: number } };
+    overview?: { deals?: { abertos?: unknown; valor_aberto?: unknown; taxa_conversao?: unknown }; atividades?: { negocios_abertos_com_vencida?: unknown } };
     runs?: { status?: string; finished_at?: string | null }[];
   }
   const d = await getJson<Bruto>('/api/pipedrive/overview');
@@ -144,10 +146,11 @@ export async function getPipedrive(): Promise<ResumoPipedrive> {
   // pipe_sync_runs grava a hora LOCAL do servidor (America/Sao_Paulo, −03:00, sem horário de verão)
   const quando = ok?.finished_at ? new Date(ok.finished_at.replace(' ', 'T') + '-03:00').toISOString() : null;
   return {
-    abertos: Number(d.overview?.deals?.abertos ?? 0),
-    valorAberto: Number(d.overview?.deals?.valor_aberto ?? 0),
-    atrasadas: Number(d.overview?.atividades?.atrasadas ?? 0),
-    conversao: d.overview?.deals?.taxa_conversao ?? null,
+    abertos: numOuNull(d.overview?.deals?.abertos),
+    valorAberto: numOuNull(d.overview?.deals?.valor_aberto),
+    // NEGÓCIOS abertos distintos com atividade vencida (não atividades): campo novo do overview; servidor antigo sem ele = sem dado
+    negociosVencidos: numOuNull(d.overview?.atividades?.negocios_abertos_com_vencida),
+    conversao: numOuNull(d.overview?.deals?.taxa_conversao),
     atualizadoEm: quando,
   };
 }
@@ -237,13 +240,18 @@ export async function getResumoModulo(id: ModuloId, periodo: PeriodoId): Promise
     case 'pipedrive': {
       try {
         const p = await getPipedrive();
+        const nv = p.negociosVencidos;
+        if (p.abertos === null && p.valorAberto === null && nv === null) {
+          // resposta sem nenhum dado utilizável: o ESTADO, nunca zeros
+          return { status: 'indisponivel', statusRotulo: 'Sem dados', metricas: [], alerta: null, atualizadoEm: null, simulado: false };
+        }
         return {
-          status: p.atrasadas > 0 ? 'atencao' : 'ok',
-          statusRotulo: p.atrasadas > 0 ? `${fmtN(p.atrasadas)} atrasada(s)` : 'Em dia',
+          status: nv === null ? 'indisponivel' : nv > 0 ? 'atencao' : 'ok',
+          statusRotulo: nv === null ? 'Sem dado de atividades' : nv > 0 ? `${fmtN(nv)} negócio(s) com atividade vencida` : 'Em dia',
           metricas: [
-            { rotulo: 'Negócios abertos', valor: fmtN(p.abertos) },
-            { rotulo: 'Valor do funil', valor: fmtMoeda(p.valorAberto) },
-            { rotulo: 'Ativ. atrasadas', valor: fmtN(p.atrasadas), ruim: p.atrasadas > 0 },
+            { rotulo: 'Negócios abertos', valor: p.abertos === null ? '—' : fmtN(p.abertos) },
+            { rotulo: 'Valor do funil', valor: p.valorAberto === null ? '—' : fmtMoeda(p.valorAberto) },
+            { rotulo: 'Negócios c/ ativ. vencida', valor: nv === null ? '—' : fmtN(nv), ruim: nv !== null && nv > 0 },
             { rotulo: 'Conversão', valor: p.conversao === null ? '—' : `${p.conversao.toLocaleString('pt-BR')}%` },
           ],
           alerta: null,
@@ -291,12 +299,12 @@ export async function getAlertas(): Promise<AlertaGeral[]> {
     }
   } catch { /* fonte fora não bloqueia os demais */ }
 
-  try {   // Pipedrive REAL: atividades atrasadas (sem permissão ou fonte fora → sem alerta, nunca número inventado)
+  try {   // Pipedrive REAL: NEGÓCIOS abertos com atividade vencida (sem permissão, fonte fora ou sem dado → sem alerta, nunca número inventado)
     const p = await getPipedrive();
-    if (p.atrasadas > 0) {
+    if (p.negociosVencidos !== null && p.negociosVencidos > 0) {
       alertas.push({
         id: 'pd-atividades', severidade: 3, modulo: 'Pipedrive',
-        descricao: `${fmtN(p.atrasadas)} atividade(s) comercial(is) atrasada(s)`,
+        descricao: `${fmtN(p.negociosVencidos)} negócio(s) aberto(s) com atividade vencida`,
         impacto: 'Negócios podem esfriar sem follow-up.',
         rota: '#/panel-pipedrive', simulado: false,
       });
@@ -345,7 +353,7 @@ export async function getIntegracoes(): Promise<StatusIntegracao[]> {
   );
   try {
     const p = await getPipedrive();
-    out.push({ nome: 'Pipedrive', detalhe: `CRM comercial · ${fmtN(p.abertos)} negócios abertos`, estado: 'conectada', ultimaSync: p.atualizadoEm });
+    out.push({ nome: 'Pipedrive', detalhe: p.abertos === null ? 'CRM comercial' : `CRM comercial · ${fmtN(p.abertos)} negócios abertos`, estado: 'conectada', ultimaSync: p.atualizadoEm });
   } catch {
     out.push({ nome: 'Pipedrive', detalhe: 'CRM comercial', estado: 'erro', ultimaSync: null });
   }

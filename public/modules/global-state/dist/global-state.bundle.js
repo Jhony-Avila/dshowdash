@@ -985,7 +985,7 @@ function $(e) {
     const c = t.on(v.LOGOUT_SUCCESS, a);
     H.push({ event: "AUTH_EVENTS.LOGOUT_SUCCESS", handler: "handleLogout", registeredAt: Date.now(), cleanup: c }), L.listenersRegistered++;
     const E = (f) => {
-      n.aborted || (e.telemetry.track(v.SESSION_CHECKED_RECEIVED, { authenticated: f == null ? void 0 : f.authenticated }), f != null && f.authenticated && (f != null && f.user) ? (e.setSession({ isAuthenticated: !0, userId: f.user.id || f.userId, user: f.user, token: f.token || null, lastActivity: Date.now() }), F(e, k.SESSION_SYNCED, { source: "session-checked" })) : f != null && f.authenticated || (e.clearSession(), F(e, k.SESSION_CLEARED, { source: "session-checked-unauthenticated" })));
+      n.aborted || (e.telemetry.track(v.SESSION_CHECKED_RECEIVED, { authenticated: f == null ? void 0 : f.authenticated }), f != null && f.authenticated && (f != null && f.user) ? (e.setSession({ isAuthenticated: !0, userId: f.user.id || f.userId, user: f.user, token: f.token || null, lastActivity: Date.now() }), F(e, k.SESSION_SYNCED, { source: "session-checked" })) : f != null && f.authenticated === !1 && !f.error && f.estado !== "desconhecido" && (e.clearSession(), F(e, k.SESSION_CLEARED, { source: "session-checked-unauthenticated" })));
     }, O = t.on(v.SESSION_CHECKED, E);
     H.push({ event: "AUTH_EVENTS.SESSION_CHECKED", handler: "sessionCheckedHandler", registeredAt: Date.now(), cleanup: O }), L.listenersRegistered++;
     const p = (f) => {

@@ -25,7 +25,7 @@ function getPorts() {
   return Ports.snapshot();
 }
 const SESSION_COOKIE_NAME = "DSHOWSESS";
-const _metrics = { loginAttempts: 0, loginSuccess: 0, loginFailures: 0, logouts: 0, sessionChecks: 0, refreshes: 0, eventsEmitted: 0, errors: 0, invalidCookiesCleared: 0 };
+const _metrics = { loginAttempts: 0, loginSuccess: 0, loginFailures: 0, logouts: 0, sessionChecks: 0, sessionChecksUnknown: 0, refreshes: 0, eventsEmitted: 0, errors: 0, invalidCookiesCleared: 0 };
 function hasSessionCookie() {
   return CookiePort.has(SESSION_COOKIE_NAME);
 }
@@ -81,7 +81,8 @@ function logout(options) {
   _metrics.logouts++;
   const wasAuthenticated = sessionStore.isAuthenticated();
   const sessionId = sessionStore.getSessionId();
-  return SessionAPIClient.logout(options).then(() => {
+  return SessionAPIClient.logout(options).then((r) => {
+    if (!r || !r.ok) return { ok: false, error: r && r.error || "logout n\xE3o confirmado" };
     sessionStore.clear();
     TokenManager.clearAll();
     clearInvalidSessionCookie();
@@ -94,8 +95,8 @@ function checkSession(options) {
   _metrics.sessionChecks++;
   return SessionAPIClient.checkSession(options).then((result) => {
     if (!result.ok) {
-      emitAuthEvent(AUTH_EVENTS.SESSION_CHECKED, { authenticated: false, error: result.error });
-      return { ok: false, error: result.error };
+      _metrics.sessionChecksUnknown++;
+      return { ok: false, estado: "desconhecido", error: result.error };
     }
     if (result.authenticated && result.user) {
       const user = sanitizeUser(result.user);

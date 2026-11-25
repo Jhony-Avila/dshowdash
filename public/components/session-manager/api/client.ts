@@ -24,6 +24,7 @@
 // ═══════════════════════════════════════════════════════════════
 'use strict';
 import { createCorePorts } from '/core/runtime/ports-profiles.js';
+import { encerrarSessao, type ResultadoLogout } from '/core/auth/logout-client.js';
 const VERSION = '5.4.0-FIX';
 const MODULE_ID = 'session-api-client';
 const Ports = createCorePorts({ moduleId: MODULE_ID });
@@ -129,19 +130,16 @@ function login(username: string, password: string, options: Record<string, unkno
 }
 
 function logout(options: Record<string, unknown> & { timeout?: number }) {
+  // DSHOW-110: o cliente ÚNICO de logout (core/auth/logout-client). Antes: POST sem CSRF (403 no servidor) e erro devolvido como ok:true.
   if (!options) options = {};
   _metrics.logoutRequests++;
   const tracker = getTracker();
   if (tracker.track) tracker.track('session:api:logout:start');
-  // @ts-expect-error strict migration — TS2345
-  return fetchWithTimeout(config.endpoints.logout, { method: 'POST', headers: { 'Accept': 'application/json' } }, options.timeout).then(() => {
-    _metrics.successfulRequests++;
-    if (tracker.track) tracker.track('session:api:logout:complete');
-    return { ok: true };
-  }).catch(error => {
+  return encerrarSessao(options.timeout || 10000).then((r: ResultadoLogout) => {
+    if (r.ok) { _metrics.successfulRequests++; if (tracker.track) tracker.track('session:api:logout:complete'); return { ok: true }; }
     _metrics.failedRequests++;
-    if (tracker.track) tracker.track('session:api:logout:error', { error: error.message });
-    return { ok: true, serverError: error.message };
+    if (tracker.track) tracker.track('session:api:logout:error', { error: r.motivo });
+    return { ok: false, error: r.motivo || 'falha', status: r.status };
   });
 }
 

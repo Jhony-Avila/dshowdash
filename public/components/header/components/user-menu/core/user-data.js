@@ -2,6 +2,7 @@ import { StateValidators } from "../state/validators.js";
 import { Formatters } from "../utils/formatters.js";
 import { emitUIAction } from "./actions.js";
 import { getPort, getHardNavService } from "./ports.js";
+import { mostrarAvisoErro, esconderAvisoErro } from "../ui/aviso-erro.js";
 import { UI_EVENTS } from "/core/runtime/events/catalog/ui.events.js";
 import { COMPONENT_EVENTS } from "/core/runtime/events/catalog/component.events.js";
 const VERSION = "1.1.0-ENTERPRISE";
@@ -99,25 +100,29 @@ function setUser(component, userData) {
 function clearUser(component) {
   setUser(component, null);
 }
+const MSG_ERRO_SAIR = "Erro ao sair. Tente novamente.";
 function handleLogout(component) {
   if (component.isDestroyed) return Promise.resolve();
   component._announce("Saindo da conta...");
-  emitUIAction("logout", { confirmed: true });
-  const eb = getPort("eventBus");
-  if (eb && eb.emit) {
-    eb.emit(UI_EVENTS.ACTION, {
-      action: "logout",
-      source: COMPONENT_MODULE_ID,
-      timestamp: Date.now()
-    });
-  }
-  return component.circuitBreaker.execute(() => component.api.logout()).then(() => {
+  esconderAvisoErro(component.element);
+  return component.circuitBreaker.execute(() => component.api.logout()).then((confirmado) => {
+    if (!confirmado) throw new Error("logout n\xE3o confirmado pelo servidor");
+    emitUIAction("logout", { confirmed: true });
+    const eb = getPort("eventBus");
+    if (eb && eb.emit) {
+      eb.emit(UI_EVENTS.ACTION, {
+        action: "logout",
+        source: COMPONENT_MODULE_ID,
+        timestamp: Date.now()
+      });
+    }
     clearUser(component);
     const hns = getHardNavService();
     hns.redirect("/login", "logout", COMPONENT_MODULE_ID);
   }).catch((error) => {
     component._log("error", "Erro logout:", error);
-    component._announce("Erro ao sair. Tente novamente.");
+    component._announce(MSG_ERRO_SAIR);
+    mostrarAvisoErro(component.element, MSG_ERRO_SAIR);
   });
 }
 function healthCheck() {
@@ -149,6 +154,7 @@ function getLogs() {
 }
 export {
   MODULE_ID,
+  MSG_ERRO_SAIR,
   VERSION,
   clearUser,
   getLogs,
