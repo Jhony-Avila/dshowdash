@@ -2,7 +2,7 @@
 /**
  * Geral V2 — bootstrap dos endpoints em api/geral/v2/*.php (contrato da CIMA, 23/11). Arquivos .php diretos: NÃO precisam de bloco novo
  * no nginx (só `/api/<módulo>/…` sem .php precisaria). Só GET. Sessão + nível ≥ 50 (a mesma regra do /api/pipedrive/overview).
- * Só LEITURA da base local (PIPE_DSHOW, GCAL_DSHOW, BLING). Nenhuma API externa.
+ * Só LEITURA da base local (PIPE_DSHOW, GCAL_DSHOW, BLING e, desde 25/11, APP_DSHOW.fin_pcf_* do coletor do Precifica). Nenhuma API externa.
  */
 declare(strict_types=1);
 
@@ -65,7 +65,10 @@ function geral_v2_provedor_agenda(?PDO $gcal, int $usuario): ?Closure
 function geral_v2_contrato(int $usuario): GeralV2Contrato
 {
     $gcal = geral_v2_pdo('GCAL_DSHOW');
-    return new GeralV2Contrato(new GeralV2(geral_v2_pdo('PIPE_DSHOW'), $gcal, geral_v2_pdo('BLING'), $usuario, null, geral_v2_provedor_agenda($gcal, $usuario)));
+    // 25/11: o "Recebido" lê APP_DSHOW.fin_pcf_* pela conexão do Dash (DSHOWDASH), com GRANT SELECT SÓ nessas tabelas (portão GERAL-V2-PRECIFICA-ACESSO).
+    // Sem o GRANT a consulta falha → "—" com "Não foi possível ler…" (nunca zero).
+    return new GeralV2Contrato(new GeralV2(geral_v2_pdo('PIPE_DSHOW'), $gcal, geral_v2_pdo('BLING'), $usuario, null, geral_v2_provedor_agenda($gcal, $usuario),
+        fin: geral_v2_pdo('DSHOWDASH')));
 }
 
 /** Texto da query (ou null). */

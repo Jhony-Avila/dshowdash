@@ -56,6 +56,8 @@ final class GeralV2
         ?DateTimeImmutable $agora = null,
         private ?Closure $agenda = null,
         private string $p = '',
+        private ?PDO $fin = null,                 // 25/11: conexão do Dash com SELECT só nas APP_DSHOW.fin_pcf_* (portão de acesso); null = sem acesso
+        private string $finSchema = 'APP_DSHOW',
     ) {
         if ($p !== '' && preg_match('/^[a-z0-9_]{1,24}\z/', $p) !== 1) throw new InvalidArgumentException('prefixo inválido');
         $this->br = new DateTimeZone(self::FUSO);
@@ -98,6 +100,68 @@ final class GeralV2
     }
 
     public function agora(): DateTimeImmutable { return $this->agora; }
+
+    /** Coletor do Precifica: um snapshot a cada 15 min; mais velho que isto = desatualizado (o valor continua, com o horário). */
+    public const PRECIFICA_VELHA_MIN = 60;
+    private ?array $recebidoCache = null;
+
+    /**
+     * 25/11 · "Recebido no período" = último snapshot UTILIZÁVEL (estado ok|parcial) do coletor do Precifica (APP_DSHOW.fin_pcf_*), regras do Walter:
+     * baixas não estornadas, total_received, por receipt_date (dia civil) e CNPJ da PARCELA (fin_pcf_recebido_dia já vem assim do coletor).
+     * Valor desconhecido em qualquer dia do período → valor null (nunca soma parcial). Sem acesso/sem snapshot → null com o motivo, nunca zero.
+     * @return array{estado:string, valor:?string, quantidade:?int, snapshot_em:?string, motivo:?string, por_empresa:?array, sem_cnpj:?int}
+     */
+    public function recebido(string $periodo): array
+    {
+        if ($this->recebidoCache !== null && $this->recebidoCache['periodo'] === $periodo) return $this->recebidoCache['r'];
+        [$de, $ate] = $this->periodo($periodo);
+        $nada = ['valor' => null, 'quantidade' => null, 'snapshot_em' => null, 'por_empresa' => null, 'sem_cnpj' => null];
+        $s = $this->finSchema; if (preg_match('/^[A-Za-z0-9_]{1,64}\z/', $s) !== 1) throw new InvalidArgumentException('schema inválido');
+        $t = fn(string $x) => "`{$s}`.`{$this->p}{$x}`";
+        if ($this->fin === null) {
+            $r = ['estado' => 'indisponivel', 'motivo' => 'sem_acesso'] + $nada;
+        } else {
+            try {
+                $snap = $this->fin->query("SELECT `id`, `gerado_em` FROM {$t('fin_pcf_snapshot')} WHERE `estado` IN ('ok','parcial') ORDER BY `id` DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+                if ($snap === false) {
+                    $r = ['estado' => 'aguardando_conexao', 'motivo' => 'sem_snapshot'] + $nada;
+                } else {
+                    $em = new DateTimeImmutable((string) $snap['gerado_em'], $this->utc);
+                    $st = $this->fin->prepare("SELECT COUNT(*) AS linhas, COALESCE(SUM(`baixas`),0) AS baixas, SUM(`valor_cents`) AS cents,
+                                                      COALESCE(SUM(`valor_cents` IS NULL),0) AS nulos, COALESCE(SUM(`empresa_id` IS NULL),0) AS sem_cnpj
+                                                 FROM {$t('fin_pcf_recebido_dia')} WHERE `snapshot_id` = ? AND `dia` BETWEEN ? AND ?");
+                    $st->execute([(int) $snap['id'], $de->format('Y-m-d'), $ate->format('Y-m-d')]);
+                    $a = $st->fetch(PDO::FETCH_ASSOC);
+                    $pe = $this->fin->prepare("SELECT r.`empresa_id`, e.`cnpj`, e.`nome`, SUM(r.`baixas`) AS baixas, SUM(r.`valor_cents`) AS cents, SUM(r.`valor_cents` IS NULL) AS nulos
+                                                 FROM {$t('fin_pcf_recebido_dia')} r LEFT JOIN {$t('fin_pcf_empresa')} e ON e.`empresa_id` = r.`empresa_id`
+                                                WHERE r.`snapshot_id` = ? AND r.`dia` BETWEEN ? AND ? GROUP BY r.`empresa_id`, e.`cnpj`, e.`nome` ORDER BY cents DESC");
+                    $pe->execute([(int) $snap['id'], $de->format('Y-m-d'), $ate->format('Y-m-d')]);
+                    $centsTxt = static fn($c, $nulos) => (int) $nulos > 0 || $c === null ? null : self::deCentavos((int) $c);
+                    $porEmp = array_map(fn($x) => ['empresa_id' => $x['empresa_id'] !== null ? (int) $x['empresa_id'] : null, 'cnpj' => $x['cnpj'], 'nome' => $x['nome'],
+                        'quantidade' => (int) $x['baixas'], 'valor' => $centsTxt($x['cents'], $x['nulos'])], $pe->fetchAll(PDO::FETCH_ASSOC));
+                    $linhas = (int) $a['linhas']; $nulos = (int) $a['nulos'];
+                    $valor = $linhas === 0 ? '0.00' : $centsTxt($a['cents'], $nulos);
+                    $velho = $this->idadeMin($em) > self::PRECIFICA_VELHA_MIN;
+                    $estado = $nulos > 0 ? 'parcial' : ($velho ? 'desatualizado' : ($linhas === 0 ? 'zero_confirmado' : 'ok'));
+                    $r = ['estado' => $estado, 'motivo' => $nulos > 0 ? 'valor_desconhecido' : ($velho ? 'snapshot_antigo' : null),
+                          'valor' => $valor, 'quantidade' => (int) $a['baixas'], 'snapshot_em' => $em->setTimezone($this->br)->format(DATE_ATOM),
+                          'por_empresa' => $porEmp, 'sem_cnpj' => (int) $a['sem_cnpj']];
+                }
+            } catch (PDOException $e) {
+                error_log('[geral-v2] precifica: ' . get_class($e));   // nunca a mensagem
+                $r = ['estado' => 'indisponivel', 'motivo' => 'leitura_falhou'] + $nada;
+            }
+        }
+        $this->recebidoCache = ['periodo' => $periodo, 'r' => $r];
+        return $r;
+    }
+
+    /** centavos inteiros → "1234.56" (sem float) */
+    private static function deCentavos(int $c): string
+    {
+        $neg = $c < 0; $c = abs($c);
+        return ($neg ? '-' : '') . intdiv($c, 100) . '.' . str_pad((string) ($c % 100), 2, '0', STR_PAD_LEFT);
+    }
 
     /**
      * Inteiro positivo vindo da URL (pagina, por_pagina, responsavel), validado no texto BRUTO: só dígitos, sem zero à esquerda, até $digitos.

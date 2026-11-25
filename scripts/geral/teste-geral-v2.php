@@ -349,8 +349,8 @@ check('contrato · agenda: só os próximos de hoje (sem o que já passou, sem c
 $agN = (new GeralV2Contrato(new GeralV2($pdo, $pdo, $pdo, 75, $AGORA, null, $P)))->agenda();
 check('contrato · agenda sem provedor: erro e itens null (nunca lista vazia)', $agN['estado'] === 'erro' && $agN['itens'] === null && is_string($agN['motivo']));
 $fo = array_column($K()->fontes(), null, 'fonte');
-check('contrato · fontes (116): pipedrive, bling, calendar, precifica — nessa ordem; Precifica aguardando', array_keys($fo) === ['pipedrive', 'bling', 'calendar', 'precifica']
-    && $fo['precifica']['estado'] === 'aguardando' && $fo['precifica']['ultimo_sucesso'] === null, implode(',', array_keys($fo)));
+check('contrato · fontes (116): pipedrive, bling, calendar, precifica — nessa ordem; Precifica sem acesso = problema', array_keys($fo) === ['pipedrive', 'bling', 'calendar', 'precifica']
+    && $fo['precifica']['estado'] === 'problema' && $fo['precifica']['ultimo_sucesso'] === null, implode(',', array_keys($fo)));   // 25/11: sem acesso ao Precifica = problema
 // P1 do mockup (116): o funil "Dados parciais · N negócios sem valor" (aqui, o negócio 12) → a linha do Pipedrive NUNCA "Atualizado"
 $fpP1 = $fo['pipedrive']; $fuP1 = $K()->resumo('7d')['funil_aberto'];
 check('P1 · funil parcial pelo valor → "Pipedrive · Dados parciais (valores do funil)", com a hora da leitura do funil', $fuP1['estado'] === 'parcial' && $fuP1['sem_valor'] === 1
@@ -869,9 +869,9 @@ check('116 · sem_canal > 0 NÃO é lacuna, NÃO deixa parcial, sem motivo/aviso
 check('116 · funil: fotografia_em = a hora da leitura dos negócios somados (o último sucesso deles); o parcial por valor faltando continua', $c116['funil_aberto']['fotografia_em'] === $c116['funil_aberto']['ultimo_sucesso']
     && $c116['funil_aberto']['fotografia_em'] !== null && $c116['funil_aberto']['estado'] === 'parcial' && $c116['funil_aberto']['lacunas'] === ['sem_valor'], json_encode($c116['funil_aberto']));
 check('116 · ganhos: sem_valor/fora_brl expostos, mas fora das lacunas (o cartão é a quantidade)', $c116['negocios_ganhos']['lacunas'] === [] && $c116['negocios_ganhos']['fora_brl'] === 1, json_encode($c116['negocios_ganhos']));
-$REC = ['fonte' => 'precifica', 'estado' => 'aguardando', 'valor' => null, 'quantidade' => null, 'ultimo_sucesso' => null, 'consulta_completa' => false, 'lacunas' => [], 'motivo' => 'Precifica ainda não conectado para recebimentos.'];
-check('116 · recebido: o bloco EXATO da CIMA (Precifica aguardando, sem número)', $c116['recebido'] === $REC, json_encode($c116['recebido'], JSON_UNESCAPED_UNICODE));
-// recebido SEM consulta: um PDO que registra cada SQL — nenhuma consulta a asaas/receb/pagamento; e o bloco é o MESMO sem banco nenhum
+// 25/11 · recebido LIGADO ao último snapshot utilizável do coletor do Precifica (APP_DSHOW.fin_pcf_*; no teste, o schema deste banco)
+check('recebido sem acesso (fin = null): "—" com o motivo, nunca zero', $c116['recebido']['estado'] === 'erro' && $c116['recebido']['valor'] === null
+    && $c116['recebido']['motivo'] === 'Sem acesso de leitura aos recebimentos do Precifica.', json_encode($c116['recebido'], JSON_UNESCAPED_UNICODE));
 $pdoReg = new class ($pdo) extends PDO {
     public array $q = [];
     public function __construct(private PDO $real) {}
@@ -879,17 +879,38 @@ $pdoReg = new class ($pdo) extends PDO {
     public function query(string $q, ?int $m = null, mixed ...$a): PDOStatement|false { $this->q[] = $q; return $this->real->query($q); }
     public function exec(string $q): int|false { $this->q[] = $q; return $this->real->exec($q); }
 };
-$paR = (new GeralV2Contrato(new GeralV2($pdoReg, $pdoReg, $pdoReg, 75, $AGORA, $provDe($cf2), $P)))->painel('7d');
-$qRec = array_values(array_filter($pdoReg->q, fn($q) => preg_match('/asaas|receb|pagament|precifica/i', $q) === 1));
-check('116 · recebido sem NENHUMA consulta de recebimento (asaas/receb/pagament/precifica): 0 no painel inteiro', $qRec === [] && $paR['resumo']['recebido'] === $REC, json_encode($qRec));
-$paSem = (new GeralV2Contrato(new GeralV2(null, null, null, 75, $AGORA, null, $P)))->painel('7d');
-check('116 · recebido igual com TODOS os bancos fora (não depende de nada lido)', $paSem['resumo']['recebido'] === $REC);
+$SCH = (string) $pdo->query('SELECT DATABASE()')->fetchColumn();
+foreach (["fin_pcf_snapshot (`id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, `gerado_em` DATETIME(3) NOT NULL, `estado` VARCHAR(10) NOT NULL, `motivos` VARCHAR(200) NOT NULL DEFAULT '', `ms` INT UNSIGNED NOT NULL DEFAULT 0, `regras_versao` VARCHAR(32) NOT NULL DEFAULT 't')",
+          "fin_pcf_recebido_dia (`snapshot_id` BIGINT UNSIGNED NOT NULL, `dia` DATE NOT NULL, `empresa_id` INT NULL, `baixas` INT UNSIGNED NOT NULL, `valor_cents` BIGINT NULL)",
+          "fin_pcf_empresa (`empresa_id` INT NOT NULL PRIMARY KEY, `cnpj` VARCHAR(20) NOT NULL, `nome` VARCHAR(100) NULL, `ativo` TINYINT(1) NOT NULL, `atualizado_em` DATETIME(3) NOT NULL)"] as $ddl) {
+    $nomeT = strtok($ddl, ' '); $pdo->exec("CREATE TABLE `{$P}{$nomeT}` " . substr($ddl, strlen($nomeT) + 1)); $criadas[] = $P . $nomeT;
+}
+$KF = fn(?PDO $fin = null) => new GeralV2Contrato(new GeralV2($pdoReg, $pdoReg, $pdoReg, 75, $AGORA, $provDe($cf2), $P, $fin ?? $pdoReg, $SCH));
+$utc = fn(string $rel) => $AGORA->modify($rel)->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+check('recebido sem snapshot utilizável (só um "erro"): aguardando, "—"', ($pdo->exec("INSERT INTO `{$P}fin_pcf_snapshot` (gerado_em, estado) VALUES ('{$utc('-5 minutes')}', 'erro')") === 1)
+    && ($rx = $KF()->resumo('7d')['recebido'])['estado'] === 'aguardando' && $rx['valor'] === null && $rx['motivo'] === 'O Precifica ainda não tem uma leitura completa de recebimentos.', json_encode($rx ?? null));
+$pdo->exec("INSERT INTO `{$P}fin_pcf_empresa` VALUES (1, '12345678000199', 'Empresa Um', 1, NOW())");
+$pdo->exec("INSERT INTO `{$P}fin_pcf_snapshot` (gerado_em, estado) VALUES ('{$utc('-10 minutes')}', 'parcial')"); $sid = (int) $pdo->lastInsertId();
+$pdo->exec("INSERT INTO `{$P}fin_pcf_snapshot` (gerado_em, estado) VALUES ('{$utc('-2 minutes')}', 'erro')");   // o erro MAIS NOVO não vale
+$pdo->exec("INSERT INTO `{$P}fin_pcf_recebido_dia` VALUES ($sid, '2026-11-18', 1, 2, 100000), ($sid, '2026-11-20', NULL, 1, 5000), ($sid, '2026-11-23', 1, 9, 999900), ($sid, '2026-11-10', 1, 9, 777700)");
+$r7 = $KF()->resumo('7d')['recebido'];   // 7d = 16–22/11: só 18/11 e 20/11 (o 23/11 é hoje, o 10/11 está fora)
+check('recebido 7d: soma em centavos das baixas do período (1050.00, 3 baixas), CNPJ da parcela; sem CNPJ entra no total e aparece à parte', $r7['estado'] === 'ok' && $r7['valor'] === '1050.00'
+    && $r7['quantidade'] === 3 && $r7['sem_cnpj'] === 1 && $r7['lacunas'] === [] && count($r7['por_empresa']) === 2 && $r7['por_empresa'][0]['cnpj'] === '12345678000199' && $r7['por_empresa'][0]['valor'] === '1000.00'
+    && $r7['ultimo_sucesso'] === $AGORA->modify('-10 minutes')->format(DATE_ATOM), json_encode($r7, JSON_UNESCAPED_UNICODE));
+check('recebido ontem (22/11) sem baixa: zero de verdade ("0.00")', ($r0 = $KF()->resumo('ontem')['recebido'])['estado'] === 'zero' && $r0['valor'] === '0.00', json_encode($r0));
+$pdo->exec("INSERT INTO `{$P}fin_pcf_recebido_dia` VALUES ($sid, '2026-11-19', 1, 1, NULL)");
+check('recebido com valor desconhecido no período: parcial e "—" (nunca soma parcial)', ($rp = $KF()->resumo('7d')['recebido'])['estado'] === 'parcial' && $rp['valor'] === null
+    && $rp['lacunas'] === ['valor_desconhecido'], json_encode($rp));
+$pdo->exec("DELETE FROM `{$P}fin_pcf_recebido_dia` WHERE valor_cents IS NULL"); $pdo->exec("UPDATE `{$P}fin_pcf_snapshot` SET gerado_em = '{$utc('-3 hours')}' WHERE id = $sid");
+check('recebido com snapshot de 3 h: desatualizado, com o valor e o horário da última leitura', ($rd = $KF()->resumo('7d')['recebido'])['estado'] === 'desatualizado' && $rd['valor'] === '1050.00', json_encode($rd));
+$pdo->exec("UPDATE `{$P}fin_pcf_snapshot` SET gerado_em = '{$utc('-10 minutes')}' WHERE id = $sid");
+$paR = $KF()->painel('7d');
+$qRec = array_values(array_filter($pdoReg->q, fn($q) => preg_match('/asaas|receb_|pagament|financ/i', $q) === 1));
+check('recebido nunca consulta Asaas/pagamentos: só fin_pcf_*', $qRec === [], json_encode($qRec));
 $fo116 = $paR['fontes']; $fP = array_column($fo116, null, 'fonte')['precifica'] ?? [];
 check('116 · fontes: pipedrive, bling, calendar, precifica — e NUNCA asaas, mercadolivre ou lojaintegrada', array_column($fo116, 'fonte') === ['pipedrive', 'bling', 'calendar', 'precifica']
     && !preg_match('/asaas|mercadolivre|lojaintegrada/i', json_encode($fo116)), implode(',', array_column($fo116, 'fonte')));
-check('116 · fonte precifica: o objeto da CIMA (aguardando, "Aguardando conexão", afetado = recebimentos)', ($fP['estado'] ?? null) === 'aguardando' && ($fP['rotulo_estado'] ?? null) === 'Aguardando conexão'
-    && array_key_exists('ultimo_sucesso', $fP) && $fP['ultimo_sucesso'] === null && ($fP['motivo'] ?? null) === 'Precifica ainda não conectado para recebimentos.'
-    && ($fP['afetado'] ?? null) === [['id' => 'recebido', 'rotulo' => 'recebimentos', 'estado' => 'aguardando', 'rotulo_estado' => 'Aguardando conexão']], json_encode($fP, JSON_UNESCAPED_UNICODE));
+check('fonte precifica com snapshot bom: Atualizado, sem parte afetada', ($fP['estado'] ?? null) === 'conectada' && ($fP['afetado'] ?? null) === [] && ($fP['conexao']['estado'] ?? null) === 'conectada', json_encode($fP, JSON_UNESCAPED_UNICODE));
 check('116 · painel coerente com tudo isso', ($e = $coerentePainel($paR)) === '', $e);
 $pdo->exec("DELETE FROM `{$P}bling_sales_orders` WHERE account_id = 7"); $pdo->exec("DELETE FROM `{$P}bling_sync_state` WHERE account_id = 7"); $pdo->exec("DELETE FROM `{$P}bling_accounts` WHERE id = 7");   // tabelas do próprio teste
 

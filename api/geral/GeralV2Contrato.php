@@ -94,9 +94,28 @@ final class GeralV2Contrato
                 'fora_brl' => $f['fora_brl'], 'ultimo_sucesso' => $f['atualizado_em'], 'motivo' => $this->motivo('pipedrive_negocios', $f['estado'], $fp, $this->lacunaDado($f)),
                 'aviso' => $this->aviso($f, $this->avisoValor($f)), 'fotografia_em' => $f['fotografia_em'],
             ] + $this->meta('pipedrive_negocios', $f['estado'], $f['quantidade'] !== null, $f['lacunas']),
-            // 116 (Jhony 25/11): "Recebido no período" FIXO em aguardando — fonte Precifica, ainda sem conector. Nenhuma consulta (nunca Asaas/Bling/Pipedrive).
-            'recebido' => self::RECEBIDO,
+            // 25/11: "Recebido no período" = último snapshot utilizável do coletor do Precifica (nunca Asaas/Bling/Pipedrive); sem snapshot/acesso = "—" + motivo
+            'recebido' => $this->recebido($periodo),
         ];
+    }
+
+    private const MOTIVO_RECEBIDO = [
+        'sem_acesso' => 'Sem acesso de leitura aos recebimentos do Precifica.',
+        'leitura_falhou' => 'Não foi possível ler os recebimentos do Precifica agora.',
+        'sem_snapshot' => 'O Precifica ainda não tem uma leitura completa de recebimentos.',
+        'valor_desconhecido' => 'Há baixa com valor desconhecido no período: o total não é somado.',
+        'snapshot_antigo' => 'Leitura do Precifica atrasada: valor da última leitura completa.',
+    ];
+
+    private function recebido(string $periodo): array
+    {
+        $x = $this->g->recebido($periodo);
+        return ['fonte' => 'precifica', 'estado' => self::ESTADO[$x['estado']], 'valor' => $x['valor'], 'quantidade' => $x['quantidade'],
+                'ultimo_sucesso' => $x['snapshot_em'], 'consulta_completa' => in_array($x['estado'], ['ok', 'zero_confirmado', 'desatualizado'], true),
+                'lacunas' => $x['estado'] === 'parcial' ? ['valor_desconhecido'] : [],
+                // CNPJ da PARCELA (regra do Walter); parcela sem CNPJ entra no total e aparece com empresa null (informação, não lacuna)
+                'por_empresa' => $x['por_empresa'], 'sem_cnpj' => $x['sem_cnpj'],
+                'motivo' => $x['motivo'] !== null ? self::MOTIVO_RECEBIDO[$x['motivo']] : null];
     }
 
     // ─────────────── 2. prioridades ───────────────
@@ -234,13 +253,16 @@ final class GeralV2Contrato
                 'afetado' => array_values(array_map(fn($i) => ['id' => $i['id'], 'rotulo' => isset($soValor[$i['id']]) ? 'valores do funil' : self::ROTULO_IND[$i['id']], 'estado' => $i['estado'],
                     'rotulo_estado' => $this->rotuloParte($i['id'], $i['estado'])], array_filter($inds, fn($i) => $i['estado'] !== 'ok')))];
         }
-        // 116: Precifica (recebimentos) aguardando conexão — a ÚNICA fonte do "Recebido"; nunca o Asaas
-        $t = self::MOTIVO_PRECIFICA;
-        $out[] = ['fonte' => 'precifica', 'estado' => 'aguardando', 'rotulo_estado' => 'Aguardando conexão', 'ultimo_sucesso' => null, 'motivo' => $t,
-            'conexao' => ['estado' => 'aguardando', 'motivo' => $t],
-            'consultas' => [['id' => 'recebido', 'rotulo' => 'Recebimentos', 'estado' => 'aguardando', 'ultimo_sucesso' => null, 'motivo' => $t, 'indicadores' => ['recebido']]],
-            'parte_afetada' => ['recebido'], 'indicadores' => [['id' => 'recebido', 'estado' => 'aguardando']],
-            'afetado' => [['id' => 'recebido', 'rotulo' => 'recebimentos', 'estado' => 'aguardando', 'rotulo_estado' => 'Aguardando conexão']]];
+        // 25/11: Precifica (recebimentos) — a ÚNICA fonte do "Recebido" (nunca o Asaas); estado = o do último snapshot utilizável
+        $rc = $r['recebido']; $e = $rc['estado'] === 'zero' ? 'ok' : $rc['estado'];   // estado da CONSULTA (zero de verdade = ok)
+        // linha da fonte no MESMO enum das outras: conectada · problema · aguardando · desatualizado · parcial
+        $linha = ['ok' => 'conectada', 'erro' => 'problema', 'aguardando' => 'aguardando', 'desatualizado' => 'desatualizado', 'parcial' => 'parcial'][$e];
+        $con = ['ok' => 'conectada', 'erro' => 'problema', 'aguardando' => 'aguardando'][$e] ?? 'conectada';
+        $out[] = ['fonte' => 'precifica', 'estado' => $linha, 'rotulo_estado' => self::ROTULO_ESTADO[$e], 'ultimo_sucesso' => $rc['ultimo_sucesso'], 'motivo' => $rc['motivo'],
+            'conexao' => ['estado' => $con, 'motivo' => $con === 'conectada' ? null : $rc['motivo']],
+            'consultas' => [['id' => 'recebido', 'rotulo' => 'Recebimentos', 'estado' => $e, 'ultimo_sucesso' => $rc['ultimo_sucesso'], 'motivo' => $rc['motivo'], 'indicadores' => ['recebido']]],
+            'parte_afetada' => $e === 'ok' ? [] : ['recebido'], 'indicadores' => [['id' => 'recebido', 'estado' => $e]],
+            'afetado' => $e === 'ok' ? [] : [['id' => 'recebido', 'rotulo' => 'recebimentos', 'estado' => $e, 'rotulo_estado' => self::ROTULO_ESTADO[$e]]]];
         return $out;
     }
 
