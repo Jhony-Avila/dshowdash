@@ -26,6 +26,7 @@ import { queryClient, apiGet, chaves } from '../lib/api';
 import type { ShellConfig, PipeStatus, PipeHealth } from '../shell/types';
 import { fmtData } from '../lib/format';
 import { Configuracoes } from '../screens/Configuracoes';
+import { PrecificaAnalyticsTela } from '../screens/PrecificaAnalytics';
 import { VisaoGeral } from '../screens/VisaoGeral';
 import { Negocios } from '../screens/Negocios';
 import { Pessoas, Organizacoes, Atividades, Leads, Produtos, Notas, Usuarios } from '../screens/EntidadesGrids';
@@ -44,7 +45,8 @@ const HASH_BASE = '#/panel-pipedrive';
 const VERSAO = '2.4.0';
 
 type TelaId = 'geral' | 'alertas' | 'rankings' | 'previsao' | 'perdas' | 'origem' | 'negocios' | 'kanban' | 'pessoas'
-  | 'organizacoes' | 'atividades' | 'leads' | 'produtos' | 'notas' | 'funis' | 'usuarios' | 'saude' | 'config' | 'metas';
+  | 'organizacoes' | 'atividades' | 'leads' | 'produtos' | 'notas' | 'funis' | 'usuarios' | 'saude' | 'config' | 'metas'
+  | 'precifica-analytics';   // P20 (CIMA): fora do menu até o backend do Precifica Analytics publicar
 
 const TELAS: Record<TelaId, { label: string; Icon: LucideIcon }> = {
   geral:        { label: 'Visão Geral',   Icon: LayoutDashboard },
@@ -66,6 +68,7 @@ const TELAS: Record<TelaId, { label: string; Icon: LucideIcon }> = {
   usuarios:     { label: 'Usuários',      Icon: UserRoundCog },
   saude:        { label: 'Saúde',         Icon: Activity },
   config:       { label: 'Configurações', Icon: Settings2 },
+  'precifica-analytics': { label: 'Precifica Analytics', Icon: LayoutDashboard },
 };
 
 // Agrupamento da navegação (§6.3).
@@ -211,6 +214,7 @@ function Shell() {
 
       <main className="pp-main">
         {tela === 'config' ? <Configuracoes onSaude={() => irPara('saude')} />
+          : tela === 'precifica-analytics' ? <PrecificaAnalyticsTela />
           : tela === 'saude' ? <SaudeSync />
           : tela === 'alertas' ? <Alertas status={status} />
           : tela === 'rankings' ? <Rankings status={status} />

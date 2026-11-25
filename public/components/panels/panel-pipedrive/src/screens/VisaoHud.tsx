@@ -10,7 +10,7 @@
 //   • 5 estados com motivo em texto: Carregando · Atualizado · Desatualizado · Parcial · Indisponível. Desconhecido = "—".
 //   • ECharts é o motor dos gráficos; números animados por CSS (sem NumberFlow: não entra no bundle neste degrau);
 //     prefers-reduced-motion desliga o que não é essencial; nada em loop.
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Trophy, CircleDollarSign, Layers, CircleX, Percent, Ticket, Timer, Wallet, LineChart, PieChart, Medal, ArrowUpRight,
@@ -62,7 +62,11 @@ export interface Drill {
 }
 
 /** Selo de estado: sempre com o texto, nunca só a cor. */
+/** Dados ILUSTRATIVOS (Precifica sem backend, P20): o selo diz "Ilustrativo" em vez de afirmar frescor que não existe. */
+export const IlustrativoCtx = createContext(false);
 export function Selo({ estado, titulo }: { estado: EstadoTela; titulo?: string }) {
+  const ilustr = useContext(IlustrativoCtx);
+  if (ilustr && estado !== 'carregando') return <span className="hud-status part" title="Dados sintéticos: não vêm da fonte real">Ilustrativo</span>;
   return <span className={`hud-status ${CLASSE_ESTADO[estado]}`} title={titulo}>{ROTULO_ESTADO[estado]}</span>;
 }
 
@@ -161,9 +165,11 @@ function serieDerivada(chave: string, s: PipeSummary): number[] {
   return por(chave);
 }
 
-export function HudKpis({ resumo, carregando, falhou, onDrill, onDetalhes }: {
+export function HudKpis({ resumo, carregando, falhou, onDrill, onDetalhes, semDrill = false, rotuloAgora = 'Em aberto agora' }: {
   resumo?: PipeSummary; carregando: boolean; falhou: boolean;
   onDrill: (d: Drill) => void; onDetalhes?: () => void;
+  /** Precifica (P20): ainda sem lista de registros no contrato → sem "Ver negócios". */
+  semDrill?: boolean; rotuloAgora?: string;
 }) {
   const pal = usePaleta();
   const per = resumo?.periodo;
@@ -176,7 +182,7 @@ export function HudKpis({ resumo, carregando, falhou, onDrill, onDetalhes }: {
     const v = !carregando && !falhou && k ? variacao(k, def.polaridade) : null;
     const serie = resumo && k && estado !== 'indisponivel' ? serieDerivada(def.chave, resumo) : [];
     const cor = def.chave === 'perdidos' ? pal.danger : def.chave === 'criados' ? pal.primary : pal.ok;
-    const clicavel = estado !== 'carregando' && estado !== 'indisponivel' && !!def.drill && !!per && k?.valor != null;
+    const clicavel = !semDrill && estado !== 'carregando' && estado !== 'indisponivel' && !!def.drill && !!per && k?.valor != null;
     const abrir = () => { if (clicavel && def.drill && per) onDrill({ ...def.drill(per.de, per.ate, ctx), esperado: { n: def.chave === 'ganhos' || def.chave === 'perdidos' || def.chave === 'criados' ? k?.valor ?? null : null, valor: def.chave === 'valor_ganho' ? k?.valor ?? null : null } }); };
     // motivo em texto de cada estado (nunca só a cor)
     let motivo: ReactNode = null;
@@ -194,7 +200,7 @@ export function HudKpis({ resumo, carregando, falhou, onDrill, onDetalhes }: {
         aria-label={`${def.rotulo}: ${fmtKpi(k)} · ${ROTULO_ESTADO[estado]}`} title={k?.dica}>
         <div className="hud-statline">
           <span className="hud-icon"><def.Icon size={15} aria-hidden /></span>
-          <span className="hud-label">{def.rotulo}</span>
+          <span className="hud-label">{k?.rotulo ?? def.rotulo}</span>
           <Selo estado={estado} titulo={estado === 'desatualizado' ? (leitura?.motivo ?? undefined) : undefined} />
         </div>
         <div className="hud-value">{estado === 'carregando' ? <span className="hud-skel" /> : <Num texto={estado === 'indisponivel' ? '—' : fmtKpi(k)} />}</div>
@@ -208,19 +214,19 @@ export function HudKpis({ resumo, carregando, falhou, onDrill, onDetalhes }: {
   // 8º: foto do agora (sem variação: a base não guarda snapshot)
   const e = resumo?.estado;
   const estAgora: EstadoTela = carregando ? 'carregando' : falhou || !e || e.valor_aberto == null ? 'indisponivel' : (e.estado ?? 'atualizado');
-  const clicAgora = estAgora !== 'carregando' && estAgora !== 'indisponivel';
+  const clicAgora = !semDrill && estAgora !== 'carregando' && estAgora !== 'indisponivel';
   const abrirAgora = () => {
     if (clicAgora) onDrill({ titulo: 'Em aberto agora', contexto: 'Situação atual da carteira · sem período · Pipedrive', rotuloValor: 'Valor em aberto', filtros: { status: 'open' }, esperado: { n: e?.abertos ?? null, valor: e?.valor_aberto ?? null } });
     else if (estAgora === 'indisponivel') onDetalhes?.();
   };
   cartoes.push(
-    <div key="agora" className={`hud-stat minor click est-${CLASSE_ESTADO[estAgora]}`} role="button" tabIndex={0}
+    <div key="agora" className={`hud-stat minor${semDrill ? '' : ' click'} est-${CLASSE_ESTADO[estAgora]}`} role={semDrill ? undefined : 'button'} tabIndex={semDrill ? undefined : 0}
       onClick={abrirAgora} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); abrirAgora(); } }}
-      aria-label={`Em aberto agora: ${e?.valor_aberto != null ? fmtBRL(e.valor_aberto) : '—'} · ${ROTULO_ESTADO[estAgora]}`}
+      aria-label={`${rotuloAgora}: ${e?.valor_aberto != null ? fmtBRL(e.valor_aberto) : '—'} · ${ROTULO_ESTADO[estAgora]}`}
       title="Situação atual da carteira — não tem período anterior para comparar.">
       <div className="hud-statline">
         <span className="hud-icon"><Wallet size={15} aria-hidden /></span>
-        <span className="hud-label">Em aberto agora</span>
+        <span className="hud-label">{rotuloAgora}</span>
         <Selo estado={estAgora} />
       </div>
       <div className="hud-value">{estAgora === 'carregando' ? <span className="hud-skel" /> : <Num texto={estAgora === 'indisponivel' ? '—' : fmtBRL(e?.valor_aberto)} />}</div>
@@ -229,7 +235,7 @@ export function HudKpis({ resumo, carregando, falhou, onDrill, onDetalhes }: {
           : estAgora === 'indisponivel' ? <small title="Consulta indisponível: a foto da carteira (funil aberto) não retornou"><span className="hud-link-off">Consulta indisponível</span></small>
           : <small>{fmtNum(e?.abertos)} negócios · {estAgora === 'desatualizado' && leitura?.atualizado_em ? `última leitura ${hhmm(leitura.atualizado_em)}` : 'foto do agora'}</small>}
       </div>
-      {estAgora !== 'carregando' && <span className="hud-action">{estAgora === 'indisponivel' ? 'Ver detalhes →' : 'Ver negócios →'}</span>}
+      {estAgora !== 'carregando' && !semDrill && <span className="hud-action">{estAgora === 'indisponivel' ? 'Ver detalhes →' : 'Ver negócios →'}</span>}
     </div>,
   );
 
@@ -307,8 +313,8 @@ function optDesfecho(escuro: boolean, ganhos: number, perdidos: number, animar: 
   } as unknown as Opcao;
 }
 
-export function BlocoGanhos({ resumo, carregando, falhou, onDrill }: {
-  resumo?: PipeSummary; carregando: boolean; falhou: boolean; onDrill: (d: Drill) => void;
+export function BlocoGanhos({ resumo, carregando, falhou, onDrill, semDrill = false }: {
+  resumo?: PipeSummary; carregando: boolean; falhou: boolean; onDrill: (d: Drill) => void; semDrill?: boolean;
 }) {
   const pal = usePaleta(); const escuro = useTemaPipe() === 'dark';
   const [gran, setGran] = useState<Gran>('dia');
@@ -329,7 +335,7 @@ export function BlocoGanhos({ resumo, carregando, falhou, onDrill }: {
   const estDesf: EstadoTela = carregando ? 'carregando' : falhou || g == null || p == null ? 'indisponivel' : (kpi('ganhos')?.estado ?? 'atualizado');
   const fechados = g != null && p != null ? g + p : null;
   const abrirDesf = (qual: 'won' | 'lost') => {
-    if (!per || estDesf === 'indisponivel' || estDesf === 'carregando') return;
+    if (semDrill || !per || estDesf === 'indisponivel' || estDesf === 'carregando') return;
     onDrill(qual === 'won'
       ? { titulo: 'Negócios ganhos', contexto: ctx, rotuloValor: 'Valor ganho', filtros: { status: 'won', won_from: per.de, won_to: per.ate }, esperado: { n: g ?? null, valor: total ?? null } }
       : { titulo: 'Negócios perdidos', contexto: ctx, rotuloValor: 'Valor perdido', filtros: { status: 'lost', lost_from: per.de, lost_to: per.ate }, esperado: { n: p ?? null, valor: null } });
@@ -352,8 +358,8 @@ export function BlocoGanhos({ resumo, carregando, falhou, onDrill }: {
                 {x === 'dia' ? 'Dia' : x === 'semana' ? 'Semana' : 'Mês'}
               </button>
             ))}
-            <button type="button" className="hud-smallbtn" title="Abrir os negócios ganhos do período" aria-label="Abrir os negócios ganhos do período"
-              onClick={() => abrirDesf('won')} disabled={estado === 'indisponivel' || estado === 'carregando'}><ArrowUpRight size={13} /></button>
+            {!semDrill && <button type="button" className="hud-smallbtn" title="Abrir os negócios ganhos do período" aria-label="Abrir os negócios ganhos do período"
+              onClick={() => abrirDesf('won')} disabled={estado === 'indisponivel' || estado === 'carregando'}><ArrowUpRight size={13} /></button>}
           </div>
         </div>
         <div className="hud-chartwrap">
@@ -361,7 +367,7 @@ export function BlocoGanhos({ resumo, carregando, falhou, onDrill }: {
             <div className="hud-vazio">— · Consulta indisponível: a série do período não retornou.</div>
           ) : (
             <EChart opcao={optGanhos(pal, escuro, pts, gran, animar)} altura="100%" aria={`Valor ganho por ${gran}`}
-              eventos={{ 'zr:click': (params, inst) => {
+              eventos={semDrill ? undefined : { 'zr:click': (params, inst) => {
                 // clique em qualquer lugar da área de plotagem → o ponto (dia/semana/mês) daquela coluna do eixo
                 const ev = params as { offsetX: number; offsetY: number };
                 if (!inst.containPixel({ gridIndex: 0 }, [ev.offsetX, ev.offsetY])) return;
@@ -373,7 +379,7 @@ export function BlocoGanhos({ resumo, carregando, falhou, onDrill }: {
               } }} />
           )}
         </div>
-        <div className="hud-chartfoot"><span>⠿ Zoom horizontal <strong>{estado === 'indisponivel' || estado === 'carregando' ? '—' : `${diasJ.length} dias`}</strong></span><span>◉ Clique em um ponto para abrir a lista filtrada</span></div>
+        <div className="hud-chartfoot"><span>⠿ Zoom horizontal <strong>{estado === 'indisponivel' || estado === 'carregando' ? '—' : `${diasJ.length} dias`}</strong></span><span>{semDrill ? '' : '◉ Clique em um ponto para abrir a lista filtrada'}</span></div>
       </section>
 
       <section className="hud-card hud-donutcard" aria-label="Desfecho dos fechados">
@@ -382,10 +388,10 @@ export function BlocoGanhos({ resumo, carregando, falhou, onDrill }: {
             <div className="hud-panelname"><PieChart size={16} aria-hidden /> Desfecho dos fechados <Selo estado={estDesf} /></div>
             <div className="hud-panelsub">Negócios finalizados · {faixa(per?.de, per?.ate)}</div>
           </div>
-          <div className="hud-panelbtns">
+          {!semDrill && <div className="hud-panelbtns">
             <button type="button" className="hud-smallbtn" title="Abrir os ganhos do período" aria-label="Abrir os ganhos do período"
               onClick={() => abrirDesf('won')} disabled={estDesf === 'indisponivel' || estDesf === 'carregando'}><ArrowUpRight size={13} /></button>
-          </div>
+          </div>}
         </div>
         <div className="hud-donutinner">
           <div className="hud-donut">
@@ -405,7 +411,7 @@ export function BlocoGanhos({ resumo, carregando, falhou, onDrill }: {
                 <strong>{v != null && fechados ? `${Math.round((v / fechados) * 100)}%` : '—'}</strong><span aria-hidden>›</span>
               </button>
             ))}
-            <p className="hud-hint">Clique no segmento para abrir os respectivos negócios.</p>
+            {!semDrill && <p className="hud-hint">Clique no segmento para abrir os respectivos negócios.</p>}
           </div>
         </div>
       </section>
@@ -415,14 +421,20 @@ export function BlocoGanhos({ resumo, carregando, falhou, onDrill }: {
 
 // ── Ranking de vendedores ────────────────────────────────────────────────────
 
-export function RankingVendedores({ periodo, resumo, onDrill }: { periodo: PipePeriodoId; resumo?: PipeSummary; onDrill: (d: Drill) => void }) {
+export function RankingVendedores({ periodo, resumo, onDrill, fonte }: {
+  periodo: PipePeriodoId; resumo?: PipeSummary; onDrill: (d: Drill) => void;
+  /** Precifica (P20): ranking vindo de fora (contrato próprio), sem consulta ao /metrics e sem drill-down. */
+  fonte?: { data?: Pick<PipeMetrics, 'owners' | 'owners_resumo' | 'owners_periodo'>; isLoading: boolean; error: unknown };
+}) {
   const [modo, setModo] = useState<'valor' | 'qtd'>('valor');
   const [todos, setTodos] = useState(false);
-  const { data, isLoading, error } = useQuery<PipeMetrics>({
+  const q = useQuery<PipeMetrics>({
     queryKey: [...chaves.metrics, 'ranking', periodo],
     queryFn: ({ signal }) => apiGet<PipeMetrics>('/metrics', { days: 365, periodo }, signal),
     refetchInterval: 120_000,
+    enabled: !fonte,
   });
+  const { data, isLoading, error } = (fonte ?? q) as { data?: Pick<PipeMetrics, 'owners' | 'owners_resumo' | 'owners_periodo'>; isLoading: boolean; error: unknown };
   const per = data?.owners_periodo; const rs = data?.owners_resumo;
   const lista: PipeOwnerRow[] = useMemo(() => (data?.owners ?? []).filter((o) => o.ganhos > 0), [data]);
   const ordenada = useMemo(() => [...lista].sort((a, b) => (modo === 'valor' ? b.valor_ganho - a.valor_ganho || b.ganhos - a.ganhos : b.ganhos - a.ganhos || b.valor_ganho - a.valor_ganho)), [lista, modo]);
@@ -438,7 +450,7 @@ export function RankingVendedores({ periodo, resumo, onDrill }: { periodo: PipeP
   const total = modo === 'valor' ? rs?.valor_total : rs?.ganhos_total;
   const ALT = 39;
   const abrir = (o: PipeOwnerRow) => {
-    if (!per?.de || !per.ate || o.owner_id == null) return;
+    if (fonte || !per?.de || !per.ate || o.owner_id == null) return;
     onDrill({ titulo: `Ganhos de ${o.name}`, contexto: `Mesmo filtro da origem · Período: ${faixa(per.de, per.ate)} · Responsável: ${o.name} · Pipedrive`,
       rotuloValor: 'Valor ganho', filtros: { status: 'won', won_from: per.de, won_to: per.ate, owner_id: String(o.owner_id) }, esperado: { n: o.ganhos, valor: o.valor_ganho } });
   };
@@ -474,7 +486,7 @@ export function RankingVendedores({ periodo, resumo, onDrill }: { periodo: PipeP
                 <span className="hud-rankname" title={o.name}>{o.name}</span>
                 <span className="hud-ranktrack"><span className="hud-rankfill" style={{ width: `${(v / max) * 100}%` }} /></span>
                 <span className="hud-rankmoney">{fmt(v)}</span>
-                <span className="hud-ranklink">Ver →</span>
+                <span className="hud-ranklink">{fonte ? "" : "Ver →"}</span>
               </div>
             );
           })}
