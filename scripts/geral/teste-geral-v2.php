@@ -350,7 +350,17 @@ $agN = (new GeralV2Contrato(new GeralV2($pdo, $pdo, $pdo, 75, $AGORA, null, $P))
 check('contrato · agenda sem provedor: erro e itens null (nunca lista vazia)', $agN['estado'] === 'erro' && $agN['itens'] === null && is_string($agN['motivo']));
 $fo = array_column($K()->fontes(), null, 'fonte');
 check('contrato · fontes (116): pipedrive, bling, calendar, precifica — nessa ordem; Precifica aguardando', array_keys($fo) === ['pipedrive', 'bling', 'calendar', 'precifica']
-    && $fo['pipedrive']['estado'] === 'conectada' && $fo['precifica']['estado'] === 'aguardando' && $fo['precifica']['ultimo_sucesso'] === null, implode(',', array_keys($fo)));
+    && $fo['precifica']['estado'] === 'aguardando' && $fo['precifica']['ultimo_sucesso'] === null, implode(',', array_keys($fo)));
+// P1 do mockup (116): o funil "Dados parciais · N negócios sem valor" (aqui, o negócio 12) → a linha do Pipedrive NUNCA "Atualizado"
+$fpP1 = $fo['pipedrive']; $fuP1 = $K()->resumo('7d')['funil_aberto'];
+check('P1 · funil parcial pelo valor → "Pipedrive · Dados parciais (valores do funil)", com a hora da leitura do funil', $fuP1['estado'] === 'parcial' && $fuP1['sem_valor'] === 1
+    && $fpP1['rotulo_estado'] === 'Dados parciais' && $fpP1['ultimo_sucesso'] === $fuP1['ultimo_sucesso'] && $fpP1['motivo'] === '1 negócio sem valor'
+    && $fpP1['afetado'] === [['id' => 'funil_aberto', 'rotulo' => 'valores do funil', 'estado' => 'parcial', 'rotulo_estado' => 'Dados parciais']]
+    && array_column($fpP1['consultas'], 'estado', 'id') === ['ganhos' => 'ok', 'funil' => 'parcial', 'atividades' => 'ok'], json_encode($fpP1, JSON_UNESCAPED_UNICODE));
+$pdo->exec("UPDATE `{$P}pipe_deals` SET value = 1000 WHERE pipedrive_id = 12");   // linha do próprio teste: todo negócio aberto com valor
+$fpOk = array_column($K()->fontes(), null, 'fonte')['pipedrive'];
+check('P1 · CONTROLE: com todo negócio aberto com valor, o funil ok e o Pipedrive "Atualizado", sem parte afetada', $fpOk['rotulo_estado'] === 'Atualizado' && $fpOk['afetado'] === [] && $fpOk['estado'] === 'conectada', json_encode([$fpOk['rotulo_estado'], $fpOk['afetado']]));
+$pdo->exec("UPDATE `{$P}pipe_deals` SET value = NULL WHERE pipedrive_id = 12");
 // estados e motivos
 $pdo->exec("UPDATE `{$P}pipe_accounts` SET status='not_configured'");
 $c = $K()->resumo('7d'); $pr = array_column($K()->prioridades()['itens'], null, 'id');
@@ -386,7 +396,9 @@ $coerentePainel = function (array $pa): string {
     foreach ($blocos as $id => $b) {
         $f = $fo[$b['fonte']]; $c = array_column($f['consultas'], null, 'id')[$CONS[$id]];
         $soDado = $b['estado'] === 'parcial' && $b['lacunas'] !== [] && array_diff($b['lacunas'], ['sem_valor', 'fora_brl', 'sem_canal']) === [];
-        $esperado = in_array($b['estado'], ['ok', 'zero'], true) || $soDado ? 'ok' : $b['estado'];
+        // 116 (P1 do mockup): o funil parcial SÓ pelo dado (valor faltando) aparece na linha como consulta "parcial" ("valores do funil"); os outros, ok
+        $esperado = $soDado && $id === 'funil_aberto' ? 'parcial' : (in_array($b['estado'], ['ok', 'zero'], true) || $soDado ? 'ok' : $b['estado']);
+        if ($soDado && $id === 'funil_aberto' && ($f['rotulo_estado'] === 'Atualizado' || !in_array('valores do funil', array_column($f['afetado'], 'rotulo'), true))) return "painel: funil parcial pelo valor e a linha {$f['fonte']} '{$f['rotulo_estado']}' sem 'valores do funil'";
         if ($c['estado'] !== $esperado && !($CONS[$id] === 'atividades')) return "painel: $id {$b['estado']} e a consulta {$CONS[$id]} {$c['estado']} na MESMA leitura";
         if ($b['estado'] === 'erro' && $f['estado'] !== 'problema') return "painel: $id com problema e a fonte {$f['estado']}";
         if (in_array($b['estado'], ['desatualizado', 'aguardando'], true) && $f['estado'] === 'conectada') return "painel: $id {$b['estado']} e a fonte conectada";
@@ -412,7 +424,7 @@ $coerentePainel = function (array $pa): string {
     }
     foreach ($blocos as $id => $b) {
         $soDado = $b['estado'] === 'parcial' && $b['lacunas'] !== [] && array_diff($b['lacunas'], ['sem_valor', 'fora_brl', 'sem_canal']) === [];
-        if (!in_array($b['estado'], ['ok', 'zero'], true) && !$soDado && !in_array($id, array_column($fo[$b['fonte']]['afetado'], 'id'), true)) return "painel: $id {$b['estado']} fora do afetado da fonte";
+        if (!in_array($b['estado'], ['ok', 'zero'], true) && (!$soDado || $id === 'funil_aberto') && !in_array($id, array_column($fo[$b['fonte']]['afetado'], 'id'), true)) return "painel: $id {$b['estado']} fora do afetado da fonte";
     }
     return '';
 };
@@ -555,7 +567,7 @@ $c = $K()->resumo('7d'); $pi = array_column($K()->prioridades()['itens'], null, 
 check('G3 · atividades há 3 h: ganhos e funil seguem com a hora dos NEGÓCIOS; prioridades desatualizadas', $c['negocios_ganhos']['estado'] === 'ok' && $c['negocios_ganhos']['fonte_atualizada_em'] === '2026-11-23T09:59:00-03:00'
     && $pi['atividade_vencida']['estado'] === 'desatualizado' && $pi['atividade_vencida']['fonte_atualizada_em'] === '2026-11-23T07:00:00-03:00', json_encode([$c['negocios_ganhos']['estado'], $pi['atividade_vencida']['estado']]));
 check('G3 · linha de fontes = o PIOR (desatualizada, 07:00) e diz qual indicador', $fp['estado'] === 'desatualizada' && $fp['ultimo_sucesso'] === '2026-11-23T07:00:00-03:00'
-    && array_column($fp['indicadores'], 'estado', 'id') === ['negocios_ganhos' => 'ok', 'funil_aberto' => 'ok', 'atividade_vencida' => 'desatualizado', 'sem_proxima_atividade' => 'desatualizado'], json_encode($fp));
+    && array_column($fp['indicadores'], 'estado', 'id') === ['negocios_ganhos' => 'ok', 'funil_aberto' => 'parcial', 'atividade_vencida' => 'desatualizado', 'sem_proxima_atividade' => 'desatualizado'], json_encode($fp));   // funil parcial = o negócio 12 sem valor (P1)
 check('G3 · coerência com as atividades atrasadas', ($e = $coerente($K())) === '', $e);
 $pdo->exec("UPDATE `{$P}pipe_sync_runs` SET finished_at='2026-11-23 09:50:00' WHERE entity='activities'");
 // G4 · lista = número: o MESMO CONJUNTO de negócios (não só a contagem), com os casos de fronteira do critério
@@ -624,7 +636,7 @@ $volta = $tmpTab('pipe_activities');
 $pT = $K()->prioridades(); $fp = array_column($K()->fontes(), null, 'fonte')['pipedrive']; $pi = array_column($pT['itens'], null, 'id');
 check('MOCK 2 · consulta das atividades falha → P1 erro e nao_verificada; fonte Pipedrive "problema", conexão conectada, parte afetada = atividades', $pi['atividade_vencida']['estado'] === 'erro'
     && $pi['atividade_vencida']['verificacao']['estado'] === 'nao_verificada' && $fp['estado'] === 'problema' && $fp['conexao']['estado'] === 'conectada'
-    && $fp['parte_afetada'] === ['atividades'] && array_column($fp['consultas'], 'estado', 'id') === ['ganhos' => 'ok', 'funil' => 'ok', 'atividades' => 'erro'], json_encode($fp));
+    && $fp['parte_afetada'] === ['funil', 'atividades'] && array_column($fp['consultas'], 'estado', 'id') === ['ganhos' => 'ok', 'funil' => 'parcial', 'atividades' => 'erro'], json_encode($fp));   // funil parcial = negócio 12 sem valor (P1)
 check('MOCK 2 · consulta das atividades falha: coerente', ($e = $coerente($K())) === '', $e);
 $volta();
 // 2b · consulta dos pedidos falha com o Bling em dia
@@ -829,7 +841,7 @@ check('R3 P1 · 3g real (Pipedrive fora, Google Calendar sem conta): não verifi
     && $gf['calendar']['rotulo_estado'] === 'Aguardando conexão', json_encode([$gf['pipedrive']['rotulo_estado'], $gf['pipedrive']['afetado'], $gf['calendar']['rotulo_estado']], JSON_UNESCAPED_UNICODE));
 $g = $CASOS['contagem_falha|ok']; $gf = array_column($g['fontes'], null, 'fonte')['pipedrive'];
 check('R3 P1 · só a consulta das prioridades do Pipedrive falha: "Pipedrive · Com problema (prioridades)"; ganhos e funil seguem ok na linha', $gf['rotulo_estado'] === 'Com problema'
-    && array_values(array_unique(array_column($gf['afetado'], 'rotulo'))) === ['prioridades'] && array_column($gf['consultas'], 'estado', 'id') === ['ganhos' => 'ok', 'funil' => 'ok', 'atividades' => 'erro'],
+    && array_values(array_unique(array_column($gf['afetado'], 'rotulo'))) === ['valores do funil', 'prioridades'] && array_column($gf['consultas'], 'estado', 'id') === ['ganhos' => 'ok', 'funil' => 'parcial', 'atividades' => 'erro'],
     json_encode([$gf['rotulo_estado'], $gf['afetado'], $gf['consultas']], JSON_UNESCAPED_UNICODE));
 $g = $CASOS['ok|uma_atrasada']; $gf = array_column($g['fontes'], null, 'fonte')['calendar'];
 $gp = array_values(array_filter($gf['afetado'], fn($a) => $a['rotulo'] === 'prioridades'))[0] ?? null;

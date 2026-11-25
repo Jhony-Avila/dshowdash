@@ -199,11 +199,14 @@ final class GeralV2Contrato
         $out = [];
         foreach (self::CONSULTAS as $id => $consultas) {
             $con = $this->g->conexao($id);
-            $lista = []; $inds = [];
+            $lista = []; $inds = []; $soValor = [];
             foreach ($consultas as $cid => [$rotulo, $ids]) {
                 $pior = null;
                 foreach ($ids as $ind) {
                     $b = $blocos[$ind]; $e = $this->estadoConsulta($b);
+                    // 116 (parecer do mockup, P1): o funil é o único bloco que ainda fica "Dados parciais" pelo DADO (negócio aberto sem valor).
+                    // A linha de fontes acompanha: "Pipedrive · Dados parciais (valores do funil)", com a hora da leitura — nunca "Atualizado".
+                    if ($ind === 'funil_aberto' && $e === 'ok' && $b['estado'] === 'parcial') { $e = 'parcial'; $soValor[$ind] = true; }
                     $inds[] = ['id' => $ind, 'estado' => $e];
                     if ($pior === null || self::PIOR_CONSULTA[$e] > self::PIOR_CONSULTA[$pior['e']]
                         || (self::PIOR_CONSULTA[$e] === self::PIOR_CONSULTA[$pior['e']] && ($b['ultimo_sucesso'] ?? '') < ($pior['b']['ultimo_sucesso'] ?? ''))) $pior = ['e' => $e, 'b' => $b];
@@ -228,7 +231,7 @@ final class GeralV2Contrato
                 // proposta da CIMA (20:0x): rótulo pronto do estado da linha e os INDICADORES afetados ("Pipedrive · Com problema (funil)")
                 'rotulo_estado' => $this->rotuloLinha($con, $estado, $pc['estado'], $inds),
                 // cada parte com o PRÓPRIO estado (nenhuma apaga a outra); prioridades parciais = "Verificação parcial" (o texto do topo)
-                'afetado' => array_values(array_map(fn($i) => ['id' => $i['id'], 'rotulo' => self::ROTULO_IND[$i['id']], 'estado' => $i['estado'],
+                'afetado' => array_values(array_map(fn($i) => ['id' => $i['id'], 'rotulo' => isset($soValor[$i['id']]) ? 'valores do funil' : self::ROTULO_IND[$i['id']], 'estado' => $i['estado'],
                     'rotulo_estado' => $this->rotuloParte($i['id'], $i['estado'])], array_filter($inds, fn($i) => $i['estado'] !== 'ok')))];
         }
         // 116: Precifica (recebimentos) aguardando conexão — a ÚNICA fonte do "Recebido"; nunca o Asaas
