@@ -3,28 +3,52 @@
 //
 // Mesmo padrão APROVADO da P14 (VisaoHud.tsx): ECharts, 5 estados com motivo em texto, polaridade e painel lateral.
 // Blocos: Valor em aberto por etapa · Ciclo de vendas (histograma) · Top produtos (tabela com indicador proporcional) ·
-// Uso da API · Pede atenção (quantidade, significado e ação). Endpoints atuais (/conversion, /metrics, /summary).
+// Uso da API · Pede atenção (quantidade, significado e ação). Fonte: o contrato da ACIMA_ESQUERDA, GET /overview-blocks?periodo=
+// (P17 431d2da5; docs/PIPEDRIVE/CONTRATO-VISAO-BLOCOS.md) — UMA consulta, a mesma fonte de datas do /summary.
 // Reconciliação na própria tela: soma das etapas = "Em aberto agora"; ciclo medido em N = cobertura do KPI "Ciclo médio";
 // "Fechamento vencido" abre exatamente os N negócios do número (status aberto + previsão até ontem).
 import { useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart3, Timer, Package, Activity, TriangleAlert, ArrowUpRight } from 'lucide-react';
-import { apiGet, chaves } from '../lib/api';
+import { apiGet } from '../lib/api';
 import { fmtBRL, fmtNum } from '../lib/format';
 import { EChart } from '../viz/EChart';
 import { usePaleta, useTemaPipe } from '../viz/tema';
 import type { Opcao } from '../viz/opts';
 import { Selo, faixa, hhmm, semReducao, type Drill, type EstadoTela } from './VisaoHud';
-import type { PipeSummary, PipeConversion, PipeMetrics, PipePeriodoId } from '../shell/types';
+import type { PipeSummary, PipePeriodoId, PipeEstadoDado } from '../shell/types';
+
+/** Contrato GET /overview-blocks (ACIMA_ESQUERDA, P17). null = desconhecido ("—"), nunca 0. */
+interface Etapa { stage_id: number; stage: string | null; pipeline_id: number | null; pipeline: string | null; abertos: number; valor: number; sem_valor: number; abertos_periodo: number; valor_periodo: number; sem_valor_periodo: number }
+interface Ciclo { count: number; avg_dias: number | null; max_dias: number | null; buckets: { ate_7: number; d8_30: number; d31_90: number; mais_90: number } }
+interface Produto { product_id: number | null; name: string | null; deals: number; qty: number; valor: number; sem_valor: number }
+interface Hora { hour: string; api_calls: number; api_errors: number; token_cost: number; api_errors_404: number | null }
+export interface PipeBlocos {
+  leitura: { estado: PipeEstadoDado; atualizado_em: string | null; minutos: number | null; motivo: string | null };
+  periodo: { id: string; de: string; ate: string; rotulo: string };
+  gerado_em: string;
+  valor_por_etapa: { recorte: string; fotografia_em: string; etapas: Etapa[] | null };
+  ciclo: { recorte: string; regra: string; ciclo: Ciclo | null };
+  top_produtos: { recorte: string; regra: string; cobertura: { ganhos: number | null; com_produtos: number | null }; itens: Produto[] | null };
+  uso_api: { recorte: string; chamadas: number; erros: number; erros_404_registro_apagado: number | null; erros_outros: number | null; por_hora: Hora[] };
+  pede_atencao: { recorte: string; fotografia_em: string; fechamento_vencido: number | null; atividades_atrasadas: number | null; sem_previsao: number | null };
+}
+/** Uma consulta para os 5 blocos (react-query divide a mesma chave entre eles). */
+export function useBlocos(periodo: PipePeriodoId) {
+  return useQuery<PipeBlocos>({
+    queryKey: ['pipe', 'overview-blocks', periodo],
+    queryFn: ({ signal }) => apiGet<PipeBlocos>('/overview-blocks', { periodo }, signal),
+    refetchInterval: 120_000,
+  });
+}
+/** Estado de um bloco de NEGÓCIOS pela leitura do próprio contrato. */
+function estadoBloco(q: { isLoading: boolean; error: unknown; data?: PipeBlocos }): EstadoTela {
+  if (q.isLoading) return 'carregando';
+  if (q.error || !q.data) return 'indisponivel';
+  const e = q.data.leitura.estado; return e === 'parcial' ? 'atualizado' : e;
+}
 
 const ontem = () => { const d = new Date(); d.setDate(d.getDate() - 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
-/** Estado dos blocos que leem os NEGÓCIOS sincronizados: o mesmo da leitura de `deals` (/summary.leitura). */
-function estadoNegocios(carregando: boolean, falhou: boolean, resumo?: PipeSummary): EstadoTela {
-  if (carregando) return 'carregando';
-  if (falhou) return 'indisponivel';
-  const e = resumo?.leitura?.estado ?? 'atualizado';
-  return e === 'parcial' ? 'atualizado' : e;
-}
 const motivoLeitura = (r?: PipeSummary) => (r?.leitura?.estado === 'desatualizado' && r.leitura.atualizado_em ? `última leitura ${hhmm(r.leitura.atualizado_em)}` : null);
 
 function Cabeca({ Icon, titulo, estado, sub, acoes }: { Icon: typeof BarChart3; titulo: string; estado: EstadoTela; sub: React.ReactNode; acoes?: React.ReactNode }) {
@@ -44,18 +68,15 @@ const Vazio = ({ texto }: { texto: string }) => <div className="hud-vazio">{text
 
 export function BlocoEtapas({ periodo, resumo, onDrill }: { periodo: PipePeriodoId; resumo?: PipeSummary; onDrill: (d: Drill) => void }) {
   const pal = usePaleta(); const escuro = useTemaPipe() === 'dark'; const animar = useMemo(semReducao, []);
-  const { data, isLoading, error } = useQuery<PipeConversion>({
-    queryKey: [...chaves.conversion, periodo],
-    queryFn: ({ signal }) => apiGet<PipeConversion>('/conversion', { periodo }, signal),
-    refetchInterval: 120_000,
-  });
+  const q = useBlocos(periodo); const data = q.data;
   const etapas = useMemo(() => {
-    const ag = (data as unknown as { stage_aging?: { stage_id: number | null; stage: string | null; pipeline: string | null; count: number; valor: number; idade_media_dias: number | null }[] })?.stage_aging ?? [];
-    const varios = new Set(ag.map((x) => x.pipeline)).size > 1;
-    return ag.filter((x) => x.count > 0).map((x) => ({ ...x, rotulo: `${x.stage ?? '—'}${varios && x.pipeline ? ` · ${x.pipeline}` : ''}` }));
+    const ag = data?.valor_por_etapa.etapas ?? [];
+    const varios = new Set(ag.map((x) => x.pipeline_id)).size > 1;
+    return ag.filter((x) => x.abertos > 0).map((x) => ({ ...x, count: x.abertos, rotulo: `${x.stage ?? '—'}${varios && x.pipeline ? ` · ${x.pipeline}` : ''}` }));
   }, [data]);
   const ref = useRef(etapas); ref.current = etapas;
-  const estado: EstadoTela = isLoading ? 'carregando' : error || !data ? 'indisponivel' : estadoNegocios(false, false, resumo);
+  const semValor = etapas.reduce((a, x) => a + x.sem_valor, 0);
+  const base = estadoBloco(q); const estado: EstadoTela = base === 'atualizado' && semValor > 0 ? 'parcial' : base === 'atualizado' && data?.valor_por_etapa.etapas == null ? 'indisponivel' : base;
   const soma = etapas.reduce((a, x) => a + x.valor, 0); const n = etapas.reduce((a, x) => a + x.count, 0);
   const agora = resumo?.estado?.valor_aberto ?? null; const nAgora = resumo?.estado?.abertos ?? null;
   const dif = agora != null ? Math.round((agora - soma) * 100) / 100 : null;
@@ -65,7 +86,7 @@ export function BlocoEtapas({ periodo, resumo, onDrill }: { periodo: PipePeriodo
     grid: { left: 8, right: 118, top: 6, bottom: 6, containLabel: true },
     tooltip: { trigger: 'item', transitionDuration: 0.1, confine: true, backgroundColor: escuro ? '#07121f' : '#12243a', borderWidth: 0, textStyle: { color: '#f5faff', fontSize: 12 },
       formatter: (p: unknown) => { const x = ref.current[(p as { dataIndex: number }).dataIndex]; if (!x) return '';
-        return `<b style="font-weight:500">${x.rotulo}</b><br/>${fmtBRL(x.valor)} · ${fmtNum(x.count)} ${x.count === 1 ? 'negócio' : 'negócios'}${x.idade_media_dias != null ? `<br/>parados há ${x.idade_media_dias} dias em média` : ''}<div style="color:${mint};margin-top:4px">Clique para ver os negócios →</div>`; } },
+        return `<b style="font-weight:500">${x.rotulo}</b><br/>${fmtBRL(x.valor)} · ${fmtNum(x.count)} ${x.count === 1 ? 'negócio aberto' : 'negócios abertos'} agora${x.sem_valor ? ` · ${x.sem_valor} sem valor` : ''}<br/><span style="opacity:.75">entraram no período e seguem abertos: ${fmtNum(x.abertos_periodo)} · ${fmtBRL(x.valor_periodo)}</span><div style="color:${mint};margin-top:4px">Clique para ver os negócios →</div>`; } },
     xAxis: { type: 'value', show: false },
     yAxis: { type: 'category', inverse: true, data: etapas.map((x) => x.rotulo), axisTick: { show: false }, axisLine: { show: false }, axisLabel: { color: pal.textDim, fontSize: 11, width: 130, overflow: 'truncate' } },
     series: [{ type: 'bar', data: etapas.map((x) => x.valor), barMaxWidth: 16, cursor: 'pointer',
@@ -75,7 +96,7 @@ export function BlocoEtapas({ periodo, resumo, onDrill }: { periodo: PipePeriodo
   return (
     <section className="hud-card hud-graph" aria-label="Valor em aberto por etapa">
       <Cabeca Icon={BarChart3} titulo="Valor em aberto por etapa" estado={estado}
-        sub={<>Negócios abertos agora, por etapa · foto do momento{motivoLeitura(resumo) ? ` · ${motivoLeitura(resumo)}` : ''}{estado === 'indisponivel' && <> · <span className="hud-link-off">consulta indisponível</span></>}</>} />
+        sub={<>Negócios abertos agora, por etapa · fotografia de agora (não segue o período){motivoLeitura(resumo) ? ` · ${motivoLeitura(resumo)}` : ''}{estado === 'parcial' ? ` · parcial: ${fmtNum(semValor)} sem valor` : ''}{estado === 'indisponivel' && <> · <span className="hud-link-off">consulta indisponível</span></>}</>} />
       <div className="hud-chartwrap">
         {estado === 'carregando' ? <div className="hud-skelbox" /> : estado === 'indisponivel' ? <Vazio texto="— · Consulta indisponível: as etapas não retornaram." />
           : etapas.length === 0 ? <Vazio texto="Nenhum negócio aberto nas etapas sincronizadas." />
@@ -99,13 +120,9 @@ const FAIXAS: { k: 'ate_7' | 'd8_30' | 'd31_90' | 'mais_90'; rot: string }[] = [
 ];
 export function BlocoCiclo({ periodo, resumo, onDrill }: { periodo: PipePeriodoId; resumo?: PipeSummary; onDrill: (d: Drill) => void }) {
   const pal = usePaleta(); const escuro = useTemaPipe() === 'dark'; const animar = useMemo(semReducao, []);
-  const { data, isLoading, error } = useQuery<PipeConversion>({
-    queryKey: [...chaves.conversion, periodo],
-    queryFn: ({ signal }) => apiGet<PipeConversion>('/conversion', { periodo }, signal),
-    refetchInterval: 120_000,
-  });
-  const cy = data?.cycle; const kc = resumo?.kpis.find((x) => x.chave === 'ciclo_medio'); const per = resumo?.periodo;
-  const base = estadoNegocios(isLoading, !!error || (!isLoading && !data), resumo);
+  const q = useBlocos(periodo);
+  const cy = q.data?.ciclo.ciclo ?? null; const kc = resumo?.kpis.find((x) => x.chave === 'ciclo_medio'); const per = resumo?.periodo;
+  const b0 = estadoBloco(q); const base: EstadoTela = b0 !== 'carregando' && b0 !== 'indisponivel' && cy == null ? 'indisponivel' : b0;
   const estado: EstadoTela = base === 'atualizado' && (kc?.cobertura?.sem_data ?? 0) > 0 ? 'parcial' : base;
   // polaridade: ciclo curto é melhor (verde → azul → âmbar → vermelho)
   const cores = escuro ? ['#12e6a8', '#76a9ff', '#f2b45e', '#fc6173'] : ['#05c994', '#4a79fa', '#d78a25', '#fa606f'];
@@ -143,35 +160,32 @@ export function BlocoCiclo({ periodo, resumo, onDrill }: { periodo: PipePeriodoI
 // ── Top produtos ─────────────────────────────────────────────────────────────
 
 export function TopProdutos({ periodo }: { periodo: PipePeriodoId }) {
-  const { data, isLoading, error } = useQuery<PipeMetrics>({
-    queryKey: [...chaves.metrics, 'ranking', periodo],
-    queryFn: ({ signal }) => apiGet<PipeMetrics>('/metrics', { days: 365, periodo }, signal),
-    refetchInterval: 120_000,
-  });
-  const cob = data?.coverage; const lista = (data?.top_products ?? []).slice(0, 10);
-  const estado: EstadoTela = isLoading ? 'carregando' : error || !data ? 'indisponivel'
-    : !cob || cob.deals_com_produtos === 0 ? 'indisponivel' : cob.deals_com_produtos < cob.deals_ativos ? 'parcial' : 'atualizado';
-  const max = Math.max(1, ...lista.map((p) => p.valor_total));
+  const q = useBlocos(periodo); const { error } = q; const tp = q.data?.top_produtos; const per = q.data?.periodo;
+  const cob = tp?.cobertura; const lista = (tp?.itens ?? []).slice(0, 10); const semValor = lista.reduce((a, x) => a + x.sem_valor, 0);
+  const b0 = estadoBloco(q);
+  const estado: EstadoTela = b0 === 'carregando' || b0 === 'indisponivel' ? b0 : tp?.itens == null || cob?.ganhos == null ? 'indisponivel'
+    : (cob.com_produtos ?? 0) < cob.ganhos || semValor > 0 ? 'parcial' : b0;
+  const max = Math.max(1, ...lista.map((p) => p.valor));
   return (
     <section className="hud-card hud-tabela-card" aria-label="Top produtos">
       <Cabeca Icon={Package} titulo="Top produtos por valor" estado={estado}
         sub={estado === 'carregando' ? 'Carregando…' : estado === 'indisponivel'
-          ? <><span className="hud-link-off">{error ? 'consulta indisponível' : 'produtos dos negócios ainda não sincronizados'}</span></>
-          : <>Todo o histórico (não segue o período) · só negócios com produtos lançados: <b>{fmtNum(cob?.deals_com_produtos)}</b> de {fmtNum(cob?.deals_ativos)} ativos · “Valor total” inclui abertos e perdidos</>} />
+          ? <><span className="hud-link-off">{error || q.data?.leitura.estado === 'indisponivel' ? 'consulta indisponível' : 'produtos dos negócios ainda não sincronizados'}</span></>
+          : <>Negócios ganhos de {faixa(per?.de, per?.ate)} · cobertura: <b>{fmtNum(cob?.com_produtos)}</b> de {fmtNum(cob?.ganhos)} ganhos com produtos lançados{semValor ? ` · ${fmtNum(semValor)} itens sem valor` : ''} · valor ganho, não é faturamento</>} />
       {estado === 'carregando' ? <div className="hud-tabela-wrap"><div className="hud-skelbox" style={{ height: 220 }} /></div>
-        : estado === 'indisponivel' || lista.length === 0 ? <Vazio texto={error ? '— · Consulta indisponível: os produtos não retornaram.' : '— · Nenhum produto de negócio sincronizado. Um administrador pode puxar os produtos em Configurações.'} />
+        : estado === 'indisponivel' ? <Vazio texto="— · Consulta indisponível: os produtos não retornaram." />
+        : lista.length === 0 ? <Vazio texto="Nenhum ganho do período com produtos lançados." />
         : (
           <div className="hud-tabela-wrap">
             <table className="hud-tabela">
-              <thead><tr><th>Produto</th><th className="r">Negócios</th><th className="r">Qtd.</th><th>Valor total</th><th className="r">Ganho</th></tr></thead>
+              <thead><tr><th>Produto</th><th className="r">Negócios</th><th className="r">Qtd.</th><th>Valor ganho (itens)</th></tr></thead>
               <tbody>
                 {lista.map((p) => (
                   <tr key={p.product_id ?? p.name}>
                     <td className="hud-tabela-nome" title={String(p.name ?? '')}>{String(p.name ?? '—')}</td>
                     <td className="r">{fmtNum(p.deals)}</td>
                     <td className="r">{fmtNum(p.qty)}</td>
-                    <td><div className="hud-prop"><span className="hud-prop-trilho"><span className="hud-prop-barra" style={{ width: `${(p.valor_total / max) * 100}%` }} /></span><span className="hud-prop-v">{fmtBRL(p.valor_total)}</span></div></td>
-                    <td className="r">{fmtBRL(p.valor_ganho)}</td>
+                    <td><div className="hud-prop"><span className="hud-prop-trilho"><span className="hud-prop-barra" style={{ width: `${(p.valor / max) * 100}%` }} /></span><span className="hud-prop-v" title={p.sem_valor ? `${p.sem_valor} itens sem valor (fora da soma)` : undefined}>{fmtBRL(p.valor)}{p.sem_valor ? '*' : ''}</span></div></td>
                   </tr>
                 ))}
               </tbody>
@@ -184,11 +198,11 @@ export function TopProdutos({ periodo }: { periodo: PipePeriodoId }) {
 
 // ── Pede atenção ─────────────────────────────────────────────────────────────
 
-export function PedeAtencao({ resumo, carregando, falhou, onDrill, onAlertas }: {
-  resumo?: PipeSummary; carregando: boolean; falhou: boolean; onDrill: (d: Drill) => void; onAlertas?: () => void;
+export function PedeAtencao({ periodo, resumo, onDrill, onAlertas }: {
+  periodo: PipePeriodoId; resumo?: PipeSummary; onDrill: (d: Drill) => void; onAlertas?: () => void;
 }) {
-  const e = resumo?.estado;
-  const estado = estadoNegocios(carregando, falhou || (!carregando && (!e || e.estado === 'indisponivel')), resumo);
+  const q = useBlocos(periodo); const e = q.data?.pede_atencao;
+  const b0 = estadoBloco(q); const estado: EstadoTela = b0 !== 'carregando' && b0 !== 'indisponivel' && e?.fechamento_vencido == null ? 'indisponivel' : b0;
   const itens = [
     { k: 'venc', rot: 'Fechamento vencido', v: e?.fechamento_vencido, cor: 'bad',
       sig: 'Negócios abertos com a previsão de fechamento já passada.', acao: 'Ver negócios →',
@@ -202,7 +216,7 @@ export function PedeAtencao({ resumo, carregando, falhou, onDrill, onAlertas }: 
   return (
     <section className="hud-card hud-atencao" aria-label="Pede atenção">
       <Cabeca Icon={TriangleAlert} titulo="Pede atenção" estado={estado}
-        sub={<>Foto do momento{motivoLeitura(resumo) ? ` · ${motivoLeitura(resumo)}` : ''}{estado === 'indisponivel' && <> · <span className="hud-link-off">consulta indisponível</span></>}</>} />
+        sub={<>Fotografia de agora (não segue o período){motivoLeitura(resumo) ? ` · ${motivoLeitura(resumo)}` : ''}{estado === 'indisponivel' && <> · <span className="hud-link-off">consulta indisponível</span></>}</>} />
       <div className="hud-atencao-lista">
         {itens.map((x) => {
           const mostrar = estado !== 'carregando' && estado !== 'indisponivel' && x.v != null;
@@ -225,15 +239,9 @@ export function PedeAtencao({ resumo, carregando, falhou, onDrill, onAlertas }: 
 
 export function UsoApiHud({ periodo }: { periodo: PipePeriodoId }) {
   const pal = usePaleta(); const escuro = useTemaPipe() === 'dark'; const animar = useMemo(semReducao, []);
-  const { data, isLoading, error } = useQuery<PipeMetrics>({
-    queryKey: [...chaves.metrics, 'ranking', periodo],
-    queryFn: ({ signal }) => apiGet<PipeMetrics>('/metrics', { days: 365, periodo }, signal),
-    refetchInterval: 120_000,
-  });
-  const h = data?.hourly ?? [];
-  const chamadas = h.reduce((a, x) => a + x.api_calls, 0); const erros = h.reduce((a, x) => a + x.api_errors, 0);
-  const temSep = h.length > 0 && h.every((x) => typeof x.api_errors_404 === 'number');
-  const e404 = temSep ? h.reduce((a, x) => a + (x.api_errors_404 as number), 0) : null;
+  const { data, isLoading, error } = useBlocos(periodo);
+  const u = data?.uso_api; const h = u?.por_hora ?? [];
+  const chamadas = u?.chamadas ?? 0; const erros = u?.erros ?? 0; const e404 = u?.erros_404_registro_apagado ?? null;
   const ultima = h.length ? h[h.length - 1].hour : null;
   const idadeH = ultima ? (Date.now() - new Date(String(ultima).replace(' ', 'T')).getTime()) / 3_600_000 : null;
   const estado: EstadoTela = isLoading ? 'carregando' : error || !data || h.length === 0 ? 'indisponivel' : idadeH != null && idadeH > 2 ? 'desatualizado' : 'atualizado';

@@ -156,7 +156,7 @@ export function VisaoGeral({ status, onConfig, onNegocios, onAlertas }: VisaoGer
             </div>
             <div className="hud-charts">
               <TopProdutos periodo={periodo} />
-              <PedeAtencao resumo={resumoQ.data} carregando={resumoQ.isLoading} falhou={!!resumoQ.error && !resumoQ.data} onDrill={setDrill} onAlertas={onAlertas} />
+              <PedeAtencao periodo={periodo} resumo={resumoQ.data} onDrill={setDrill} onAlertas={onAlertas} />
             </div>
             <UsoApiHud periodo={periodo} />
             <div style={{ height: 15 }} />
