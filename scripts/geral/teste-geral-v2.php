@@ -399,8 +399,15 @@ $coerentePainel = function (array $pa): string {
     foreach ($vf as $x) if ($x['rotulo_estado'] !== $RE[$x['estado']]) return "painel: verificacao.fontes {$x['fonte']} rótulo ≠ estado";
     if ($pa['prioridades']['verificacao']['estado'] === 'completa' && array_filter($vf, fn($x) => $x['estado'] !== 'ok') !== []) return 'painel: completa com fonte exigida não ok';
     foreach ($pa['fontes'] as $f) {
-        $okR = match ($f['estado']) { 'conectada' => ['Atualizado'], 'problema' => ['Com problema'], 'aguardando' => ['Aguardando conexão'], default => ['Desatualizado', 'Dados parciais'] };
+        $okR = match ($f['estado']) { 'conectada' => ['Atualizado'], 'problema' => ['Com problema'], 'aguardando' => ['Aguardando conexão'], default => ['Desatualizado', 'Dados parciais', 'Verificação parcial'] };
         if (!in_array($f['rotulo_estado'] ?? null, $okR, true)) return "painel: fonte {$f['fonte']} {$f['estado']} com rótulo " . var_export($f['rotulo_estado'] ?? null, true);
+        // R3 (P1): "Verificação parcial" na linha SÓ quando a única parte afetada são as prioridades; cada parte com o próprio rótulo
+        $soPrio = ($f['afetado'] ?? []) !== [] && array_diff(array_column($f['afetado'], 'rotulo'), ['prioridades']) === [];
+        if (($f['rotulo_estado'] ?? '') === 'Verificação parcial' && !$soPrio) return "painel: fonte {$f['fonte']} 'Verificação parcial' com parte que não é prioridade";
+        foreach ($f['afetado'] ?? [] as $a) {
+            $esp = $a['estado'] === 'parcial' && $a['rotulo'] === 'prioridades' ? 'Verificação parcial' : $RE[$a['estado']];
+            if (($a['rotulo_estado'] ?? null) !== $esp) return "painel: fonte {$f['fonte']} parte {$a['id']} {$a['estado']} com rótulo " . var_export($a['rotulo_estado'] ?? null, true);
+        }
         if (array_column($f['afetado'] ?? [], 'id') !== array_column(array_filter($f['indicadores'], fn($i) => $i['estado'] !== 'ok'), 'id')) return "painel: fonte {$f['fonte']} afetado ≠ indicadores não ok";
     }
     foreach ($blocos as $id => $b) {
@@ -729,7 +736,7 @@ $pa = (new GeralV2Contrato(new GeralV2($pdoFunil, $pdo, $pdo, 75, $AGORA, $provD
 $fp = array_column($pa['fontes'], null, 'fonte')['pipedrive'];
 check('CIMA · só o funil falha → "Pipedrive · Com problema (funil)": rotulo_estado e afetado = [funil erro]; ganhos seguem ok', $pa['resumo']['funil_aberto']['estado'] === 'erro'
     && $pa['resumo']['negocios_ganhos']['quantidade'] !== null && $fp['rotulo_estado'] === 'Com problema'
-    && $fp['afetado'] === [['id' => 'funil_aberto', 'rotulo' => 'funil', 'estado' => 'erro']], json_encode([$fp['rotulo_estado'], $fp['afetado']]));
+    && $fp['afetado'] === [['id' => 'funil_aberto', 'rotulo' => 'funil', 'estado' => 'erro', 'rotulo_estado' => 'Com problema']], json_encode([$fp['rotulo_estado'], $fp['afetado']]));
 check('CIMA · funil com problema: painel coerente', ($e = $coerentePainel($pa)) === '', $e);
 $vf = $K()->prioridades()['verificacao']['fontes'];
 check('CIMA · verificacao.fontes no topo: Pipedrive e Google Calendar, rótulo pronto', $vf === [['fonte' => 'pipedrive', 'rotulo' => 'Pipedrive', 'estado' => 'ok', 'rotulo_estado' => 'Atualizado'],
@@ -742,9 +749,97 @@ check('NOME · nenhuma ocorrência de "Google Agenda" no painel (prioridades, ve
     && str_contains($jsN, 'Última atualização do Google Calendar') && array_column($paN['prioridades']['verificacao']['fontes'], 'rotulo', 'fonte')['calendar'] === 'Google Calendar'
     && str_starts_with(array_column($paN['prioridades']['itens'], 'detalhe', 'id')['conflito_agenda'], 'Google Calendar'), mb_substr($jsN, 0, 0));
 // 3 · contraprova embutida: a lista e o cartão chamam a MESMA função de filtro
-check('MOCK 3 · cartão e lista contam pela MESMA função (contarPrioridade), sem outro COUNT de prioridade', substr_count($src = (string) file_get_contents($argv[1] ?? "$RAIZ/api/geral/GeralV2.php"), 'contarPrioridade(') === 4
-    && preg_match('/SELECT COUNT\(\*\) \$from"\)/', $src) === 0);
+check('MOCK 3 · cartão e lista contam pela MESMA função (contarPrioridade), sem outro COUNT de prioridade', substr_count($src = (string) file_get_contents($argv[1] ?? "$RAIZ/api/geral/GeralV2.php"), 'contarPrioridade(') === 5
+    && preg_match('/SELECT COUNT\(\*\) \$from/', $src) === 0);
 check('MOCK · coerência final', ($e = $coerente($K())) === '', $e);
+
+// ---------- PARECER DO MOCKUP R3 (P11), 25/11 ----------
+// P2 · "sem responsável" do rodapé = MESMA função e MESMO filtro da lista: conta exatamente os itens SEM responsável que a lista devolve
+$semResp = function (string $id) use ($K): array {
+    $todos = []; $pg = 1;
+    do { $L = $K()->lista($id, $pg, 50, 'prazo', 'asc', null); $todos = array_merge($todos, $L['itens']); $pg++; } while ($pg <= ($L['paginas'] ?? 0));
+    return [$L, count(array_filter($todos, fn($x) => $x['responsavel'] === null)), count($todos)];
+};
+[$Lr, $nNulo, $nTodos] = $semResp('atividade_vencida');
+check('R3 P2 · sem_responsavel = itens da lista SEM responsável (1: o negócio 500), contados em TODAS as páginas da mesma lista', $Lr['sem_responsavel'] === $nNulo && $nNulo === 1
+    && $nTodos === $Lr['total'], json_encode([$Lr['sem_responsavel'], $nNulo, $nTodos, $Lr['total']]));
+[$Lr2, $nNulo2] = $semResp('sem_proxima_atividade');
+check('R3 P2 · P2 da Geral: todos os registros com responsável → sem_responsavel 0 (nunca 1 sem que a lista tenha um)', $Lr2['sem_responsavel'] === $nNulo2 && $nNulo2 === 0, json_encode([$Lr2['sem_responsavel'], $nNulo2]));
+$pdo->exec("UPDATE `{$P}pipe_deals` SET owner_id = 901 WHERE pipedrive_id = 500");   // linha do próprio teste: agora todos têm responsável
+[$Lr3, $nNulo3] = $semResp('atividade_vencida');
+check('R3 P2 · com todos os negócios com responsável, o rodapé diz 0 (a mesma consulta da lista)', $Lr3['sem_responsavel'] === 0 && $nNulo3 === 0, json_encode([$Lr3['sem_responsavel'], $nNulo3]));
+$Lf3 = $K()->lista('atividade_vencida', 1, 50, 'prazo', 'asc', 901);
+check('R3 P2 · com filtro de responsável o rodapé continua do conjunto da lista: sem_responsavel 0', $Lf3['sem_responsavel'] === 0, json_encode($Lf3['sem_responsavel']));
+$pdo->exec("UPDATE `{$P}pipe_deals` SET owner_id = NULL WHERE pipedrive_id = 500");
+
+// P1 · MATRIZ Pipedrive × Google Calendar: a linha de fontes INCLUI as consultas das prioridades. Toda fonte que a verificação cita
+// (não ok) aparece na linha com a parte "prioridades" no MESMO estado e NUNCA "Atualizado"; as outras consultas mantêm o próprio estado.
+$foto = function (array $tabs) use ($pdo, $P, &$criadas): Closure {   // cópia das tabelas DO TESTE; devolve quem as restaura
+    foreach ($tabs as $t) { $pdo->exec("DROP TABLE IF EXISTS `{$P}{$t}__foto`"); $pdo->exec("CREATE TABLE `{$P}{$t}__foto` LIKE `{$P}$t`"); $pdo->exec("INSERT INTO `{$P}{$t}__foto` SELECT * FROM `{$P}$t`"); $criadas[] = "{$P}{$t}__foto"; }
+    return function () use ($pdo, $P, $tabs): void { foreach ($tabs as $t) { $pdo->exec("DELETE FROM `{$P}$t`"); $pdo->exec("INSERT INTO `{$P}$t` SELECT * FROM `{$P}{$t}__foto`"); } };
+};
+$pdoAtivFalha = new class ($pdo) extends PDO {   // SÓ a contagem das prioridades do Pipedrive falha
+    public function __construct(private PDO $real) {}
+    public function prepare(string $q, array $o = []): PDOStatement|false { if (str_contains($q, 'COUNT(DISTINCT d.owner_id)')) throw new PDOException('x'); return $this->real->prepare($q, $o); }
+    public function query(string $q, ?int $m = null, mixed ...$a): PDOStatement|false { return $this->real->query($q); }
+    public function exec(string $q): int|false { return $this->real->exec($q); }
+};
+$PIPE = [
+    'ok' => [null, []], 'velho' => [null, ["UPDATE `{$P}pipe_sync_runs` SET finished_at = '2026-11-23 07:00:00'"]],
+    'incompleto' => [null, ["INSERT INTO `{$P}pipe_sync_runs` (run_type, entity, started_at, finished_at, status, errors) VALUES ('cron','activities','2026-11-23 09:51:00','2026-11-23 09:52:00','completed',2)"]],
+    'sem_conta' => [null, ["UPDATE `{$P}pipe_accounts` SET is_active = 0"]],
+    'expirado_com_dado' => [null, ["UPDATE `{$P}pipe_accounts` SET status = 'expired'"]],
+    'expirado_sem_dado' => [null, ["UPDATE `{$P}pipe_accounts` SET status = 'expired'", "UPDATE `{$P}pipe_sync_runs` SET status = 'failed'"]],
+    'banco_fora' => ['fora', []], 'contagem_falha' => [$pdoAtivFalha, []],
+];
+$GCAL = [
+    'ok' => [null, [], $cf2], 'uma_atrasada' => [null, ["UPDATE `{$P}gcal_sync_state` SET last_sync_at = '2026-11-23 08:00:00' WHERE calendar_id = 'b@exemplo.test'"], $cf2],
+    'todas_atrasadas' => [null, ["UPDATE `{$P}gcal_sync_state` SET last_sync_at = '2026-11-23 08:00:00'"], $cf2],
+    'sem_conta' => [null, ["UPDATE `{$P}gcal_accounts` SET is_active = 0"], $cf2], 'reautorizar' => [null, ["UPDATE `{$P}gcal_accounts` SET connection_status = 'reauth_required'"], $cf2],
+    'banco_fora' => ['fora', [], $cf2], 'sem_provedor' => [null, [], null], 'conflitos_falham' => [null, [], function () { throw new RuntimeException('x'); }],
+];
+$volta = $foto(['pipe_accounts', 'pipe_sync_runs', 'gcal_accounts', 'gcal_sync_state']);
+$errosM = []; $errosAtual = []; $casosM = 0; $naoCompletas = 0; $CASOS = [];
+foreach ($PIPE as $np => [$pp, $sqlP]) foreach ($GCAL as $ng => [$pg, $sqlG, $cfG]) {
+    foreach (array_merge($sqlP, $sqlG) as $q) $pdo->exec($q);
+    $svc = new GeralV2($pp === 'fora' ? null : ($pp ?? $pdo), $pg === 'fora' ? null : $pdo, $pdo, 75, $AGORA, $provDe($cfG), $P);
+    $pa = (new GeralV2Contrato($svc))->painel('7d'); $CASOS["$np|$ng"] = $pa; $casosM++;
+    $v = $pa['prioridades']['verificacao']; $fo = array_column($pa['fontes'], null, 'fonte');
+    if ($v['estado'] !== 'completa') $naoCompletas++;
+    if (($e = $coerentePainel($pa)) !== '') $errosM[] = "{$np}×{$ng}: $e";
+    foreach ($v['fontes'] as $vf) {
+        $linha = $fo[$vf['fonte']]; $prio = array_values(array_filter($linha['afetado'], fn($a) => $a['rotulo'] === 'prioridades'));
+        $cPrio = array_column($linha['consultas'], 'estado', 'id')[$vf['fonte'] === 'calendar' ? 'conflitos' : 'atividades'];
+        if ($vf['estado'] === 'ok') { if ($prio !== []) $errosM[] = "{$np}×{$ng}: {$vf['fonte']} verificado ok e a linha cita prioridades"; continue; }
+        // a acusação do parecer: verificação incompleta e a linha da MESMA fonte "Atualizado" (ou a consulta das prioridades em outro estado)
+        if ($linha['rotulo_estado'] === 'Atualizado' || $cPrio !== $vf['estado']) $errosAtual[] = "{$np}×{$ng}: verificação {$vf['fonte']} {$vf['estado']}, linha {$linha['rotulo_estado']}, consulta {$cPrio}";
+        if ($prio === []) $errosM[] = "{$np}×{$ng}: verificação cita {$vf['fonte']} e a linha não nomeia a parte prioridades";
+        foreach ($prio as $a) if ($a['estado'] !== $vf['estado']) $errosM[] = "{$np}×{$ng}: {$vf['fonte']} prioridades {$a['estado']} na linha × {$vf['estado']} na verificação";
+    }
+    // as OUTRAS consultas não são apagadas: cada consulta da linha continua com o próprio estado
+    foreach ($pa['fontes'] as $f) foreach ($f['consultas'] as $c) if (!isset($c['estado'])) $errosM[] = "{$np}×{$ng}: {$f['fonte']}/{$c['id']} sem estado";
+    $volta();
+}
+check("R3 P1 · matriz {$casosM} casos: verificação incompleta → a linha da MESMA fonte nunca \"Atualizado\" e a consulta das prioridades no mesmo estado", $errosAtual === [] && $casosM === 64, implode(' | ', array_slice($errosAtual, 0, 4)));
+check("R3 P1 · matriz {$casosM} casos (Pipedrive 8 × Google Calendar 8; {$naoCompletas} sem verificação completa): a linha de fontes inclui as prioridades, nomeia a parte e nunca diz Atualizado", $errosM === [] && $casosM === 64 && $naoCompletas >= 60, implode(' | ', array_slice($errosM, 0, 4)));
+$g = $CASOS['banco_fora|sem_conta']; $gf = array_column($g['fontes'], null, 'fonte');
+check('R3 P1 · 3g real (Pipedrive fora, Google Calendar sem conta): não verificada; "Pipedrive · Com problema (…prioridades)" e "Google Calendar · Aguardando conexão", nunca "Atualizado"',
+    $g['prioridades']['verificacao']['estado'] === 'nao_verificada' && $g['prioridades']['sem_pendencias'] === false
+    && $gf['pipedrive']['rotulo_estado'] === 'Com problema' && in_array('prioridades', array_column($gf['pipedrive']['afetado'], 'rotulo'), true)
+    && $gf['calendar']['rotulo_estado'] === 'Aguardando conexão', json_encode([$gf['pipedrive']['rotulo_estado'], $gf['pipedrive']['afetado'], $gf['calendar']['rotulo_estado']], JSON_UNESCAPED_UNICODE));
+$g = $CASOS['contagem_falha|ok']; $gf = array_column($g['fontes'], null, 'fonte')['pipedrive'];
+check('R3 P1 · só a consulta das prioridades do Pipedrive falha: "Pipedrive · Com problema (prioridades)"; ganhos e funil seguem ok na linha', $gf['rotulo_estado'] === 'Com problema'
+    && array_values(array_unique(array_column($gf['afetado'], 'rotulo'))) === ['prioridades'] && array_column($gf['consultas'], 'estado', 'id') === ['ganhos' => 'ok', 'funil' => 'ok', 'atividades' => 'erro'],
+    json_encode([$gf['rotulo_estado'], $gf['afetado'], $gf['consultas']], JSON_UNESCAPED_UNICODE));
+$g = $CASOS['ok|uma_atrasada']; $gf = array_column($g['fontes'], null, 'fonte')['calendar'];
+$gp = array_values(array_filter($gf['afetado'], fn($a) => $a['rotulo'] === 'prioridades'))[0] ?? null;
+check('R3 P1 · 3f real (1 de 2 agendas atrasada): verificação parcial; a parte "prioridades" da linha = "Verificação parcial", a agenda de hoje mantém "Dados parciais"',
+    $g['prioridades']['verificacao']['estado'] === 'parcial' && $gp !== null && $gp['rotulo_estado'] === 'Verificação parcial' && $gf['rotulo_estado'] !== 'Atualizado'
+    && array_column($gf['afetado'], 'rotulo_estado', 'rotulo')['agenda de hoje'] === 'Dados parciais', json_encode([$gf['rotulo_estado'], $gf['afetado']], JSON_UNESCAPED_UNICODE));
+$g = $CASOS['ok|conflitos_falham']; $gf = array_column($g['fontes'], null, 'fonte')['calendar'];
+// (a agenda de hoje marca os eventos em conflito com a MESMA consulta: se ela falha, a agenda também sai erro — nada fica "Atualizado")
+check('R3 P1 · os conflitos falham: "Google Calendar · Com problema (agenda de hoje, prioridades)", cada parte com o próprio estado', $gf['rotulo_estado'] === 'Com problema'
+    && array_column($gf['afetado'], 'rotulo') === ['agenda de hoje', 'prioridades'] && array_column($gf['consultas'], 'estado', 'id') === ['agenda' => 'erro', 'conflitos' => 'erro'], json_encode([$gf['rotulo_estado'], $gf['afetado']], JSON_UNESCAPED_UNICODE));
 
 // ---------- VALIDAÇÃO DO TEXTO BRUTO (DSHOW-116): `\z`, nunca `$` (no PHP o `$` aceita um "\n" no fim) ----------
 $casosUrl = ['1' => 1, '50' => 50, "1\n" => null, "1\r\n" => null, "\n1" => null, ' 1' => null, '1 ' => null, '01' => null, '0' => null, '-1' => null, '1.0' => null, '' => null, '123456' => null];

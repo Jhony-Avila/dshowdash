@@ -342,13 +342,15 @@ final class GeralV2
 
     /**
      * A ÚNICA função de filtro das prioridades do Pipedrive (parecer do mockup, 24/11): o número do cartão e o `total` da lista saem DAQUI.
-     * Mesmo FROM/WHERE (basePrioridade) + o filtro opcional de responsável. Devolve a contagem, a referência mais antiga e o nº de responsáveis.
+     * Mesmo FROM/WHERE (basePrioridade) + o filtro opcional de responsável (ou só os SEM responsável). Devolve a contagem, a referência mais antiga e o nº de responsáveis.
      * @return array{n:int, antiga:?string, donos:int}
      */
-    private function contarPrioridade(string $id, ?int $responsavel = null): array
+    private function contarPrioridade(string $id, ?int $responsavel = null, bool $semResponsavel = false): array
     {
         [$from, $par, $ref] = $this->basePrioridade($id);
         if ($responsavel !== null) { $from .= ' AND d.owner_id = :resp'; $par[':resp'] = $responsavel; }
+        // "sem responsável" do rodapé da lista: o MESMO conjunto (mesma função, mesmo filtro), só com owner_id nulo (parecer do mockup R3, P2)
+        if ($semResponsavel) $from .= ' AND d.owner_id IS NULL';
         $st = $this->pipe->prepare("SELECT COUNT(*) AS n, MIN($ref) AS antiga, COUNT(DISTINCT d.owner_id) AS donos $from");
         $st->execute($par);
         $r = $st->fetch(PDO::FETCH_ASSOC);
@@ -614,9 +616,7 @@ final class GeralV2
             $st->execute($par);
             $base['responsaveis'] = array_map(fn($x) => ['id' => (int) $x['id'], 'nome' => $x['nome'], 'quantidade' => (int) $x['n']], $st->fetchAll(PDO::FETCH_ASSOC));
             // negócios do conjunto SEM responsável: entram no número, mas não há o que escolher no seletor → Σ responsáveis + sem_responsavel = total_sem_filtro
-            $st = $this->pipe->prepare("SELECT COUNT(*) $from AND d.owner_id IS NULL");
-            $st->execute($par);
-            $base['sem_responsavel'] = (int) $st->fetchColumn();
+            $base['sem_responsavel'] = $this->contarPrioridade($prioridade, null, true)['n'];   // mesma função e mesmo filtro do número da lista
             $total = $this->contarPrioridade($prioridade, $responsavel)['n'];
             if ($responsavel !== null) { $from .= ' AND d.owner_id = :resp'; $par[':resp'] = $responsavel; }
             $p = $this->p;

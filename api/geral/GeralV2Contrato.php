@@ -42,8 +42,10 @@ final class GeralV2Contrato
     /** rótulo pronto do estado (proposta da CIMA, 24/11 20:0x): a tela só exibe */
     private const ROTULO_ESTADO = ['ok' => 'Atualizado', 'parcial' => 'Dados parciais', 'desatualizado' => 'Desatualizado', 'erro' => 'Com problema', 'aguardando' => 'Aguardando conexão'];
     private const ROTULO_FONTE = ['pipedrive' => 'Pipedrive', 'bling' => 'Bling', 'calendar' => 'Google Calendar'];
-    private const ROTULO_IND = ['negocios_ganhos' => 'ganhos', 'funil_aberto' => 'funil', 'atividade_vencida' => 'atividades vencidas',
-                                'sem_proxima_atividade' => 'sem próxima atividade', 'pedidos_bling' => 'pedidos', 'agenda' => 'agenda de hoje', 'conflito_agenda' => 'conflitos'];
+    /** parte afetada na linha de fontes. As 3 prioridades = UMA parte, "prioridades" (parecer do mockup R3, P1): "Pipedrive · Com problema (prioridades)" */
+    private const ROTULO_IND = ['negocios_ganhos' => 'ganhos', 'funil_aberto' => 'funil', 'atividade_vencida' => 'prioridades',
+                                'sem_proxima_atividade' => 'prioridades', 'pedidos_bling' => 'pedidos', 'agenda' => 'agenda de hoje', 'conflito_agenda' => 'prioridades'];
+    private const IND_PRIORIDADE = ['atividade_vencida', 'sem_proxima_atividade', 'conflito_agenda'];
     /** lacunas do DADO: deixam o cartão "Dados parciais", mas a consulta e a fonte estão bem */
     private const LACUNA_DADO = ['sem_valor', 'fora_brl', 'sem_canal'];
     /** consultas de cada fonte usadas na tela → os indicadores que cada uma alimenta */
@@ -219,14 +221,35 @@ final class GeralV2Contrato
                 'parte_afetada' => array_values(array_map(fn($c) => $c['id'], array_filter($lista, fn($c) => $c['estado'] !== 'ok'))),
                 'indicadores' => $inds,
                 // proposta da CIMA (20:0x): rótulo pronto do estado da linha e os INDICADORES afetados ("Pipedrive · Com problema (funil)")
-                'rotulo_estado' => $con['estado'] === 'problema' ? 'Com problema' : ($con['estado'] === 'aguardando' && $estado === 'aguardando' ? 'Aguardando conexão' : self::ROTULO_ESTADO[$pc['estado']]),
-                'afetado' => array_values(array_map(fn($i) => ['id' => $i['id'], 'rotulo' => self::ROTULO_IND[$i['id']], 'estado' => $i['estado']],
-                    array_filter($inds, fn($i) => $i['estado'] !== 'ok')))];
+                'rotulo_estado' => $this->rotuloLinha($con, $estado, $pc['estado'], $inds),
+                // cada parte com o PRÓPRIO estado (nenhuma apaga a outra); prioridades parciais = "Verificação parcial" (o texto do topo)
+                'afetado' => array_values(array_map(fn($i) => ['id' => $i['id'], 'rotulo' => self::ROTULO_IND[$i['id']], 'estado' => $i['estado'],
+                    'rotulo_estado' => $this->rotuloParte($i['id'], $i['estado'])], array_filter($inds, fn($i) => $i['estado'] !== 'ok')))];
         }
         foreach (self::SEM_CONECTOR as $id => $txt) $out[] = ['fonte' => $id, 'estado' => 'aguardando', 'ultimo_sucesso' => null, 'motivo' => $txt,
             'conexao' => ['estado' => 'aguardando', 'motivo' => $txt], 'consultas' => [], 'parte_afetada' => [], 'indicadores' => [],
             'rotulo_estado' => 'Aguardando conexão', 'afetado' => []];
         return $out;
+    }
+
+    /** Rótulo de uma parte afetada: a das prioridades "parcial" é "Verificação parcial" (o mesmo texto do topo das prioridades). */
+    private function rotuloParte(string $ind, string $estado): string
+    {
+        return $estado === 'parcial' && in_array($ind, self::IND_PRIORIDADE, true) ? 'Verificação parcial' : self::ROTULO_ESTADO[$estado];
+    }
+
+    /**
+     * Rótulo da LINHA de uma fonte: conexão com problema = "Com problema"; nunca conectada = "Aguardando conexão"; senão o pior estado das consultas.
+     * Se a ÚNICA parte afetada são as prioridades e ela está parcial → "Verificação parcial" (parecer do mockup R3: "Google Calendar · Verificação parcial (prioridades)").
+     * @param list<array{id:string, estado:string}> $inds
+     */
+    private function rotuloLinha(array $con, string $estado, string $pior, array $inds): string
+    {
+        if ($con['estado'] === 'problema') return 'Com problema';
+        if ($con['estado'] === 'aguardando' && $estado === 'aguardando') return 'Aguardando conexão';
+        $af = array_filter($inds, fn($i) => $i['estado'] !== 'ok');
+        if ($pior === 'parcial' && $af !== [] && array_diff(array_column($af, 'id'), self::IND_PRIORIDADE) === []) return 'Verificação parcial';
+        return self::ROTULO_ESTADO[$pior];
     }
 
     /** Estado da CONSULTA de um cartão: o estado dele sem as lacunas do DADO (zero e "dados parciais" só pelo dado = ok). */
