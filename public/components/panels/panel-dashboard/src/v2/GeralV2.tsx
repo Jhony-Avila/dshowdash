@@ -160,6 +160,9 @@ function BlocoPrioridades({ b, fl, aoAbrir }: { b: ReturnType<typeof useBloco<Pr
     .filter((p) => { const e = efs.get(p.id)!; return p.quantidade === null || p.quantidade > 0 || (e.estado !== 'ok' && e.estado !== 'zero'); })   // quantidade desconhecida APARECE (nunca some como se fosse zero)
     .sort((x, y) => x.gravidade - y.gravidade || (x.desde ?? '9').localeCompare(y.desde ?? '9')), [b.dados, efs]);
   const acoes = itens.filter((p) => (p.quantidade ?? 0) > 0).length;
+  // Ausência ≠ zero (achado na captura R4 do 3g): prioridade sem contagem (quantidade null) não entra como 0 — sem o selo "N ações",
+  // que afirmaria um total; o selo da verificação e cada linha ("Não foi possível contar…") dizem o que falta.
+  const acoesDesconhecidas = itens.some((p) => p.quantidade === null || p.quantidade === undefined);
   const cab = (extra?: ReactNode) => (
     <div className="gv2-sec-cab">
       <h2 className="gv2-h2">Prioridades de hoje</h2>
@@ -206,7 +209,7 @@ function BlocoPrioridades({ b, fl, aoAbrir }: { b: ReturnType<typeof useBloco<Pr
   return (
     <section className="gv2-cartao gv2-prioridades" data-gv2-bloco="prioridades" data-gv2-estado={b.erro ? 'problema' : 'conectado'}>
       {cab(<>
-        <span className="gv2-selo gv2-selo--aviso">{acoes} {acoes === 1 ? 'ação' : 'ações'}</span>
+        {!acoesDesconhecidas && <span className="gv2-selo gv2-selo--aviso" data-gv2-acoes>{acoes} {acoes === 1 ? 'ação' : 'ações'}</span>}
         {/* verificação não completa: dita no cabeçalho mesmo com itens na lista (o que falta verificar não vira "só estas") */}
         {(() => { const tv = textoVerificacao(b.dados!.verificacao); return tv && b.dados!.verificacao ? <span className="gv2-selo gv2-selo--aviso" data-gv2-verificacao={tv.estado}>{tv.texto}</span> : null; })()}
       </>)}
