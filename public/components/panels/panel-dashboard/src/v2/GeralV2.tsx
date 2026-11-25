@@ -11,6 +11,7 @@ import {
   lerPainel, type Painel,
   type Agenda, type EstadoBloco, type Fonte, type IdPrioridade, type PedidosBling, type PeriodoV2, type Prioridade, type Prioridades, type Resumo,
 } from './servico';
+import { Integracoes } from './Integracoes';
 import { ListaPrioridade } from './ListaPrioridade';
 import { Problema, useBloco } from './comuns';
 import { FONTE_DO_INDICADOR, NOME_FONTE, efetivo, fonteEfetiva, textoSemValor, type Efetivo, type FontesLidas, type IdIndicador } from './coerencia';
@@ -43,7 +44,7 @@ function Osso({ l, a = 12 }: { l: string; a?: number }) { return <span className
 // ════════════════════════════════════════════════════════════════════
 export function GeralV2() {
   const [periodo, setPeriodo] = useState<PeriodoV2>(() => { try { const p = localStorage.getItem(K_PERIODO); return p === 'ontem' || p === 'mes' ? p : '7d'; } catch { return '7d'; } });
-  const [vista, setVista] = useState<{ tipo: 'geral' } | { tipo: 'lista'; id: IdPrioridade; quantidade: number | null }>({ tipo: 'geral' });
+  const [vista, setVista] = useState<{ tipo: 'geral' } | { tipo: 'integracoes' } | { tipo: 'lista'; id: IdPrioridade; quantidade: number | null }>({ tipo: 'geral' });
   const trocarPeriodo = (p: PeriodoV2) => { setPeriodo(p); try { localStorage.setItem(K_PERIODO, p); } catch { /* sem storage */ } };
 
   // uma leitura só (painel.php): cada bloco é uma VISTA dela, com o mesmo erro, o mesmo "Tentar de novo" e o mesmo instante
@@ -67,6 +68,7 @@ export function GeralV2() {
   const fl: FontesLidas = fontes.carregando && !fontes.dados ? 'carregando' : fontes.dados ?? null;
   const efs = indicadoresEfetivos(resumo, prioridades, agenda, fl);
 
+  if (vista.tipo === 'integracoes') return <div ref={topo} className="gv2" data-gv2-vista="integracoes"><Integracoes aoVoltar={() => setVista({ tipo: 'geral' })} /></div>;
   if (vista.tipo === 'lista') {
     return <div ref={topo} className="gv2" data-gv2-vista="lista"><ListaPrioridade id={vista.id} quantidadeGeral={vista.quantidade} aoVoltar={() => setVista({ tipo: 'geral' })} /></div>;
   }
@@ -90,7 +92,7 @@ export function GeralV2() {
         <BlocoPedidosGrafico b={resumo} fl={fl} />
         <BlocoAgenda b={agenda} fl={fl} />
       </div>
-      <BlocoFontes b={fontes} efs={efs} />
+      <BlocoFontes b={fontes} efs={efs} aoIntegracoes={() => setVista({ tipo: 'integracoes' })} />
     </div>
   );
 }
@@ -463,7 +465,7 @@ function textoFonte(f: Fonte, ef: ReturnType<typeof fonteEfetiva>): string {
   const partes = ef.partes.length ? ` (${ef.partes.join(', ')})` : '';
   return `${ef.rotulo}${partes}${ef.estado === 'desatualizada' && f.ultimo_sucesso ? ` · último sucesso ${fmtQuando(f.ultimo_sucesso)}` : ''}`;
 }
-function BlocoFontes({ b, efs }: { b: ReturnType<typeof useBloco<Fonte[]>>; efs: { id: IdIndicador; e: Efetivo }[] }) {
+function BlocoFontes({ b, efs, aoIntegracoes }: { b: ReturnType<typeof useBloco<Fonte[]>>; efs: { id: IdIndicador; e: Efetivo }[]; aoIntegracoes?: () => void }) {
   const [aberto, setAberto] = useState(false); const car = b.carregando && !b.dados;
   return (
     <section className="gv2-cartao gv2-fontes" data-gv2-bloco="fontes" data-gv2-estado={car ? 'carregando' : b.dados ? 'conectado' : 'problema'}>
@@ -478,7 +480,8 @@ function BlocoFontes({ b, efs }: { b: ReturnType<typeof useBloco<Fonte[]>>; efs:
             ); })}
           </ul>
         )}
-        {b.dados && <button type="button" className="gv2-link gv2-dir" aria-expanded={aberto} onClick={() => setAberto((v) => !v)}>{aberto ? 'Fechar detalhes' : 'Detalhes'} <ArrowRight size={13} aria-hidden className={aberto ? 'gv2-gira90' : undefined} /></button>}
+        {aoIntegracoes && <button type="button" className="gv2-link gv2-dir" onClick={aoIntegracoes}>Integrações <ArrowRight size={13} aria-hidden /></button>}
+        {b.dados && <button type="button" className={`gv2-link${aoIntegracoes ? '' : ' gv2-dir'}`} aria-expanded={aberto} onClick={() => setAberto((v) => !v)}>{aberto ? 'Fechar detalhes' : 'Detalhes'} <ArrowRight size={13} aria-hidden className={aberto ? 'gv2-gira90' : undefined} /></button>}
       </div>
       {aberto && b.dados && (
         <dl className="gv2-fontes-det">
