@@ -2345,3 +2345,6 @@ dist/
 # DSHOW-110 (23/11): módulo NOVO de public/core gerado pela receita — versionado para o publicador aceitar (diff git × diff das releases)
 !/public/core/auth/logout-client.js
 !/scripts/bling-ausencia-teste.php
+# Geral V2 — serviço (ACIMA_DIREITA, 23/11/2026): resumo.php e lista.php, só leitura da base local
+!/api/geral/
+!/api/geral/**
