@@ -103,6 +103,9 @@ export const lerResumo = (p: PeriodoV2, s?: AbortSignal) => ler<Resumo>(`/resumo
 export const lerPrioridades = (s?: AbortSignal) => ler<Prioridades>('/prioridades.php', s);
 export const lerAgenda = (s?: AbortSignal) => ler<Agenda>('/agenda.php', s);
 export const lerFontes = (s?: AbortSignal) => ler<Fonte[]>('/fontes.php', s);
+/** 25/11 noite (CIMA): estado das integrações — contrato da ACIMA_ESQUERDA (P22), nível ≥ 80, só leitura. */
+export interface Integracao { id: string; nome: string; estado: 'ok' | 'atrasado' | 'com_problema' | 'aguardando' | 'sem_acesso' | 'nao_integrado'; ultima_sincronizacao: string | null; erro: string | null; proximo_passo: string | null }
+export function lerIntegracoes(s?: AbortSignal) { return ler<{ gerado_em: string; integracoes: Integracao[] }>('/integracoes.php', s); }
 export function lerLista(id: IdPrioridade, f: FiltrosLista, s?: AbortSignal) {
   const q = new URLSearchParams({ id, pagina: String(f.pagina), por_pagina: '50', ordem: f.ordem, dir: f.dir });
   if (f.responsavel !== null) q.set('responsavel', String(f.responsavel));

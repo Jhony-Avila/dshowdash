@@ -226,3 +226,23 @@
   [data-geral-react-root] .gv2-prio-quando { grid-area: q; justify-self: end; }
   [data-geral-react-root] .gv2-prio .gv2-link { grid-area: l; justify-self: start; }
 }
+
+/* Integrações (CIMA, 25/11 noite): lista com o estado colorido, última sincronização, erro e próximo passo */
+[data-geral-react-root] .gv2-pilula--ok { color: var(--ger-ok, #16a37f); background: color-mix(in srgb, var(--ger-ok, #16a37f) 9%, transparent); border-color: color-mix(in srgb, var(--ger-ok, #16a37f) 30%, transparent); }
+[data-geral-react-root] .gv2-pilula--neutro { color: var(--ger-texto-dim); background: color-mix(in srgb, var(--ger-texto-dim) 8%, transparent); border-color: var(--ger-borda); }
+[data-geral-react-root] .gv2-integ-lista { list-style: none; margin: 0; padding: 0; }
+[data-geral-react-root] .gv2-integ { display: grid; grid-template-columns: minmax(140px, 1fr) auto minmax(0, 1.4fr); grid-template-areas: "n p q" "e e e" "s s s"; gap: 6px 16px; align-items: center; padding: 14px 0 14px 14px; border-bottom: 1px solid var(--ger-borda); border-left: 4px solid var(--ger-borda); }
+[data-geral-react-root] .gv2-integ:last-child { border-bottom: 0; }
+[data-geral-react-root] .gv2-integ--erro { border-left-color: var(--ger-bad); } [data-geral-react-root] .gv2-integ--aviso { border-left-color: var(--ger-warn); } [data-geral-react-root] .gv2-integ--ok { border-left-color: var(--ger-ok, #16a37f); }
+[data-geral-react-root] .gv2-integ-nome { grid-area: n; font-size: 14px; font-weight: 500; }
+[data-geral-react-root] .gv2-integ .gv2-pilula { grid-area: p; justify-self: start; }
+[data-geral-react-root] .gv2-integ-quando { grid-area: q; justify-self: end; font-size: 12px; }
+[data-geral-react-root] .gv2-integ-erro { grid-area: e; font-size: 12.5px; color: var(--ger-bad); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-geral-react-root] .gv2-integ-passo { grid-area: s; font-size: 12.5px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .gv2-integ-passo strong { color: var(--ger-texto); font-weight: 500; }
+[data-geral-react-root] .gv2-integ--osso { display: flex; flex-direction: column; gap: 8px; }
+@media (max-width: 600px) {
+  [data-geral-react-root] .gv2-integ { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "n p" "q q" "e e" "s s"; }
+  [data-geral-react-root] .gv2-integ-quando { justify-self: start; }
+}
+[data-geral-react-root] [data-gv2-integracoes] .gv2-h2 { display: flex; align-items: center; gap: 8px; }
