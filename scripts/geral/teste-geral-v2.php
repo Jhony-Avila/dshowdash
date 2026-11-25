@@ -746,6 +746,21 @@ check('MOCK 3 · cartão e lista contam pela MESMA função (contarPrioridade), 
     && preg_match('/SELECT COUNT\(\*\) \$from"\)/', $src) === 0);
 check('MOCK · coerência final', ($e = $coerente($K())) === '', $e);
 
+// ---------- VALIDAÇÃO DO TEXTO BRUTO (DSHOW-116): `\z`, nunca `$` (no PHP o `$` aceita um "\n" no fim) ----------
+$casosUrl = ['1' => 1, '50' => 50, "1\n" => null, "1\r\n" => null, "\n1" => null, ' 1' => null, '1 ' => null, '01' => null, '0' => null, '-1' => null, '1.0' => null, '' => null, '123456' => null];
+$errosUrl = [];
+foreach ($casosUrl as $v => $esp) if (GeralV2::inteiroDaUrl((string) $v, 5) !== $esp) $errosUrl[] = json_encode((string) $v);
+check('URL · inteiroDaUrl: só dígitos sem zero à esquerda; "1\n", "1\r\n", espaço, sinal, ponto e vazio recusados', $errosUrl === [], implode(' ', $errosUrl));
+check('URL · inteiroDaUrl(null) = null; responsável até 19 dígitos', GeralV2::inteiroDaUrl(null, 5) === null && GeralV2::inteiroDaUrl('9223372036854775807', 19) === 9223372036854775807);
+$srcL = (string) file_get_contents(dirname($argv[1] ?? "$RAIZ/api/geral/GeralV2.php") . '/v2/prioridades/lista.php');
+$srcG = (string) file_get_contents($argv[1] ?? "$RAIZ/api/geral/GeralV2.php") . (string) file_get_contents(dirname($argv[1] ?? "$RAIZ/api/geral/GeralV2.php") . '/GeralV2Contrato.php');
+check('URL · lista.php valida pagina, por_pagina e responsavel pelo inteiroDaUrl (nenhum regex com $ no fim)', substr_count($srcL, 'GeralV2::inteiroDaUrl(') === 3 && preg_match('/\$\/[a-zA-Z]*[\'"]/', $srcL) === 0);
+check('URL · serviço sem regex terminado em $ (todos com \z)', preg_match('/preg_match\(\'[^\']*\$\/[a-zA-Z]*\'/', $srcG) === 0);
+$pdo->exec("UPDATE `{$P}pipe_accounts` SET company_domain = 'dshow\nmal'");   // tabela do próprio teste
+$lD = $sv()->lista('atividade_vencida', 1, null, 'prazo', 'asc', 1);
+$pdo->exec("UPDATE `{$P}pipe_accounts` SET company_domain = 'dshow'");
+check('URL · domínio do Pipedrive com quebra de linha no meio → sem link (regressão; o trim já tirava a do fim)', array_filter(array_column($lD['itens'], 'link')) === [], json_encode(array_column($lD['itens'], 'link')));
+
 // ---------- só leitura: nenhuma escrita do serviço ----------
 $antes = $pdo->query("SELECT SUM(t.n) FROM (SELECT COUNT(*) n FROM `{$P}pipe_deals` UNION ALL SELECT COUNT(*) FROM `{$P}bling_sales_orders` UNION ALL SELECT COUNT(*) FROM `{$P}gcal_sync_state`) t")->fetchColumn();
 $src = (string) file_get_contents($argv[1] ?? "$RAIZ/api/geral/GeralV2.php");

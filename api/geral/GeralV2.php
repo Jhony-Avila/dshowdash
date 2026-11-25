@@ -57,7 +57,7 @@ final class GeralV2
         private ?Closure $agenda = null,
         private string $p = '',
     ) {
-        if ($p !== '' && preg_match('/^[a-z0-9_]{1,24}$/', $p) !== 1) throw new InvalidArgumentException('prefixo inválido');
+        if ($p !== '' && preg_match('/^[a-z0-9_]{1,24}\z/', $p) !== 1) throw new InvalidArgumentException('prefixo inválido');
         $this->br = new DateTimeZone(self::FUSO);
         $this->utc = new DateTimeZone('UTC');
         $this->agora = ($agora ?? new DateTimeImmutable('now'))->setTimezone($this->br);
@@ -98,6 +98,16 @@ final class GeralV2
     }
 
     public function agora(): DateTimeImmutable { return $this->agora; }
+
+    /**
+     * Inteiro positivo vindo da URL (pagina, por_pagina, responsavel), validado no texto BRUTO: só dígitos, sem zero à esquerda, até $digitos.
+     * `\z` (fim real do texto), nunca `$`: no PHP o `$` aceita um "\n" no fim ("1\n" passava). Revisão das validações, DSHOW-116.
+     */
+    public static function inteiroDaUrl(?string $v, int $digitos): ?int
+    {
+        if ($v === null || $digitos < 1 || preg_match('/^[1-9][0-9]{0,' . ($digitos - 1) . '}\z/', $v) !== 1) return null;
+        return (int) $v;
+    }
 
     /** @return array{0: DateTimeImmutable, 1: DateTimeImmutable} primeiro e último dia (inclusive), em Brasília */
     public function periodo(string $chave): array
@@ -681,7 +691,7 @@ final class GeralV2
         if (!is_string($d) || $d === '') return null;
         $d = strtolower(trim($d));
         if (!str_contains($d, '.')) $d .= '.pipedrive.com';
-        return preg_match('/^[a-z0-9-]{1,63}\.pipedrive\.com$/', $d) === 1 ? $d : null;
+        return preg_match('/^[a-z0-9-]{1,63}\.pipedrive\.com\z/', $d) === 1 ? $d : null;
     }
 
     // ─────────────────────────────────────────── utilidades ───────────────────────────────────────────
@@ -700,7 +710,7 @@ final class GeralV2
 
     private function normal(string $v): string
     {
-        if (preg_match('/^(-?)(\d+)(?:\.(\d{1,2})\d*)?$/', $v, $m) !== 1) throw new GeralV2Erro('valor_invalido');
+        if (preg_match('/^(-?)(\d+)(?:\.(\d{1,2})\d*)?\z/', $v, $m) !== 1) throw new GeralV2Erro('valor_invalido');
         $int = ltrim($m[2], '0');
         return $m[1] . ($int === '' ? '0' : $int) . '.' . str_pad($m[3] ?? '', 2, '0');
     }

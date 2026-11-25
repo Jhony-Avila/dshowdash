@@ -11,9 +11,12 @@ $ordem = geral_v2_q('ordem') ?? 'prazo';
 $dir = geral_v2_q('dir') ?? 'asc';
 $resp = geral_v2_q('responsavel');
 if (!in_array($id, GeralV2::PRIORIDADES, true)) ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 400, ['campo' => 'id']);
-if (preg_match('/^[1-9][0-9]{0,4}$/', $pag) !== 1) ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 400, ['campo' => 'pagina']);
-if (preg_match('/^[1-9][0-9]?$/', $pp) !== 1 || (int) $pp > GeralV2::POR_PAGINA) ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 400, ['campo' => 'por_pagina']);
+// texto BRUTO validado com \z (GeralV2::inteiroDaUrl): "1\n" e "1\r\n" são recusados (o `$` do PHP aceitava o "\n" final)
+$pagN = GeralV2::inteiroDaUrl($pag, 5); $ppN = GeralV2::inteiroDaUrl($pp, 2);
+$respN = $resp === null ? null : GeralV2::inteiroDaUrl($resp, 19);
+if ($pagN === null) ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 400, ['campo' => 'pagina']);
+if ($ppN === null || $ppN > GeralV2::POR_PAGINA) ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 400, ['campo' => 'por_pagina']);
 if (!in_array($ordem, ['prazo', 'valor', 'responsavel'], true)) ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 400, ['campo' => 'ordem']);
 if (!in_array($dir, ['asc', 'desc'], true)) ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 400, ['campo' => 'dir']);
-if ($resp !== null && preg_match('/^[1-9][0-9]{0,18}$/', $resp) !== 1) ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 400, ['campo' => 'responsavel']);
-ApiResponse::success(geral_v2_contrato($usuario)->lista($id, (int) $pag, (int) $pp, $ordem, $dir, $resp !== null ? (int) $resp : null));
+if ($resp !== null && $respN === null) ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 400, ['campo' => 'responsavel']);
+ApiResponse::success(geral_v2_contrato($usuario)->lista($id, $pagN, $ppN, $ordem, $dir, $respN));

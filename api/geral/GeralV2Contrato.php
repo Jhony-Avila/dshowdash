@@ -347,7 +347,7 @@ final class GeralV2Contrato
             'desatualizado' => $quando !== null ? "Última atualização do $nome $quando." : "$nome sem atualização recente.",
             'parcial' => match (true) {
                 $dado !== null && $f['estado'] === 'ok' => $dado,
-                preg_match('/^calendarios_atrasados_(\d+)_de_(\d+)$/', (string) $f['detalhe'], $m) === 1 => "{$m[1]} de {$m[2]} agendas com atualização atrasada.",
+                preg_match('/^calendarios_atrasados_(\d+)_de_(\d+)\z/', (string) $f['detalhe'], $m) === 1 => "{$m[1]} de {$m[2]} agendas com atualização atrasada.",
                 $f['detalhe'] === 'pedidos_nunca_sincronizados' => 'Os pedidos do Bling ainda não foram sincronizados.',
                 default => "A última sincronização do $nome ficou incompleta.",
             },
