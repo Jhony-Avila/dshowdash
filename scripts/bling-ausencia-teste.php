@@ -535,6 +535,22 @@ try {
         && [$fxZ['fluxo_zerado'], $fxZ['fluxo_indisponivel']] !== [$fxD['fluxo_zerado'], $fxD['fluxo_indisponivel']]);
     $fxV = AnalyticsController::montarFluxo([]);
     ok('DSHOW-115: período sem vendas (nenhuma linha) = zerado conhecido, não indisponível', $fxV['fluxo_zerado'] === true && $fxV['fluxo_indisponivel'] === false, json_encode($fxV));
+    // Codex DSHOW-115 (complemento): "sem vendas = zerado" só com leitura válida cobrindo o período inteiro
+    $agoraT = strtotime('2026-11-24 15:00:00'); $isoT = static fn(string $q) => gmdate('c', strtotime($q));
+    $okT = static fn(?string $ult) => ['estado' => 'ok', 'cobertura' => 'completa', 'ultimo_sucesso' => $ult];
+    $cob = [
+        'fechado, lido depois do fim' => AnalyticsController::semCoberturaDoPeriodo($okT($isoT('2026-11-02 09:00:00')), '2026-10-31', $agoraT),
+        'fechado, lido ANTES do fim' => AnalyticsController::semCoberturaDoPeriodo($okT($isoT('2026-10-30 09:00:00')), '2026-10-31', $agoraT),
+        'falha (parcial)' => AnalyticsController::semCoberturaDoPeriodo(['estado' => 'parcial', 'motivo' => 'última coleta erro; dados podem estar incompletos', 'ultimo_sucesso' => $isoT('2026-11-24 14:50:00')], '2026-10-31', $agoraT),
+        'nunca lido' => AnalyticsController::semCoberturaDoPeriodo(['estado' => 'sem_dados', 'motivo' => 'recurso ainda não sincronizado', 'ultimo_sucesso' => null], '2026-10-31', $agoraT),
+        'escopo ausente' => AnalyticsController::semCoberturaDoPeriodo(['estado' => 'indisponivel', 'motivo' => 'escopo ausente', 'ultimo_sucesso' => null], '2026-10-31', $agoraT),
+        'ok sem último sucesso' => AnalyticsController::semCoberturaDoPeriodo($okT(null), '2026-10-31', $agoraT),
+        'em curso, lido há 30 min' => AnalyticsController::semCoberturaDoPeriodo($okT(gmdate('c', $agoraT - 1800)), date('Y-m-d', $agoraT), $agoraT),
+        'em curso, lido há 2 h (atrasada)' => AnalyticsController::semCoberturaDoPeriodo($okT(gmdate('c', $agoraT - 7200)), date('Y-m-d', $agoraT), $agoraT),
+    ];
+    ok('DSHOW-115: cobertura do período — só "fechado lido depois do fim" e "em curso lido há ≤ 1 h" valem; falha, nunca lido, escopo, sem sucesso, lido antes do fim '
+        . 'e atrasada = sem cobertura (com motivo)', $cob['fechado, lido depois do fim'] === null && $cob['em curso, lido há 30 min'] === null
+        && count(array_filter($cob, static fn($m) => is_string($m) && $m !== '')) === 6, json_encode($cob, JSON_UNESCAPED_UNICODE));
     $fxP = AnalyticsController::montarFluxo([$linF('Loja A', 100.0), $linF('Loja B', null)]);
     ok('DSHOW-115: parcial (desenha o conhecido e lista o desconhecido) = nem indisponível nem zerado', $fxP['fluxo_indisponivel'] === false && $fxP['fluxo_zerado'] === false
         && $fxP['links'] !== [] && $fxP['links_desconhecidos'] !== [], json_encode([$fxP['fluxo_indisponivel'], $fxP['fluxo_zerado']]));
@@ -553,7 +569,7 @@ try {
     $fx = AnalyticsController::montarFluxo([$linF('Loja A', 100.0, 0.0)]);
     ok('fluxo: frete ZERO conhecido → sem ligação e NÃO desconhecido (zero legítimo)', $fx['links_desconhecidos'] === [] && $fx['indisponivel'] === null
         && !in_array('Frete', array_column($fx['nos'], 'id'), true), json_encode($fx));
-    ok('… e o endpoint usa essa função', str_contains($srcQ, 'ApiResponse::success(self::montarFluxo($linhas)'));
+    ok('… e o endpoint usa essa função', (str_contains($srcQ, '$fluxo = self::montarFluxo($linhas);') && str_contains($srcQ, 'ApiResponse::success($fluxo +')));
 
     // ultima_movimentacao: o estoque sintético não tem registro de movimentação
     ok('revisão ESQUERDA 24/11: estoque sem movimentação registrada → ultima_movimentacao null (antes: "hoje")', $e31['ultima_movimentacao'] === null && $e32['ultima_movimentacao'] === null,
@@ -586,6 +602,25 @@ try {
     ok('C) categorias: receita 1.234,56', $ct !== null && $ct['receita'] === 1234.56, json_encode($ct));
     $st = $pdo->prepare('UPDATE bling_sales_orders SET situacao = ? WHERE id = ?');
     foreach ($sitOrig as $s) { $st->execute([$s['situacao'], $s['id']]); }
+
+    echo "== 4j. Codex DSHOW-115 (complemento): período SEM vendas só é \"fluxo zerado\" com leitura válida do Bling cobrindo o período inteiro\n";
+    $antigo = ['de' => '2020-01-01', 'ate' => '2020-01-31'];   // período sem nenhum pedido
+    $pdo->prepare("INSERT INTO bling_sync_jobs (account_id, recurso, estrategia, situacao, iniciado_em, terminado_em) VALUES (?, 'pedidos', 'incremental', 'concluido', UTC_TIMESTAMP(), UTC_TIMESTAMP())")->execute([$conta]);
+    $pdo->prepare("INSERT INTO bling_sync_state (account_id, recurso, situacao, ultima_execucao_em) VALUES (?, 'pedidos', 'ok', UTC_TIMESTAMP())
+                   ON DUPLICATE KEY UPDATE situacao = 'ok', ultima_execucao_em = UTC_TIMESTAMP()")->execute([$conta]);
+    [$rcZ, $dZ, $txtZ] = $endpoint('AnalyticsController', 'fluxoFinanceiro', $antigo);
+    ok('leitura ok concluída DEPOIS do fim do período e nenhuma venda → fluxo_zerado (zero legítimo), não indisponível', $rcZ === 0 && ($dZ['fluxo_zerado'] ?? null) === true
+        && ($dZ['fluxo_indisponivel'] ?? null) === false, mb_substr($txtZ, 0, 300));
+    $pdo->prepare("UPDATE bling_sync_state SET situacao = 'erro', ultima_execucao_em = UTC_TIMESTAMP() WHERE account_id = ? AND recurso = 'pedidos'")->execute([$conta]);
+    [$rcF, $dF, $txtF] = $endpoint('AnalyticsController', 'fluxoFinanceiro', $antigo);
+    ok('DECISIVO: última sincronização FALHOU → fluxo_indisponivel com motivo, NUNCA zerado', $rcF === 0 && ($dF['fluxo_indisponivel'] ?? null) === true && ($dF['fluxo_zerado'] ?? null) === false
+        && ($dF['indisponivel'] ?? null) === 'leitura_sem_cobertura' && ($dF['motivo_indisponivel'] ?? '') !== '', mb_substr($txtF, 0, 300));
+    $pdo->prepare("UPDATE bling_sync_state SET situacao = 'ok' WHERE account_id = ? AND recurso = 'pedidos'")->execute([$conta]);
+    $pdo->exec("UPDATE bling_sync_jobs SET terminado_em = '2019-12-31 10:00:00' WHERE recurso = 'pedidos'");   // só leituras ANTES do fim do período
+    $pdo->prepare("UPDATE bling_sync_state SET ultima_execucao_em = '2019-12-31 10:00:00' WHERE account_id = ? AND recurso = 'pedidos'")->execute([$conta]);
+    [$rcA, $dAt, $txtA] = $endpoint('AnalyticsController', 'fluxoFinanceiro', $antigo);
+    ok('DECISIVO: leitura ok mas ANTERIOR ao fim do período (não o cobre) → fluxo_indisponivel com motivo, nunca zerado', $rcA === 0 && ($dAt['fluxo_indisponivel'] ?? null) === true
+        && ($dAt['fluxo_zerado'] ?? null) === false && str_contains((string) ($dAt['motivo_indisponivel'] ?? ''), 'anterior ao fim do período'), mb_substr($txtA, 0, 300));
 
     echo "== 5. o provedor de DEMONSTRAÇÃO (mock) não muda: números como antes\n";
     [$rc5, $d, $txt] = $endpoint('OverviewController', 'overview', [], 'mock');

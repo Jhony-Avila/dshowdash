@@ -258,7 +258,41 @@ final class AnalyticsController
             return;
         }
 
-        ApiResponse::success(self::montarFluxo($linhas) + ['nota' => 'Impostos e taxas são estimativas.'], bling_meta(['filtros' => $f]));
+        $fluxo = self::montarFluxo($linhas);
+        // Codex DSHOW-115 (complemento, Jhony 24/11): "sem vendas = fluxo zerado" SÓ com leitura válida do Bling cobrindo o período inteiro
+        if ($fluxo['fluxo_zerado']) {
+            $motivo = self::semCoberturaDoPeriodo($p->disponibilidade('pedidos'), $f['ate'], time());
+            if ($motivo !== null) {
+                $fluxo = ['fluxo_indisponivel' => true, 'fluxo_zerado' => false, 'indisponivel' => 'leitura_sem_cobertura', 'motivo_indisponivel' => $motivo,
+                          'links_zero' => [], 'prejuizo_total' => null] + $fluxo;
+            }
+        }
+        ApiResponse::success($fluxo + ['nota' => 'Impostos e taxas são estimativas.'], bling_meta(['filtros' => $f]));
+    }
+
+    /** Tolerância do período EM CURSO (termina hoje/no futuro): a leitura ok tem de ser no máximo desta idade (o fim do período ainda não chegou). */
+    public const ATRASO_MAX_LEITURA_S = 3600;
+
+    /**
+     * Codex DSHOW-115 (complemento): o período tem leitura VÁLIDA do Bling que o cubra inteiro? null = sim; senão o motivo (para "indisponível").
+     * Válida = selo de disponibilidade dos pedidos 'ok' (cobertura completa, sem falha, escopo, desativação) E último sucesso DEPOIS do fim do período.
+     * Período que ainda não terminou: o fim efetivo é agora → último sucesso há no máximo ATRASO_MAX_LEITURA_S. Função pura (testada direto).
+     * @param array{estado?:string, motivo?:string, ultimo_sucesso?:?string, cobertura?:string} $disp
+     */
+    public static function semCoberturaDoPeriodo(array $disp, string $fimPeriodo, int $agora): ?string
+    {
+        if (($disp['estado'] ?? null) !== 'ok') {
+            return 'leitura dos pedidos ' . (($disp['estado'] ?? '') === 'sem_dados' ? 'ainda não feita' : 'não está completa') . ($disp['motivo'] ?? null ? ': ' . $disp['motivo'] : '');
+        }
+        $ult = ($disp['ultimo_sucesso'] ?? null) === null ? null : strtotime((string) $disp['ultimo_sucesso']);
+        if ($ult === null || $ult === false) { return 'não há leitura concluída dos pedidos'; }
+        $fim = strtotime($fimPeriodo . ' 23:59:59');
+        if ($fim === false) { return 'fim do período ilegível'; }
+        $exigido = $fim <= $agora ? $fim : $agora - self::ATRASO_MAX_LEITURA_S;
+        if ($ult < $exigido) {
+            return 'a última leitura concluída dos pedidos (' . gmdate('Y-m-d H:i', $ult) . ' UTC) é anterior ao fim do período — não cobre o período inteiro';
+        }
+        return null;
     }
 
     /**
