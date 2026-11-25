@@ -326,7 +326,7 @@ $pi = array_column($pr['itens'], null, 'id');
 check('contrato · prioridades: os 3 ids da CIMA, gravidade 1/2/3', array_keys($pi) === ['atividade_vencida', 'sem_proxima_atividade', 'conflito_agenda'] && $pi['atividade_vencida']['gravidade'] === 1 && $pi['conflito_agenda']['gravidade'] === 3);
 check('contrato · P1: quantidade, desde, responsáveis e detalhe', $pi['atividade_vencida']['quantidade'] === 63 && $pi['atividade_vencida']['desde'] === '2026-10-15'
     && $pi['atividade_vencida']['responsaveis'] === 2 && $pi['atividade_vencida']['detalhe'] === 'Pipedrive · 63 negócios distintos', json_encode($pi['atividade_vencida']));
-check('contrato · P3: "Google Agenda · 1 conflito hoje"', $pi['conflito_agenda']['detalhe'] === 'Google Agenda · 1 conflito hoje' && $pi['conflito_agenda']['estado'] === 'ok');
+check('contrato · P3: "Google Calendar · 1 conflito hoje"', $pi['conflito_agenda']['detalhe'] === 'Google Calendar · 1 conflito hoje' && $pi['conflito_agenda']['estado'] === 'ok');
 foreach (['atividade_vencida', 'sem_proxima_atividade'] as $id) {
     $L = $K()->lista($id, 1, 50, 'prazo', 'asc', null);
     check("contrato · ACEITE da CIMA ($id): total da lista = quantidade da prioridade", $L['total'] === $pi[$id]['quantidade'], json_encode([$L['total'], $pi[$id]['quantidade']]));
@@ -395,7 +395,7 @@ $coerentePainel = function (array $pa): string {
     // proposta da CIMA (20:0x): rótulos prontos e parte afetada coerentes com o estado
     $RE = ['ok' => 'Atualizado', 'parcial' => 'Dados parciais', 'desatualizado' => 'Desatualizado', 'erro' => 'Com problema', 'aguardando' => 'Aguardando conexão'];
     $vf = $pa['prioridades']['verificacao']['fontes'] ?? null;
-    if (!is_array($vf) || array_column($vf, 'fonte') !== ['pipedrive', 'calendar']) return 'painel: verificacao.fontes ausente ou sem Pipedrive e Google Agenda';
+    if (!is_array($vf) || array_column($vf, 'fonte') !== ['pipedrive', 'calendar']) return 'painel: verificacao.fontes ausente ou sem Pipedrive e Google Calendar';
     foreach ($vf as $x) if ($x['rotulo_estado'] !== $RE[$x['estado']]) return "painel: verificacao.fontes {$x['fonte']} rótulo ≠ estado";
     if ($pa['prioridades']['verificacao']['estado'] === 'completa' && array_filter($vf, fn($x) => $x['estado'] !== 'ok') !== []) return 'painel: completa com fonte exigida não ok';
     foreach ($pa['fontes'] as $f) {
@@ -670,7 +670,7 @@ $pdo->exec("UPDATE `{$P}bling_sync_state` SET situacao='ok'");
 $volta = $tmpTab('pipe_deals'); $pdo->exec("CREATE TABLE `{$P}pipe_deals` LIKE `{$P}pipe_deals__fora`"); $criadas[] = "{$P}pipe_deals";
 $pdo->exec("UPDATE `{$P}gcal_sync_state` SET last_sync_at = '2026-11-23 08:00:00' WHERE calendar_id = 'b@exemplo.test'");   // 1 de 2 agendas há 5 h
 $Kz = new GeralV2Contrato($sv(cf: fn() => [])); $pT = $Kz->prioridades(); $pi = array_column($pT['itens'], null, 'id');
-check('D1 · tudo 0, mas 1 de 2 agendas atrasada → conflito parcial, Google Agenda afetada, sem_pendencias FALSE', $pT['sem_pendencias'] === false
+check('D1 · tudo 0, mas 1 de 2 agendas atrasada → conflito parcial, Google Calendar afetado, sem_pendencias FALSE', $pT['sem_pendencias'] === false
     && $pi['conflito_agenda']['quantidade'] === 0 && $pi['conflito_agenda']['verificacao']['estado'] === 'parcial'
     && $pi['conflito_agenda']['verificacao']['fontes_afetadas'][0]['fonte'] === 'calendar' && $pi['conflito_agenda']['verificacao']['fontes_afetadas'][0]['consulta'] === 'conflitos'
     && $pi['atividade_vencida']['verificacao']['estado'] === 'completa' && $pT['verificacao']['estado'] === 'parcial', json_encode([$pT['verificacao'], $pi['conflito_agenda']['verificacao']]));
@@ -732,8 +732,15 @@ check('CIMA · só o funil falha → "Pipedrive · Com problema (funil)": rotulo
     && $fp['afetado'] === [['id' => 'funil_aberto', 'rotulo' => 'funil', 'estado' => 'erro']], json_encode([$fp['rotulo_estado'], $fp['afetado']]));
 check('CIMA · funil com problema: painel coerente', ($e = $coerentePainel($pa)) === '', $e);
 $vf = $K()->prioridades()['verificacao']['fontes'];
-check('CIMA · verificacao.fontes no topo: Pipedrive e Google Agenda, rótulo pronto', $vf === [['fonte' => 'pipedrive', 'rotulo' => 'Pipedrive', 'estado' => 'ok', 'rotulo_estado' => 'Atualizado'],
-    ['fonte' => 'calendar', 'rotulo' => 'Google Agenda', 'estado' => 'ok', 'rotulo_estado' => 'Atualizado']], json_encode($vf));
+check('CIMA · verificacao.fontes no topo: Pipedrive e Google Calendar, rótulo pronto', $vf === [['fonte' => 'pipedrive', 'rotulo' => 'Pipedrive', 'estado' => 'ok', 'rotulo_estado' => 'Atualizado'],
+    ['fonte' => 'calendar', 'rotulo' => 'Google Calendar', 'estado' => 'ok', 'rotulo_estado' => 'Atualizado']], json_encode($vf));
+// RÓTULO ÚNICO (pedido da CIMA, 24/11 22:4x): "Google Calendar" nas prioridades, na verificação e nas fontes — nunca "Google Agenda" na mesma tela
+$pdo->exec("UPDATE `{$P}gcal_sync_state` SET last_sync_at = '2026-11-23 08:00:00'");   // agenda atrasada: os motivos citam a fonte pelo nome
+$paN = $K()->painel('7d'); $jsN = json_encode($paN, JSON_UNESCAPED_UNICODE);
+$pdo->exec("UPDATE `{$P}gcal_sync_state` SET last_sync_at = '2026-11-23 12:50:00'");
+check('NOME · nenhuma ocorrência de "Google Agenda" no painel (prioridades, verificação, fontes, motivos), e "Google Calendar" presente', !str_contains($jsN, 'Google Agenda')
+    && str_contains($jsN, 'Última atualização do Google Calendar') && array_column($paN['prioridades']['verificacao']['fontes'], 'rotulo', 'fonte')['calendar'] === 'Google Calendar'
+    && str_starts_with(array_column($paN['prioridades']['itens'], 'detalhe', 'id')['conflito_agenda'], 'Google Calendar'), mb_substr($jsN, 0, 0));
 // 3 · contraprova embutida: a lista e o cartão chamam a MESMA função de filtro
 check('MOCK 3 · cartão e lista contam pela MESMA função (contarPrioridade), sem outro COUNT de prioridade', substr_count($src = (string) file_get_contents($argv[1] ?? "$RAIZ/api/geral/GeralV2.php"), 'contarPrioridade(') === 4
     && preg_match('/SELECT COUNT\(\*\) \$from"\)/', $src) === 0);

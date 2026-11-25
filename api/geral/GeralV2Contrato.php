@@ -26,7 +26,7 @@ final class GeralV2Contrato
 {
     private const ESTADO = ['ok' => 'ok', 'zero_confirmado' => 'zero', 'parcial' => 'parcial', 'desatualizado' => 'desatualizado',
                             'aguardando_conexao' => 'aguardando', 'indisponivel' => 'erro'];
-    private const NOME = ['pipedrive' => 'Pipedrive', 'pipedrive_negocios' => 'Pipedrive', 'bling' => 'Bling', 'google_calendar' => 'Google Agenda'];
+    private const NOME = ['pipedrive' => 'Pipedrive', 'pipedrive_negocios' => 'Pipedrive', 'bling' => 'Bling', 'google_calendar' => 'Google Calendar'];   // um nome só na tela (pedido da CIMA, 24/11): o do resto do Dash
     public const URL_AGENDA = '#/panel-google-calendar';
     private const GRAVIDADE = ['atividade_vencida' => 1, 'sem_proxima_atividade' => 2, 'conflito_agenda' => 3];
     private const FONTE_TELA = ['pipedrive' => 'pipedrive', 'pipedrive_negocios' => 'pipedrive', 'bling' => 'bling', 'google_calendar' => 'calendar'];
@@ -41,7 +41,7 @@ final class GeralV2Contrato
     private const PIOR_CONSULTA = ['ok' => 0, 'parcial' => 1, 'desatualizado' => 2, 'aguardando' => 3, 'erro' => 4];
     /** rótulo pronto do estado (proposta da CIMA, 24/11 20:0x): a tela só exibe */
     private const ROTULO_ESTADO = ['ok' => 'Atualizado', 'parcial' => 'Dados parciais', 'desatualizado' => 'Desatualizado', 'erro' => 'Com problema', 'aguardando' => 'Aguardando conexão'];
-    private const ROTULO_FONTE = ['pipedrive' => 'Pipedrive', 'bling' => 'Bling', 'calendar' => 'Google Agenda'];
+    private const ROTULO_FONTE = ['pipedrive' => 'Pipedrive', 'bling' => 'Bling', 'calendar' => 'Google Calendar'];
     private const ROTULO_IND = ['negocios_ganhos' => 'ganhos', 'funil_aberto' => 'funil', 'atividade_vencida' => 'atividades vencidas',
                                 'sem_proxima_atividade' => 'sem próxima atividade', 'pedidos_bling' => 'pedidos', 'agenda' => 'agenda de hoje', 'conflito_agenda' => 'conflitos'];
     /** lacunas do DADO: deixam o cartão "Dados parciais", mas a consulta e a fonte estão bem */
@@ -103,7 +103,7 @@ final class GeralV2Contrato
                 'id' => $x['id'], 'estado' => self::ESTADO[$x['estado']], 'quantidade' => $n, 'gravidade' => self::GRAVIDADE[$x['id']],
                 'desde' => $x['mais_antiga'], 'responsaveis' => $x['responsaveis'] ?? null,
                 'detalhe' => $x['id'] === 'conflito_agenda'
-                    ? 'Google Agenda' . ($n !== null ? ' · ' . $n . ($n === 1 ? ' conflito hoje' : ' conflitos hoje') : '')
+                    ? 'Google Calendar' . ($n !== null ? ' · ' . $n . ($n === 1 ? ' conflito hoje' : ' conflitos hoje') : '')
                     : 'Pipedrive' . ($n !== null ? ' · ' . $n . ($n === 1 ? ' negócio distinto' : ' negócios distintos') : ''),
                 'ultimo_sucesso' => $x['atualizado_em'], 'motivo' => $this->motivo($fonte, $x['estado'], $this->g->fonte($fonte)),
             ] + $this->meta($fonte, $x['estado'], $n !== null, $this->lacunasFonte($this->g->fonte($fonte)));
