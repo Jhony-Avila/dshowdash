@@ -83,6 +83,29 @@ function Sparkline({ serie, cor }: { serie: number[]; cor: string }) {
   );
 }
 
+// ── P2 do mockup (P14): todo texto cortado com reticências ganha o texto inteiro como tooltip ──
+const CORTAVEIS = '.hud-label, .hud-delta, .hud-delta small, .hud-panelsub, .hud-rankname, .hud-drawerrowtitle, .hud-drawerrowowner, .hud-api-kpi small, .hud-tabela-nome, .hud-legendrow em';
+/** Observa a raiz da Visão Geral: em cada mudança de conteúdo/tamanho, quem não cabe recebe `title` com o texto completo
+ *  (e perde o title automático quando volta a caber). Títulos escritos à mão (data-titulo-fixo) não são tocados. */
+export function useTooltipNosCortes(raiz: React.RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const el = raiz.current; if (!el) return;
+    let quadro = 0;
+    const aplicar = () => { cancelAnimationFrame(quadro); quadro = requestAnimationFrame(() => {
+      el.querySelectorAll<HTMLElement>(CORTAVEIS).forEach((x) => {
+        if (x.dataset.tituloFixo !== undefined) return;
+        const cortado = x.scrollWidth > x.clientWidth + 1;
+        const texto = (x.textContent || '').replace(/\s+/g, ' ').trim();
+        if (cortado && texto) { if (x.title !== texto) { x.title = texto; x.dataset.tituloAuto = '1'; } }
+        else if (x.dataset.tituloAuto) { x.removeAttribute('title'); delete x.dataset.tituloAuto; }
+      }); }); };
+    const mo = new MutationObserver(aplicar); mo.observe(el, { childList: true, subtree: true, characterData: true });
+    const ro = new ResizeObserver(aplicar); ro.observe(el);
+    aplicar();
+    return () => { mo.disconnect(); ro.disconnect(); cancelAnimationFrame(quadro); };
+  }, [raiz]);
+}
+
 // ── KPIs em HUD ──────────────────────────────────────────────────────────────
 
 type Polaridade = 'sobe_bom' | 'sobe_ruim' | 'neutra';

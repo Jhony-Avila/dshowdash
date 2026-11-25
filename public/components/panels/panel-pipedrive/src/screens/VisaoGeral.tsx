@@ -14,14 +14,14 @@
 // Duas classes de numero, sinalizadas na UI: os KPIs da FAIXA sao fatos de janela
 // (comparaveis); "em aberto agora" e foto do momento e por isso NAO tem variacao —
 // a base nao guarda snapshot historico e inventar um seria fabricar dado.
-import { Fragment, useState } from 'react';
+import { Fragment, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { LayoutDashboard, TriangleAlert } from 'lucide-react';
 import { apiGet, chaves, ApiError } from '../lib/api';
 import { fmtNum, fmtData } from '../lib/format';
 import { PageHeader } from './PageHeader';
 import { EstadoErro, SkeletonBloco } from './Estados';
-import { HudKpis, BlocoGanhos, RankingVendedores, PainelDrill, type Drill } from './VisaoHud';
+import { HudKpis, BlocoGanhos, RankingVendedores, PainelDrill, useTooltipNosCortes, type Drill } from './VisaoHud';
 import { BlocoEtapas, BlocoCiclo, TopProdutos, PedeAtencao, UsoApiHud } from './VisaoHud2';
 import type {
   PipeStatus, PipeOverview, PipeSummary, PipePeriodoId,
@@ -83,6 +83,7 @@ export function VisaoGeral({ status, onConfig, onNegocios, onAlertas }: VisaoGer
     enabled: conectado,
   });
   const [drill, setDrill] = useState<Drill | null>(null);
+  const raiz = useRef<HTMLDivElement>(null); useTooltipNosCortes(raiz);   // P2 (P14): texto cortado → tooltip
 
   const ov = data?.overview;
   const d = ov?.deals;
@@ -90,7 +91,7 @@ export function VisaoGeral({ status, onConfig, onNegocios, onAlertas }: VisaoGer
   const ultimaRun = data?.runs?.[0];
 
   return (
-    <div>
+    <div ref={raiz}>
       <PageHeader Icon={LayoutDashboard} titulo="Visão Geral"
         descricao="Painel executivo do Pipedrive — indicadores da base sincronizada."
         acoes={conectado && !semDados ? (
