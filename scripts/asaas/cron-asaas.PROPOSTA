@@ -1,0 +1,6 @@
+# PROPOSTA — NÃO INSTALADO. Portão À PARTE ("APLICAR ASAAS AGENDAMENTO"), só depois da 1ª sincronização manual conferida.
+# Destino quando aprovado: /etc/cron.d/dshow-asaas (root:root 0644). Uma rodada por hora, no minuto 17 (fora do :00 dos outros jobs).
+# O resumo mostra números até 3 h depois da última sincronização boa; com 1 rodada/hora, até 2 falhas seguidas não tiram os números da tela.
+# Saída: uma linha por empresa, sem valores e sem chave. Desligar = comentar a linha (nada é apagado).
+# Antes (root), como o log do bling-worker:  touch /var/log/asaas-sincronizar.log && chown www-data:adm /var/log/asaas-sincronizar.log && chmod 0640 /var/log/asaas-sincronizar.log
+17 * * * * www-data cd /var/www/dshowdash && /usr/bin/php scripts/asaas/asaas-sincronizar.php >> /var/log/asaas-sincronizar.log 2>&1

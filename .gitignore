@@ -2348,3 +2348,6 @@ dist/
 # Geral V2 — serviço (ACIMA_DIREITA, 23/11/2026): resumo.php e lista.php, só leitura da base local
 !/api/geral/
 !/api/geral/**
+# Asaas SÓ LEITURA (23/11/2026): conector api/asaas/ e scripts/asaas/ (guarda das chaves, sincronização, testes). Chaves em config/asaas/*.key, fora do git.
+!/api/asaas/
+!/scripts/asaas/
