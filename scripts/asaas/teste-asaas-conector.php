@@ -239,6 +239,7 @@ if ($pdo !== null) {
         '/finance/balance' => fn() => json200(['balance' => 12345.67]),
         '/payments' => function ($p, $q) use (&$estado) {
             if (isset($q['paymentDate']['ge'])) return pagina([], $q);   // as pagas recentes já vêm na janela
+            if (isset($q['status'])) return pagina($estado['A']['abertas_antigas'][$q['status']] ?? [], $q);   // 25/11: abertas sem data
             $mes = substr($q['dateCreated']['ge'] ?? '', 0, 7);
             $l = $mes === '2026-11' ? $estado['A']['nov'] : ($mes === '2026-10' ? $estado['A']['out'] : []);
             return pagina($l, $q);
@@ -324,6 +325,7 @@ if ($pdo !== null) {
     $r4 = array_column($resumo->montar(['conta-a'], $agora->modify('+5 hours'))['contas'], null, 'conta')['conta-a'];
     check('sem sincronização boa há > 3 h: null + desatualizada (nunca zero)', $r4['disponivel'] === false && $r4['valores'] === null && $r4['motivo'] === 'desatualizada');
     check('execuções registradas (ok/erro)', $n("SELECT GROUP_CONCAT(resultado ORDER BY id) FROM `{$P}asaas_execucoes` WHERE conta='conta-a'") === 'ok,ok,erro');
+
     // ciclo completo seguinte: vira a geração 0; as linhas da rodada interrompida que não vieram de novo ficam presente=0 (nada apagado)
     $res4 = $sync->sincronizar('conta-a', $agora->modify('+6 hours'));
     check('4ª rodada completa troca o retrato (geração 0)', $res4['resultado'] === 'ok' && $res4['geracao'] === 0 && (int) $n("SELECT geracao_ativa FROM `{$P}asaas_contas` WHERE conta='conta-a'") === 0);
@@ -465,6 +467,19 @@ if ($pdo !== null) {
     check('LIQ: cobrança NÃO recebida sem líquido não derruba o líquido do mês', $rL4['resultado'] === 'ok'
         && $cents($vLiq('+7 hours 41 minutes')['valores']['recebido_mes_liquido']) === $cents($pL3['valores']['recebido_mes_liquido']));
     $estado['A']['nov'] = $pPend;
+    // 25/11: nome da commercialInfo gravado; cobrança EM ABERTO criada antes da janela de 13 meses entra pelo status (a estatística do Asaas a soma)
+    check('nome da conta gravado da commercialInfo', $n("SELECT nome FROM `{$P}asaas_contas` WHERE conta='conta-a'") === 'Empresa conta-a');
+    $sync->sincronizar('conta-a', $agora->modify('+8 hours'));
+    $antes = array_column($resumo->montar(['conta-a'], $agora->modify('+8 hours 1 minute'))['contas'], null, 'conta')['conta-a']['valores']['a_receber'];
+    $esperado = AsaasValor::deCentavos(AsaasValor::centavos($antes) + 1000);
+    $estado['A']['abertas_antigas'] = ['PENDING' => [$cob('pay_antiga1', 'PENDING', '10.00', '2024-01-10')]];
+    $rotaStats = $apiA->rotas['/finance/payment/statistics'];
+    $apiA->rotas['/finance/payment/statistics'] = fn($p, $q) => json200($q['status'] === 'PENDING' ? ['quantity' => 1, 'value' => (float) $esperado] : ['quantity' => 1, 'value' => 300.0]);
+    $res2b = $sync->sincronizar('conta-a', $agora->modify('+8 hours 5 minutes'));
+    $r2b = array_column($resumo->montar(['conta-a'], $agora->modify('+8 hours 6 minutes'))['contas'], null, 'conta')['conta-a'];
+    check('aberta antiga (criada em 2024) entra no a receber (+10,00) e a divergência some', $res2b['resultado'] === 'ok' && $r2b['valores']['a_receber'] === $esperado
+        && !str_contains((string) $r2b['aviso'], 'divergencia_pending'));
+    $estado['A']['abertas_antigas'] = []; $apiA->rotas['/finance/payment/statistics'] = $rotaStats;
 }
 
 // ================= G2 (DSHOW-116). texto BRUTO com \z: no PHP o `$` aceita um "\n" no fim =================

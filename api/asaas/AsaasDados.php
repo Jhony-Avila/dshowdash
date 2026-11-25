@@ -110,6 +110,18 @@ final class AsaasValor
     public static function data(mixed $v): ?string { return is_string($v) && preg_match('/^\d{4}-\d{2}-\d{2}/', $v) ? substr($v, 0, 10) : null; }
     public static function id(mixed $v): ?string { return is_string($v) && preg_match('/^[A-Za-z0-9_-]{1,40}\z/', $v) ? $v : null; }
     public static function curto(mixed $v, int $n): ?string { return is_string($v) && $v !== '' ? mb_substr($v, 0, $n) : null; }
+
+    /** 25/11: nome da conta (commercialInfo): companyName, senão name; texto UTF-8 de 1 a 120 caracteres sem controle. Inválido/ausente → null. */
+    public static function nomeConta(array $info): ?string
+    {
+        foreach (['companyName', 'name'] as $k) {
+            $v = $info[$k] ?? null;
+            if (!is_string($v)) continue;
+            $v = trim($v);
+            if (preg_match('/^[^\x00-\x1F\x7F]{1,120}\z/u', $v) === 1) return $v;
+        }
+        return null;
+    }
 }
 
 final class AsaasRepositorio
@@ -189,13 +201,14 @@ final class AsaasRepositorio
     }
 
     /** B1: FIM do ciclo, numa transação — o que não veio fica presente=0 na geração desta rodada; troca a geração ativa com saldo e horário */
-    public function concluir(int $exec, int $ger, string $conta, string $saldo, array $cont, string $agora, int $req): void
+    public function concluir(int $exec, int $ger, string $conta, string $saldo, array $cont, string $agora, int $req, ?string $nome = null): void
     {
         $this->pdo->beginTransaction();
         try {
             $this->q("UPDATE `{p}asaas_cobrancas` SET `presente`=0 WHERE `conta`=? AND `geracao`=? AND `execucao`<>?", [$conta, $ger, $exec]);
-            $this->q("UPDATE `{p}asaas_contas` SET `estado`='ok',`erro_codigo`=NULL,`geracao_ativa`=?,`execucao_ativa`=?,`ultima_sync_ok`=?,`saldo`=?,`saldo_em`=?,`atualizado_em`=? WHERE `conta`=?",
-                     [$ger, $exec, $agora, $saldo, $agora, $agora, $conta]);
+            // nome: só troca com um nome VÁLIDO desta leitura; sem nome válido fica o que havia (nunca apaga com vazio)
+            $this->q("UPDATE `{p}asaas_contas` SET `estado`='ok',`erro_codigo`=NULL,`geracao_ativa`=?,`execucao_ativa`=?,`ultima_sync_ok`=?,`saldo`=?,`saldo_em`=?,`atualizado_em`=?,`nome`=COALESCE(?,`nome`) WHERE `conta`=?",
+                     [$ger, $exec, $agora, $saldo, $agora, $agora, $nome, $conta]);
             $this->q("UPDATE `{p}asaas_execucoes` SET `fim`=?,`resultado`='ok',`requisicoes`=?,`cobrancas`=?,`extrato`=? WHERE `id`=?",
                      [$agora, $req, $cont['cobrancas'] ?? 0, $cont['extrato'] ?? 0, $exec]);
             $this->pdo->commit();
@@ -240,7 +253,10 @@ final class AsaasSincronizador
             $identidade = $k['identidade']; unset($k);
             $cli = ($this->cliente)($conta);
             // B2: a conta da chave tem de ser a mesma presa ao rótulo — ANTES de gravar qualquer dado
-            if (!hash_equals($identidade, $this->chaves->identidadeDe($cli->get('conta')))) throw new AsaasErro('conta_divergente');
+            $info = $cli->get('conta');
+            if (!hash_equals($identidade, $this->chaves->identidadeDe($info))) throw new AsaasErro('conta_divergente');
+            // 25/11 (nome "ainda não lido"): o nome vem da MESMA resposta da identidade (commercialInfo), já conferida acima.
+            $nome = AsaasValor::nomeConta($info);
             $saldo = AsaasValor::dinheiro(($cli->get('saldo'))['balance'] ?? null);
             if ($saldo === null) throw new AsaasErro('resposta_invalida', 200);
 
@@ -252,11 +268,16 @@ final class AsaasSincronizador
             }
             $nCob += $this->paginar($cli, 'cobrancas', ['paymentDate[ge]' => $agora->modify('-' . self::DIAS_PAGAMENTO . ' days')->format('Y-m-d'),
                 'paymentDate[le]' => $agora->format('Y-m-d')], fn(array $itens) => $this->repo->gravarCobrancas($conta, $ger, $exec, $itens, $ts));
+            // 25/11 (divergencia_pending/overdue): a janela acima é por CRIAÇÃO (13 meses); cobrança em aberto criada antes dela (parcela de
+            // parcelamento antigo, boleto antigo) ficava fora do local, e a estatística do Asaas (sem data) a soma. Puxa TODAS as abertas por status.
+            foreach (['PENDING', 'OVERDUE'] as $s) {
+                $nCob += $this->paginar($cli, 'cobrancas', ['status' => $s], fn(array $itens) => $this->repo->gravarCobrancas($conta, $ger, $exec, $itens, $ts));
+            }
             foreach (['PENDING', 'OVERDUE'] as $s) $this->repo->gravarEstatistica($conta, $ger, $s, $cli->get('estatisticas_cobrancas', ['status' => $s]), $ts);
             $nExt = $this->paginar($cli, 'extrato', ['startDate' => $agora->modify('-' . self::DIAS_EXTRATO . ' days')->format('Y-m-d'),
                 'finishDate' => $agora->format('Y-m-d')], fn(array $itens) => $this->repo->gravarExtrato($conta, $exec, $itens, $ts));
 
-            $this->repo->concluir($exec, $ger, $conta, $saldo, ['cobrancas' => $nCob, 'extrato' => $nExt], $ts, $cli->requisicoes);   // sucesso SÓ aqui
+            $this->repo->concluir($exec, $ger, $conta, $saldo, ['cobrancas' => $nCob, 'extrato' => $nExt], $ts, $cli->requisicoes, $nome);   // sucesso SÓ aqui
             return ['resultado' => 'ok', 'geracao' => $ger, 'cobrancas' => $nCob, 'extrato' => $nExt, 'requisicoes' => $cli->requisicoes];
         } catch (AsaasErro $e) {
             $this->repo->falhar($exec, $conta, $e->codigo, $ts, $cli?->requisicoes ?? 0);
