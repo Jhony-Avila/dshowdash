@@ -662,6 +662,87 @@ final class PipeAnalyticsRepository
     }
 
     /** Foto do agora: nao tem periodo anterior (a base nao guarda snapshot). */
+    /**
+     * 2º ciclo (25/11 noite) · GET /overview-blocks?periodo= — os 5 blocos da Visão Geral numa resposta, com UMA fonte de datas (a do /summary).
+     * Cada bloco diz o seu recorte: 'periodo' (janela global), 'agora' (fotografia) ou '72h'. Valor desconhecido (value NULL) nunca vira 0:
+     * a soma é só dos conhecidos e `sem_valor` conta os desconhecidos (a tela mostra "parcial").
+     */
+    public function visaoGeralBlocos(?string $periodo): array
+    {
+        [$de, $ate, $rotulo] = $this->janelaDoPeriodo($periodo);
+        $ini = $de . ' 00:00:00'; $fim = date('Y-m-d', strtotime($ate . ' +1 day')) . ' 00:00:00';
+        $agora = date('c');
+
+        // 1) Valor por etapa: abertos AGORA por etapa (fotografia) + os que ENTRARAM no período (add_time na janela) e seguem abertos
+        $st = $this->pdo->prepare(
+            "SELECT d.stage_id, s.name AS stage, s.order_nr, pl.pipedrive_id AS pipeline_id, pl.name AS pipeline,
+                    COUNT(*) AS abertos, COALESCE(SUM(d.value),0) AS valor, SUM(d.value IS NULL) AS sem_valor,
+                    SUM(d.add_time >= ? AND d.add_time < ?) AS abertos_periodo,
+                    COALESCE(SUM(CASE WHEN d.add_time >= ? AND d.add_time < ? THEN d.value END),0) AS valor_periodo,
+                    SUM(d.add_time >= ? AND d.add_time < ? AND d.value IS NULL) AS sem_valor_periodo
+               FROM pipe_deals d
+               JOIN pipe_stages s ON s.pipedrive_id = d.stage_id
+          LEFT JOIN pipe_pipelines pl ON pl.pipedrive_id = d.pipeline_id
+              WHERE d.is_deleted = 0 AND d.status = 'open'
+           GROUP BY d.stage_id, s.name, s.order_nr, pl.pipedrive_id, pl.name
+           ORDER BY valor DESC"
+        );
+        $st->execute([$ini, $fim, $ini, $fim, $ini, $fim]);
+        $etapas = array_map(static fn($r) => [
+            'stage_id' => (int)$r['stage_id'], 'stage' => $r['stage'], 'pipeline_id' => $r['pipeline_id'] !== null ? (int)$r['pipeline_id'] : null, 'pipeline' => $r['pipeline'],
+            'abertos' => (int)$r['abertos'], 'valor' => (float)$r['valor'], 'sem_valor' => (int)$r['sem_valor'],
+            'abertos_periodo' => (int)$r['abertos_periodo'], 'valor_periodo' => (float)$r['valor_periodo'], 'sem_valor_periodo' => (int)$r['sem_valor_periodo'],
+        ], $st->fetchAll(PDO::FETCH_ASSOC));
+
+        // 2) Ciclo: a MESMA regra e janela do KPI "Ciclo médio" (ganhos na janela)
+        $cc = $this->conversionCycle(null, $de, $ate);
+
+        // 3) Top produtos dos negócios GANHOS no período (itens de pipe_deal_products; cobertura = ganhos do período com produtos lançados)
+        $tp = $this->pdo->prepare(
+            "SELECT dp.product_pd_id AS product_id, COALESCE(p.name, CONCAT('#', dp.product_pd_id)) AS name,
+                    COUNT(DISTINCT dp.deal_pd_id) AS deals, COALESCE(SUM(dp.quantity),0) AS qty, COALESCE(SUM(dp.`sum`),0) AS valor, SUM(dp.`sum` IS NULL) AS sem_valor
+               FROM pipe_deal_products dp
+               JOIN pipe_deals d ON d.pipedrive_id = dp.deal_pd_id AND d.is_deleted = 0 AND d.status = 'won' AND d.won_time >= ? AND d.won_time < ?
+          LEFT JOIN pipe_products p ON p.pipedrive_id = dp.product_pd_id
+           GROUP BY dp.product_pd_id, p.name ORDER BY valor DESC LIMIT 15"
+        );
+        $tp->execute([$ini, $fim]);
+        $produtos = array_map(static fn($r) => ['product_id' => $r['product_id'] !== null ? (int)$r['product_id'] : null, 'name' => $r['name'],
+            'deals' => (int)$r['deals'], 'qty' => (float)$r['qty'], 'valor' => (float)$r['valor'], 'sem_valor' => (int)$r['sem_valor']], $tp->fetchAll(PDO::FETCH_ASSOC));
+        $cov = $this->pdo->prepare(
+            "SELECT COUNT(*) AS ganhos, SUM(EXISTS(SELECT 1 FROM pipe_deal_products dp WHERE dp.deal_pd_id = d.pipedrive_id)) AS com_produtos
+               FROM pipe_deals d WHERE d.is_deleted = 0 AND d.status = 'won' AND d.won_time >= ? AND d.won_time < ?"
+        );
+        $cov->execute([$ini, $fim]);
+        $c = $cov->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        // 4) Uso da API (72 h): erros com os 404/410 de registro apagado À PARTE (hora ainda não recalculada = null, nunca 0)
+        $h = (new PipeMetricsRepository($this->pdo))->readHourly(72);
+        $sep = $h !== [] && array_filter($h, static fn($x) => !is_numeric($x['api_errors_404'] ?? null)) === [];
+        $erros = array_sum(array_column($h, 'api_errors'));
+        $e404 = $sep ? array_sum(array_column($h, 'api_errors_404')) : null;
+
+        // mesma regra dos KPIs (P14): nunca houve leitura de negócios → os blocos de negócio viram null ("—"), nunca 0
+        $leitura = $this->leituraNegocios();
+        if ($leitura['estado'] === 'indisponivel') {
+            $etapas = null; $cc['cycle'] = null; $produtos = null; $c = ['ganhos' => null, 'com_produtos' => null];
+        }
+        $pa = array_intersect_key($this->estadoAgora(), array_flip(['fechamento_vencido', 'atividades_atrasadas', 'sem_previsao']));
+        if ($leitura['estado'] === 'indisponivel') $pa = array_map(static fn() => null, $pa);
+        return [
+            'leitura' => $leitura,
+            'periodo' => ['id' => $periodo ?? 'd30', 'de' => $de, 'ate' => $ate, 'rotulo' => $rotulo],
+            'gerado_em' => $agora,
+            'valor_por_etapa' => ['recorte' => 'agora', 'recorte_periodo' => 'entraram no período e seguem abertos', 'fotografia_em' => $agora, 'etapas' => $etapas],
+            'ciclo' => ['recorte' => 'periodo', 'regra' => 'ganhos no período: dias entre criação e ganho (igual ao KPI Ciclo médio)', 'ciclo' => $cc['cycle']],
+            'top_produtos' => ['recorte' => 'periodo', 'regra' => 'itens de produto dos negócios GANHOS no período (só os que têm produtos lançados)',
+                'cobertura' => ['ganhos' => $c['ganhos'] !== null ? (int)$c['ganhos'] : null, 'com_produtos' => $c['com_produtos'] !== null ? (int)$c['com_produtos'] : null], 'itens' => $produtos],
+            'uso_api' => ['recorte' => '72h', 'chamadas' => array_sum(array_column($h, 'api_calls')), 'erros' => $erros,
+                'erros_404_registro_apagado' => $e404, 'erros_outros' => $e404 !== null ? $erros - $e404 : null, 'por_hora' => $h],
+            'pede_atencao' => ['recorte' => 'agora', 'fotografia_em' => $agora] + $pa,
+        ];
+    }
+
     private function estadoAgora(): array
     {
         $r = $this->pdo->query(

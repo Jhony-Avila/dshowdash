@@ -60,6 +60,15 @@ final class PipeAnalyticsController
         ApiResponse::success($repo->funnelAnalysis(), ['ts' => date('c')]);
     }
 
+    /** GET /overview-blocks?periodo= — 2º ciclo: os 5 blocos da Visão Geral com a fonte de datas do /summary (contrato: docs/PIPEDRIVE/CONTRATO-VISAO-BLOCOS.md). */
+    public static function overviewBlocks(string $method, PDO $pdo): void
+    {
+        requireMethod(['GET']);
+        $q = pipe_query(['periodo']);
+        $per = isset($q['periodo']) && in_array($q['periodo'], PipeAnalyticsRepository::PERIODOS, true) ? (string)$q['periodo'] : null;
+        ApiResponse::success((new PipeAnalyticsRepository($pdo))->visaoGeralBlocos($per), ['ts' => date('c')]);
+    }
+
     public static function conversion(string $method, PDO $pdo): void
     {
         requireMethod(['GET']);
