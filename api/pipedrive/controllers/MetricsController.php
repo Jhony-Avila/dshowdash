@@ -26,7 +26,9 @@ final class PipeMetricsController
             'hourly'       => $m->readHourly(72),
             'top_products' => $m->topProducts(15),
             // Fase 0: o ranking segue o período GLOBAL (mesma resolução de datas do /summary)
-            'owners'       => $m->ownerLeaderboard(10, $de, $ate),
+            // P13: com período, TODOS os vendedores (até 50) + o fecho, para "Ver todos (N)" e para o ranking somar o KPI
+            'owners'       => $m->ownerLeaderboard($de !== null ? 50 : 10, $de, $ate),
+            'owners_resumo' => $de !== null && $ate !== null ? $m->ownersResumo($de, $ate) : null,
             'owners_periodo' => ['id' => $per, 'de' => $de, 'ate' => $ate, 'rotulo' => $rotulo],
             'coverage'     => $m->productsCoverage(),
             'days'         => $days,

@@ -84,6 +84,8 @@ export interface PipeDealRow {
   status: string | null; stage: string | null; owner: string | null; pipeline: string | null;
   person: string | null; org: string | null; probability: number | null;
   expected_close_date: string | null; add_time: string | null; update_time: string | null;
+  /** P13: data do desfecho (ganho / perda). */
+  won_time?: string | null; lost_time?: string | null;
   /** Só vem preenchido em negócios perdidos (#30). */
   lost_reason: string | null;
 }
@@ -91,6 +93,8 @@ export interface PipeDealRow {
 export interface PipeFacetOption { id: number | string; name: string | null; }
 export interface PipeDealsPage {
   rows: PipeDealRow[]; total: number; page: number; per_page: number; pages: number;
+  /** P13: soma do valor do MESMO filtro (null = há negócio sem valor e nenhum com valor). */
+  soma_valor?: number | null; sem_valor?: number;
   facets: { stages: PipeFacetOption[]; owners: PipeFacetOption[]; lost_reasons?: PipeFacetOption[] };
 }
 
@@ -179,6 +183,8 @@ export interface PipeMetrics {
   days: number;
   /** Fase 0: janela do ranking de vendedores (o período global; sem `periodo`, todo o histórico). */
   owners_periodo?: { id: PipePeriodoId | null; de: string | null; ate: string | null; rotulo: string };
+  /** P13: fecho do ranking na janela (todos os vendedores + sem responsável = KPI Valor ganho). */
+  owners_resumo?: { vendedores: number; valor_total: number; ganhos_total: number; sem_responsavel: { valor: number; ganhos: number } } | null;
 }
 
 // Envelope generico de listagem paginada (persons/organizations/activities).
@@ -504,7 +510,13 @@ export interface PipeSummaryKpi {
   anterior: number | null;
   serie: number[];
   dica?: string;
+  /** P13: estado do indicador (régua do /health: leitura de `deals` ≤ 60 min = atualizado). */
+  estado?: PipeEstadoDado;
+  /** P13 (só ciclo_medio): ganhos do período com e sem data suficiente para medir o ciclo. */
+  cobertura?: { com_data: number; sem_data: number };
 }
+/** P13: estados de um dado na Visão Geral ("carregando" é só da tela; os outros vêm do servidor). */
+export type PipeEstadoDado = 'atualizado' | 'desatualizado' | 'parcial' | 'indisponivel';
 /** Períodos do /summary (#3). `d*` = janela deslizante; os demais, calendário. */
 export type PipePeriodoId = 'd7' | 'd30' | 'd90' | 'd180' | 'mes' | 'mes_ant' | 'trim' | 'ano';
 
@@ -523,9 +535,12 @@ export interface PipeSummary {
   kpis: PipeSummaryKpi[];
   /** Foto do agora — sem período anterior de propósito (a base não guarda snapshot). */
   estado: {
-    abertos: number; valor_aberto: number; sem_previsao: number;
+    abertos: number | null; valor_aberto: number | null; sem_previsao: number;
     fechamento_vencido: number; atividades_atrasadas: number;
+    estado?: PipeEstadoDado;
   };
+  /** P13: a última leitura de negócios (pipe_sync_runs `deals`). */
+  leitura?: { estado: PipeEstadoDado; atualizado_em: string | null; minutos: number | null; motivo: string | null };
 }
 
 // Funil analítico (GET /funnel): alcance/conversão/gargalo + comparação entre funis.

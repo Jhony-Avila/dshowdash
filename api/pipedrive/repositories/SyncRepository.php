@@ -1036,11 +1036,20 @@ final class PipeSyncRepository
         if ($isDate($f['close_to'] ?? null))     { $where[] = 'd.expected_close_date <= :ct';  $params[':ct']  = $f['close_to']; }
         if ($isDate($f['created_from'] ?? null)) { $where[] = 'd.add_time >= :crf'; $params[':crf'] = $f['created_from'] . ' 00:00:00'; }
         if ($isDate($f['created_to'] ?? null))   { $where[] = 'd.add_time <= :crt'; $params[':crt'] = $f['created_to'] . ' 23:59:59'; }
+        // P13 (CIMA, 25/11): drill-down da Visão Geral pela DATA DO DESFECHO — a MESMA regra do /summary (won_time / lost_time
+        // na janela, limite superior exclusivo no dia seguinte). Assim "Negócios ganhos (73)" abre exatamente os 73 do KPI.
+        if ($isDate($f['won_from'] ?? null))  { $where[] = 'd.won_time >= :wf';  $params[':wf']  = $f['won_from'] . ' 00:00:00'; }
+        if ($isDate($f['won_to'] ?? null))    { $where[] = 'd.won_time < :wt';   $params[':wt']  = date('Y-m-d', strtotime($f['won_to'] . ' +1 day')) . ' 00:00:00'; }
+        if ($isDate($f['lost_from'] ?? null)) { $where[] = 'd.lost_time >= :lf'; $params[':lf']  = $f['lost_from'] . ' 00:00:00'; }
+        if ($isDate($f['lost_to'] ?? null))   { $where[] = 'd.lost_time < :lt';  $params[':lt']  = date('Y-m-d', strtotime($f['lost_to'] . ' +1 day')) . ' 00:00:00'; }
 
         if (isset($f['q']) && trim((string)$f['q']) !== '') { $where[] = 'd.title LIKE :q'; $params[':q'] = '%' . trim((string)$f['q']) . '%'; }
         $whereSql = implode(' AND ', $where);
 
-        $total = (int)$this->prepFetch("SELECT COUNT(*) FROM pipe_deals d WHERE $whereSql", $params)->fetchColumn();
+        // P13: a soma do valor do MESMO filtro vem junto (o painel lateral mostra "N negócios · R$ X" sem refazer a conta na tela).
+        // Negócio sem valor torna a soma desconhecida para quem exige exatidão: `sem_valor` diz quantos ficaram de fora.
+        $tot = $this->prepFetch("SELECT COUNT(*) AS n, SUM(d.value) AS soma, SUM(d.value IS NULL) AS sem_valor FROM pipe_deals d WHERE $whereSql", $params)->fetch(PDO::FETCH_ASSOC) ?: [];
+        $total = (int)($tot['n'] ?? 0);
 
         // Colunas de campos personalizados (#11): o JSON so entra no SELECT quem pediu.
         // Medido: +10 ms numa pagina de 25 e +20 ms em 200 — quem nao usa nao paga.
@@ -1048,7 +1057,7 @@ final class PipeSyncRepository
         $cfSel  = $cfKeys ? ', d.custom_fields' : '';
 
         $sql = "SELECT d.pipedrive_id, d.title, d.value, d.currency, d.status, d.probability,
-                       d.expected_close_date, d.update_time, d.add_time, d.lost_reason,
+                       d.expected_close_date, d.update_time, d.add_time, d.lost_reason, d.won_time, d.lost_time,
                        s.name AS stage, u.name AS owner, pl.name AS pipeline,
                        p.name AS person, o.name AS org{$cfSel}
                 FROM pipe_deals d
@@ -1076,6 +1085,8 @@ final class PipeSyncRepository
         return [
             'rows'     => $shaped,
             'total'    => $total,
+            'soma_valor' => $total > 0 && $tot['soma'] !== null ? (float)$tot['soma'] : ($total === 0 ? 0.0 : null),
+            'sem_valor'  => (int)($tot['sem_valor'] ?? 0),
             'page'     => $page,
             'per_page' => $perPage,
             'pages'    => (int)ceil($total / $perPage),
@@ -1119,6 +1130,8 @@ final class PipeSyncRepository
             'expected_close_date' => $r['expected_close_date'],
             'add_time'    => $r['add_time'] ?? null,
             'update_time' => $r['update_time'],
+            'won_time'    => $r['won_time'] ?? null,    // P13: data do desfecho no painel lateral
+            'lost_time'   => $r['lost_time'] ?? null,
             'lost_reason' => ($r['lost_reason'] ?? '') !== '' ? $r['lost_reason'] : null,
         ];
     }

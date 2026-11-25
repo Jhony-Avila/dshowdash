@@ -60,6 +60,9 @@ export function Negocios({ status, filtrosIniciais }: { status?: PipeStatus; fil
           { key: 'value', label: 'Faixa de valor (R$)', tipo: 'numRange' },
           { key: 'close', label: 'Fechamento previsto', tipo: 'dateRange' },
           { key: 'created', label: 'Data de criação', tipo: 'dateRange' },
+          // P13: o drill-down da Visão Geral chega com o período do desfecho — fica visível e editável aqui.
+          { key: 'won', label: 'Data do ganho', tipo: 'dateRange' },
+          { key: 'lost', label: 'Data da perda', tipo: 'dateRange' },
         ]}
       />
       {dealAberto != null && <DealDrawer dealId={dealAberto} onClose={() => setDealAberto(null)} />}

@@ -198,6 +198,31 @@ final class PipeMetricsRepository
         ], $st->fetchAll(PDO::FETCH_ASSOC));
     }
 
+    /**
+     * P13 (CIMA, 25/11): o fecho do ranking na janela — quantos vendedores ganharam, a soma de TODOS (sem limite) e o que
+     * ficou sem responsável. vendedores.valor + sem_responsavel.valor = KPI "Valor ganho" (mesma regra: won_time na janela).
+     */
+    public function ownersResumo(string $de, string $ate): array
+    {
+        $args = [$de . ' 00:00:00', date('Y-m-d', strtotime($ate . ' +1 day')) . ' 00:00:00'];
+        $st = $this->pdo->prepare(
+            "SELECT COUNT(DISTINCT CASE WHEN owner_id IS NOT NULL THEN owner_id END) AS vendedores,
+                    COALESCE(SUM(CASE WHEN owner_id IS NOT NULL THEN value END),0) AS valor_vendedores,
+                    SUM(owner_id IS NOT NULL) AS ganhos_vendedores,
+                    COALESCE(SUM(CASE WHEN owner_id IS NULL THEN value END),0) AS valor_sem_responsavel,
+                    SUM(owner_id IS NULL) AS ganhos_sem_responsavel
+               FROM pipe_deals WHERE is_deleted = 0 AND status = 'won' AND won_time >= ? AND won_time < ?"
+        );
+        $st->execute($args);
+        $r = $st->fetch(PDO::FETCH_ASSOC) ?: [];
+        return [
+            'vendedores'       => (int)($r['vendedores'] ?? 0),
+            'valor_total'      => (float)($r['valor_vendedores'] ?? 0),
+            'ganhos_total'     => (int)($r['ganhos_vendedores'] ?? 0),
+            'sem_responsavel'  => ['valor' => (float)($r['valor_sem_responsavel'] ?? 0), 'ganhos' => (int)($r['ganhos_sem_responsavel'] ?? 0)],
+        ];
+    }
+
     /** Cobertura de deal_products: quantos negocios ativos ja tem produtos sincronizados. */
     public function productsCoverage(): array
     {

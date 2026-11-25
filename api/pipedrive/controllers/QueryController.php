@@ -24,7 +24,7 @@ final class PipeQueryController
         }
         $f = pipe_query(['page', 'per_page', 'sort', 'dir', 'q', 'status', 'stage_id', 'owner_id',
             'value_min', 'value_max', 'close_from', 'close_to', 'created_from', 'created_to',
-            'lost_reason', 'cf', 'facets']);   // cf: colunas personalizadas (#11); facets=0: nao recalcular (#46)
+            'lost_reason', 'cf', 'facets', 'won_from', 'won_to', 'lost_from', 'lost_to']);   // P13: data do desfecho   // cf: colunas personalizadas (#11); facets=0: nao recalcular (#46)
         ApiResponse::success($repo->dealsPage($f), ['ts' => date('c')]);
     }
 

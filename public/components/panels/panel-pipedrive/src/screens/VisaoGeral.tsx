@@ -21,13 +21,13 @@ import { apiGet, chaves, ApiError } from '../lib/api';
 import { fmtBRL, fmtNum, fmtData } from '../lib/format';
 import { PageHeader } from './PageHeader';
 import { EstadoErro, SkeletonBloco } from './Estados';
-import { BigNumber, type FormatoBN } from './BigNumber';
 import { EChartCard } from '../viz/ChartCard';
 import { usePaleta } from '../viz/tema';
-import { optArea, optBarras, optColunas, optDonut, type PontoXY } from '../viz/opts';
+import { optArea, optBarras, optColunas, type PontoXY } from '../viz/opts';
+import { HudKpis, BlocoGanhos, RankingVendedores, PainelDrill, type Drill } from './VisaoHud';
 import type {
-  PipeStatus, PipeOverview, PipeMetrics, PipeDailyMetric, PipeConversion,
-  PipeSummary, PipeSummaryKpi, PipeFunnelData, PipePeriodoId,
+  PipeStatus, PipeOverview, PipeMetrics, PipeConversion,
+  PipeSummary, PipeFunnelData, PipePeriodoId,
 } from '../shell/types';
 
 // #3/#4 — janela deslizante E calendário. Os dois convivem porque respondem
@@ -77,6 +77,15 @@ export function VisaoGeral({ status, onConfig, onNegocios, onFunis, onAlertas }:
     queryFn: ({ signal }) => apiGet<PipeOverview>('/overview', undefined, signal),
     refetchInterval: 60_000,
   });
+
+  // P13 (R2): UMA consulta do período para KPIs, série e desfecho; o ranking lê o MESMO período no /metrics.
+  const resumoQ = useQuery<PipeSummary>({
+    queryKey: [...chaves.summary, periodo],
+    queryFn: ({ signal }) => apiGet<PipeSummary>('/summary', { periodo }, signal),
+    refetchInterval: 120_000,
+    enabled: conectado,
+  });
+  const [drill, setDrill] = useState<Drill | null>(null);
 
   const ov = data?.overview;
   const d = ov?.deals;
@@ -134,9 +143,14 @@ export function VisaoGeral({ status, onConfig, onNegocios, onFunis, onAlertas }:
           </div>
         ) : (
           <>
-            <FaixaIndicadores periodo={periodo} onNegocios={onNegocios} />
+            <NotaPeriodo resumo={resumoQ.data} />
 
-            <BlocoTendencia periodo={periodo} />
+            {/* P13 · desenho R2: 8 KPIs em HUD → Ganhos | Desfecho → Ranking. Os demais blocos seguem como estavam. */}
+            <HudKpis resumo={resumoQ.data} carregando={resumoQ.isLoading} falhou={!!resumoQ.error && !resumoQ.data}
+              onDrill={setDrill} onDetalhes={onConfig} />
+            <BlocoGanhos resumo={resumoQ.data} carregando={resumoQ.isLoading} falhou={!!resumoQ.error && !resumoQ.data} onDrill={setDrill} />
+            <RankingVendedores periodo={periodo} resumo={resumoQ.data} onDrill={setDrill} />
+            <div style={{ height: 15 }} />
 
             <BlocoOperacao periodo={periodo} onNegocios={onNegocios} onFunis={onFunis} onAlertas={onAlertas} />
 
@@ -172,183 +186,27 @@ export function VisaoGeral({ status, onConfig, onNegocios, onFunis, onAlertas }:
           </>
         )
       )}
+
+      {/* Painel lateral: o MESMO recorte do número clicado; "Abrir lista completa" leva o filtro para Negócios
+          (e a volta mantém o período, que fica no estado/armazenamento local desta tela). */}
+      {drill && <PainelDrill drill={drill} onClose={() => setDrill(null)}
+        onLista={onNegocios ? (f) => { setDrill(null); onNegocios(f); } : undefined} />}
     </div>
   );
 }
 
-// ── Faixa de indicadores (GET /summary) ──────────────────────────────────────
-
-/** Filtro de Negócios equivalente a cada KPI — sem correspondência, não é clicável. */
-const DRILL: Record<string, Record<string, string> | undefined> = {
-  ganhos:      { status: 'won' },
-  valor_ganho: { status: 'won' },
-  criados:     {},
-  perdidos:    { status: 'lost' },
-};
-
-function FaixaIndicadores({ periodo, onNegocios }: {
-  periodo: PipePeriodoId; onNegocios?: (f?: Record<string, string>) => void;
-}) {
-  const { data, isLoading } = useQuery<PipeSummary>({
-    queryKey: [...chaves.summary, periodo],
-    queryFn: ({ signal }) => apiGet<PipeSummary>('/summary', { periodo }, signal),
-    refetchInterval: 120_000,
-  });
-
-  if (isLoading || !data) {
-    return <div className="pp-card" style={{ maxWidth: 'none' }}><SkeletonBloco linhas={3} /></div>;
-  }
-
-  const corDe = (c: PipeSummaryKpi['cor']) =>
-    c === 'ok' ? 'var(--pp-ok)' : c === 'danger' ? 'var(--pp-danger)' : c === 'primary' ? 'var(--pp-primary)' : undefined;
-  // 'dias' não existe no formatador de números — vira num e a UI acrescenta o sufixo.
-  const formatoDe = (f: PipeSummaryKpi['formato']): FormatoBN => (f === 'dias' ? 'num' : f);
-  const e = data.estado;
-
-  // #3 — o chip ▲/▼ compara com ALGO; qual algo muda conforme o período (janela
-  // anterior, mesmo trecho do mês passado, ano a ano). Sem esta linha o usuário teria
-  // de adivinhar, e a mesma seta significaria coisas diferentes em cada modo.
-  const per = data.periodo;
-  const tamanhosDiferem = per.dias_atual !== per.dias_anterior;
-
+/** Período e comparação do servidor (uma fonte de datas), com o aviso de janelas de tamanhos diferentes. */
+function NotaPeriodo({ resumo }: { resumo?: PipeSummary }) {
+  const per = resumo?.periodo;
+  if (!per) return null;
   return (
-    <>
-      <div className="pp-periodo-nota">
-        <span><strong>{per.rotulo}</strong> · variação contra {per.comparacao}</span>
-        {/* Fevereiro tem 28 dias e janeiro 31: sem este aviso, 10% a menos em
-            fevereiro parece queda de desempenho quando é queda de calendário. */}
-        {tamanhosDiferem && (
-          <span className="pp-periodo-alerta" title="Períodos de tamanhos diferentes — a variação embute a diferença de dias.">
-            <TriangleAlert size={11} aria-hidden />
-            {per.dias_atual} d contra {per.dias_anterior} d
-          </span>
-        )}
-      </div>
-
-      <div className="pp-g12">
-        {data.kpis.map((k) => {
-          const drill = DRILL[k.chave];
-          return (
-            <BigNumber key={k.chave} className="pp-c-3"
-              rotulo={k.formato === 'dias' ? `${k.rotulo} (dias)` : k.rotulo}
-              valor={k.valor} anterior={k.anterior} formato={formatoDe(k.formato)}
-              cor={corDe(k.cor)} serie={k.serie} inverterCor={k.inverter}
-              dica={k.dica}
-              onClick={drill && onNegocios ? () => onNegocios(drill) : undefined} />
-          );
-        })}
-
-        {/* Foto do agora: sem variação de propósito (ver cabeçalho do arquivo). */}
-        <BigNumber className="pp-c-3" rotulo="Em aberto agora" valor={e.abertos} formato="num"
-          cor="var(--pp-sync)" nota={`${fmtBRL(e.valor_aberto)} em jogo`}
-          dica="Situação atual da carteira — não tem período anterior para comparar."
-          onClick={onNegocios ? () => onNegocios({ status: 'open' }) : undefined} />
-      </div>
-
-      {/* Fase 0 (25/11): UMA fonte de datas — o mesmo texto do topo (per.comparacao, calculado no servidor).
-          Antes o rodapé refazia as datas com new Date('AAAA-MM-DD'), que é meia-noite UTC = véspera em Brasília. */}
-      <p className="pp-cc-rodape" style={{ margin: '-8px 0 16px' }}>
-        Variação contra {per.comparacao}. “Em aberto agora” é a foto do momento e por isso não tem variação.
-      </p>
-    </>
-  );
-}
-
-// ── Tendência (GET /metrics) ─────────────────────────────────────────────────
-
-type Gran = 'dia' | 'semana' | 'mes';
-const rotuloGran = (g: Gran) => (g === 'dia' ? 'Dia' : g === 'semana' ? 'Semana' : 'Mês');
-
-function fmtDiaCurto(iso: string): string { const [, m, dd] = iso.split('-'); return `${dd}/${m}`; }
-function fmtMesCurto(ym: string): string {
-  const [y, m] = ym.split('-');
-  const dt = new Date(Number(y), Number(m) - 1, 1);
-  return dt.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }).replace('.', '');
-}
-function semanaKey(iso: string): string {
-  const dt = new Date(`${iso}T00:00:00`);
-  const off = (dt.getDay() + 6) % 7; // segunda = 0
-  dt.setDate(dt.getDate() - off);
-  const mm = String(dt.getMonth() + 1).padStart(2, '0');
-  const dd = String(dt.getDate()).padStart(2, '0');
-  return `${dt.getFullYear()}-${mm}-${dd}`;
-}
-/** Fase 0: dias Y-m-d da janela [de, ate] por aritmética de calendário em UTC (sem fuso: 'AAAA-MM-DD' é dia civil). */
-function diasDaJanela(de: string, ate: string): string[] {
-  const out: string[] = [];
-  const t = new Date(`${de}T00:00:00Z`); const fim = new Date(`${ate}T00:00:00Z`);
-  while (t <= fim && out.length < 400) { out.push(t.toISOString().slice(0, 10)); t.setUTCDate(t.getUTCDate() + 1); }
-  return out;
-}
-function agrupar(daily: PipeDailyMetric[], gran: Gran, campo: 'value_won' | 'deals_won'): PontoXY[] {
-  if (gran === 'dia') return daily.map((x) => ({ label: fmtDiaCurto(x.date), valor: x[campo] }));
-  const acc = new Map<string, number>();
-  const ordem: string[] = [];
-  for (const x of daily) {
-    const key = gran === 'mes' ? x.date.slice(0, 7) : semanaKey(x.date);
-    if (!acc.has(key)) { acc.set(key, 0); ordem.push(key); }
-    acc.set(key, (acc.get(key) as number) + x[campo]);
-  }
-  return ordem.map((k) => ({ label: gran === 'mes' ? fmtMesCurto(k) : fmtDiaCurto(k), valor: acc.get(k) as number }));
-}
-
-function BlocoTendencia({ periodo }: { periodo: PipePeriodoId }) {
-  const pal = usePaleta();
-  const [gran, setGran] = useState<Gran>('dia');
-  // Fase 0 (25/11): segue o período GLOBAL. A série vem do MESMO /summary dos KPIs (séries diárias densas da janela,
-  // lidas de pipe_deals) — a soma do gráfico é o KPI "Valor ganho", e o desfecho é "Negócios ganhos" × "perdidos".
-  const { data, isLoading } = useQuery<PipeSummary>({
-    queryKey: [...chaves.summary, periodo],
-    queryFn: ({ signal }) => apiGet<PipeSummary>('/summary', { periodo }, signal),
-    refetchInterval: 120_000,
-  });
-  const per = data?.periodo;
-  const serie = (k: string) => data?.kpis.find((x) => x.chave === k)?.serie ?? [];
-  const daily: PipeDailyMetric[] = useMemo(() => {
-    if (!per) return [];
-    const vg = serie('valor_ganho'); const g = serie('ganhos'); const p = serie('perdidos');
-    return diasDaJanela(per.de, per.ate).map((d, i) => ({
-      date: d, value_won: vg[i] ?? 0, deals_won: g[i] ?? 0, deals_lost: p[i] ?? 0, deals_created: 0, value_created: 0,
-    }) as PipeDailyMetric);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
-  const pontos = useMemo(() => agrupar(daily, gran, 'value_won'), [daily, gran]);
-  const kpi = (k: string) => data?.kpis.find((x) => x.chave === k)?.valor;
-  const totalValor = kpi('valor_ganho') ?? 0;
-  const totalGanhos = kpi('ganhos') ?? 0;
-
-  const desfecho: PontoXY[] = [
-    { label: 'Ganhos', valor: Number(kpi('ganhos') ?? 0) },
-    { label: 'Perdidos', valor: Number(kpi('perdidos') ?? 0) },
-  ];
-  const totalDesfecho = desfecho[0].valor + desfecho[1].valor;
-  const rotulo = per?.rotulo ?? '';
-
-  return (
-    <div className="pp-g12">
-      <EChartCard className="pp-c-8" titulo="Ganhos ao longo do tempo" altura={300}
-        subtitulo={`${fmtNum(Number(totalGanhos))} ganhos · ${fmtBRL(Number(totalValor))} em valor ganho · ${rotulo}`}
-        carregando={isLoading} vazio={pontos.length === 0}
-        vazioMsg="Sem valor ganho registrado. A série se preenche conforme negócios são marcados como ganhos."
-        acoes={
-          <div className="pp-seg" role="group" aria-label="Granularidade da série">
-            {(['dia', 'semana', 'mes'] as Gran[]).map((g) => (
-              <button key={g} type="button" className={`pp-seg-b${gran === g ? ' is-active' : ''}`}
-                onClick={() => setGran(g)} aria-pressed={gran === g}>{rotuloGran(g)}</button>
-            ))}
-          </div>
-        }
-        opcao={pontos.length ? optArea(pal, pontos, { formato: 'brl', zoom: pontos.length > 30, nomeSerie: 'Valor ganho' }) : null}
-        aria={`Valor ganho por ${rotuloGran(gran).toLowerCase()}`} />
-
-      <EChartCard className="pp-c-4" titulo="Desfecho dos fechados" altura={300}
-        subtitulo={`Ganhos × perdidos fechados · ${rotulo}`}
-        carregando={isLoading} vazio={totalDesfecho === 0}
-        opcao={totalDesfecho > 0 ? optDonut(pal, desfecho, {
-          formato: 'num', cores: [pal.ok, pal.danger],
-          rotuloCentro: 'fechados', valorCentro: fmtNum(totalDesfecho),
-        }) : null}
-        aria="Proporção de negócios ganhos e perdidos" />
+    <div className="pp-periodo-nota">
+      <span><strong>{per.rotulo}</strong> · variação contra {per.comparacao}</span>
+      {per.dias_atual !== per.dias_anterior && (
+        <span className="pp-periodo-alerta" title="Períodos de tamanhos diferentes — a variação embute a diferença de dias.">
+          <TriangleAlert size={11} aria-hidden />{per.dias_atual} d contra {per.dias_anterior} d
+        </span>
+      )}
     </div>
   );
 }
@@ -457,26 +315,18 @@ function ItemAtencao({ rotulo, valor, cor, onClick }: { rotulo: string; valor: n
 // ── Rankings (GET /metrics) ──────────────────────────────────────────────────
 
 function BlocoRankings({ periodo }: { periodo: PipePeriodoId }) {
-  const pal = usePaleta();
-  const { data, isLoading } = useQuery<PipeMetrics>({
+  const { data } = useQuery<PipeMetrics>({
     queryKey: [...chaves.metrics, 365, periodo],
     queryFn: ({ signal }) => apiGet<PipeMetrics>('/metrics', { days: 365, periodo }, signal),
     refetchInterval: 120_000,
   });
 
-  const owners = (data?.owners ?? []).filter((o) => o.valor_ganho > 0);
   const produtos = data?.top_products ?? [];
 
   return (
     <div className="pp-g12">
-      <EChartCard className="pp-c-6" titulo="Ranking de vendedores" altura={280}
-        subtitulo={`Valor ganho (não é faturamento) · ${data?.owners_periodo?.rotulo ?? ''}`}
-        carregando={isLoading} vazio={owners.length === 0}
-        vazioMsg="Nenhum vendedor com valor ganho registrado."
-        opcao={owners.length ? optBarras(pal, owners.map((o) => ({ label: o.name, valor: o.valor_ganho })), { formato: 'brl', cor: pal.ok }) : null}
-        aria="Ranking de vendedores por valor ganho" />
-
-      <div className="pp-card pp-c-6">
+      {/* P13: o ranking de vendedores passou para o desenho R2 (RankingVendedores); Top produtos segue como estava. */}
+      <div className="pp-card pp-c-12">
         <h3>Top produtos por valor</h3>
         {/* Fase 0: o ranking soma os itens de produto dos negócios (pipe_deal_products) — SÓ os negócios com produtos
             sincronizados, histórico inteiro; "Valor total" inclui abertos e perdidos, "Ganho" só os ganhos. */}

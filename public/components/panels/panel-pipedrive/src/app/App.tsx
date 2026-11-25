@@ -114,7 +114,9 @@ function corDoStatus(s?: string): string {
 function Shell() {
   const [tela, setTela] = useState<TelaId>(lerTela());
   const [compacta, setCompacta] = useState<boolean>(() => {
-    try { return localStorage.getItem('pp:sidebar:compact') === '1'; } catch { return false; }
+    // P14 (R2): sem preferência salva, telas ≤ 1600 px começam com a navegação do módulo recolhida — a Visão Geral do R2
+    // precisa da largura para os 8 KPIs e os dois gráficos na 1ª dobra em 1440. A escolha do usuário continua valendo.
+    try { const s = localStorage.getItem('pp:sidebar:compact'); return s === null ? window.innerWidth <= 1600 : s === '1'; } catch { return false; }
   });
   const [gruposAbertos, setGruposAbertos] = useState<Record<string, boolean>>(() => {
     try { const s = localStorage.getItem('pp:sidebar:groups'); if (s) return JSON.parse(s); } catch { /* ignora */ }

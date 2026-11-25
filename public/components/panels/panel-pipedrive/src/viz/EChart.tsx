@@ -67,7 +67,11 @@ export const EChart = forwardRef<EChartHandle, EChartProps>(function EChart(
       prontoRef.current = true;
       if (opcaoRef.current) inst.setOption(opcaoRef.current, true);
       const evs = eventosRef.current;
-      if (evs) for (const [nome, fn] of Object.entries(evs)) inst.on(nome, (params: unknown) => fn(params, inst));
+      // 'zr:<evento>' = evento da ÁREA do gráfico (P14: clique em qualquer ponto do eixo, não só em cima do marcador)
+      if (evs) for (const [nome, fn] of Object.entries(evs)) {
+        if (nome.startsWith('zr:')) inst.getZr().on(nome.slice(3) as 'click', (params: unknown) => eventosRef.current?.[nome]?.(params, inst));
+        else inst.on(nome, (params: unknown) => fn(params, inst));
+      }
       ro = new ResizeObserver(() => inst.resize());
       ro.observe(elRef.current);
       // Resize defensivo: o canvas pode inicializar antes do layout final assentar

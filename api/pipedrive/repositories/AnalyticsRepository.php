@@ -485,7 +485,29 @@ final class PipeAnalyticsRepository
              'dica' => 'Dias entre a criação e o ganho, dos negócios ganhos no período.'],
         ];
 
+        // P13 (CIMA, 25/11): ESTADO de cada indicador, com a régua do /health (HealthRepository::STALE_MIN = 60 min):
+        //   atualizado    = a última rodada de `deals` terminou ok e há ≤ 60 min;
+        //   desatualizado = a última rodada foi há mais de 60 min ou falhou: o número é a ÚLTIMA leitura, não o valor de agora;
+        //   parcial       = (ciclo) há ganhos do período sem data suficiente — `cobertura` diz quantos;
+        //   indisponivel  = nunca houve leitura de negócios — o valor vira null ("—"), nunca 0.
+        $leitura = $this->leituraNegocios();
+        $base = $leitura['estado'];
+        foreach ($kpis as &$k) {
+            $k['estado'] = $base;
+            if ($base === 'indisponivel') { $k['valor'] = null; $k['anterior'] = null; $k['serie'] = []; }
+            if ($k['chave'] === 'ciclo_medio') {
+                $com = max(0, $mAtual['ganhos'] - $mAtual['ciclo_sem_data']);
+                $k['cobertura'] = ['com_data' => $com, 'sem_data' => $mAtual['ciclo_sem_data']];
+                if ($base === 'atualizado' && $mAtual['ciclo_sem_data'] > 0) { $k['estado'] = 'parcial'; }
+            }
+        }
+        unset($k);
+        $estadoAgora = $this->estadoAgora();
+        $estadoAgora['estado'] = $base;
+        if ($base === 'indisponivel') { $estadoAgora['abertos'] = null; $estadoAgora['valor_aberto'] = null; }
+
         return [
+            'leitura' => $leitura,
             'periodo' => [
                 'dias' => $days, 'de' => $de, 'ate' => $ate,
                 'de_anterior' => $deAnt, 'ate_anterior' => $ateAnt,
@@ -500,7 +522,30 @@ final class PipeAnalyticsRepository
                 'dias_anterior' => (int)((strtotime($ateAnt) - strtotime($deAnt)) / 86400) + 1,
             ],
             'kpis'   => $kpis,
-            'estado' => $this->estadoAgora(),
+            'estado' => $estadoAgora,
+        ];
+    }
+
+    /**
+     * P13: quando e como foi a última leitura dos NEGÓCIOS (pipe_sync_runs, entidade `deals`) — a mesma régua do /health
+     * (atraso > 60 min ou rodada com erro = desatualizado). Sem rodada nenhuma = indisponível.
+     */
+    private function leituraNegocios(): array
+    {
+        $r = $this->pdo->query(
+            "SELECT finished_at, status, errors, TIMESTAMPDIFF(MINUTE, finished_at, NOW()) AS minutos
+               FROM pipe_sync_runs WHERE entity = 'deals' AND finished_at IS NOT NULL
+           ORDER BY finished_at DESC, id DESC LIMIT 1"
+        )->fetch(PDO::FETCH_ASSOC);
+        if (!$r) { return ['estado' => 'indisponivel', 'atualizado_em' => null, 'minutos' => null, 'motivo' => 'nenhuma leitura de negócios registrada']; }
+        $min = $r['minutos'] !== null ? (int)$r['minutos'] : null;
+        $ok = (string)$r['status'] === 'completed' && (int)$r['errors'] === 0;
+        $atrasada = $min === null || $min > 60;
+        return [
+            'estado'        => ($ok && !$atrasada) ? 'atualizado' : 'desatualizado',
+            'atualizado_em' => $r['finished_at'],
+            'minutos'       => $min,
+            'motivo'        => $ok ? ($atrasada ? 'última leitura há mais de 60 min' : null) : 'a última leitura terminou com erro',
         ];
     }
 
@@ -537,7 +582,8 @@ final class PipeAnalyticsRepository
         $ganhos = $this->pdo->prepare(
             "SELECT COUNT(*) AS ganhos, COALESCE(SUM(value),0) AS valor_ganho,
                     ROUND(AVG(CASE WHEN add_time IS NOT NULL AND won_time >= add_time
-                                   THEN DATEDIFF(won_time, add_time) END)) AS ciclo_medio
+                                   THEN DATEDIFF(won_time, add_time) END)) AS ciclo_medio,
+                    SUM(add_time IS NULL OR won_time < add_time) AS ciclo_sem_data
                FROM pipe_deals
               WHERE is_deleted = 0 AND status = 'won' AND won_time >= ? AND won_time < ?"
         );
@@ -564,6 +610,7 @@ final class PipeAnalyticsRepository
             'perdidos'      => (int)($r['perdidos'] ?? 0),
             'valor_perdido' => (float)($r['valor_perdido'] ?? 0),
             'ciclo_medio'   => isset($r['ciclo_medio']) && $r['ciclo_medio'] !== null ? (int)$r['ciclo_medio'] : null,
+            'ciclo_sem_data' => (int)($r['ciclo_sem_data'] ?? 0),
         ];
     }
 
