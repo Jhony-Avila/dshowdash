@@ -182,3 +182,41 @@
   [data-pp-react-root] .hud-num, [data-pp-react-root] .hud-drawer, [data-pp-react-root] .hud-drawerbackdrop { animation:none; }
   [data-pp-react-root] .hud-stat.click:hover { transform:none; }
 }
+
+/* ── P17 · 2º ciclo R2: etapas, ciclo, top produtos, pede atenção, uso da API ── */
+[data-pp-react-root] .hud-charts + .hud-charts { margin-top:15px; }
+[data-pp-react-root] .hud-tabela-card, [data-pp-react-root] .hud-atencao { min-height:var(--hud-panelh); display:flex; flex-direction:column; }
+[data-pp-react-root] .hud-tabela-wrap { padding:0 16px 14px; overflow-x:auto; }
+[data-pp-react-root] .hud-tabela { width:100%; border-collapse:collapse; font-size:12px; }
+[data-pp-react-root] .hud-tabela th { text-align:left; font-weight:500; color:var(--hud-muted); font-size:11px; padding:8px 8px; border-bottom:1px solid var(--hud-stroke); white-space:nowrap; }
+[data-pp-react-root] .hud-tabela td { padding:9px 8px; border-bottom:1px solid var(--hud-stroke); font-variant-numeric:tabular-nums; }
+[data-pp-react-root] .hud-tabela .r { text-align:right; }
+[data-pp-react-root] .hud-tabela tr:hover td { background:var(--hud-sub); }
+[data-pp-react-root] .hud-tabela-nome { max-width:260px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+[data-pp-react-root] .hud-prop { display:grid; grid-template-columns:minmax(60px,1fr) 104px; gap:10px; align-items:center; }
+[data-pp-react-root] .hud-prop-trilho { height:10px; background:var(--hud-sub); border-radius:99px; overflow:hidden; }
+[data-pp-react-root] .hud-prop-barra { display:block; height:100%; background:linear-gradient(90deg,#4a79fa,#16e0a1); border-radius:99px; transition:width .35s ease; }
+[data-pp-react-root] .hud-prop-v { text-align:right; font-weight:500; }
+[data-pp-react-root] .hud-atencao-lista { padding:4px 20px 16px; display:flex; flex-direction:column; }
+[data-pp-react-root] .hud-atencao-item { display:grid; grid-template-columns:72px minmax(0,1fr) auto; gap:14px; align-items:center; padding:16px 0; border-bottom:1px solid var(--hud-stroke); }
+[data-pp-react-root] .hud-atencao-n { font-size:30px; font-weight:500; letter-spacing:-.5px; font-variant-numeric:tabular-nums; }
+[data-pp-react-root] .hud-atencao-n.bad { color:var(--hud-red); } [data-pp-react-root] .hud-atencao-n.warn { color:var(--hud-gold); }
+[data-pp-react-root] .hud-atencao-txt b { display:block; font-weight:500; font-size:13px; }
+[data-pp-react-root] .hud-atencao-txt small { display:block; color:var(--hud-muted); font-size:11px; margin-top:3px; line-height:1.4; }
+[data-pp-react-root] .hud-atencao-ok { color:var(--hud-muted); font-size:11px; }
+[data-pp-react-root] .hud-api { margin-top:15px; }
+[data-pp-react-root] .hud-api-kpis { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; padding:0 22px 8px; }
+[data-pp-react-root] .hud-api-kpi { background:var(--hud-sub); border-radius:10px; padding:10px 12px; }
+[data-pp-react-root] .hud-api-kpi small { display:block; color:var(--hud-muted); font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+[data-pp-react-root] .hud-api-kpi b { font-size:18px; font-weight:500; } [data-pp-react-root] .hud-api-kpi b.bad { color:var(--hud-red); }
+[data-pp-react-root] .hud-api-graf { height:220px; flex:none; padding-bottom:10px; }
+@media (max-width:1600px) {
+  [data-pp-react-root] .hud-charts + .hud-charts { margin-top:10px; }
+  [data-pp-react-root] .hud-tabela { font-size:11px; } [data-pp-react-root] .hud-tabela td { padding:7px 6px; }
+  [data-pp-react-root] .hud-prop { grid-template-columns:minmax(40px,1fr) 88px; }
+  [data-pp-react-root] .hud-atencao-item { grid-template-columns:56px minmax(0,1fr) auto; padding:11px 0; gap:10px; }
+  [data-pp-react-root] .hud-atencao-n { font-size:24px; }
+  [data-pp-react-root] .hud-api { margin-top:10px; } [data-pp-react-root] .hud-api-kpis { padding:0 13px 6px; gap:7px; }
+  [data-pp-react-root] .hud-api-kpi b { font-size:15px; } [data-pp-react-root] .hud-api-graf { height:170px; }
+}
+@media (max-width:1100px) { [data-pp-react-root] .hud-api-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } }

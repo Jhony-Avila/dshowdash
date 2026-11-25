@@ -29,19 +29,19 @@ import '../styles/visao-hud.css';
 // ── utilitários ──────────────────────────────────────────────────────────────
 
 export type EstadoTela = PipeEstadoDado | 'carregando';
-const ROTULO_ESTADO: Record<EstadoTela, string> = {
+export const ROTULO_ESTADO: Record<EstadoTela, string> = {
   carregando: 'Carregando', atualizado: 'Atualizado', desatualizado: 'Desatualizado', parcial: 'Parcial', indisponivel: 'Indisponível',
 };
-const CLASSE_ESTADO: Record<EstadoTela, string> = {
+export const CLASSE_ESTADO: Record<EstadoTela, string> = {
   carregando: 'load', atualizado: 'ok', desatualizado: 'old', parcial: 'part', indisponivel: 'off',
 };
 
-const ddmm = (iso: string) => { const [, m, d] = iso.split('-'); return `${d}/${m}`; };
-const ddmmaaaa = (iso: string) => { const [a, m, d] = iso.split('-'); return `${d}/${m}/${a}`; };
-const faixa = (de?: string, ate?: string) => (de && ate ? `${ddmm(de)}–${ddmmaaaa(ate)}` : '');
-const hhmm = (s?: string | null) => (s ? s.replace('T', ' ').slice(11, 16) : '');
+export const ddmm = (iso: string) => { const [, m, d] = iso.split('-'); return `${d}/${m}`; };
+export const ddmmaaaa = (iso: string) => { const [a, m, d] = iso.split('-'); return `${d}/${m}/${a}`; };
+export const faixa = (de?: string, ate?: string) => (de && ate ? `${ddmm(de)}–${ddmmaaaa(ate)}` : '');
+export const hhmm = (s?: string | null) => (s ? s.replace('T', ' ').slice(11, 16) : '');
 const pct = (v: number, casas = 1) => `${v.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas })}%`;
-function semReducao(): boolean {
+export function semReducao(): boolean {
   try { return !window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return true; }
 }
 /** Dias Y-m-d de [de, ate] (aritmética em UTC: 'AAAA-MM-DD' é dia civil). */
@@ -62,12 +62,12 @@ export interface Drill {
 }
 
 /** Selo de estado: sempre com o texto, nunca só a cor. */
-function Selo({ estado, titulo }: { estado: EstadoTela; titulo?: string }) {
+export function Selo({ estado, titulo }: { estado: EstadoTela; titulo?: string }) {
   return <span className={`hud-status ${CLASSE_ESTADO[estado]}`} title={titulo}>{ROTULO_ESTADO[estado]}</span>;
 }
 
 /** Número com troca suave (CSS, 320 ms) quando o VALOR muda — "—" não anima como zero. */
-function Num({ texto }: { texto: string }) {
+export function Num({ texto }: { texto: string }) {
   return <span key={texto} className={texto === '—' ? 'hud-num is-vazio' : 'hud-num'}>{texto}</span>;
 }
 

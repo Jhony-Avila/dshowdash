@@ -14,20 +14,17 @@
 // Duas classes de numero, sinalizadas na UI: os KPIs da FAIXA sao fatos de janela
 // (comparaveis); "em aberto agora" e foto do momento e por isso NAO tem variacao —
 // a base nao guarda snapshot historico e inventar um seria fabricar dado.
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { LayoutDashboard, TriangleAlert } from 'lucide-react';
 import { apiGet, chaves, ApiError } from '../lib/api';
-import { fmtBRL, fmtNum, fmtData } from '../lib/format';
+import { fmtNum, fmtData } from '../lib/format';
 import { PageHeader } from './PageHeader';
 import { EstadoErro, SkeletonBloco } from './Estados';
-import { EChartCard } from '../viz/ChartCard';
-import { usePaleta } from '../viz/tema';
-import { optArea, optBarras, optColunas, type PontoXY } from '../viz/opts';
 import { HudKpis, BlocoGanhos, RankingVendedores, PainelDrill, type Drill } from './VisaoHud';
+import { BlocoEtapas, BlocoCiclo, TopProdutos, PedeAtencao, UsoApiHud } from './VisaoHud2';
 import type {
-  PipeStatus, PipeOverview, PipeMetrics, PipeConversion,
-  PipeSummary, PipeFunnelData, PipePeriodoId,
+  PipeStatus, PipeOverview, PipeSummary, PipePeriodoId,
 } from '../shell/types';
 
 // #3/#4 — janela deslizante E calendário. Os dois convivem porque respondem
@@ -64,7 +61,7 @@ export interface VisaoGeralProps {
   onAlertas?: () => void;
 }
 
-export function VisaoGeral({ status, onConfig, onNegocios, onFunis, onAlertas }: VisaoGeralProps) {
+export function VisaoGeral({ status, onConfig, onNegocios, onAlertas }: VisaoGeralProps) {
   const conectado = status?.status === 'connected';
   const [periodo, setPeriodoEstado] = useState<PipePeriodoId>(lerPeriodo);
   const trocarPeriodo = (p: PipePeriodoId) => {
@@ -152,13 +149,21 @@ export function VisaoGeral({ status, onConfig, onNegocios, onFunis, onAlertas }:
             <RankingVendedores periodo={periodo} resumo={resumoQ.data} onDrill={setDrill} />
             <div style={{ height: 15 }} />
 
-            <BlocoOperacao periodo={periodo} onNegocios={onNegocios} onFunis={onFunis} onAlertas={onAlertas} />
-
-            <BlocoRankings periodo={periodo} />
+            {/* P17 · 2º ciclo R2: etapas | ciclo → top produtos | pede atenção → uso da API (mesmo padrão da P14) */}
+            <div className="hud-charts">
+              <BlocoEtapas periodo={periodo} resumo={resumoQ.data} onDrill={setDrill} />
+              <BlocoCiclo periodo={periodo} resumo={resumoQ.data} onDrill={setDrill} />
+            </div>
+            <div className="hud-charts">
+              <TopProdutos periodo={periodo} />
+              <PedeAtencao resumo={resumoQ.data} carregando={resumoQ.isLoading} falhou={!!resumoQ.error && !resumoQ.data} onDrill={setDrill} onAlertas={onAlertas} />
+            </div>
+            <UsoApiHud periodo={periodo} />
+            <div style={{ height: 15 }} />
 
             {/* Base sincronizada + uso da API */}
             <div className="pp-g12">
-              <div className="pp-card pp-c-7">
+              <div className="pp-card pp-c-12">
                 <h3>Base sincronizada</h3>
                 <div className="pp-row"><span className="pp-k">Contatos</span><span className="pp-v">{fmtNum(ov?.contagens.persons)} pessoas · {fmtNum(ov?.contagens.organizations)} organizações</span></div>
                 <div className="pp-row"><span className="pp-k">Catálogo & leads</span><span className="pp-v">{fmtNum(ov?.contagens.products)} produtos · {fmtNum(ov?.contagens.leads)} leads · {fmtNum(ov?.contagens.notes)} notas</span></div>
@@ -181,7 +186,6 @@ export function VisaoGeral({ status, onConfig, onNegocios, onFunis, onAlertas }:
                 )}
               </div>
 
-              <UsoApi />
             </div>
           </>
         )
@@ -211,186 +215,3 @@ function NotaPeriodo({ resumo }: { resumo?: PipeSummary }) {
   );
 }
 
-// ── Operação: etapas, ciclo e o que pede atenção ─────────────────────────────
-
-function BlocoOperacao({ periodo, onNegocios, onFunis, onAlertas }: {
-  periodo: PipePeriodoId; onNegocios?: (f?: Record<string, string>) => void; onFunis?: () => void; onAlertas?: () => void;
-}) {
-  const pal = usePaleta();
-
-  const { data: funil, isLoading: carregandoFunil } = useQuery<PipeFunnelData>({
-    queryKey: chaves.funnel,
-    queryFn: ({ signal }) => apiGet<PipeFunnelData>('/funnel', undefined, signal),
-    refetchInterval: 120_000,
-  });
-  const { data: conv, isLoading: carregandoConv } = useQuery<PipeConversion>({
-    // Fase 0: o ciclo segue o período GLOBAL, com a MESMA regra do KPI "Ciclo médio" (ganhos na janela).
-    queryKey: [...chaves.conversion, periodo],
-    queryFn: ({ signal }) => apiGet<PipeConversion>('/conversion', { periodo }, signal),
-    refetchInterval: 120_000,
-  });
-  const { data: resumo } = useQuery<PipeSummary>({
-    queryKey: [...chaves.summary, 30],
-    queryFn: ({ signal }) => apiGet<PipeSummary>('/summary', { days: 30 }, signal),
-    refetchInterval: 120_000,
-  });
-
-  // Etapas com negócio em aberto, de todos os funis (o nome do funil desambigua homônimos).
-  const etapas = useMemo(() => {
-    const out: { label: string; valor: number; stageId: number }[] = [];
-    for (const pl of funil?.pipelines ?? []) {
-      for (const s of pl.stages) {
-        if (s.abertos > 0) {
-          out.push({ label: (pl.name && (funil?.pipelines.length ?? 0) > 1) ? `${s.stage} · ${pl.name}` : (s.stage ?? '—'), valor: s.valor_aberto, stageId: s.stage_id });
-        }
-      }
-    }
-    return out.sort((a, b) => b.valor - a.valor).slice(0, 10);
-  }, [funil]);
-
-  const b = conv?.cycle.buckets;
-  const ciclo: PontoXY[] = b ? [
-    { label: 'Até 7 d', valor: b.ate_7 },
-    { label: '8–30 d', valor: b.d8_30 },
-    { label: '31–90 d', valor: b.d31_90 },
-    { label: '+90 d', valor: b.mais_90 },
-  ] : [];
-  const e = resumo?.estado;
-
-  return (
-    <div className="pp-g12">
-      <EChartCard className="pp-c-5" titulo="Valor em aberto por etapa" altura={270}
-        subtitulo={onFunis ? 'Clique numa barra para abrir os negócios da etapa' : undefined}
-        carregando={carregandoFunil} vazio={etapas.length === 0}
-        vazioMsg="Nenhum negócio em aberto nas etapas ativas."
-        opcao={etapas.length ? optBarras(pal, etapas, { formato: 'brl', cor: pal.sync }) : null}
-        eventos={onNegocios ? {
-          click: (params) => {
-            const p = params as { name?: string };
-            // optBarras reordena para desenhar de baixo p/ cima — casa pelo rótulo, não pelo índice.
-            const alvo = etapas.find((x) => x.label === p.name);
-            if (alvo) onNegocios({ status: 'open', stage_id: String(alvo.stageId) });
-          },
-        } : undefined}
-        aria="Valor em aberto por etapa do funil" />
-
-      <EChartCard className="pp-c-4" titulo="Ciclo de vendas" altura={270}
-        subtitulo={`${conv?.cycle.avg_dias != null ? `Média de ${conv.cycle.avg_dias} dias entre criar e ganhar` : 'Dias entre criar e ganhar'}${conv?.periodo_ciclo ? ` · ganhos em ${conv.periodo_ciclo.rotulo}` : ''}`}
-        carregando={carregandoConv} vazio={(conv?.cycle.count ?? 0) === 0}
-        vazioMsg="Nenhum negócio ganho com datas completas para medir o ciclo."
-        opcao={ciclo.length ? optColunas(pal, ciclo, { formato: 'num', cores: [pal.ok, pal.primary, pal.warn, pal.danger] }) : null}
-        aria="Distribuição do ciclo de vendas" />
-
-      <div className="pp-card pp-c-3">
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <TriangleAlert size={16} style={{ color: 'var(--pp-warn)' }} aria-hidden /> Pede atenção
-        </h3>
-        {!e ? <SkeletonBloco linhas={3} /> : (
-          <>
-            <ItemAtencao rotulo="Fechamento vencido" valor={e.fechamento_vencido} cor="var(--pp-danger)"
-              onClick={onAlertas} />
-            <ItemAtencao rotulo="Atividades atrasadas" valor={e.atividades_atrasadas} cor="var(--pp-danger)"
-              onClick={onAlertas} />
-            <ItemAtencao rotulo="Sem previsão de fechamento" valor={e.sem_previsao} cor="var(--pp-warn)"
-              onClick={onAlertas} />
-            {onAlertas && (
-              <div className="pp-actions"><button className="pp-btn" onClick={onAlertas}>Abrir alertas →</button></div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ItemAtencao({ rotulo, valor, cor, onClick }: { rotulo: string; valor: number; cor: string; onClick?: () => void }) {
-  return (
-    <div className="pp-row" onClick={onClick} style={onClick ? { cursor: 'pointer' } : undefined}>
-      <span className="pp-k">{rotulo}</span>
-      <span className="pp-v" style={{ color: valor > 0 ? cor : undefined }}>{fmtNum(valor)}</span>
-    </div>
-  );
-}
-
-// ── Rankings (GET /metrics) ──────────────────────────────────────────────────
-
-function BlocoRankings({ periodo }: { periodo: PipePeriodoId }) {
-  const { data } = useQuery<PipeMetrics>({
-    queryKey: [...chaves.metrics, 365, periodo],
-    queryFn: ({ signal }) => apiGet<PipeMetrics>('/metrics', { days: 365, periodo }, signal),
-    refetchInterval: 120_000,
-  });
-
-  const produtos = data?.top_products ?? [];
-
-  return (
-    <div className="pp-g12">
-      {/* P13: o ranking de vendedores passou para o desenho R2 (RankingVendedores); Top produtos segue como estava. */}
-      <div className="pp-card pp-c-12">
-        <h3>Top produtos por valor</h3>
-        {/* Fase 0: o ranking soma os itens de produto dos negócios (pipe_deal_products) — SÓ os negócios com produtos
-            sincronizados, histórico inteiro; "Valor total" inclui abertos e perdidos, "Ganho" só os ganhos. */}
-        <p className="pp-cc-rodape" style={{ margin: '0 0 8px' }}>
-          Todo o histórico · só negócios com produtos lançados ({fmtNum(data?.coverage?.deals_com_produtos)} de {fmtNum(data?.coverage?.deals_ativos)} ativos) · “Valor total” inclui abertos e perdidos
-        </p>
-        {produtos.length === 0 ? (
-          <p className="pp-placeholder">
-            Nenhum produto de negócio sincronizado ainda ({fmtNum(data?.coverage?.deals_com_produtos)} de {fmtNum(data?.coverage?.deals_ativos)} negócios ativos).
-            Um administrador pode puxar os produtos dos negócios na aba <strong>Configurações</strong>.
-          </p>
-        ) : (
-          // 5 colunas num cartão de 6/12: rola a tabela, nunca a página (§23).
-          <div className="pp-tabela-rolavel">
-            <table className="pp-table">
-              <thead><tr><th>Produto</th><th className="ta-r">Negócios</th><th className="ta-r">Qtd.</th><th className="ta-r">Valor total</th><th className="ta-r">Ganho</th></tr></thead>
-              <tbody>
-                {produtos.map((p) => (
-                  <tr key={p.product_id ?? p.name}>
-                    {/* um item por linha: nome com vários itens (quebras de linha, ";" ou " + ") vira uma lista */}
-                    <td className="pp-td-title" style={{ whiteSpace: 'normal' }}>
-                      {String(p.name ?? '').split(/\r?\n|;\s*|\s\+\s/).map((x) => x.trim()).filter(Boolean)
-                        .map((x, i) => <div key={i}>{x}</div>)}
-                    </td>
-                    <td className="ta-r">{fmtNum(p.deals)}</td>
-                    <td className="ta-r">{fmtNum(p.qty)}</td>
-                    <td className="ta-r">{fmtBRL(p.valor_total)}</td>
-                    <td className="ta-r">{fmtBRL(p.valor_ganho)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Uso da API (GET /metrics — hourly) ───────────────────────────────────────
-
-function UsoApi() {
-  const pal = usePaleta();
-  const { data, isLoading } = useQuery<PipeMetrics>({
-    queryKey: [...chaves.metrics, 365],
-    queryFn: ({ signal }) => apiGet<PipeMetrics>('/metrics', { days: 365 }, signal),
-    refetchInterval: 120_000,
-  });
-
-  const hourly = data?.hourly ?? [];
-  const pontos: PontoXY[] = hourly.map((h) => ({ label: (h.hour ?? '').slice(5, 16), valor: h.api_calls }));
-  const chamadas = hourly.reduce((a, h) => a + h.api_calls, 0);
-  const erros = hourly.reduce((a, h) => a + h.api_errors, 0);
-  // Fase 0: 404/410 = registro apagado no Pipedrive (tratado como exclusão local). Só mostra a separação se TODAS as
-  // horas já têm a contagem (null = hora ainda não recalculada; ausência não vira zero).
-  const temSep = hourly.length > 0 && hourly.every((h) => typeof h.api_errors_404 === 'number');
-  const e404 = temSep ? hourly.reduce((a, h) => a + (h.api_errors_404 as number), 0) : null;
-
-  return (
-    <EChartCard className="pp-c-5" titulo="Uso da API — últimas 72h" altura={220}
-      subtitulo={`${fmtNum(chamadas)} chamadas · ${fmtNum(erros)} erros${e404 !== null ? ` (${fmtNum(e404)} são 404 de registro apagado no Pipedrive, já tratados; ${fmtNum(erros - e404)} outros)` : ''}`}
-      carregando={isLoading} vazio={pontos.length === 0}
-      vazioMsg="Sem chamadas registradas nas últimas 72 horas."
-      opcao={pontos.length ? optArea(pal, pontos, { formato: 'num', cor: erros > 0 ? pal.warn : pal.primary, nomeSerie: 'Chamadas' }) : null}
-      aria="Chamadas à API do Pipedrive por hora" />
-  );
-}
