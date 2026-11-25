@@ -118,6 +118,22 @@ abstract class BlingProviderBase
         return (float) ($it['custo_unitario'] ?? 0) * (float) $it['quantidade'];
     }
 
+    /**
+     * Codex 115B (revisão da ACIMA_ESQUERDA, 25/11): nota com situação NÃO MAPEADA (7, 11, código desconhecido) é contada À PARTE — nunca entra em
+     * "Notas emitidas" nem em nenhum outro total (funil, fluxo, conciliação, lista, documentos, participação). Continua visível (linha própria
+     * em Situações fiscais, faceta e filtro da lista, número da nota no pedido).
+     */
+    public static function notaContavel(array $n): bool
+    {
+        return ($n['situacao'] ?? null) !== 'nao_mapeada';
+    }
+
+    /** @return list<array> só as notas que entram em totais (ver notaContavel) */
+    public static function notasContaveis(array $notas): array
+    {
+        return array_values(array_filter($notas, static fn($n) => self::notaContavel($n)));
+    }
+
     /** Pedidos que contam como venda: exclui rascunho e cancelado. */
     protected function pedidosValidos(array $pedidos): array
     {
@@ -158,7 +174,7 @@ abstract class BlingProviderBase
 
         $unidades = self::unidadesConhecidas($noPer);   // null = itens desconhecidos (nunca 0 por ausência)
 
-        $notasPer   = $this->noPeriodo($notas, 'emissao', $f);
+        $notasPer   = self::notasContaveis($this->noPeriodo($notas, 'emissao', $f));   // Codex 115B: não mapeadas fora de "Notas emitidas"
         $notasErro  = array_values(array_filter($notasPer, static fn($n) => $n['situacao'] === 'rejeitada'));
 
         $recAberto  = array_values(array_filter($receber, static fn($r) => in_array($r['situacao'], ['aberto', 'parcial'], true)));
@@ -372,7 +388,8 @@ abstract class BlingProviderBase
     public function evolucao(array $f): array
     {
         $pedidosPeriodo = $this->pedidosValidos($this->noPeriodo($this->colecao('pedidos'), 'data', $f));
-        $notasPeriodo   = $this->noPeriodo($this->colecao('notas'), 'emissao', $f);
+        // ciclo 116: nota com situação não mapeada não conta como "emitida" (fica à parte, em Situações fiscais)
+        $notasPeriodo   = self::notasContaveis($this->noPeriodo($this->colecao('notas'), 'emissao', $f));
         $comprasPeriodo = $this->noPeriodo($this->colecao('compras'), 'emissao', $f);
         $recPeriodo     = $this->noPeriodo($this->colecao('receber'), 'vencimento', $f);
         $pagPeriodo     = $this->noPeriodo($this->colecao('pagar'), 'vencimento', $f);
@@ -623,7 +640,7 @@ abstract class BlingProviderBase
         }
 
         $notasPorPedido = [];
-        foreach ($this->colecao('notas') as $n) {
+        foreach (self::notasContaveis($this->colecao('notas')) as $n) {   // Codex 115B: não mapeada fora do fluxo
             $notasPorPedido[$n['pedido']] = $n;
         }
         $enviosPorPedido = [];
@@ -711,7 +728,7 @@ abstract class BlingProviderBase
     {
         $pedidos = $this->pedidosValidos($this->noPeriodo($this->colecao('pedidos'), 'data', $f));
         $notas   = [];
-        foreach ($this->colecao('notas') as $n) {
+        foreach (self::notasContaveis($this->colecao('notas')) as $n) {   // Codex 115B: não mapeada fora do funil (geradas/autorizadas…)
             $notas[$n['pedido']] = $n;
         }
         $envios = [];

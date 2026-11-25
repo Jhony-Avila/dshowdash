@@ -549,11 +549,21 @@ final class BlingReal extends BlingProviderBase
         }, $pedidos);
     }
 
+    /**
+     * Situação da nota na leitura: o código CRU do Bling (situacao_bling) → mapa atual (corrige as gravadas com o mapa antigo); sem código, a gravada.
+     * Codex 115B (P10.1): QUALQUER código gravado passa pelo mapa — antes só o numérico; um código de texto desconhecido ficava com a situação gravada
+     * ("pendente" do padrão antigo). Desconhecido = 'nao_mapeada'. Só LEITURA: nada é regravado na consulta.
+     */
+    public static function situacaoNotaLida(string $gravada, ?string $codigoBling): string
+    {
+        return ($codigoBling !== null && trim($codigoBling) !== '') ? BlingVersionAdapter::situacaoNota(trim($codigoBling)) : $gravada;
+    }
+
     private function notas(): array
     {
         $r = $this->repo->consultar(
             'SELECT id, bling_id, numero, serie, chave, sales_order_id, contact_id,
-                    data_emissao, valor, situacao, finalidade, tipo,
+                    data_emissao, valor, situacao, situacao_bling, finalidade, tipo,
                     erro_codigo, erro_mensagem, tentativas, url_danfe, url_xml
                FROM bling_invoices WHERE account_id = ? AND deletado_em IS NULL',
             [$this->conta()]
@@ -567,7 +577,11 @@ final class BlingReal extends BlingProviderBase
             'conta' => 'conta-padrao',
             'emissao' => (string) $n['data_emissao'],
             'valor' => (float) $n['valor'],
-            'situacao' => $n['situacao'],
+            // 24/11 (mapa da situação corrigido pelo OpenAPI v3): as notas gravadas com o mapa ANTIGO guardam o código cru em situacao_bling →
+            // a situação é refeita pelo mapa atual na leitura (sem migração de dados; a listagem não regrava nota que não mudou). Sem código
+            // gravado: vale a situação gravada. Código desconhecido (7, 11 ou outro): 'nao_mapeada' (Codex 115B).
+            'situacao' => self::situacaoNotaLida($n['situacao'], $n['situacao_bling'] ?? null),
+            'situacao_codigo' => ($n['situacao_bling'] ?? null) === null ? null : (string) $n['situacao_bling'],   // Codex 115B (aditivo): o código ORIGINAL do Bling, preservado
             'finalidade' => $n['finalidade'] ?? 'normal',
             'tipo' => $n['tipo'],
             'erro' => $n['erro_codigo'] === null ? null

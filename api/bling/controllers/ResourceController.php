@@ -91,12 +91,7 @@ final class ResourceController
             $linhas = self::ordenarLinhas($linhas, $f['ordenar'], $f['direcao']);
         }
 
-        $totais = [];
-        foreach ($totalizar as $campo) {
-            // "ausência ≠ zero": uma linha com o campo null (desconhecido) torna o total desconhecido — nunca soma parcial
-            $s = BlingProviderBase::somaConhecida($linhas, $campo);
-            $totais[$campo] = $s === null ? null : round($s, 2);
-        }
+        $totais = self::totalizarLinhas($linhas, $totalizar);
 
         $total = count($linhas);
         $offset = ($f['pagina'] - 1) * $f['limite'];
@@ -114,6 +109,25 @@ final class ResourceController
             'recurso' => $recurso,
             'filtros' => $f,
         ]));
+    }
+
+    /**
+     * Totais da tela e da exportação (a MESMA conta). "Ausência ≠ zero": uma linha com o campo null torna o total desconhecido — nunca soma parcial.
+     * Codex 115B: linha marcada `fora_dos_totais` (ex.: "Situação não mapeada") é mostrada, mas não entra em total nenhum.
+     * @param list<array<string,mixed>> $linhas
+     * @param list<string> $campos
+     * @return array<string, ?float>
+     */
+    public static function totalizarLinhas(array $linhas, array $campos): array
+    {
+        $base = array_values(array_filter($linhas, static fn($l) => empty($l['fora_dos_totais'])));
+        $totais = [];
+        foreach ($campos as $campo) {
+            if ($linhas !== [] && $base === []) { $totais[$campo] = null; continue; }   // só linhas à parte: total não se aplica (null), nunca R$ 0
+            $s = BlingProviderBase::somaConhecida($base, $campo);
+            $totais[$campo] = $s === null ? null : round($s, 2);
+        }
+        return $totais;
     }
 
     /**
@@ -148,12 +162,7 @@ final class ResourceController
         }
 
         // Totais sobre o conjunto FILTRADO inteiro, não sobre o recorte exportado.
-        $totais = [];
-        foreach (($dados['totalizar'] ?? []) as $campo) {
-            // "ausência ≠ zero": uma linha com o campo null (desconhecido) torna o total desconhecido — nunca soma parcial
-            $s = BlingProviderBase::somaConhecida($linhas, $campo);
-            $totais[$campo] = $s === null ? null : round($s, 2);
-        }
+        $totais = self::totalizarLinhas($linhas, $dados['totalizar'] ?? []);
 
         $total = count($linhas);
         $truncado = $total > $limite;
@@ -1415,14 +1424,22 @@ final class ResourceController
         $pedidos = self::indexar($p->colecao('pedidos'));
 
         $linhas = [];
+        $facetaTodas = [];   // Codex 115B: a faceta da visão padrão inclui as não mapeadas (contadas à parte, visíveis pelo filtro)
         foreach ($p->colecao('notas') as $n) {
             if ($n['emissao'] < $f['de'] || $n['emissao'] > $f['ate']) {
                 continue;
             }
+            $facetaTodas[] = ['situacao' => $n['situacao']];
             if ($f['situacao'] !== '' && $n['situacao'] !== $f['situacao']) {
                 continue;
             }
+            // Codex 115B: sem filtro, a lista (e com ela "Emitidas" = meta.total e "Valor emitido" = totais.valor) fica SÓ com as contáveis;
+            // as não mapeadas aparecem pela faceta/filtro "Situação não mapeada" e em Situações fiscais — e mesmo filtradas ficam fora dos totais
+            if ($f['situacao'] === '' && !BlingProviderBase::notaContavel($n)) {
+                continue;
+            }
             $linhas[] = [
+                'fora_dos_totais' => !BlingProviderBase::notaContavel($n),
                 'id'        => $n['id'],
                 'numero'    => $n['numero'],
                 'serie'     => $n['serie'],
@@ -1441,6 +1458,7 @@ final class ResourceController
                 'erro_codigo'   => $n['erro']['codigo'] ?? null,
                 'erro_mensagem' => $n['erro']['mensagem'] ?? null,
                 'tentativas'=> $n['tentativas'],
+                'situacao_codigo' => $n['situacao_codigo'] ?? null,   // Codex 115B (aditivo): código original do Bling (ex.: 7, 11) — sem coluna nova na tabela
             ];
         }
 
@@ -1448,7 +1466,7 @@ final class ResourceController
             'linhas' => $linhas,
             'busca'  => ['numero', 'chave', 'cliente', 'pedido', 'erro_codigo'],
             'totalizar' => ['valor'],
-            'facetas' => ['situacao' => self::facetar($linhas, 'situacao')],
+            'facetas' => ['situacao' => self::facetar($f['situacao'] === '' ? $facetaTodas : $linhas, 'situacao')],
             'colunas' => [
                 self::col('numero', 'Número'),
                 self::col('serie', 'Série'),
@@ -1525,18 +1543,20 @@ final class ResourceController
     {
         $notas = array_values(array_filter($p->colecao('notas'), static fn($n) =>
             $n['emissao'] >= $f['de'] && $n['emissao'] <= $f['ate']));
-        $total = count($notas);
+        $total = count(BlingProviderBase::notasContaveis($notas));   // Codex 115B: participação só sobre as contáveis
 
         $linhas = [];
         foreach (BlingSituacoes::listar('nota') as $s) {
             $desta = array_values(array_filter($notas, static fn($n) => $n['situacao'] === $s['chave']));
+            $aParte = $s['chave'] === 'nao_mapeada';   // Codex 115B: linha própria, visível, fora dos totais e da participação
             $linhas[] = [
+                'fora_dos_totais' => $aParte,
                 'id'          => $s['chave'],
                 'situacao'    => $s['chave'],
                 'situacao_info' => $s,
                 'rotulo'      => $s['rotulo'],
                 'quantidade'  => count($desta),
-                'participacao'=> $total > 0 ? round((count($desta) / $total) * 100, 1) : 0.0,
+                'participacao'=> $aParte ? null : ($total > 0 ? round((count($desta) / $total) * 100, 1) : 0.0),
                 'valor'       => round(array_sum(array_column($desta, 'valor')), 2),
                 'tentativas_media' => count($desta) > 0
                     ? round(array_sum(array_column($desta, 'tentativas')) / count($desta), 2) : 0.0,
@@ -1618,6 +1638,9 @@ final class ResourceController
                 continue;
             }
             if (!$n['danfe'] && !$n['xml']) {
+                continue;
+            }
+            if (!BlingProviderBase::notaContavel($n)) {   // Codex 115B: não mapeada fora da contagem e do valor dos documentos
                 continue;
             }
             $linhas[] = [
@@ -1784,7 +1807,7 @@ final class ResourceController
     private static function conciliacao(BlingProviderBase $p, array $f): array
     {
         $notas = [];
-        foreach ($p->colecao('notas') as $n) {
+        foreach (BlingProviderBase::notasContaveis($p->colecao('notas')) as $n) {   // Codex 115B: não mapeada fora do valor/delta da nota
             $notas[$n['pedido']] = $n;
         }
         $titulos = [];

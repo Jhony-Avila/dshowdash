@@ -61,14 +61,23 @@ final class BlingVersionAdapter
         'cancelado' => 'cancelado',
     ];
 
+    // OpenAPI v3 oficial (openapi-Dfpp2fup.json, NotasFiscaisDadosBaseDTO.situacao, conferido 24/11): 1 Pendente · 2 Cancelada · 3 Aguardando recibo ·
+    // 4 Rejeitada · 5 Autorizada · 6 Emitida DANFE · 7 Registrada · 8 Aguardando protocolo · 9 Denegada · 10 Consulta situação · 11 Bloqueada.
+    // ANTES (bug): 2 = processando, 3 = rejeitada, 4 = AUTORIZADA, 5 = CANCELADA, 6 = inutilizada — nota rejeitada aparecia autorizada e nota
+    // autorizada aparecia cancelada. Ciclo 116 (decisão do Jhony 24/11): 7 e 11 — e qualquer código não documentado, e a nota nova sem situação —
+    // = 'nao_mapeada': fora de autorizadas e de canceladas, contada à parte e visível, nunca no faturamento (o significado vem do Julio).
     private const NOTA = [
         '1'  => 'pendente',
-        '2'  => 'processando',
-        '3'  => 'rejeitada',
-        '4'  => 'autorizada',
-        '5'  => 'cancelada',
-        '6'  => 'inutilizada',
-        '7'  => 'processando',
+        '2'  => 'cancelada',
+        '3'  => 'processando',   // aguardando recibo da SEFAZ
+        '4'  => 'rejeitada',
+        '5'  => 'autorizada',
+        '6'  => 'autorizada',    // emitida DANFE = autorizada e impressa
+        '8'  => 'processando',   // aguardando protocolo
+        '9'  => 'rejeitada',     // denegada
+        '10' => 'processando',   // consulta situação
+        '7'  => 'nao_mapeada',   // Registrada — sentido não documentado
+        '11' => 'nao_mapeada',   // Bloqueada — sentido não documentado
         'pendente'    => 'pendente',
         'emitida'     => 'autorizada',
         'autorizada'  => 'autorizada',
@@ -119,7 +128,7 @@ final class BlingVersionAdapter
 
     public static function situacaoNota(?string $codigo): string
     {
-        return self::traduzir(self::NOTA, $codigo, 'pendente', 'nota');
+        return self::traduzir(self::NOTA, $codigo, 'nao_mapeada', 'nota');   // ciclo 116: desconhecido nunca vira "pendente"
     }
 
     public static function situacaoEnvio(?string $codigo): string
