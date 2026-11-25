@@ -158,10 +158,10 @@ export function HudKpis({ resumo, carregando, falhou, onDrill, onDetalhes }: {
     // motivo em texto de cada estado (nunca só a cor)
     let motivo: ReactNode = null;
     if (estado === 'carregando') motivo = <small>lendo a base sincronizada…</small>;
-    else if (estado === 'indisponivel') motivo = <small><span className="hud-link-off">Consulta indisponível</span> {falhou ? 'a consulta não retornou' : (leitura?.motivo ?? 'sem leitura de negócios')}</small>;
+    else if (estado === 'indisponivel') motivo = <small title={`Consulta indisponível: ${falhou ? 'a consulta não retornou' : (leitura?.motivo ?? 'sem leitura de negócios')}`}><span className="hud-link-off">Consulta indisponível</span></small>;
     else if (estado === 'desatualizado') motivo = <small>{v ? <b className={v.classe}>{v.texto} </b> : null}última leitura {leitura?.atualizado_em ? hhmm(leitura.atualizado_em) : '—'}</small>;
     else if (estado === 'parcial' && k?.cobertura) motivo = <small>{v ? <b className={v.classe}>{v.texto} </b> : null}{v?.adj ? `${v.adj} · ` : ''}{fmtNum(k.cobertura.sem_data)} sem data</small>;
-    else if (v) motivo = <small><b className={v.classe}>{v.texto}</b> {v.adj ? `${v.adj} vs.` : 'vs.'} {per ? `${per.dias_anterior} dias anteriores` : 'período anterior'}</small>;
+    else if (v) motivo = <small title={`${v.texto} ${v.adj ? `${v.adj} ` : ''}vs. ${per ? `${per.dias_anterior} dias anteriores` : 'período anterior'}`}><b className={v.classe}>{v.texto}</b> {v.adj ? `${v.classe === 'good' ? 'favorável' : 'desfavorável'} · ` : ''}vs. {per ? `${per.dias_anterior} d anteriores` : 'período anterior'}</small>;
     else motivo = <small>sem base de comparação</small>;
 
     return (
@@ -203,7 +203,7 @@ export function HudKpis({ resumo, carregando, falhou, onDrill, onDetalhes }: {
       <div className="hud-value">{estAgora === 'carregando' ? <span className="hud-skel" /> : <Num texto={estAgora === 'indisponivel' ? '—' : fmtBRL(e?.valor_aberto)} />}</div>
       <div className="hud-delta">
         {estAgora === 'carregando' ? <small>lendo a base sincronizada…</small>
-          : estAgora === 'indisponivel' ? <small><span className="hud-link-off">Consulta indisponível</span> funil não retornou</small>
+          : estAgora === 'indisponivel' ? <small title="Consulta indisponível: a foto da carteira (funil aberto) não retornou"><span className="hud-link-off">Consulta indisponível</span></small>
           : <small>{fmtNum(e?.abertos)} negócios · {estAgora === 'desatualizado' && leitura?.atualizado_em ? `última leitura ${hhmm(leitura.atualizado_em)}` : 'foto do agora'}</small>}
       </div>
       {estAgora !== 'carregando' && <span className="hud-action">{estAgora === 'indisponivel' ? 'Ver detalhes →' : 'Ver negócios →'}</span>}
@@ -319,7 +319,8 @@ export function BlocoGanhos({ resumo, carregando, falhou, onDrill }: {
           <div>
             <div className="hud-panelname"><LineChart size={16} aria-hidden /> Ganhos ao longo do tempo <Selo estado={estado} /></div>
             <div className="hud-panelsub">
-              Valor ganho por {gran === 'dia' ? 'dia' : gran === 'semana' ? 'semana' : 'mês'} · {faixa(per?.de, per?.ate)} · Total do período: <b>{estado === 'indisponivel' ? '—' : fmtBRL(total)}</b> · Comparação: {per ? `${per.dias_anterior} dias anteriores` : '—'}
+              Valor ganho por {gran === 'dia' ? 'dia' : gran === 'semana' ? 'semana' : 'mês'} · {faixa(per?.de, per?.ate)} · Total do período: <b>{estado === 'indisponivel' || estado === 'carregando' ? '—' : fmtBRL(total)}</b> · Comparação: {per ? `${per.dias_anterior} dias anteriores` : '—'}
+              {estado === 'indisponivel' && <> · <span className="hud-link-off">consulta indisponível</span></>}
             </div>
           </div>
           <div className="hud-panelbtns" role="group" aria-label="Granularidade">
@@ -349,7 +350,7 @@ export function BlocoGanhos({ resumo, carregando, falhou, onDrill }: {
               } }} />
           )}
         </div>
-        <div className="hud-chartfoot"><span>⠿ Zoom horizontal <strong>{diasJ.length} dias</strong></span><span>◉ Clique em um ponto para abrir a lista filtrada</span></div>
+        <div className="hud-chartfoot"><span>⠿ Zoom horizontal <strong>{estado === 'indisponivel' || estado === 'carregando' ? '—' : `${diasJ.length} dias`}</strong></span><span>◉ Clique em um ponto para abrir a lista filtrada</span></div>
       </section>
 
       <section className="hud-card hud-donutcard" aria-label="Desfecho dos fechados">
@@ -425,7 +426,8 @@ export function RankingVendedores({ periodo, resumo, onDrill }: { periodo: PipeP
         <div>
           <div className="hud-panelname"><Medal size={16} aria-hidden /> Ranking de vendedores <Selo estado={estado} /></div>
           <div className="hud-panelsub">
-            {modo === 'valor' ? 'Valor ganho por vendedor' : 'Negócios ganhos por vendedor'} · {faixa(per?.de ?? undefined, per?.ate ?? undefined)} · {rs ? `${rs.vendedores} vendedores` : '—'} · Total: <b>{total != null ? fmt(total) : '—'}</b>
+            {modo === 'valor' ? 'Valor ganho por vendedor' : 'Negócios ganhos por vendedor'} · {faixa(per?.de ?? undefined, per?.ate ?? undefined)} · {rs && estado !== 'indisponivel' && estado !== 'carregando' ? `${rs.vendedores} vendedores` : '— vendedores'} · Total: <b>{total != null && estado !== 'indisponivel' && estado !== 'carregando' ? fmt(total) : '—'}</b>
+            {estado === 'indisponivel' && <> · <span className="hud-link-off">consulta indisponível</span></>}
           </div>
         </div>
         <div className="hud-panelbtns" role="group" aria-label="Ordenar por">
