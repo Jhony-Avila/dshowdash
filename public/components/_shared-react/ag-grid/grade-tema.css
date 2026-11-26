@@ -2,8 +2,8 @@
    PROPOSTA-COMPONENTES.md §"Tokens de linha e estado"); degrau do VERDE/ACIMA_DIREITA, 26/11. Valores = os propostos; contraste MEDIDO (WCAG AA):
    texto ≥ 11,4:1 e texto apagado ≥ 5,0:1 sobre TODOS os fundos, nos dois temas (ver o PARA-STATUS da ACIMA_DIREITA).
    Escopo [data-bl-root] e o mesmo detector de tema de styles/tokens.css: ESCURO por padrão; claro só por html[data-theme="light"] / body.theme-light.
-   Os fallbacks (--bl-*) valem enquanto o pacote DES (--des-link, --des-aviso…) não estiver na tela. Regras: hover ≠ seleção (a seleção tem também
-   a borda esquerda: não depende só da cor); estado sempre com texto/ícone na própria linha além da cor; nada pisca nem fica em loop. */
+   Os fallbacks (--bl-*) valem enquanto o pacote DES (--des-link, --des-aviso…) não estiver na tela. Regras: hover ≠ seleção (fundo próprio + a caixa marcada:
+   não depende só da cor; sem barra lateral colorida, 26/11); estado sempre com texto/ícone na própria linha além da cor; nada pisca nem fica em loop. */
 
 [data-bl-root] {
   --des-linha-par: #1e1e2e;
@@ -32,20 +32,16 @@ body.theme-light [data-bl-root] {
   --des-linha-marca: var(--des-link, #4f46e5);
 }
 
-/* seleção: fundo próprio (≠ hover) + borda esquerda 3 px na 1ª coluna (AG Grid 36: a linha é UM elemento com parte fixa e parte que rola;
-   a 1ª célula tem .ag-column-first, fixa ou não) */
-[data-bl-root] .ag-row-selected .ag-cell.ag-column-first { box-shadow: inset 3px 0 0 var(--des-linha-marca); }
+/* 26/11 (auditoria independente + parecer do arquiteto): SEM barra lateral colorida. Seleção = fundo próprio (≠ hover) + a caixa marcada;
+   estados = fundo sutil + texto/ícone/pílula NA LINHA (obrigação da tela). */
+/* pendente: só o selo da tela (sem fundo próprio, para não competir com a seleção) */
 /* edição na célula */
 [data-bl-root] .ag-cell-inline-editing { background-color: var(--des-linha-edicao) !important; outline: 2px solid var(--des-linha-aviso); outline-offset: -2px; }
 /* estados de linha (classes aplicadas pelo criarGrade a partir de `estadoLinha`) */
 [data-bl-root] .ag-row.des-edicao { background-color: var(--des-linha-edicao); }
-[data-bl-root] .ag-row.des-pendente .ag-cell.ag-column-first { box-shadow: inset 3px 0 0 var(--des-linha-aviso); }
 [data-bl-root] .ag-row.des-erro { background-color: var(--des-linha-erro); }
-[data-bl-root] .ag-row.des-erro .ag-cell.ag-column-first { box-shadow: inset 3px 0 0 var(--des-linha-erro-borda); }
 [data-bl-root] .ag-row.des-sucesso { background-color: var(--des-linha-sucesso); }
-[data-bl-root] .ag-row.des-sucesso .ag-cell.ag-column-first { box-shadow: inset 3px 0 0 var(--des-linha-ok); }
 [data-bl-root] .ag-row.des-expandida { background-color: var(--des-linha-expandida); }
-[data-bl-root] .ag-row.des-expandida .ag-cell.ag-column-first { box-shadow: inset 3px 0 0 var(--bl-borda); }
 [data-bl-root] .ag-row.des-desabilitada { color: var(--des-linha-dim); }
 [data-bl-root] .ag-row.des-desabilitada.ag-row-hover { background-color: inherit; }
 [data-bl-root] .ag-row.des-desabilitada.ag-row-hover::before { display: none; }
