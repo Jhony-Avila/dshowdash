@@ -7,12 +7,15 @@ import { criarGrade, type GridApi, type ColDef, type ICellRendererParams } from 
 import { lerPrevia, gerarPrevia, type Resultado } from '../lib/api';
 import { ROTULO_CLASSE, ROTULO_DOADORA, ROTULO_FONTE, ROTULO_ORIGEM, type Classe, type Fontes, type Linha, type Lote, type Previa } from '../lib/tipos';
 
-type Filtro = 'todas' | 'com_sugestao' | 'divergem' | 'revisar' | 'sem_valor' | 'paga_opcional';
+type Filtro = 'todas' | 'com_sugestao' | 'divergem' | 'identidade' | 'indisponivel' | 'revisar' | 'sem_valor' | 'paga_opcional';
 // Os 4 filtros pedidos (+ "Todos"); "Razão = nome: revisar" (v1.1 da C1) só aparece quando existir caso no lote.
 const FILTROS: { id: Filtro; rotulo: string; dica: string; casa: (c: Classe) => boolean; soComCaso?: boolean }[] = [
   { id: 'todas', rotulo: 'Todos os campos vazios', dica: 'Todos os destinos (ficha + campo) do lote', casa: () => true },
   { id: 'com_sugestao', rotulo: 'Com sugestão', dica: 'Há valor proposto por uma fonte interna (ou mais, concordando)', casa: (c) => c === 'sugestao' },
-  { id: 'divergem', rotulo: 'Fontes divergem', dica: 'Conteúdos diferentes ou identidade duvidosa: nada é proposto até a escolha humana', casa: (c) => c === 'fontes_divergem' || c === 'identidade_duvidosa' },
+  // RC-008 F29: cada bloqueio no seu filtro (antes "Fontes divergem" juntava identidade duvidosa); os dois novos só aparecem se houver caso
+  { id: 'divergem', rotulo: 'Fontes divergem', dica: 'Conteúdos diferentes: nada é proposto até a escolha humana', casa: (c) => c === 'fontes_divergem' },
+  { id: 'identidade', rotulo: 'Identidade duvidosa', dica: 'Identidade ambígua: a sugestão fica bloqueada', casa: (c) => c === 'identidade_duvidosa', soComCaso: true },
+  { id: 'indisponivel', rotulo: 'Fonte indisponível', dica: 'Uma fonte falhou para estes campos: falha não conta como ausência', casa: (c) => c === 'fonte_indisponivel', soComCaso: true },
   { id: 'revisar', rotulo: 'Razão = nome: revisar', dica: 'A razão social é igual ao nome de exibição e as fontes trazem outra: nunca entra sozinha', casa: (c) => c === 'nome_para_razao_revisar', soComCaso: true },
   { id: 'sem_valor', rotulo: 'Sem valor nas bases', dica: 'Nenhuma fonte interna tem valor (com o CNPJ no legado ou fora dele)', casa: (c) => c === 'sem_valor_legado_presente' || c === 'sem_valor_legado_ausente' },
   { id: 'paga_opcional', rotulo: 'Consulta paga opcional', dica: 'CNPJ fora do legado: uma consulta paga poderia trazer o valor (nunca é disparada aqui)', casa: (c) => c === 'sem_valor_legado_ausente' },
@@ -98,6 +101,8 @@ export function RevisaoCadastral() {
   const [motivo, setMotivo] = React.useState('');
   const [gerando, setGerando] = React.useState(false);
   const [aviso, setAviso] = React.useState<string | null>(null);
+  // RC-008 F30/F31: erro de geração PERSISTENTE (não some sozinho nem com filtro/expansão; só ao fechar ou no próximo sucesso)
+  const [erroGerar, setErroGerar] = React.useState<string | null>(null);
   const [filtro, setFiltro] = React.useState<Filtro>('todas');
   const [abertas, setAbertas] = React.useState<Set<string>>(new Set());
   const caixa = React.useRef<HTMLDivElement>(null);
@@ -109,9 +114,10 @@ export function RevisaoCadastral() {
     const r: Resultado = gerar ? await gerarPrevia(signal) : await lerPrevia(signal);
     if (signal?.aborted) return;
     setGerando(false);
-    if (r.tipo === 'ok') { setPrevia(r.previa); setEstado('pronto'); setAbertas(new Set()); if (gerar) setAviso('Gerada agora · leu as fontes; nada foi gravado no CRM nem comprado.'); }
-    else if (r.tipo === 'sem_lote') { if (!gerar || !previa) setEstado('sem_lote'); else setAviso('A API não respondeu à geração (404).'); }
-    else if (gerar && previa) setAviso(`Não foi possível gerar a prévia (${r.motivo}). A anterior continua na tela.`);
+    // RC-008 F32: um lote novo volta o filtro para "Todos" (e recolhe as linhas abertas)
+    if (r.tipo === 'ok') { setPrevia(r.previa); setEstado('pronto'); setAbertas(new Set()); setFiltro('todas'); setErroGerar(null); if (gerar) setAviso('Gerada agora · leu as fontes; nada foi gravado no CRM nem comprado.'); }
+    else if (r.tipo === 'sem_lote') { if (!gerar || !previa) setEstado('sem_lote'); else { setAviso(null); setErroGerar('A API não respondeu à geração (404).'); } }
+    else if (gerar && previa) { setAviso(null); setErroGerar(`Não foi possível gerar a prévia (${r.motivo}). A prévia anterior continua na tela.`); }
     else { setMotivo(r.motivo); setEstado('erro'); }
   }, [previa]);
   React.useEffect(() => { const c = new AbortController(); carregar(false, c.signal); return () => c.abort(); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
@@ -191,7 +197,7 @@ export function RevisaoCadastral() {
       requestAnimationFrame(() => requestAnimationFrame(() => { const excesso = document.documentElement.scrollHeight - window.innerHeight; if (excesso > 0) setAltura(Math.max(280, base - excesso)); }));
     };
     medir(); window.addEventListener('resize', medir); return () => window.removeEventListener('resize', medir);
-  }, [estado, previa]);
+  }, [estado, previa, erroGerar]);   // a faixa de erro muda a altura do topo: remede (uma região de rolagem)
 
   if (estado === 'carregando') return <div className="cs-estado" role="status">Carregando a prévia…</div>;
   if (estado === 'sem_lote') return (
@@ -238,6 +244,11 @@ export function RevisaoCadastral() {
           <div className="cs-kpi" data-cs-kpi="custo"><span className="cs-kpi__num">{reais(0)}</span>
             <span className="cs-kpi__rot" title="A prévia só lê (custo zero). A consulta paga é OPCIONAL e nunca é disparada aqui.">Prévia · opcional {n(lote.custo_opcional?.cnpjs_distintos ?? null)} CNPJs = {reais(custoOpc)}</span></div>
         </div>
+        {erroGerar && (
+          <div className="cs-erro" role="alert" data-cs-erro-gerar>
+            <span>{erroGerar}</span>
+            <button type="button" className="cs-botao" onClick={() => setErroGerar(null)} aria-label="Fechar o aviso de erro">Fechar</button>
+          </div>)}
         {(lote.completa === false || falhas.length > 0) && (
           <div className="cs-incompleta" role="alert" data-cs-incompleta>
             <strong>Prévia incompleta.</strong> {(falhas.length ? falhas : fontes).map((f) => `${f.rotulo}: ${f.estado === 'indisponivel' ? 'indisponível' : f.estado}`).join(' · ')}. Falha não conta como ausência.

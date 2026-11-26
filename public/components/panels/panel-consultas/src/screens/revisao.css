@@ -30,6 +30,8 @@
 .cs-kpi__rot--aviso { color: var(--bl-texto); }
 .cs-kpi__rot em { font-style: normal; font-weight: 600; margin-left: 4px; }
 
+.cs-erro { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12.5px; padding: 4px 6px 4px 12px; border-radius: 8px;
+  color: var(--bl-texto); background: var(--bl-erro-bg); border: 1px solid var(--bl-erro); }
 .cs-incompleta { font-size: 12.5px; padding: 6px 12px; border-radius: 8px; color: var(--bl-texto); background: var(--bl-aviso-bg); border: 1px solid var(--bl-aviso); }
 
 .cs-filtros { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; justify-content: center; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; min-width: 0; }
