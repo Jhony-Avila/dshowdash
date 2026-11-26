@@ -61,6 +61,10 @@ export default defineConfig({
             if (/[\\/]node_modules[\\/](echarts|zrender)[\\/]/.test(id)) {
               return 'echarts';
             }
+            // 26/11 (ROXO): AG Grid só na tela Cobranças vencidas (import dinâmico) — chunk próprio, a Geral não carrega
+            if (/[\\/]node_modules[\\/](ag-grid-community|@ag-grid-community)[\\/]/.test(id)) {
+              return 'ag-grid';
+            }
             return 'vendor';
           }
           return undefined;

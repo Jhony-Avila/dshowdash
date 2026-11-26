@@ -4,8 +4,8 @@
 // Regras do serviço que a tela respeita: total só com TODAS as empresas ok (senão "—" + por empresa); empresa sem leitura atual = "—" com o
 // motivo, nunca R$ 0; valor bruto da cobrança (sem juros/multa). A tela nunca mostra chave nem CNPJ (o serviço não manda).
 import { useState, type ReactNode } from 'react';
-import { ArrowLeft, ArrowRight, Banknote } from 'lucide-react';
-import { ErroV2, dinheiro, fmtData, fmtDiaMes, fmtMoeda2, fmtN, fmtQuando, lerVencidasAsaas, type AsaasCartao, type AsaasEmpresa, type Fonte } from './servico';
+import { ArrowRight, Banknote } from 'lucide-react';
+import { ErroV2, dinheiro, fmtDiaMes, fmtMoeda2, fmtN, fmtQuando, type AsaasCartao, type AsaasEmpresa, type Fonte } from './servico';
 import { Problema, useBloco } from './comuns';
 
 type BlocoAsaas = ReturnType<typeof useBloco<AsaasCartao>>;
@@ -130,64 +130,4 @@ function PorEmpresa({ empresas }: { empresas: AsaasEmpresa[] }) {
   );
 }
 
-/** Drill-down "Vencidas do Asaas": empresa, cliente, vencimento, valor e dias de atraso (P34). */
-export function VencidasAsaas({ aoVoltar }: { aoVoltar: () => void }) {
-  const b = useBloco((s) => lerVencidasAsaas(s), []);
-  const d = b.dados;
-  const linhas = (d?.contas ?? []).flatMap((c) => (c.cobrancas ?? []).map((x) => ({ c, x })));
-  const fora = (d?.contas ?? []).filter((c) => !c.disponivel);
-  const truncadas = (d?.contas ?? []).filter((c) => c.truncada);
-  const qtd = (d?.contas ?? []).reduce((s, c) => s + (c.disponivel && c.qtd !== null ? c.qtd : 0), 0);
-  const soma = (d?.contas ?? []).reduce((s, c) => s + (c.disponivel ? dinheiro(c.total) ?? 0 : 0), 0);
-  return (
-    <div className="gv2-lista" data-gv2-vencidas-asaas>
-      <nav className="gv2-trilha" aria-label="Você está em">
-        <button type="button" className="gv2-link" onClick={aoVoltar}><ArrowLeft size={13} aria-hidden /> Geral</button>
-        <span aria-hidden>›</span><span>Vencidas do Asaas</span>
-      </nav>
-      <section className="gv2-sec">
-        <div className="gv2-sec-cab">
-          <h2 className="gv2-h2">Cobranças vencidas · Asaas</h2>
-          <span className="gv2-fraco gv2-dir">
-            {d ? `${fmtN(qtd)} ${qtd === 1 ? 'cobrança' : 'cobranças'} · ${fmtMoeda2(soma)}${fora.length ? ` nas empresas com leitura (${fora.length} sem leitura)` : ''} · conferido ${fmtQuando(d.gerado_em)}` : b.carregando ? 'Carregando…' : '—'}
-          </span>
-        </div>
-        {b.carregando && !d ? (
-          <ul className="gv2-integ-lista" aria-busy>{[0, 1, 2, 3].map((k) => <li key={k} className="gv2-integ gv2-integ--osso"><span className="gv2-osso" style={{ width: '30%' }} /><span className="gv2-osso" style={{ width: '55%' }} /></li>)}</ul>
-        ) : b.erro instanceof ErroV2 && (b.erro.http === 404 || b.erro.semAcesso) && !d ? (
-          <p className="gv2-fraco">Seu acesso não inclui as cobranças do Asaas.</p>
-        ) : !d ? (
-          <Problema motivo="Não foi possível ler as cobranças vencidas agora." quando={null} onTentar={b.recarregar} tentando={b.atualizando} />
-        ) : (
-          <>
-            {b.erro && <Problema motivo="A atualização falhou; mostrando a última leitura." quando={b.okEm} onTentar={b.recarregar} tentando={b.atualizando} />}
-            {fora.map((c) => <p key={c.conta} className="gv2-aviso-linha" data-gv2-vencidas-sem-leitura={c.conta}>{nomeEmp(c)}: — · {textoMotivoAsaas(c.motivo) || 'sem leitura'} · vencidas desconhecidas, não é zero.</p>)}
-            {truncadas.map((c) => <p key={`t-${c.conta}`} className="gv2-fraco">{nomeEmp(c)}: mostrando as {fmtN(d.limite_por_empresa)} mais antigas de {fmtN(c.qtd)}.</p>)}
-            {linhas.length === 0 ? (
-              <p className="gv2-fraco">{fora.length ? 'Nenhuma cobrança vencida nas empresas com leitura.' : 'Nenhuma cobrança vencida.'}</p>
-            ) : (
-              <div className="gv2-asaas-rolar">
-                <table className="gv2-asaas-tab gv2-venc-tab">
-                  <caption className="gv2-sr">Cobranças vencidas do Asaas</caption>
-                  <thead><tr><th scope="col">Empresa</th><th scope="col">Cliente (código Asaas)</th><th scope="col">Vencimento</th><th scope="col">Valor</th><th scope="col">Dias de atraso</th></tr></thead>
-                  <tbody>
-                    {linhas.map(({ c, x }) => (
-                      <tr key={`${c.conta}:${x.cobranca}`}>
-                        <td>{nomeEmp(c)}</td>
-                        <td>{x.cliente ?? '—'}</td>
-                        <td>{x.vencimento ? fmtData(x.vencimento) : '—'}</td>
-                        <td className="gv2-conc-num">{fmtMoeda2(dinheiro(x.valor))}</td>
-                        <td className="gv2-conc-num">{x.dias_atraso === null ? '—' : fmtN(x.dias_atraso)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            <p className="gv2-fraco">Valor bruto da cobrança, sem juros nem multa. O serviço informa o cliente pelo código do Asaas.</p>
-          </>
-        )}
-      </section>
-    </div>
-  );
-}
+// (26/11) o drill-down simples da P34 foi substituído pela tela Cobrancas.tsx (contrato v1 do VINHO).

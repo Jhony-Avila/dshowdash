@@ -23,7 +23,8 @@ export interface DSKpiCardV2Props {
   /** série do micrográfico (7–30 pontos, do serviço). Sem série: nada. null no meio = ponto desconhecido (a linha quebra). */
   serie?: (number | null)[] | null;
   fonte: string; acao?: { rotulo: string; onClick: () => void } | null; onTentar?: () => void; tentando?: boolean; dica?: string;
-  animar?: boolean; /** só a A vai para o Dash (a B ficou no Lab) */ variante?: 'A'; dados?: Record<`data-${string}`, string | undefined>;
+  animar?: boolean; /** só a A vai para o Dash (a B ficou no Lab) */ variante?: 'A';
+  /** faixa travada de uma tela (Cobranças vencidas): ícone 22, número 22 px, sem micrográfico nem rodapé; ~88 px */ compacto?: boolean; dados?: Record<`data-${string}`, string | undefined>;
 }
 
 const SELO_PADRAO: Partial<Record<EstadoKpi, [string, TomSelo]>> = {
@@ -76,9 +77,30 @@ export function DSKpiCardV2(p: DSKpiCardV2Props) {
   const selo = p.selo === null ? null : p.selo ?? (padrao ? { texto: padrao[0], tom: padrao[1] } : null);
   const carregando = p.estado === 'carregando';
   const semNumero = p.estado === 'vazio' || p.estado === 'erro' || p.valor === null;
-  const temSerie = !semNumero && !!p.serie && p.serie.filter((x) => x !== null).length >= 2;
+  const temSerie = !p.compacto && !semNumero && !!p.serie && p.serie.filter((x) => x !== null && Number.isFinite(x)).length >= 2;
+  if (p.compacto) {
+    // faixa KPI travada (contrato espacial aprovado 26/11: ≤ 56 px): rótulo · número · uma linha de contexto. O estado nunca some: fora de 'ok'
+    // a linha de contexto é o selo + o motivo. Número sem cortar (o tamanho acompanha a largura do cartão: R$ 999.999.999,99 cabe).
+    const linha = p.estado === 'ok' ? p.sub : (
+      <>{selo && <span className={`des-selo des-selo--${selo.tom} des2-kpi__selo`} data-des-selo>{selo.texto}</span>}{p.motivo ? <span> {p.motivo}</span> : null}
+        {p.estado === 'erro' && p.onTentar && <button type="button" className="des-link" onClick={p.onTentar} disabled={p.tentando}> {p.tentando ? 'Tentando…' : 'Tentar de novo'}</button>}</>);
+    return (
+      <article className="des2-kpi des2-kpi--A des2-kpi--compacto" data-des-kpi data-des-estado={p.estado} data-des-dominio={p.dominio ?? 'neutro'} aria-busy={carregando || undefined} title={p.dica} {...p.dados}>
+        {/* sem a caixa do ícone: a largura vai para o número e a linha de contexto (nada cortado na faixa de 56 px) */}
+        <div className="des2-kpi__cmp">
+          <h3 className="des2-kpi__rotulo" data-des-rotulo>{p.rotulo}</h3>
+          {carregando ? <span className="des-osso" style={{ width: '70%', height: 18 }} /> : (
+            // número longo (≥ 14 caracteres, ex.: R$ 1.000.000.000) encolhe mais com a largura do cartão: nunca corta
+            <div className={`des2-kpi__valor${semNumero ? ' des2-kpi__valor--vazio' : p.estado === 'desatualizado' ? ' des2-kpi__valor--velho' : ''}`} data-des-valor
+              data-des-longo={!semNumero && p.valor !== null && fmtKpi(p.valor, p.formato).length >= 14 ? '' : undefined}>
+              {semNumero || p.valor === null ? '—' : <Numero v={p.valor} f={p.formato} animar={p.animar} />}</div>)}
+          {!carregando && linha ? <span className="des2-kpi__sub" data-des-sub>{linha}</span> : null}
+        </div>
+      </article>
+    );
+  }
   return (
-    <article className={`des2-kpi des2-kpi--${v}`} data-des-kpi data-des-estado={p.estado} data-des-dominio={p.dominio ?? 'neutro'} aria-busy={carregando || undefined} title={p.dica} {...p.dados}>
+    <article className={`des2-kpi des2-kpi--${v}${p.compacto ? ' des2-kpi--compacto' : ''}`} data-des-kpi data-des-estado={p.estado} data-des-dominio={p.dominio ?? 'neutro'} aria-busy={carregando || undefined} title={p.dica} {...p.dados}>
       <header className="des2-kpi__cab">
         {p.icone && <span className="des2-kpi__ic" aria-hidden>{p.icone}</span>}
         <div className="des2-kpi__tit">
@@ -110,7 +132,7 @@ export function DSKpiCardV2(p: DSKpiCardV2Props) {
       )}
       {/* rodapé só com o que acrescenta: micrográfico e/ou ação. A fonte já está no marcador ("Financeiro · Precifica"); repeti-la sozinha
           esticava os cartões de estado acima de 160 px (a linha inteira da Geral cresce junto). Sem marcador, a fonte volta para o rodapé. */}
-      {(temSerie || (p.acao && !carregando) || !p.marcador) && (
+      {!p.compacto && (temSerie || (p.acao && !carregando) || !p.marcador) && (
         <footer className="des2-kpi__rodape" data-des-rodape>
           {temSerie ? <Sparkline serie={p.serie!} area={false} /> : <span className="des2-kpi__fonte">{p.marcador ? '' : p.fonte}</span>}
           {p.acao && !carregando && <button type="button" className="des-link des2-kpi__acao" onClick={p.acao.onClick}>{p.acao.rotulo} <ArrowRight size={13} aria-hidden /></button>}

@@ -160,3 +160,39 @@ export function fmtQuando(iso: string): string {
   const dia = (x: Date) => x.toLocaleDateString('pt-BR', { timeZone: FUSO });
   return dia(d) === dia(new Date()) ? `às ${fmtHora(iso)}` : `${fmtDiaMes(iso)} às ${fmtHora(iso)}`;
 }
+
+// ── Cobranças vencidas · Asaas (26/11, contrato v1 do VINHO/ACIMA_ESQUERDA, PARA-STATUS 13:40) ──────────────────────────
+// GET /api/asaas/?r=vencidas_resumo | vencidas_lista | vencida&id= · mesmo portão do Asaas (404 = sem acesso) · dinheiro em texto · null = "—".
+export interface EmpresaCv { conta: string; rotulo: string }
+export interface SemLeituraCv { empresa: EmpresaCv; motivo: string | null }
+export interface SomaCv { valor: string | null; cobrancas: number | null }
+export type FaixaCv = '1-30' | '31-90' | '91-180' | '180+';
+export interface ResumoCv {
+  gerado_em: string; empresa: EmpresaCv | null; completo: boolean; empresas_sem_leitura: SemLeituraCv[];
+  total: { valor: string | null; cobrancas: number | null; clientes: number | null } | null;
+  por_vencimento: { mes_atual: SomaCv | null; ultimos_30_dias: SomaCv | null; ultimos_3_meses: SomaCv | null } | null;
+  faixas: { faixa: FaixaCv; valor: string | null; cobrancas: number | null }[] | null;
+  maior: { id: string; empresa: EmpresaCv; cliente_nome: string | null; valor: string | null; dias_atraso: number | null } | null;
+  /** opcional (pedido ao VINHO): as empresas que podem ser filtradas */
+  empresas?: EmpresaCv[] | null;
+}
+export interface ItemCv {
+  id: string; empresa: EmpresaCv; cliente_nome: string | null; vencimento: string | null;
+  valor_original: string | null; valor_atualizado: string | null; juros_multa: string | null; dias_atraso: number | null;
+  forma: { codigo: string | null; rotulo: string | null } | null;
+  situacao: { status_asaas: string | null; negativacao: boolean | null; protesto: null; cobranca_externa: null } | null;
+}
+export interface ListaCv { total: number | null; pagina: number; por_pagina: number; completo: boolean; empresas_sem_leitura: SemLeituraCv[]; itens: ItemCv[] }
+export interface DetalheCv extends ItemCv {
+  cliente_codigo: string | null; descricao: string | null; numero_fatura: string | null; link_fatura: string | null; criada_em: string | null;
+  vencimento_original: string | null; eventos: { data: string; evento: string }[] | null;
+  outras_do_cliente: { cobrancas: number | null; valor: string | null; itens: { id: string; vencimento: string | null; valor_original: string | null; dias_atraso: number | null }[] } | null;
+}
+const qEmp = (empresa: string | null) => (empresa ? `&empresa=${encodeURIComponent(empresa)}` : '');
+export function lerResumoCv(empresa: string | null, s?: AbortSignal) { return ler<ResumoCv>(`/api/asaas/?r=vencidas_resumo${qEmp(empresa)}`, s, 20000); }
+/** A tela carrega até POR_PAGINA_CV linhas de uma vez (maiores primeiro) e ordena/filtra localmente em todas as colunas. */
+export const POR_PAGINA_CV = 500;
+export function lerListaCv(empresa: string | null, s?: AbortSignal) {
+  return ler<ListaCv>(`/api/asaas/?r=vencidas_lista&ordem=valor&dir=desc&pagina=1&por_pagina=${POR_PAGINA_CV}${qEmp(empresa)}`, s, 20000);
+}
+export function lerDetalheCv(id: string, s?: AbortSignal) { return ler<DetalheCv>(`/api/asaas/?r=vencida&id=${encodeURIComponent(id)}`, s, 20000); }

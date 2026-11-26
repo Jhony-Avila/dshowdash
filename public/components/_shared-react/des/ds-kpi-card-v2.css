@@ -60,3 +60,16 @@
 .des2-kpi__sub { line-height: 16px; }
 .des2-kpi__rodape { min-height: 26px; }
 .des2-spark { height: 26px; }
+/* compacto (26/11, Cobranças vencidas): faixa KPI travada ≤ 56 px (contrato espacial aprovado pelo Jhony 13:44). Ícone à esquerda;
+   rótulo 12/14 · número 20/22 (encolhe com a largura do cartão, nunca corta) · contexto 12/14. */
+.des2-kpi--compacto { flex-direction: row; align-items: center; gap: 8px; min-height: 0; height: 56px; padding: 2px 10px; border-radius: 10px; container-type: inline-size; }
+.des2-kpi--compacto .des2-kpi__ic { width: 24px; height: 24px; border-radius: 6px; }
+.des2-kpi--compacto .des2-kpi__cmp { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+.des2-kpi--compacto .des2-kpi__rotulo { font-size: 12px; line-height: 14px; color: var(--des-dim); }
+.des2-kpi--compacto .des2-kpi__valor { font-size: min(20px, 14cqi); line-height: 22px; height: 22px; overflow: visible; }
+.des2-kpi--compacto .des2-kpi__sub { font-size: 12px; line-height: 14px; display: flex; align-items: center; gap: 4px; }
+.des2-kpi--compacto .des2-kpi__selo { margin: 0; padding: 0 6px; font-size: 12px; line-height: 14px; }
+.des2-kpi--compacto .des-link { padding: 0; font-size: 12px; line-height: 14px; }
+.des2-kpi--compacto:hover { transform: none; }
+.des2-kpi--compacto .des2-kpi__selo { height: 16px; }
+.des2-kpi--compacto .des2-kpi__valor[data-des-longo] { font-size: min(20px, 10cqi); }

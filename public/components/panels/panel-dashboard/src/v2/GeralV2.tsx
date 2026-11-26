@@ -4,7 +4,7 @@
 // Regras: períodos Ontem / Últimos 7 dias / Mês até ontem (dias completos, corte em Brasília); prioridades = situação de AGORA
 // (não mudam com o período), no máximo 3, por gravidade e depois antiguidade; pedidos, ganhos e funil são conceitos SEPARADOS
 // (nunca somados); sem "Comparação: período anterior"; texto mínimo de 12 px; falha nunca vira zero; estado sempre escrito.
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AlertTriangle, ArrowRight, CalendarDays, CheckCircle2, ExternalLink, PlugZap } from 'lucide-react';
 import {
   ErroV2, dinheiro, fmtData, fmtDiaMes, fmtHora, fmtMoeda2, fmtN, fmtQuando, hojeExtenso, numDe,
@@ -15,7 +15,9 @@ import { Integracoes } from './Integracoes';
 import type { FormatoKpi } from '@shared/des/DSKpiCard';
 import { DSKpiCardV2 as DSKpiCard, type DominioKpi } from '@shared/des/DSKpiCardV2';   // v2, variação A (escolha do Jhony, 26/11)
 import { BarChartSquare02, Package as IcPacote, TrendUp01, Wallet02 } from '@shared/des/icones-pro';
-import { CartaoAsaas, VencidasAsaas, fonteAsaas } from './Asaas';
+import { CartaoAsaas, fonteAsaas } from './Asaas';
+// 26/11: Cobranças vencidas (AG Grid) sob demanda — a Geral não carrega a grade
+const CobrancasVencidas = lazy(() => import('./Cobrancas'));
 import { ListaPrioridade } from './ListaPrioridade';
 import { Problema, useBloco } from './comuns';
 import { FONTE_DO_INDICADOR, NOME_FONTE, efetivo, fonteEfetiva, textoSemValor, type Efetivo, type FontesLidas, type IdIndicador } from './coerencia';
@@ -95,7 +97,7 @@ export function GeralV2() {
   const efs = indicadoresEfetivos(resumo, prioridades, agenda, fl);
 
   if (vista.tipo === 'integracoes') return <div ref={topo} className="gv2" data-gv2-vista="integracoes"><Integracoes aoVoltar={() => setVista({ tipo: 'geral' })} /></div>;
-  if (vista.tipo === 'vencidas_asaas') return <div ref={topo} className="gv2" data-gv2-vista="vencidas-asaas"><VencidasAsaas aoVoltar={() => setVista({ tipo: 'geral' })} /></div>;
+  if (vista.tipo === 'vencidas_asaas') return <div ref={topo} className="gv2" data-gv2-vista="vencidas-asaas"><Suspense fallback={<p className="gv2-fraco" aria-busy>Abrindo as cobranças vencidas…</p>}><CobrancasVencidas aoVoltar={() => setVista({ tipo: 'geral' })} /></Suspense></div>;
   if (vista.tipo === 'lista') {
     return <div ref={topo} className="gv2" data-gv2-vista="lista"><ListaPrioridade id={vista.id} quantidadeGeral={vista.quantidade} aoVoltar={() => setVista({ tipo: 'geral' })} /></div>;
   }

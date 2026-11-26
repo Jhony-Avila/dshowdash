@@ -1,0 +1,78 @@
+/* cobrancas.css — "Cobranças vencidas · Asaas" (ROXO/CIMA, 26/11). Contrato espacial aprovado (Jhony 13:44): UM bloco travado e um dono de
+   rolagem (a tabela). A 1440×900: shell 100 + topo 36 + 8 + faixa KPI 56 + cabeçalho da tabela 36 = 236 px (orçamento analítico).
+   Tokens --des-* (pacote DES) e --des-linha-* / --bl-* (tema DSHOW da P50) na grade. Nada global: tudo sob [data-geral-react-root] .cv */
+[data-geral-react-root] .cv { display: flex; flex-direction: column; gap: 8px; min-width: 0; font-family: var(--des-fonte, inherit); color: var(--des-texto); }
+[data-geral-react-root] .cv--travada { overflow: hidden; }
+[data-geral-react-root] .cv-fixo { display: flex; flex-direction: column; gap: 8px; flex: none; }
+[data-geral-react-root] .cv-topo { display: flex; align-items: center; gap: 12px; min-height: 36px; flex-wrap: wrap; }
+[data-geral-react-root] .cv-h1 { margin: 0; font-size: 18px; line-height: 24px; font-weight: 600; letter-spacing: -.01em; }
+[data-geral-react-root] .cv-emp select { height: 30px; padding: 0 8px; border: 1px solid var(--des-borda); border-radius: 8px; background: var(--des-sup); color: var(--des-texto); font: inherit; font-size: 13px; }
+[data-geral-react-root] .cv-conferido, [data-geral-react-root] .cv-dim { font-size: 12px; color: var(--des-dim); }
+[data-geral-react-root] .cv-dir { margin-left: auto; }
+[data-geral-react-root] .cv-total { display: flex; align-items: center; gap: 8px; font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+[data-geral-react-root] .cv-total strong { font-weight: 600; }
+[data-geral-react-root] .cv-csv { height: 28px; }
+/* faixa KPI: 5 big numbers + as faixas de atraso (6ª célula, mais larga), 56 px */
+[data-geral-react-root] .cv-kpis { display: grid; grid-template-columns: minmax(0, 1.2fr) repeat(3, minmax(0, .9fr)) minmax(0, 1.15fr) minmax(0, 2.4fr); gap: 8px; }
+[data-geral-react-root] .cv-maior { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; text-align: left; }
+[data-geral-react-root] .cv-faixas { display: flex; flex-direction: column; justify-content: center; gap: 0; height: 56px; box-sizing: border-box; padding: 4px;
+  border: 1px solid var(--des-borda); border-radius: 10px; background: var(--des-sup); min-width: 0; }
+[data-geral-react-root] .cv-faixas-rot { font-size: 12px; line-height: 14px; color: var(--des-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-geral-react-root] .cv-faixas-barra { display: flex; gap: 4px; height: 46px; min-width: 0; }
+[data-geral-react-root] .cv-faixa { flex: 1 1 0; min-width: 56px; display: inline-flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 0 8px; border-radius: 6px;
+  border: 1px solid transparent; background: var(--cv-f-fundo); color: var(--cv-f-txt); font: inherit; font-size: 12px; line-height: 14px; cursor: pointer; white-space: nowrap; overflow: hidden; }
+[data-geral-react-root] .cv-faixa-rot { font-weight: 500; }
+[data-geral-react-root] .cv-faixa-v { font-weight: 600; font-size: 12px; font-variant-numeric: tabular-nums; }
+[data-geral-react-root] .cv-faixa-v { font-variant-numeric: tabular-nums; }
+[data-geral-react-root] .cv-faixa:hover { border-color: var(--cv-f-txt); }
+[data-geral-react-root] .cv-faixa[aria-pressed="true"] { border-color: var(--cv-f-txt); box-shadow: inset 0 0 0 1px var(--cv-f-txt); font-weight: 600; }
+[data-geral-react-root] .cv-faixa:focus-visible { outline: 2px solid var(--des-link); outline-offset: 1px; }
+/* cor por faixa (sempre com o texto da faixa junto): 1–30 aviso leve · 31–90 aviso · 91–180 erro · 180+ erro forte */
+[data-geral-react-root] .cv { --cv-f1: var(--des-aviso-txt); --cv-f2: var(--des-aviso-txt); --cv-f3: var(--des-erro-txt); --cv-f4: var(--des-erro-txt); }
+[data-geral-react-root] .cv-faixa--1 { --cv-f-txt: var(--cv-f1); --cv-f-fundo: color-mix(in srgb, var(--des-aviso) 8%, transparent); }
+[data-geral-react-root] .cv-faixa--2 { --cv-f-txt: var(--cv-f2); --cv-f-fundo: color-mix(in srgb, var(--des-aviso) 16%, transparent); }
+[data-geral-react-root] .cv-faixa--3 { --cv-f-txt: var(--cv-f3); --cv-f-fundo: color-mix(in srgb, var(--des-erro) 12%, transparent); }
+[data-geral-react-root] .cv-faixa--4 { --cv-f-txt: var(--cv-f4); --cv-f-fundo: color-mix(in srgb, var(--des-erro) 22%, transparent); }
+:root[data-theme="light"] [data-geral-react-root] .cv, :root.theme-light [data-geral-react-root] .cv { --cv-f1: #92400e; --cv-f2: #92400e; --cv-f3: #b91c1c; --cv-f4: #991b1b; }
+/* tabela: o único dono de rolagem */
+[data-geral-react-root] .cv-corpo { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; background: transparent; }
+[data-geral-react-root] .cv-grade-caixa { flex: 1 1 auto; min-height: 0; display: flex; }
+[data-geral-react-root] .cv-grade-caixa[hidden] { display: none; }
+[data-geral-react-root] .cv-grade { flex: 1 1 auto; min-height: 0; width: 100%; }
+[data-geral-react-root] .cv:not(.cv--travada) .cv-grade { height: 560px; }
+[data-geral-react-root] .cv-grade .ag-row { cursor: pointer; }
+[data-geral-react-root] .cv-carregando { padding: 16px; font-size: 13px; color: var(--des-dim); }
+[data-geral-react-root] .cv-vazio { font-size: 13px; color: var(--des-dim); }
+[data-geral-react-root] .cv-atraso { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums;
+  color: var(--cv-f-txt, var(--des-dim)); background: var(--cv-f-fundo, transparent); }
+[data-geral-react-root] .cv-atraso--1 { --cv-f-txt: var(--cv-f1); --cv-f-fundo: color-mix(in srgb, var(--des-aviso) 10%, transparent); }
+[data-geral-react-root] .cv-atraso--2 { --cv-f-txt: var(--cv-f2); --cv-f-fundo: color-mix(in srgb, var(--des-aviso) 18%, transparent); }
+[data-geral-react-root] .cv-atraso--3 { --cv-f-txt: var(--cv-f3); --cv-f-fundo: color-mix(in srgb, var(--des-erro) 14%, transparent); }
+[data-geral-react-root] .cv-atraso--4 { --cv-f-txt: var(--cv-f4); --cv-f-fundo: color-mix(in srgb, var(--des-erro) 24%, transparent); }
+/* painel lateral (~480 px), não modal: a tabela continua montada atrás (filtro, ordem e rolagem preservados) */
+[data-geral-react-root] .cv-detalhe { position: fixed; z-index: 40; top: var(--cv-det-topo, 100px); right: 0; bottom: 0; width: min(480px, 100vw); box-sizing: border-box;
+  display: flex; flex-direction: column; background: var(--des-sup); border-left: 1px solid var(--des-borda); box-shadow: -16px 0 32px -20px rgba(0, 0, 0, .45); }
+[data-geral-react-root] .cv-det-cab { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--des-borda); }
+[data-geral-react-root] .cv-det-tit { margin: 0; flex: 1 1 auto; font-size: 16px; font-weight: 600; line-height: 22px; min-width: 0; overflow-wrap: anywhere; }
+[data-geral-react-root] .cv-det-tit:focus { outline: none; }
+[data-geral-react-root] .cv-det-tit:focus-visible { outline: 2px solid var(--des-link); outline-offset: 2px; }
+[data-geral-react-root] .cv-fechar { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 1px solid var(--des-borda); border-radius: 8px; background: transparent; color: var(--des-texto); cursor: pointer; }
+[data-geral-react-root] .cv-fechar:focus-visible { outline: 2px solid var(--des-link); outline-offset: 2px; }
+[data-geral-react-root] .cv-det-corpo { flex: 1 1 auto; overflow: auto; padding: 14px 16px 20px; display: flex; flex-direction: column; gap: 12px; font-size: 13px; }
+[data-geral-react-root] .cv-det-sub { margin: 0; color: var(--des-dim); font-size: 12px; overflow-wrap: anywhere; }
+[data-geral-react-root] .cv-det-sub code { font-size: 12px; }
+[data-geral-react-root] .cv-det-valores { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+[data-geral-react-root] .cv-det-valores > div { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px solid var(--des-borda); border-radius: 10px; }
+[data-geral-react-root] .cv-det-rot, [data-geral-react-root] .cv-det-nota { font-size: 12px; color: var(--des-dim); }
+[data-geral-react-root] .cv-det-num { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+[data-geral-react-root] .cv-det-dl { display: grid; grid-template-columns: 120px 1fr; gap: 6px 12px; margin: 0; }
+[data-geral-react-root] .cv-det-dl dt { color: var(--des-dim); font-size: 12px; }
+[data-geral-react-root] .cv-det-dl dd { margin: 0; overflow-wrap: anywhere; }
+[data-geral-react-root] .cv-det-link { align-self: flex-start; text-decoration: none; }
+[data-geral-react-root] .cv-det-h3 { margin: 6px 0 0; font-size: 13px; font-weight: 600; }
+[data-geral-react-root] .cv-det-soma { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+[data-geral-react-root] .cv-det-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+[data-geral-react-root] .cv-det-lista li { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; padding: 6px 0; border-top: 1px solid var(--des-borda); }
+[data-geral-react-root] .cv-num { text-align: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 1100px) { [data-geral-react-root] .cv-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } [data-geral-react-root] .cv-faixas { grid-column: span 3; } }
+@media (max-width: 600px) { [data-geral-react-root] .cv-kpis { grid-template-columns: 1fr 1fr; } [data-geral-react-root] .cv-faixas { grid-column: span 2; } [data-geral-react-root] .cv-dir { margin-left: 0; } }
