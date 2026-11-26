@@ -190,9 +190,16 @@ export interface DetalheCv extends ItemCv {
 }
 const qEmp = (empresa: string | null) => (empresa ? `&empresa=${encodeURIComponent(empresa)}` : '');
 export function lerResumoCv(empresa: string | null, s?: AbortSignal) { return ler<ResumoCv>(`/api/asaas/?r=vencidas_resumo${qEmp(empresa)}`, s, 20000); }
-/** A tela carrega até POR_PAGINA_CV linhas de uma vez (maiores primeiro) e ordena/filtra localmente em todas as colunas. */
-export const POR_PAGINA_CV = 500;
-export function lerListaCv(empresa: string | null, s?: AbortSignal) {
-  return ler<ListaCv>(`/api/asaas/?r=vencidas_lista&ordem=valor&dir=desc&pagina=1&por_pagina=${POR_PAGINA_CV}${qEmp(empresa)}`, s, 20000);
+/** A tela carrega as vencidas em páginas de 200 (o limite do serviço, P53), maiores primeiro, até LIMITE_CV linhas, e ordena/filtra
+ *  localmente em todas as colunas. Acima do limite, a tela avisa "as LIMITE_CV maiores de N" (nunca corta sem aviso). */
+export const POR_PAGINA_CV = 200;
+export const LIMITE_CV = 1000;
+export async function lerListaCv(empresa: string | null, s?: AbortSignal): Promise<ListaCv> {
+  const pag = (n: number) => ler<ListaCv>(`/api/asaas/?r=vencidas_lista&ordem=valor&dir=desc&pagina=${n}&por_pagina=${POR_PAGINA_CV}${qEmp(empresa)}`, s, 20000);
+  const primeira = await pag(1); const itens = [...primeira.itens];
+  for (let n = 2; primeira.total !== null && itens.length < Math.min(primeira.total, LIMITE_CV); n++) {
+    const p = await pag(n); if (!p.itens.length) break; itens.push(...p.itens);
+  }
+  return { ...primeira, itens: itens.slice(0, LIMITE_CV) };
 }
 export function lerDetalheCv(id: string, s?: AbortSignal) { return ler<DetalheCv>(`/api/asaas/?r=vencida&id=${encodeURIComponent(id)}`, s, 20000); }

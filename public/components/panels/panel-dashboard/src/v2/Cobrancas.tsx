@@ -14,7 +14,7 @@ import '@shared/styles/tokens.css';
 // registrado só por esta tela — o grade.ts compartilhado não muda
 ModuleRegistry.registerModules([ClientSideRowModelApiModule]);
 import {
-  ErroV2, POR_PAGINA_CV, dinheiro, fmtData, fmtHora, fmtMoeda2, fmtMoedaCurta, fmtN, fmtQuando, lerDetalheCv, lerListaCv, lerResumoCv,
+  ErroV2, LIMITE_CV, dinheiro, fmtData, fmtHora, fmtMoeda2, fmtMoedaCurta, fmtN, fmtQuando, lerDetalheCv, lerListaCv, lerResumoCv,
   type DetalheCv, type EmpresaCv, type FaixaCv, type ItemCv, type ResumoCv,
 } from './servico';
 import { Problema, useBloco } from './comuns';
@@ -213,7 +213,7 @@ export default function CobrancasVencidas({ aoVoltar }: { aoVoltar: () => void }
           <span className="cv-conferido" data-cv-conferido>{r ? `conferido às ${fmtHora(r.gerado_em)}` : resumo.carregando ? 'lendo…' : 'conferido às —'}</span>
           <div className="cv-total cv-dir" data-cv-total aria-live="polite">
             {totais ? <><strong>{plural(totais.n, 'cobrança', 'cobranças')} · {fmtMoeda2(totais.soma)}</strong>{totais.desconhecidos ? ` · ${totais.desconhecidos} sem valor` : ''}{faixa ? ' na faixa' : ''}</> : '—'}
-            {truncada && <span className="cv-dim" data-cv-truncada> · as {fmtN(POR_PAGINA_CV)} maiores de {fmtN(total)}</span>}
+            {truncada && <span className="cv-dim" data-cv-truncada> · as {fmtN(LIMITE_CV)} maiores de {fmtN(total)}</span>}
             <button type="button" className="des-btn cv-csv" onClick={() => apiRef.current && exportarCsv(apiRef.current, `cobrancas-vencidas-${new Date().toISOString().slice(0, 10)}.csv`)} disabled={!lista.dados}>
               <Download size={13} aria-hidden /> CSV</button>
           </div>
