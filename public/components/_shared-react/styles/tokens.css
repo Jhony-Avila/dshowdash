@@ -2,16 +2,14 @@
  * @version 1.0.0  @created 2026-07-30
  *
  * ─── COMO O TEMA É DETECTADO (leia antes de mexer) ────────────────────────
- * Este projeto tem uma armadilha conhecida: a classe `theme-light` existe no
- * <html> nos DOIS temas. Escrever `:root.theme-light { ... }` PRENDE o painel
- * no tema claro para sempre.
- *
- * Os sinais confiáveis são, nesta ordem:
- *   1. html[data-theme="light"|"dark"]
- *   2. body.theme-light / body.theme-dark
+ * FONTE ÚNICA: html[data-theme="light"|"dark"] (GOVERNANCA-DES; auditoria UX03b, ROXO 26/11).
+ * Medido no DOM (8112, tema trocado pelo BOTÃO do shell): o <html> troca classe
+ * e data-theme juntos; o <body>.theme-* NÃO troca (fica o tema da abertura).
+ * Por isso `body.theme-light` NÃO é sinal: com ele, "claro → escuro" pelo botão
+ * prendia as tabelas no claro. Também não usar :root.theme-light.
  *
  * O padrão abaixo é ESCURO (o dashboard é escuro por padrão) e o claro só entra
- * quando um dos dois sinais confiáveis aparece. Sempre medir os dois temas lado
+ * com html[data-theme="light"]. Sempre medir os dois temas lado
  * a lado depois de alterar qualquer cor aqui.
  * ──────────────────────────────────────────────────────────────────────────
  *
@@ -75,9 +73,8 @@
   --bl-fonte-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 }
 
-/* ── Tema claro: só pelos sinais confiáveis ───────────────────────────── */
-html[data-theme="light"] [data-bl-root],
-body.theme-light [data-bl-root] {
+/* ── Tema claro: só pela fonte única html[data-theme] ─────────────────── */
+html[data-theme="light"] [data-bl-root] {
   --bl-bg:            #f5f6f9;
   --bl-bg-elevado:    #ffffff;
   --bl-superficie:    #ffffff;
