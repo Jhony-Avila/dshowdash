@@ -7,7 +7,7 @@
 // NÃO exportado pelo index.ts: quem usa importa '@shared/ag-grid/grade' (o bundle dos outros painéis não muda).
 import {
   ModuleRegistry, ClientSideRowModelModule, TextFilterModule, NumberFilterModule, CsvExportModule, CellStyleModule, RowStyleModule,
-  ColumnApiModule, LocaleModule, RowSelectionModule, TooltipModule, ColumnAutoSizeModule, RenderApiModule, RowApiModule, ScrollApiModule,
+  ColumnApiModule, LocaleModule, RowSelectionModule, PinnedRowModule, TooltipModule, ColumnAutoSizeModule, RenderApiModule, RowApiModule, ScrollApiModule,
   createGrid, themeQuartz, type GridApi, type GridOptions,
 } from 'ag-grid-community';
 import { AG_GRID_LOCALE_PT_BR } from '@ag-grid-community/locale';
@@ -16,7 +16,7 @@ let registrado = false;
 function registrar(): void {
   if (registrado) return;
   ModuleRegistry.registerModules([ClientSideRowModelModule, TextFilterModule, NumberFilterModule, CsvExportModule, CellStyleModule, RowStyleModule,
-    ColumnApiModule, LocaleModule, RowSelectionModule, TooltipModule, ColumnAutoSizeModule, RenderApiModule, RowApiModule, ScrollApiModule]);
+    ColumnApiModule, LocaleModule, RowSelectionModule, PinnedRowModule, TooltipModule, ColumnAutoSizeModule, RenderApiModule, RowApiModule, ScrollApiModule]);
   registrado = true;
 }
 

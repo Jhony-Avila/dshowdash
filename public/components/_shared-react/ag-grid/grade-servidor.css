@@ -1,0 +1,23 @@
+/* _shared-react/ag-grid/grade-servidor.css — moldura da GradeServidor (barra, menu de colunas, paginação): a MESMA aparência do DataGrid do Bling
+   (tokens --bl-*). O corpo é o AG Grid com o tema DSHOW (grade.ts). */
+.bl-ag__barra { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 9px 12px; border-bottom: 1px solid var(--bl-borda); }
+.bl-ag__busca { height: 28px; min-width: 190px; flex: 0 1 260px; padding: 0 10px; font: inherit; font-size: 12px; color: var(--bl-texto);
+  background: var(--bl-superficie-2); border: 1px solid var(--bl-borda); border-radius: var(--bl-raio-sm); }
+.bl-ag__conta { font-size: 12px; color: var(--bl-texto-2); }
+.bl-ag__sel { font-size: 12px; color: var(--bl-verde); }
+.bl-ag__menu { position: absolute; right: 0; top: 34px; z-index: 31; width: 232px; max-height: 320px; overflow: auto; padding: 8px;
+  background: var(--bl-overlay); border: 1px solid var(--bl-borda); border-radius: var(--bl-raio); box-shadow: var(--bl-sombra); }
+.bl-ag__menu-rot { font-size: 11px; color: var(--bl-texto-3); padding: 2px 4px 6px; }
+.bl-ag__menu-item { display: flex; align-items: center; gap: 8px; padding: 4px; font-size: 12px; cursor: pointer; }
+.bl-ag__menu-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bl-ag__dens { flex: 1; height: 24px; font-size: 11px; justify-content: center; }
+.bl-ag__dens[aria-pressed="true"] { background: var(--bl-verde-suave); border-color: var(--bl-verde-borda); }
+.bl-ag__corpo { min-width: 0; }
+.bl-ag__corpo .ag-row-odd { background-color: var(--bl-superficie-2); }
+.bl-ag__corpo .ag-row-pinned { font-weight: 600; background: var(--bl-bg-elevado); }
+.bl-ag__corpo .bl-ag-txt { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; font-size: 12px; }
+.bl-ag__corpo .bl-ag-total { font-variant-numeric: tabular-nums; font-size: 12px; }
+.bl-ag__corpo .bl-ag-imagem { display: inline-block; width: 22px; height: 22px; border-radius: 4px; background: var(--bl-superficie-2); border: 1px solid var(--bl-borda); }
+.bl-ag__paginas { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 12px; border-top: 1px solid var(--bl-borda); font-size: 12px; color: var(--bl-texto-2); }
+.bl-ag__porpagina { display: flex; align-items: center; gap: 5px; }
+.bl-ag__porpagina select { height: 26px; font: inherit; font-size: 12px; color: var(--bl-texto); background: var(--bl-superficie-2); border: 1px solid var(--bl-borda); border-radius: var(--bl-raio-sm); }

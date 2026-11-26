@@ -64,6 +64,7 @@ export default defineConfig({
         manualChunks(id) {
           if (id.includes('node_modules')) {
             if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'react';
+            if (/[\\/]node_modules[\\/](ag-grid-community|ag-stack|ag-charts-types|@ag-grid-community)[\\/]/.test(id)) return 'ag-grid';   // 26/11: tabela padrão, sob demanda
             if (/[\\/]node_modules[\\/](echarts|zrender)[\\/]/.test(id)) return 'echarts';
             if (/[\\/]node_modules[\\/]d3-/.test(id)) return 'd3';
             if (/[\\/]node_modules[\\/]lucide-react[\\/]/.test(id)) return 'icones';

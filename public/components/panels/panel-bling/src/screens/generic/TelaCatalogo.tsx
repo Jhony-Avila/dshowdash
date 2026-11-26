@@ -14,6 +14,11 @@ import {
   EstadoErro, BlocoCarregando, Secao, porTipo, TipoFormato,
 } from '@shared';
 import { TelaSpec, GraficoSpec } from '../catalog';
+
+// 26/11 (decisão do Jhony): a tabela padrão do Dash é o AG Grid Community, trocada UMA TELA POR DEGRAU. Contas a Pagar é a 1ª do Bling;
+// as outras seguem no DataGrid até o degrau delas. Mesmas props (PropsDataGrid), mesma consulta, carregada sob demanda (chunk `ag-grid`).
+const GradeServidor = React.lazy(() => import('@shared/ag-grid/GradeServidor').then((x) => ({ default: x.GradeServidor })));
+const TELAS_AG_GRID = new Set(['contas-pagar']);
 import { api, RespostaRecurso, Evolucao } from '../../services/api';
 import { Filtros, useCarga, useDebounce } from '../../app/estado';
 import { useSelecao, CampoSelecao, Destino } from '../../app/selecao';
@@ -124,6 +129,26 @@ export function TelaCatalogo({ tela, filtros, aoMudarFiltros, larguraPainel }: P
     || filtros.vendedor || filtros.deposito || grid.busca || selecao.selecoes.length,
   );
 
+  // as MESMAS props nas duas grades (DataGrid ou, nas telas já migradas, a tabela padrão AG Grid)
+  const propsGrade: React.ComponentProps<typeof DataGrid> = {
+    colunas: colunas,
+    linhas: linhas,
+    total: locais.length > 0 ? linhas.length : total,
+    estado: grid,
+    aoMudarEstado: p => setGrid(g => ({ ...g, ...p })),
+    carregando: carga.carregando,
+    totais: totais,
+    chavePreferencias: tela.id,
+    selecionaveis: tela.selecionavel,
+    filtroAtivo: filtroAtivo,
+    alturaMax: larguraPainel < 980 ? 460 : 580,
+    acoesEmLote: tela.selecionavel ? [{
+      id: 'exportar-selecao',
+      rotulo: 'Exportar seleção',
+      aoExecutar: ids => exportarSelecao(colunas, linhas, ids, tela.id),
+    }] : undefined,
+  };
+
   return (
     <div style={{ minWidth: 0 }}>
       <BarraFiltros
@@ -195,24 +220,11 @@ export function TelaCatalogo({ tela, filtros, aoMudarFiltros, larguraPainel }: P
       )}
 
       <Secao titulo="Registros">
-        <DataGrid
-          colunas={colunas}
-          linhas={linhas}
-          total={locais.length > 0 ? linhas.length : total}
-          estado={grid}
-          aoMudarEstado={p => setGrid(g => ({ ...g, ...p }))}
-          carregando={carga.carregando}
-          totais={totais}
-          chavePreferencias={tela.id}
-          selecionaveis={tela.selecionavel}
-          filtroAtivo={filtroAtivo}
-          alturaMax={larguraPainel < 980 ? 460 : 580}
-          acoesEmLote={tela.selecionavel ? [{
-            id: 'exportar-selecao',
-            rotulo: 'Exportar seleção',
-            aoExecutar: ids => exportarSelecao(colunas, linhas, ids, tela.id),
-          }] : undefined}
-        />
+        {TELAS_AG_GRID.has(tela.id) ? (
+          <React.Suspense fallback={<div style={{ padding: 4 }}><BlocoCarregando linhas={8} rotulo={`Carregando ${tela.titulo}`} /></div>}>
+            <GradeServidor {...propsGrade} />
+          </React.Suspense>
+        ) : <DataGrid {...propsGrade} />}
       </Secao>
     </div>
   );
