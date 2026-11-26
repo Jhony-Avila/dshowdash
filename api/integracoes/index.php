@@ -21,7 +21,7 @@ $volta = static function (string $res): void {
     exit;
 };
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') ApiResponse::error(ApiResponse::ERR_METHOD_NOT_ALLOWED, 405);
-$rota = trim(is_string($_GET['r'] ?? null) ? $_GET['r'] : '', '/');
+[$rota, $param] = RdOAuth::rotaEParametros($_GET);   // tolera "?r=…retorno?code=…" (provedor que só concatena "?code=")
 if (!in_array($rota, ['oauth/rdstation/conectar', 'oauth/rdstation/retorno'], true)) ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404);
 
 SessionGate::start();
@@ -40,7 +40,7 @@ try {
         header('Location: ' . $url, true, 302);
         exit;
     }
-    $volta(RdOAuth::retorno($_GET, $usuario, $_SESSION, $auth, new RdTokens($seg, new RdCrypto($seg->chave())), $agora));
+    $volta(RdOAuth::retorno($param, $usuario, $_SESSION, $auth, new RdTokens($seg, new RdCrypto($seg->chave())), $agora));
 } catch (RdErro $e) {
     error_log('[rdstation] ' . $rota . ': ' . $e->codigo);
     $volta($e->codigo === 'nao_configurado' ? 'nao_configurado' : 'falhou');

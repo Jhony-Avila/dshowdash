@@ -68,6 +68,12 @@ $S = []; $url = RdOAuth::iniciar($auth, 75, $S, $agora); parse_str((string) pars
 check('conectar: URL do diálogo com client_id, redirect cadastrado e state de 64 hex; a sessão guarda só o HASH', str_starts_with($url, RdAuth::DIALOGO_URL . '?')
     && $q['client_id'] === $ID && $q['redirect_uri'] === RdAuth::RETORNO_URL && $q['redirect_uri'] === 'https://dshowdash.com.br/api/integracoes/index.php?r=oauth/rdstation/retorno' && preg_match('/^[0-9a-f]{64}$/', $q['state']) === 1
     && $S[RdOAuth::CHAVE_SESSAO]['h'] === hash('sha256', $q['state']) && !str_contains(json_encode($S), $q['state']));
+[$ro1, $pa1] = RdOAuth::rotaEParametros(['r' => 'oauth/rdstation/retorno', 'code' => 'c1', 'state' => 's1']);
+[$ro2, $pa2] = RdOAuth::rotaEParametros(['r' => 'oauth/rdstation/retorno?code=c2', 'state' => 's2']);   // "?code=" concatenado ao callback com ?r=
+[$ro3, $pa3] = RdOAuth::rotaEParametros(['r' => 'oauth/rdstation/conectar?code=x', 'code' => 'manda']);
+check('rota por ?r=: normal, "?code=" concatenado (rota limpa + code recuperado) e o $_GET tem precedência', $ro1 === 'oauth/rdstation/retorno' && $pa1['code'] === 'c1'
+    && $ro2 === 'oauth/rdstation/retorno' && $pa2['code'] === 'c2' && $pa2['state'] === 's2' && $ro3 === 'oauth/rdstation/conectar' && $pa3['code'] === 'manda'
+    && RdOAuth::rotaEParametros([])[0] === '' && RdOAuth::rotaEParametros(['r' => ['x']])[0] === '');
 $n0 = count($f->chamadas);
 $casos = ['state ausente' => [[], 75, 'state_invalido'], 'state trocado' => [['state' => str_repeat('a', 64), 'code' => 'codigoBom-123'], 75, 'state_invalido'],
           'outro usuário do Dash' => [['state' => $q['state'], 'code' => 'codigoBom-123'], 12, 'state_invalido']];

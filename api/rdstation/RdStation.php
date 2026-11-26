@@ -249,6 +249,23 @@ final class RdOAuth
     public const VALIDADE_S = 600;
     public const CHAVE_SESSAO = 'rdstation_oauth';
 
+    /**
+     * 26/11 (rota por ?r=): o RD documenta o retorno como "<callback>?code=…". Com o callback já tendo "?r=…", um provedor que só concatena
+     * "?code=" entrega "?r=oauth/rdstation/retorno?code=X&state=Y" → o PHP lê r = "oauth/rdstation/retorno?code=X". Aqui a rota é separada
+     * do resto e só code/state/error do resto entram nos parâmetros (o que já veio em $_GET tem precedência).
+     * @return array{0:string, 1:array} [rota, parâmetros]
+     */
+    public static function rotaEParametros(array $get): array
+    {
+        $r = is_string($get['r'] ?? null) ? $get['r'] : '';
+        $pos = strpos($r, '?');
+        if ($pos !== false) {
+            parse_str(substr($r, $pos + 1), $resto); $r = substr($r, 0, $pos);
+            foreach (['code', 'state', 'error'] as $k) if (!isset($get[$k]) && is_string($resto[$k] ?? null)) $get[$k] = $resto[$k];
+        }
+        return [trim($r, '/'), $get];
+    }
+
     public static function iniciar(RdAuth $auth, int $usuario, array &$sessao, DateTimeImmutable $agora): string
     {
         $state = bin2hex(random_bytes(32));
