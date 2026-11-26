@@ -2355,3 +2355,6 @@ dist/
 !/api/rdstation/
 !/api/integracoes/
 !/scripts/rdstation/
+# Consultas cadastrais (26/11/2026, VINHO/ACIMA_ESQUERDA): C1 · fila genérica de revisão cadastral (api/cadastro/ + scripts/cadastro/). Credencial em config/consultar_io/, fora do git.
+!/api/cadastro/
+!/scripts/cadastro/
