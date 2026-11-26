@@ -58,6 +58,8 @@ final class AsaasRotas
         'saldo' => ['caminho' => '/finance/balance', 'params' => []],
         // Codex DSHOW-111 (B2): identidade estável da conta (cpfCnpj → HMAC-SHA256 com segredo, DSHOW-112 C; nunca guardado em claro). Leitura, GET.
         'conta' => ['caminho' => '/myAccount/commercialInfo', 'params' => []],
+        // 26/11 (Cobranças vencidas): o NOME do cliente de uma cobrança vencida (GET /v3/customers/{id}); só o nome e o tipo de pessoa são gravados.
+        'cliente' => ['caminho' => '/customers/{id}', 'id' => '/^cus_[A-Za-z0-9]{1,40}\z/', 'params' => []],
     ];
 
     /** @return string URL completa (base + caminho + query ordenada); lança AsaasErro antes de qualquer rede */
@@ -66,13 +68,19 @@ final class AsaasRotas
         if (!in_array($base, self::BASES, true)) throw new AsaasErro('rota_recusada');
         $def = self::ROTAS[$rota] ?? null;
         if ($def === null) throw new AsaasErro('rota_recusada');
+        $caminho = $def['caminho'];
+        if (isset($def['id'])) {   // rota com id no caminho: o id passa pela MESMA lista fechada (regex) e sai da query
+            $id = $query['id'] ?? null;
+            if (!is_string($id) || preg_match($def['id'], $id) !== 1) throw new AsaasErro('parametro_recusado');
+            $caminho = str_replace('{id}', $id, $caminho); unset($query['id']);
+        }
         foreach ($query as $k => $v) {
             $re = $def['params'][$k] ?? null;
             if ($re === null || !(is_string($v) || is_int($v)) || preg_match($re, (string) $v) !== 1) throw new AsaasErro('parametro_recusado');
         }
         ksort($query);
         $qs = $query === [] ? '' : '?' . http_build_query(array_map('strval', $query), '', '&', PHP_QUERY_RFC3986);
-        return $base . $def['caminho'] . $qs;
+        return $base . $caminho . $qs;
     }
 }
 

@@ -46,6 +46,8 @@ final class AsaasPortaoDeps
      * @param Closure(): string            $token     session_id()
      * @param Closure(): array             $resumo    AsaasResumo::montar(...) já com as contas
      * @param ?Closure(): array            $vencidas  AsaasResumo::vencidas(...) já com as contas (26/11; ausente → 404)
+     * @param ?Closure(string, array): array $cobrancas 26/11 "Cobranças vencidas": fn(rota, $_GET) → resumo/lista/detalhe (ausente → 404)
+     * @param ?Closure(): int              $nivel     nível do usuário logado (as rotas de cobranças exigem ≥ 80, como a Geral)
      */
     public function __construct(
         public readonly Closure $flag,
@@ -54,13 +56,17 @@ final class AsaasPortaoDeps
         public readonly AsaasSessaoRepositorio $repo,
         public readonly Closure $resumo,
         public readonly ?Closure $vencidas = null,
+        public readonly ?Closure $cobrancas = null,
+        public readonly ?Closure $nivel = null,
     ) {}
 }
 
 final class AsaasPortao
 {
     public const FLAG = 'financeiro_asaas_leitura';
-    public const ROTAS = ['resumo', 'vencidas'];
+    public const ROTAS = ['resumo', 'vencidas', 'vencidas_resumo', 'vencidas_lista', 'vencida'];
+    public const ROTAS_COBRANCAS = ['vencidas_resumo', 'vencidas_lista', 'vencida'];
+    public const NIVEL_COBRANCAS = 80;
     private const DESLIGADO = ['not_found', 'disabled', 'not_started', 'expired', 'environment_mismatch', 'error'];
 
     /** @return array{0:int, 1:array} status HTTP e corpo JSON */
@@ -86,6 +92,16 @@ final class AsaasPortao
             $p = ($d->flag)(self::FLAG, $uid);
             if ((string) ($p['source'] ?? 'error') === 'error' || ($p['enabled'] ?? false) !== true) return self::erro(404, 'NOT_FOUND');
 
+            if (in_array($rota, self::ROTAS_COBRANCAS, true)) {
+                if ($d->cobrancas === null || $d->nivel === null) return self::erro(404, 'NOT_FOUND');
+                try { $nv = ($d->nivel)(); } catch (Throwable) { $nv = 0; }
+                if ($nv < self::NIVEL_COBRANCAS) return self::erro(404, 'NOT_FOUND');
+                try { $dados = ($d->cobrancas)($rota, $get); }
+                catch (InvalidArgumentException) { return self::erro(400, 'parametro_invalido'); }
+                catch (Throwable $e) { error_log('[asaas] ' . $rota . ': ' . get_class($e)); return self::erro(503, 'dados_indisponiveis'); }
+                if ($dados === null) return self::erro(404, 'NOT_FOUND');
+                return [200, ['ok' => true, 'data' => $dados, 'error' => null]];
+            }
             $ler = $rota === 'vencidas' ? $d->vencidas : $d->resumo;
             if ($ler === null) return self::erro(404, 'NOT_FOUND');
             try { $dados = $ler(); }

@@ -32,9 +32,13 @@ final class AsaasEsquema
             $t('asaas_cobrancas', "`conta` VARCHAR(32) NOT NULL, `geracao` TINYINT NOT NULL, `payment_id` VARCHAR(40) NOT NULL, `status` VARCHAR(40) NOT NULL,
                `billing_type` VARCHAR(24) NULL, `valor` DECIMAL(15,2) NOT NULL, `valor_liquido` DECIMAL(15,2) NULL, `vencimento` DATE NULL,
                `data_criacao` DATE NULL, `data_pagamento` DATE NULL, `data_credito` DATE NULL, `cliente_id` VARCHAR(40) NULL,
+               `juros_multa` DECIMAL(15,2) NULL, `vencimento_original` DATE NULL, `invoice_url` VARCHAR(255) NULL, `invoice_number` VARCHAR(40) NULL,
                `deletada` TINYINT(1) NOT NULL DEFAULT 0, `presente` TINYINT(1) NOT NULL DEFAULT 1, `execucao` BIGINT UNSIGNED NOT NULL,
                `atualizado_em` DATETIME NOT NULL, PRIMARY KEY (`conta`, `geracao`, `payment_id`), KEY `ix_status` (`conta`, `geracao`, `status`),
                KEY `ix_pagamento` (`conta`, `geracao`, `data_pagamento`)"),
+            // 26/11 (Cobranças vencidas): cadastro MÍNIMO do cliente — só o nome e o tipo de pessoa (nunca CPF/CNPJ, e-mail, telefone, endereço)
+            $t('asaas_clientes', "`conta` VARCHAR(32) NOT NULL, `cliente_id` VARCHAR(40) NOT NULL, `nome` VARCHAR(160) NULL, `tipo_pessoa` VARCHAR(10) NULL,
+               `deletado` TINYINT(1) NOT NULL DEFAULT 0, `atualizado_em` DATETIME NOT NULL, PRIMARY KEY (`conta`, `cliente_id`)"),
             $t('asaas_extrato', "`conta` VARCHAR(32) NOT NULL, `transacao_id` VARCHAR(40) NOT NULL, `tipo` VARCHAR(60) NULL, `valor` DECIMAL(15,2) NOT NULL,
                `saldo` DECIMAL(15,2) NULL, `data` DATE NULL, `payment_id` VARCHAR(40) NULL, `execucao` BIGINT UNSIGNED NOT NULL,
                `atualizado_em` DATETIME NOT NULL, PRIMARY KEY (`conta`, `transacao_id`), KEY `ix_data` (`conta`, `data`)"),
@@ -110,6 +114,19 @@ final class AsaasValor
     public static function data(mixed $v): ?string { return is_string($v) && preg_match('/^\d{4}-\d{2}-\d{2}/', $v) ? substr($v, 0, 10) : null; }
     public static function id(mixed $v): ?string { return is_string($v) && preg_match('/^[A-Za-z0-9_-]{1,40}\z/', $v) ? $v : null; }
     public static function curto(mixed $v, int $n): ?string { return is_string($v) && $v !== '' ? mb_substr($v, 0, $n) : null; }
+    /** 26/11: link da fatura do Asaas (invoiceUrl) — só https em asaas.com, sem query estranha; fora disso null. */
+    public static function linkFatura(mixed $v): ?string
+    {
+        return is_string($v) && strlen($v) <= 255 && preg_match('#^https://(www\.|sandbox\.)?asaas\.com/[A-Za-z0-9/_\-]{1,200}\z#', $v) === 1 ? $v : null;
+    }
+    public static function numeroFatura(mixed $v): ?string { return (is_string($v) || is_int($v)) && preg_match('/^[0-9]{1,20}\z/', (string) $v) === 1 ? (string) $v : null; }
+    /** 26/11: nome do cliente (customers.name), texto de 1 a 160 caracteres sem controle; senão null. */
+    public static function nomeCliente(mixed $v): ?string
+    {
+        if (!is_string($v)) return null;
+        $v = trim($v);
+        return preg_match('/^[^\x00-\x1F\x7F]{1,160}\z/u', $v) === 1 ? $v : null;
+    }
 
     /** 25/11: nome da conta (commercialInfo): companyName, senão name; texto UTF-8 de 1 a 120 caracteres sem controle. Inválido/ausente → null. */
     public static function nomeConta(array $info): ?string
@@ -149,10 +166,12 @@ final class AsaasRepositorio
     public function gravarCobrancas(string $conta, int $ger, int $exec, array $itens, string $agora): int
     {
         $st = $this->pdo->prepare(str_replace('{p}', $this->p, "INSERT INTO `{p}asaas_cobrancas` (`conta`,`geracao`,`payment_id`,`status`,`billing_type`,`valor`,`valor_liquido`,
-              `vencimento`,`data_criacao`,`data_pagamento`,`data_credito`,`cliente_id`,`deletada`,`presente`,`execucao`,`atualizado_em`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?)
+              `vencimento`,`data_criacao`,`data_pagamento`,`data_credito`,`cliente_id`,`deletada`,`presente`,`execucao`,`atualizado_em`,
+              `juros_multa`,`vencimento_original`,`invoice_url`,`invoice_number`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,?,?,?,?)
               ON DUPLICATE KEY UPDATE `status`=VALUES(`status`),`billing_type`=VALUES(`billing_type`),`valor`=VALUES(`valor`),`valor_liquido`=VALUES(`valor_liquido`),
               `vencimento`=VALUES(`vencimento`),`data_criacao`=VALUES(`data_criacao`),`data_pagamento`=VALUES(`data_pagamento`),`data_credito`=VALUES(`data_credito`),
-              `cliente_id`=VALUES(`cliente_id`),`deletada`=VALUES(`deletada`),`presente`=1,`execucao`=VALUES(`execucao`),`atualizado_em`=VALUES(`atualizado_em`)"));
+              `cliente_id`=VALUES(`cliente_id`),`deletada`=VALUES(`deletada`),`presente`=1,`execucao`=VALUES(`execucao`),`atualizado_em`=VALUES(`atualizado_em`),
+              `juros_multa`=VALUES(`juros_multa`),`vencimento_original`=VALUES(`vencimento_original`),`invoice_url`=VALUES(`invoice_url`),`invoice_number`=VALUES(`invoice_number`)"));
         $n = 0;
         $this->pdo->beginTransaction();
         try {
@@ -162,7 +181,9 @@ final class AsaasRepositorio
                 if ($id === null || $valor === null || $status === null) throw new AsaasErro('resposta_invalida', 200);
                 $st->execute([$conta, $ger, $id, $status, AsaasValor::curto($c['billingType'] ?? null, 24), $valor, AsaasValor::opcional($c, 'netValue', 'cobranca'),
                     AsaasValor::data($c['dueDate'] ?? null), AsaasValor::data($c['dateCreated'] ?? null), AsaasValor::data($c['paymentDate'] ?? ($c['clientPaymentDate'] ?? null)),
-                    AsaasValor::data($c['creditDate'] ?? null), AsaasValor::id($c['customer'] ?? null), ($c['deleted'] ?? false) === true ? 1 : 0, $exec, $agora]);
+                    AsaasValor::data($c['creditDate'] ?? null), AsaasValor::id($c['customer'] ?? null), ($c['deleted'] ?? false) === true ? 1 : 0, $exec, $agora,
+                    AsaasValor::opcional($c, 'interestValue', 'cobranca'), AsaasValor::data($c['originalDueDate'] ?? null),
+                    AsaasValor::linkFatura($c['invoiceUrl'] ?? null), AsaasValor::numeroFatura($c['invoiceNumber'] ?? null)]);
                 $n++;
             }
             $this->pdo->commit();
@@ -216,6 +237,22 @@ final class AsaasRepositorio
     }
 
     /** falha: a geração ATIVA, o saldo e o horário ficam como estavam; só o estado registra a falha */
+    /** Clientes com cobrança vencida (OVERDUE/DUNNING_REQUESTED) na geração em gravação, sem nome no cache ou com cache de mais de 7 dias. */
+    public function clientesSemNome(string $conta, int $ger, string $agora, int $max): array
+    {
+        return $this->q("SELECT DISTINCT c.`cliente_id` FROM `{p}asaas_cobrancas` c LEFT JOIN `{p}asaas_clientes` k ON k.`conta` = c.`conta` AND k.`cliente_id` = c.`cliente_id`
+                          WHERE c.`conta` = ? AND c.`geracao` = ? AND c.`presente` = 1 AND c.`deletada` = 0 AND c.`status` IN ('OVERDUE','DUNNING_REQUESTED')
+                            AND c.`cliente_id` IS NOT NULL AND (k.`cliente_id` IS NULL OR k.`nome` IS NULL OR k.`atualizado_em` < ? - INTERVAL 7 DAY)
+                          ORDER BY c.`cliente_id` LIMIT " . max(1, min($max, 1000)), [$conta, $ger, $agora])->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    public function gravarCliente(string $conta, string $cid, ?string $nome, ?string $tipo, bool $deletado, string $agora): void
+    {
+        $this->q("INSERT INTO `{p}asaas_clientes` (`conta`,`cliente_id`,`nome`,`tipo_pessoa`,`deletado`,`atualizado_em`) VALUES (?,?,?,?,?,?)
+                  ON DUPLICATE KEY UPDATE `nome`=VALUES(`nome`),`tipo_pessoa`=VALUES(`tipo_pessoa`),`deletado`=VALUES(`deletado`),`atualizado_em`=VALUES(`atualizado_em`)",
+                 [$conta, $cid, $nome, $tipo, $deletado ? 1 : 0, $agora]);
+    }
+
     public function falhar(int $exec, string $conta, string $codigo, string $agora, int $req): void
     {
         $this->q("UPDATE `{p}asaas_contas` SET `estado`=?,`erro_codigo`=?,`atualizado_em`=? WHERE `conta`=?",
@@ -229,6 +266,7 @@ final class AsaasSincronizador
     public const POR_PAGINA = 100;
     public const MAX_PAGINAS_JANELA = 200;
     public const JANELA_MESES = 13;
+    public const MAX_CLIENTES_RODADA = 300;   // 26/11: nomes de clientes buscados por conta e por rodada (o resto vem na próxima)
     public const DIAS_PAGAMENTO = 35;
     public const DIAS_EXTRATO = 35;
 
@@ -270,8 +308,21 @@ final class AsaasSincronizador
                 'paymentDate[le]' => $agora->format('Y-m-d')], fn(array $itens) => $this->repo->gravarCobrancas($conta, $ger, $exec, $itens, $ts));
             // 25/11 (divergencia_pending/overdue): a janela acima é por CRIAÇÃO (13 meses); cobrança em aberto criada antes dela (parcela de
             // parcelamento antigo, boleto antigo) ficava fora do local, e a estatística do Asaas (sem data) a soma. Puxa TODAS as abertas por status.
-            foreach (['PENDING', 'OVERDUE'] as $s) {
+            // 26/11: + DUNNING_REQUESTED (negativação pedida: continua vencida, mas sai do status OVERDUE no Asaas)
+            foreach (['PENDING', 'OVERDUE', 'DUNNING_REQUESTED'] as $s) {
                 $nCob += $this->paginar($cli, 'cobrancas', ['status' => $s], fn(array $itens) => $this->repo->gravarCobrancas($conta, $ger, $exec, $itens, $ts));
+            }
+            // 26/11 (Cobranças vencidas): NOME dos clientes com cobrança vencida (cache; só nome e tipo de pessoa). Falha aqui NÃO derruba a
+            // rodada: o nome fica null ("—") e é tentado de novo na próxima.
+            foreach ($this->repo->clientesSemNome($conta, $ger, $ts, self::MAX_CLIENTES_RODADA) as $cid) {
+                try {
+                    ($this->pausaMs)(250);
+                    $cl = $cli->get('cliente', ['id' => $cid]);
+                    $this->repo->gravarCliente($conta, $cid, AsaasValor::nomeCliente($cl['name'] ?? null),
+                        in_array($cl['personType'] ?? null, ['FISICA', 'JURIDICA'], true) ? $cl['personType'] : null, ($cl['deleted'] ?? false) === true, $ts);
+                } catch (AsaasErro $e) {
+                    if (in_array($e->codigo, ['chave_recusada', 'acesso_negado', 'limite'], true)) break;   // não insiste na rodada
+                }
             }
             foreach (['PENDING', 'OVERDUE'] as $s) $this->repo->gravarEstatistica($conta, $ger, $s, $cli->get('estatisticas_cobrancas', ['status' => $s]), $ts);
             $nExt = $this->paginar($cli, 'extrato', ['startDate' => $agora->modify('-' . self::DIAS_EXTRATO . ' days')->format('Y-m-d'),
@@ -407,6 +458,31 @@ final class AsaasResumo
             return $out;
         });
         return ['contas' => $contas, 'limite_por_empresa' => $limite, 'moeda' => 'BRL', 'gerado_em' => $agora->format(DATE_ATOM)];
+    }
+
+    /**
+     * 26/11 (Cobranças vencidas): TODAS as vencidas (OVERDUE + DUNNING_REQUESTED) das contas em dia, com o nome do cliente do cache, sob um mesmo
+     * retrato do banco. Conta fora das portas (divergente / nunca / desatualizada) → em `sem_leitura`, sem número.
+     * @return array{contas: list<array>, sem_leitura: list<array>, itens: list<array>}
+     */
+    public function vencidasDetalhadas(array $rotulos, DateTimeImmutable $agora): array
+    {
+        $agora = $agora->setTimezone($this->fuso);
+        return $this->noRetrato(function () use ($rotulos, $agora): array {
+            $contas = []; $sem = []; $itens = [];
+            foreach ($rotulos as $r) {
+                [$base, $pt] = $this->ponteiro($r, $agora);
+                if ($pt === null) { $sem[] = ['conta' => $r, 'nome' => $base['nome'], 'motivo' => $base['motivo']]; continue; }
+                $contas[] = ['conta' => $r, 'nome' => $base['nome'], 'atualizado_em' => $pt['ok']->format(DATE_ATOM)];
+                $q = $this->pdo->prepare("SELECT c.`payment_id`, c.`cliente_id`, c.`status`, c.`billing_type`, c.`valor`, c.`juros_multa`, c.`vencimento`,
+                        c.`vencimento_original`, c.`data_criacao`, c.`invoice_url`, c.`invoice_number`, k.`nome` AS cliente_nome
+                       FROM `{$this->p}asaas_cobrancas` c LEFT JOIN `{$this->p}asaas_clientes` k ON k.`conta` = c.`conta` AND k.`cliente_id` = c.`cliente_id`
+                      WHERE c.`conta` = ? AND c.`geracao` = ? AND c.`presente` = 1 AND c.`deletada` = 0 AND c.`status` IN ('OVERDUE','DUNNING_REQUESTED')");
+                $q->execute([$r, $pt['ger']]);
+                foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $x) $itens[] = ['conta' => $r] + $x;
+            }
+            return ['contas' => $contas, 'sem_leitura' => $sem, 'itens' => $itens];
+        });
     }
 
     private function conta(string $r, DateTimeImmutable $agora): array

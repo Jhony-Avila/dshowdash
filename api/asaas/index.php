@@ -10,6 +10,8 @@ require_once __DIR__ . '/../core/SessionGate.php';
 require_once __DIR__ . '/../../config/db_connection.php';
 require_once __DIR__ . '/../feature-flags/resolver.php';
 require_once __DIR__ . '/AsaasPortao.php';
+require_once __DIR__ . '/AsaasCobrancas.php';
+require_once __DIR__ . '/../_helpers/AuthHelpers.php';
 
 CorsPolicy::apply();
 SessionGate::start();
@@ -29,5 +31,18 @@ $deps = new AsaasPortaoDeps(
     },
     resumo: static fn(): array => (new AsaasResumo($db()))->montar(AsaasChaves::padrao()->rotulos(), new DateTimeImmutable('now')),
     vencidas: static fn(): array => (new AsaasResumo($db()))->vencidas(AsaasChaves::padrao()->rotulos(), new DateTimeImmutable('now')),
+    // 26/11 "Cobranças vencidas · Asaas": resumo / lista / detalhe sobre o mesmo retrato do banco local (nunca chama o Asaas daqui)
+    cobrancas: static function (string $rota, array $get) use ($db): ?array {
+        $txt = static fn(string $k): ?string => is_string($get[$k] ?? null) && $get[$k] !== '' ? $get[$k] : null;
+        $int = static function (string $k, int $padrao) use ($txt): int { $v = $txt($k); if ($v === null) return $padrao; if (preg_match('/^[1-9][0-9]{0,3}\z/', $v) !== 1) throw new InvalidArgumentException($k); return (int) $v; };
+        $agora = new DateTimeImmutable('now');
+        $c = new AsaasCobrancas((new AsaasResumo($db()))->vencidasDetalhadas(AsaasChaves::padrao()->rotulos(), $agora), $agora, $txt('empresa'));
+        return match ($rota) {
+            'vencidas_resumo' => $c->resumo(),
+            'vencidas_lista' => $c->lista($txt('ordem') ?? 'dias', $txt('dir') ?? 'desc', $int('pagina', 1), $int('por_pagina', 50)),
+            'vencida' => $c->detalhe($txt('id') ?? throw new InvalidArgumentException('id')),
+        };
+    },
+    nivel: static fn(): int => (int) AuthHelpers::getCurrentUserLevel(),
 );
 AsaasPortao::emitir(AsaasPortao::atender((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'), $_GET, $deps));

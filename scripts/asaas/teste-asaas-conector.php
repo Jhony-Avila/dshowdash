@@ -7,6 +7,7 @@ declare(strict_types=1);
 // Uso: php scripts/asaas/teste-asaas-conector.php [--sem-banco]
 
 require_once __DIR__ . '/../../api/asaas/AsaasPortao.php';
+require_once __DIR__ . '/../../api/asaas/AsaasCobrancas.php';
 
 $ok = 0; $falhas = [];
 function check(string $nome, bool $cond): void { global $ok, $falhas; if ($cond) $ok++; else { $falhas[] = $nome; echo "FALHOU: $nome\n"; } }
@@ -45,7 +46,12 @@ $semSono = static function (int $s) use (&$sonos): void { $sonos[] = $s; };
 $sonos = [];
 
 // ================= A. lista fixa de rotas e parâmetros =================
-check('5 rotas permitidas (as 4 de dados + identidade da conta)', array_keys(AsaasRotas::ROTAS) === ['cobrancas', 'estatisticas_cobrancas', 'extrato', 'saldo', 'conta']);
+check('6 rotas permitidas (as 4 de dados + identidade da conta + 26/11 cliente)', array_keys(AsaasRotas::ROTAS) === ['cobrancas', 'estatisticas_cobrancas', 'extrato', 'saldo', 'conta', 'cliente']);
+check('rota cliente: id cus_ no caminho; id fora do formato, ausente ou com barra → parametro_recusado antes da rede',
+    AsaasRotas::url('https://api.asaas.com/v3', 'cliente', ['id' => 'cus_000001']) === 'https://api.asaas.com/v3/customers/cus_000001'
+    && erroDe(fn() => AsaasRotas::url('https://api.asaas.com/v3', 'cliente', ['id' => '../payments'])) === 'parametro_recusado'
+    && erroDe(fn() => AsaasRotas::url('https://api.asaas.com/v3', 'cliente', [])) === 'parametro_recusado'
+    && erroDe(fn() => AsaasRotas::url('https://api.asaas.com/v3', 'cliente', ['id' => 'cus_1', 'name' => 'x'])) === 'parametro_recusado');
 // B3 (Codex DSHOW-111): centavos INTEIROS, conversão decimal exata
 foreach ([['1000.5', 100050], ['199.99', 19999], ['0.1', 10], ['12345678.9', 1234567890], ['2500.0', 250000], [7, 700], ['-3.10', -310], ['19.99', 1999],
           ['9999999999999.99', 999999999999999], ['19.999', null], ['0.105', null], ['10.500', null], [19.99, null], [1000.5, null], ['1e3', null], ['1.0E-7', null], [true, null], [NAN, null]] as [$e, $c]) {
@@ -197,6 +203,22 @@ $l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'resumo'], deps
 check('portão: 75 com override → 200 na ordem certa', $r[0] === 200 && $l->getArrayCopy() === ['flag:g', 'sessao', 'repo', 'flag:75', 'resumo']);
 $l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'resumo'], deps($l, $g, ['user_id' => 75], $sOk, $on, function (): array { throw new PDOException('fora'); }));
 check('portão: banco local fora → 503 dados_indisponiveis (nunca zero)', $r[0] === 503 && $r[1]['data'] === null && $r[1]['error']['code'] === 'dados_indisponiveis');
+// 26/11 · Cobranças vencidas: mesmas portas + nível ≥ 80; parâmetro inválido → 400; detalhe inexistente → 404
+$depsC = function (ArrayObject $l, int $nivel, Closure $f) use ($g, $sOk, $on): AsaasPortaoDeps {
+    $d = deps($l, $g, ['user_id' => 75], $sOk, $on);
+    return new AsaasPortaoDeps(flag: $d->flag, sessao: $d->sessao, token: $d->token, repo: $d->repo, resumo: $d->resumo, cobrancas: $f, nivel: fn() => $nivel);
+};
+$fc = fn(ArrayObject $l) => function (string $r, array $q) use ($l) { $l[] = "cob:$r"; if (($q['ordem'] ?? '') === 'nome') throw new InvalidArgumentException('x'); return $r === 'vencida' ? null : ['ok' => 1]; };
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'vencidas_resumo'], $depsC($l, 80, $fc($l)));
+check('portão cobranças: nível 80 + flag → 200 na ordem certa', $r[0] === 200 && $l->getArrayCopy() === ['flag:g', 'sessao', 'repo', 'flag:75', 'cob:vencidas_resumo']);
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'vencidas_lista'], $depsC($l, 79, $fc($l)));
+check('portão cobranças: nível 79 → 404 sem ler nada', $r[0] === 404 && !in_array('cob:vencidas_lista', $l->getArrayCopy(), true));
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'vencidas_lista', 'ordem' => 'nome'], $depsC($l, 90, $fc($l)));
+check('portão cobranças: parâmetro inválido → 400 parametro_invalido', $r[0] === 400 && $r[1]['error']['code'] === 'parametro_invalido');
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'vencida', 'id' => 'pay_x'], $depsC($l, 90, $fc($l)));
+check('portão cobranças: detalhe que não é vencida lida → 404', $r[0] === 404);
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'vencidas_resumo'], $depsC($l, 90, function () { throw new PDOException('fora'); }));
+check('portão cobranças: banco fora → 503 dados_indisponiveis', $r[0] === 503 && $r[1]['error']['code'] === 'dados_indisponiveis');
 // 26/11: drill-down das vencidas — mesma ordem de portas; só lê as vencidas depois da flag da pessoa; sem leitor → 404
 $depsV = function (ArrayObject $l, ?array $sess, array $flagP, ?Closure $v) use ($g, $sOk): AsaasPortaoDeps {
     $d = deps($l, $g, $sess, $sOk, $flagP);
@@ -255,6 +277,7 @@ if ($pdo !== null) {
     $apiA->rotas = [
         '/myAccount/commercialInfo' => $info('conta-a'),
         '/finance/balance' => fn() => json200(['balance' => 12345.67]),
+        '/customers/cus_000001' => fn() => json200(['object' => 'customer', 'id' => 'cus_000001', 'name' => 'Cliente Fictício Um', 'personType' => 'JURIDICA', 'cpfCnpj' => '00000000000191', 'email' => 'NAO-GRAVAR@x', 'deleted' => false]),
         '/payments' => function ($p, $q) use (&$estado) {
             if (isset($q['paymentDate']['ge'])) return pagina([], $q);   // as pagas recentes já vêm na janela
             if (isset($q['status'])) return pagina($estado['A']['abertas_antigas'][$q['status']] ?? [], $q);   // 25/11: abertas sem data
@@ -288,7 +311,9 @@ if ($pdo !== null) {
     check('páginas de 100 com offset 0/100/200', array_map(fn($c) => [$c['q']['limit'], $c['q']['offset']], $pg) === [['100', '0'], ['100', '100'], ['100', '200']]);
     check('pausa entre páginas (uma requisição por vez)', in_array(250, $pausas, true));
     check('só rotas da lista foram chamadas', array_diff(array_unique(array_merge(...array_values(array_map(fn($a) => array_column($a->chamadas, 'path'), $apis)))),
-        ['/myAccount/commercialInfo', '/finance/balance', '/payments', '/finance/payment/statistics', '/financialTransactions']) === []);
+        ['/myAccount/commercialInfo', '/finance/balance', '/payments', '/finance/payment/statistics', '/financialTransactions', '/customers/cus_000001']) === []);
+    check('26/11 · nome do cliente com cobrança vencida gravado no cache (só nome e tipo de pessoa)', $pdo->query("SELECT CONCAT(nome,'|',tipo_pessoa) FROM `{$P}asaas_clientes` WHERE conta='conta-a' AND cliente_id='cus_000001'")->fetchColumn() === 'Cliente Fictício Um|JURIDICA'
+        && implode(',', $pdo->query("SHOW COLUMNS FROM `{$P}asaas_clientes`")->fetchAll(PDO::FETCH_COLUMN)) === 'conta,cliente_id,nome,tipo_pessoa,deletado,atualizado_em');
     check('janela de 13 meses por mês de criação', count(array_filter($apiA->chamadas, fn($c) => $c['path'] === '/payments' && isset($c['q']['dateCreated']))) === 12 + 3);
     $n = fn(string $sql, array $a = []) => (function () use ($pdo, $sql, $a) { $s = $pdo->prepare($sql); $s->execute($a); return $s->fetchColumn(); })();
     check('uma linha por (conta, payment_id): pay_comum em A e C', (int) $n("SELECT COUNT(*) FROM `{$P}asaas_cobrancas` WHERE payment_id='pay_comum'") === 2);
@@ -338,6 +363,37 @@ if ($pdo !== null) {
         && array_column($vv['cobrancas'], 'dias_atraso') === [53, 3]);
     $vt = $resumo->vencidas(['conta-v'], $agora)['contas'][0]['cobrancas'];
     check('vencidas V: sem vencimento vai por último, dias null (nunca 0)', end($vt)['cobranca'] === 'v3' && end($vt)['vencimento'] === null && end($vt)['dias_atraso'] === null);
+    // ─── 26/11 · Cobranças vencidas (resumo/lista/detalhe) sobre o retrato real (conta-v: 3 OVERDUE da geração ativa) + 1 DUNNING_REQUESTED com juros
+    $pdo->prepare("INSERT INTO `{$P}asaas_cobrancas` (`conta`,`geracao`,`payment_id`,`status`,`billing_type`,`valor`,`juros_multa`,`vencimento`,`cliente_id`,`deletada`,`presente`,`execucao`,`atualizado_em`,`invoice_url`,`invoice_number`)
+                   VALUES ('conta-v',0,'v8','DUNNING_REQUESTED','PIX','100.00','7.50','2026-08-01','cus_w',0,1,1,'2026-11-23 10:00:00','https://www.asaas.com/i/abc123','42')")->execute();
+    $pdo->prepare("INSERT INTO `{$P}asaas_clientes` VALUES ('conta-v','cus_v','Cliente V Fictício','JURIDICA',0,'2026-11-23 10:00:00')")->execute();
+    $rt = $resumo->vencidasDetalhadas(['conta-v', 'conta-z'], $agora);
+    check('cobranças · retrato: 4 vencidas da conta-v (OVERDUE + DUNNING_REQUESTED, sem apagada/ausente/outra geração/PENDING); conta-z sem leitura',
+        count($rt['itens']) === 4 && $rt['sem_leitura'][0]['conta'] === 'conta-z' && $rt['sem_leitura'][0]['motivo'] === 'nunca_sincronizada');
+    $cb = new AsaasCobrancas($rt, $agora);
+    $rs = $cb->resumo();
+    check('cobranças · resumo: total 135.50 em 4 cobranças de 2 clientes; parcial (conta-z sem leitura)', $rs['total'] === ['valor' => '135.50', 'cobrancas' => 4, 'clientes' => 2]
+        && $rs['completo'] === false && $rs['empresas_sem_leitura'][0]['empresa']['conta'] === 'conta-z', json_encode($rs['total']));
+    check('cobranças · faixas: 1-30 (3 dias: 10.00), 31-90 (53 dias: 20.50), 91-180 (114 dias: 100.00); sem vencimento 1', $rs['faixas'][0] === ['faixa' => '1-30', 'valor' => '10.00', 'cobrancas' => 1]
+        && $rs['faixas'][1]['valor'] === '20.50' && $rs['faixas'][2] === ['faixa' => '91-180', 'valor' => '100.00', 'cobrancas' => 1] && $rs['faixas'][3]['cobrancas'] === 0 && $rs['sem_vencimento'] === 1, json_encode($rs['faixas']));
+    check('cobranças · por vencimento: mês atual 10.00 · 30 dias 10.00 · 3 meses 30.50 (o de 01/08 fica fora de 23/08)', $rs['por_vencimento']['mes_atual']['valor'] === '10.00' && $rs['por_vencimento']['ultimos_30_dias']['valor'] === '10.00'
+        && $rs['por_vencimento']['ultimos_3_meses']['valor'] === '30.50', json_encode($rs['por_vencimento']));
+    check('cobranças · maior = v8 (100.00, cliente sem nome no cache → null) · top 1 = cus_w', $rs['maior']['id'] === 'v8' && $rs['maior']['cliente_nome'] === null && $rs['maior']['dias_atraso'] === 114
+        && $rs['top_clientes'][0]['valor'] === '100.00' && $rs['top_clientes'][1] === ['cliente_nome' => 'Cliente V Fictício', 'empresa' => ['conta' => 'conta-v', 'rotulo' => 'conta-v'], 'valor' => '35.50', 'cobrancas' => 3]);
+    $ls = $cb->lista('valor', 'desc', 1, 2); $v8 = $ls['itens'][0];
+    check('cobranças · lista por valor, página de 2; negativação pelo status; valor atualizado = valor + juros/multa do Asaas', $ls['total'] === 4 && count($ls['itens']) === 2
+        && $v8['situacao'] === ['status_asaas' => 'DUNNING_REQUESTED', 'negativacao' => true, 'protesto' => null, 'cobranca_externa' => null] && $v8['valor_atualizado'] === '107.50'
+        && $v8['forma'] === ['codigo' => 'PIX', 'rotulo' => 'Pix'] && $ls['itens'][1]['valor_atualizado'] === null && $ls['itens'][1]['situacao']['negativacao'] === false);
+    $dt = $cb->detalhe('v1');
+    check('cobranças · detalhe v1: cus_ só no detalhe; outras do mesmo cliente = v2 + v3 (25.50); descrição e eventos null', $dt['cliente_codigo'] === 'cus_v' && $dt['cliente_nome'] === 'Cliente V Fictício'
+        && $dt['outras_do_cliente']['cobrancas'] === 2 && $dt['outras_do_cliente']['valor'] === '25.50' && $dt['descricao'] === null && $dt['eventos'] === null
+        && $cb->detalhe('v8')['link_fatura'] === 'https://www.asaas.com/i/abc123' && $cb->detalhe('v8')['numero_fatura'] === '42' && $cb->detalhe('nao-existe') === null);
+    check('cobranças · lista e resumo sem o código cus_ (só no detalhe)', !str_contains(json_encode([$rs, $ls]), 'cus_'));
+    check('cobranças · filtro de empresa inválido e ordem inválida → InvalidArgumentException', (function () use ($rt, $agora) { try { new AsaasCobrancas($rt, $agora, '../x'); return false; } catch (InvalidArgumentException) { return true; } })()
+        && (function () use ($cb) { try { $cb->lista('nome'); return false; } catch (InvalidArgumentException) { return true; } })());
+    check('cobranças · filtro empresa=conta-z: nada lido, total 0 de verdade não aparece como completo', ($fz = (new AsaasCobrancas($rt, $agora, 'conta-z'))->resumo())['completo'] === false && $fz['total']['cobrancas'] === 0);
+    check('cobranças · rótulo curto pelo mapa fixo; fora dele, o nome da conta', AsaasCobrancas::rotulo('jwa', 'JWA LTDA') === 'J.W.A.' && AsaasCobrancas::rotulo('led-lovers', null) === 'LED Lovers'
+        && AsaasCobrancas::rotulo('nova', 'Nova Empresa') === 'Nova Empresa');
     check('vencidas: recusa conexão dentro de transação', (function () use ($pdo, $resumo, $agora) { $pdo->beginTransaction();
         try { $resumo->vencidas(['conta-a'], $agora); return false; } catch (LogicException) { return true; } finally { $pdo->rollBack(); } })());
 
