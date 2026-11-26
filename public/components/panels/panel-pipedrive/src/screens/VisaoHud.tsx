@@ -200,7 +200,7 @@ export function HudKpis({ resumo, carregando, falhou, onDrill, onDetalhes, semDr
       <div key={def.chave} className={`hud-stat ${def.major ? 'major' : 'minor'}${clicavel ? ' click' : ''} est-${CLASSE_ESTADO[estado]}`}
         role={clicavel ? 'button' : undefined} tabIndex={clicavel ? 0 : undefined}
         onClick={abrir} onKeyDown={(e) => { if (clicavel && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); abrir(); } }}
-        aria-label={`${def.rotulo}: ${fmtKpi(k)} · ${ROTULO_ESTADO[estado]}`} title={k?.dica}>
+        title={k?.dica}>
         <div className="hud-statline">
           <span className="hud-icon"><def.Icon size={15} aria-hidden /></span>
           <span className="hud-label">{k?.rotulo ?? def.rotulo}</span>
@@ -225,7 +225,6 @@ export function HudKpis({ resumo, carregando, falhou, onDrill, onDetalhes, semDr
   cartoes.push(
     <div key="agora" className={`hud-stat minor${semDrill ? '' : ' click'} est-${CLASSE_ESTADO[estAgora]}`} role={semDrill ? undefined : 'button'} tabIndex={semDrill ? undefined : 0}
       onClick={abrirAgora} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); abrirAgora(); } }}
-      aria-label={`${rotuloAgora}: ${e?.valor_aberto != null ? fmtBRL(e.valor_aberto) : '—'} · ${ROTULO_ESTADO[estAgora]}`}
       title="Situação atual da carteira — não tem período anterior para comparar.">
       <div className="hud-statline">
         <span className="hud-icon"><Wallet size={15} aria-hidden /></span>
@@ -484,8 +483,7 @@ export function RankingVendedores({ periodo, resumo, onDrill, fonte }: {
             return (
               <div key={o.owner_id ?? o.name} className={`hud-rankrow p${i + 1}${oculto ? ' is-oculto' : ''}`} style={{ transform: `translateY(${i * ALT}px)` }}
                 role="button" tabIndex={oculto ? -1 : 0} aria-hidden={oculto} onClick={() => abrir(o)}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(o); } }}
-                aria-label={`${i + 1}º ${o.name}: ${fmt(v)}`}>
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(o); } }}>
                 <span className="hud-rankbadge">{i + 1}</span>
                 <span className="hud-rankname" title={o.name}>{o.name}</span>
                 <span className="hud-ranktrack"><span className="hud-rankfill" style={{ width: `${(v / max) * 100}%` }} /></span>
