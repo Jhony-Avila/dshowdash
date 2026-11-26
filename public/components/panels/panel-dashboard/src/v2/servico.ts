@@ -2,7 +2,8 @@
 // (PARA-STATUS compartilhado, "GERAL V2 — PROPOSTA DE CONTRATO"). A tela só LÊ; o serviço é da ACIMA_DIREITA.
 // Regra da casa: valor desconhecido = null (nunca 0); cada bloco carrega e falha sozinho (um endpoint por bloco).
 
-export type EstadoBloco = 'ok' | 'zero' | 'parcial' | 'desatualizado' | 'aguardando' | 'erro';
+// 'sem_permissao' (26/11, F03/P70 do VINHO): o "Recebido" exige a flag por pessoa financeiro_asaas_leitura; sem ela o serviço nem consulta (valores null)
+export type EstadoBloco = 'ok' | 'zero' | 'parcial' | 'desatualizado' | 'aguardando' | 'erro' | 'sem_permissao';
 export type PeriodoV2 = 'ontem' | '7d' | 'mes';
 
 export interface Periodo { id: PeriodoV2; de: string; ate: string; rotulo: string }

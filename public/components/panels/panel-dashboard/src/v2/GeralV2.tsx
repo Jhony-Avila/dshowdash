@@ -293,6 +293,9 @@ function CartaoNumero({ data, marcador, titulo, icone, dominio, estado, valor, f
   const comum = { marcador, rotulo: titulo, icone, dominio, variante: 'A' as const, formato, fonte: rodape, dica, animar: true, onTentar, tentando,
     acao: link ? { rotulo: link.rotulo, onClick: () => navegar(link.rota) } : null, dados: { 'data-gv2-cartao': data, 'data-gv2-estado': estado } as const };
   if (estado === 'carregando') return <DSKpiCard {...comum} estado="carregando" valor={null} />;
+  // F03 (P0 de segurança, P70 do VINHO): sem a permissão financeira o serviço não consulta nada → "—" com o motivo; sem link para o painel financeiro
+  if (estado === 'sem_permissao' || bloco?.estado === 'sem_permissao')
+    return <DSKpiCard {...comum} acao={null} estado="vazio" valor={null} selo={{ texto: 'Sem permissão', tom: 'neutro' }} motivo="Sem permissão para dados financeiros." />;
   if (falha === 'semacesso') return <DSKpiCard {...comum} estado="vazio" valor={null} selo={{ texto: 'Sem acesso', tom: 'neutro' }} motivo="Seu nível de acesso não inclui este resultado." />;
   if (falha === 'erro') return <DSKpiCard {...comum} estado="erro" valor={null} motivo="Não foi possível ler este resultado agora." quando={null} />;
   if (estado === 'aguardando' || bloco?.estado === 'aguardando') return <DSKpiCard {...comum} estado="vazio" valor={null} selo={{ texto: 'Aguardando conexão', tom: 'neutro' }} motivo={aguardando} />;

@@ -61,7 +61,7 @@ export function efetivo(id: IdIndicador, ind: IndicadorBruto, fontes: FontesLida
   const nome = NOME_FONTE[fonte];
   const fonteAtrasada = !!f && f.estado !== 'conectada';
 
-  if (ind.estado === 'aguardando' || ind.estado === 'erro') return base;
+  if (ind.estado === 'aguardando' || ind.estado === 'erro' || ind.estado === 'sem_permissao') return base;   // sem_permissao (F03): nada a conferir
   // um 0 que não é "zero" (consulta incompleta, parcial ou desatualizado) NUNCA aparece como 0: "—" + o estado escrito
   const zeroSemConfirmar = ind.quantidade === 0 && ind.estado !== 'zero';
   if (ind.estado === 'desatualizado') return { ...base, zeroNaoConfirmado: zeroSemConfirmar };
