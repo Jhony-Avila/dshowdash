@@ -33,7 +33,7 @@
 [data-geral-react-root] .cv-faixa--2 { --cv-f-txt: var(--cv-f2); --cv-f-fundo: color-mix(in srgb, var(--des-aviso) 16%, transparent); }
 [data-geral-react-root] .cv-faixa--3 { --cv-f-txt: var(--cv-f3); --cv-f-fundo: color-mix(in srgb, var(--des-erro) 12%, transparent); }
 [data-geral-react-root] .cv-faixa--4 { --cv-f-txt: var(--cv-f4); --cv-f-fundo: color-mix(in srgb, var(--des-erro) 22%, transparent); }
-:root[data-theme="light"] [data-geral-react-root] .cv, :root.theme-light [data-geral-react-root] .cv { --cv-f1: #92400e; --cv-f2: #92400e; --cv-f3: #b91c1c; --cv-f4: #991b1b; }
+:root[data-theme="light"] [data-geral-react-root] .cv { --cv-f1: #92400e; --cv-f2: #92400e; --cv-f3: #b91c1c; --cv-f4: #991b1b; }
 /* tabela: o único dono de rolagem */
 [data-geral-react-root] .cv-corpo { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; background: transparent; }
 [data-geral-react-root] .cv-grade-caixa { flex: 1 1 auto; min-height: 0; display: flex; }

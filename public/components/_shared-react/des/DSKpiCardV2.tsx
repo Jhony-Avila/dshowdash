@@ -5,6 +5,7 @@
 // "bento" (fundo com tom, profundidade no hover). Regras R2: "—" nunca animado nem 0; variação só se o dado existir; micrográfico só com
 // série real (sem série, nada); cor da variação pela POLARIDADE; NumberFlow e entrada respeitam "reduzir movimento".
 import { useId, type ReactNode } from 'react';
+import type React from 'react';
 import { ArrowRight, RefreshCw } from 'lucide-react';
 import NumberFlow from '@number-flow/react';
 import { fmtKpi, intlDe, type EstadoKpi, type FormatoKpi, type TomSelo, type VariacaoKpi } from './DSKpiCard';
@@ -32,6 +33,10 @@ const SELO_PADRAO: Partial<Record<EstadoKpi, [string, TomSelo]>> = {
 };
 const base = (v: number, f: FormatoKpi) => (f === 'percentual' ? v / 100 : v);
 
+/** Copiar (Ctrl+C) com o número selecionado entrega o valor formatado ("R$ 4.717.500"), não os dígitos da animação nem o texto do leitor de tela. */
+const copiarValor = (v: number | null, f: FormatoKpi) => (e: React.ClipboardEvent) => {
+  if (v === null || !e.clipboardData) return; e.clipboardData.setData('text/plain', fmtKpi(v, f)); e.preventDefault(); };
+const longo = (v: number | null, f: FormatoKpi) => (v !== null && fmtKpi(v, f).length >= 14 ? '' : undefined);
 function Numero({ v, f, animar }: { v: number; f: FormatoKpi; animar?: boolean }) {
   if (!animar) return <>{fmtKpi(v, f)}</>;
   return <><span aria-hidden><NumberFlow value={base(v, f)} locales="pt-BR" format={intlDe(f)} respectMotionPreference /></span><span className="des-sr">{fmtKpi(v, f)}</span></>;
@@ -44,7 +49,7 @@ function Variacao({ v, anterior, formato }: { v: VariacaoKpi; anterior?: number 
   const txt = `${zero ? '' : sobe ? '▲ +' : '▼ '}${zero ? '0' : v.valor.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`.replace('▼ -', '▼ −');
   const ant = anterior === undefined || anterior === null ? null : fmtKpi(anterior, formato);
   return (
-    <span className={`des2-var des2-var--${bom === null ? 'neutro' : bom ? 'bom' : 'ruim'}`} title={ant ? `${v.base}: ${ant}` : v.base} data-des-variacao>
+    <span className={`des2-var des2-var--${bom === null ? 'neutro' : bom ? 'bom' : 'ruim'}`} data-des-variacao tabIndex={0} data-des-dica={ant ? `${v.base}: ${ant}` : v.base}>
       <span aria-hidden>{txt}</span>
       <span className="des-sr">{`variação ${v.valor.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%, ${bom === null ? 'estável' : bom ? 'favorável' : 'desfavorável'}`}{ant ? `; ${v.base}: ${ant}` : ''}</span>
       <span className="des2-var__base" aria-hidden>{v.base}</span>
@@ -55,12 +60,12 @@ function Variacao({ v, anterior, formato }: { v: VariacaoKpi; anterior?: number 
 /** Micrográfico: só com série real (≥ 2 pontos conhecidos). A linha quebra onde o ponto é desconhecido (null). */
 function Sparkline({ serie, area }: { serie: (number | null)[]; area: boolean }) {
   const id = useId().replace(/:/g, '');
-  const conhecidos = serie.filter((x): x is number => x !== null && Number.isFinite(x));
+  const conhecidos = serie.filter((x): x is number => typeof x === 'number' && Number.isFinite(x));
   if (conhecidos.length < 2) return null;
   const mn = Math.min(...conhecidos), mx = Math.max(...conhecidos), W = 100, H = 28, pad = 2;
   const pt = (v: number, i: number) => `${(i / (serie.length - 1)) * W},${H - pad - ((v - mn) / (mx - mn || 1)) * (H - pad * 2)}`;
   const trechos: string[][] = []; let cur: string[] = [];
-  serie.forEach((v, i) => { if (v === null || !Number.isFinite(v)) { if (cur.length) trechos.push(cur); cur = []; } else cur.push(pt(v, i)); });
+  serie.forEach((v, i) => { if (typeof v !== 'number' || !Number.isFinite(v)) { if (cur.length) trechos.push(cur); cur = []; } else cur.push(pt(v, i)); });
   if (cur.length) trechos.push(cur);
   return (
     <svg className="des2-spark" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden data-des-spark={serie.length}>
@@ -77,7 +82,7 @@ export function DSKpiCardV2(p: DSKpiCardV2Props) {
   const selo = p.selo === null ? null : p.selo ?? (padrao ? { texto: padrao[0], tom: padrao[1] } : null);
   const carregando = p.estado === 'carregando';
   const semNumero = p.estado === 'vazio' || p.estado === 'erro' || p.valor === null;
-  const temSerie = !p.compacto && !semNumero && !!p.serie && p.serie.filter((x) => x !== null && Number.isFinite(x)).length >= 2;
+  const temSerie = !p.compacto && !semNumero && !!p.serie && p.serie.filter((x) => typeof x === 'number' && Number.isFinite(x)).length >= 2;
   if (p.compacto) {
     // faixa KPI travada (contrato espacial aprovado 26/11: ≤ 56 px): rótulo · número · uma linha de contexto. O estado nunca some: fora de 'ok'
     // a linha de contexto é o selo + o motivo. Número sem cortar (o tamanho acompanha a largura do cartão: R$ 999.999.999,99 cabe).
@@ -86,13 +91,14 @@ export function DSKpiCardV2(p: DSKpiCardV2Props) {
         {p.estado === 'erro' && p.onTentar && <button type="button" className="des-link" onClick={p.onTentar} disabled={p.tentando}> {p.tentando ? 'Tentando…' : 'Tentar de novo'}</button>}</>);
     return (
       <article className="des2-kpi des2-kpi--A des2-kpi--compacto" data-des-kpi data-des-estado={p.estado} data-des-dominio={p.dominio ?? 'neutro'} aria-busy={carregando || undefined} title={p.dica} {...p.dados}>
+        {p.dica && <span className="des-sr">{p.dica}</span>}
         {/* sem a caixa do ícone: a largura vai para o número e a linha de contexto (nada cortado na faixa de 56 px) */}
         <div className="des2-kpi__cmp">
           <h3 className="des2-kpi__rotulo" data-des-rotulo>{p.rotulo}</h3>
           {carregando ? <span className="des-osso" style={{ width: '70%', height: 18 }} /> : (
             // número longo (≥ 14 caracteres, ex.: R$ 1.000.000.000) encolhe mais com a largura do cartão: nunca corta
             <div className={`des2-kpi__valor${semNumero ? ' des2-kpi__valor--vazio' : p.estado === 'desatualizado' ? ' des2-kpi__valor--velho' : ''}`} data-des-valor
-              data-des-longo={!semNumero && p.valor !== null && fmtKpi(p.valor, p.formato).length >= 14 ? '' : undefined}>
+              data-des-longo={semNumero ? undefined : longo(p.valor, p.formato)} onCopy={copiarValor(semNumero ? null : p.valor, p.formato)}>
               {semNumero || p.valor === null ? '—' : <Numero v={p.valor} f={p.formato} animar={p.animar} />}</div>)}
           {!carregando && linha ? <span className="des2-kpi__sub" data-des-sub>{linha}</span> : null}
         </div>
@@ -101,6 +107,7 @@ export function DSKpiCardV2(p: DSKpiCardV2Props) {
   }
   return (
     <article className={`des2-kpi des2-kpi--${v}${p.compacto ? ' des2-kpi--compacto' : ''}`} data-des-kpi data-des-estado={p.estado} data-des-dominio={p.dominio ?? 'neutro'} aria-busy={carregando || undefined} title={p.dica} {...p.dados}>
+        {p.dica && <span className="des-sr">{p.dica}</span>}
       <header className="des2-kpi__cab">
         {p.icone && <span className="des2-kpi__ic" aria-hidden>{p.icone}</span>}
         <div className="des2-kpi__tit">
@@ -119,13 +126,17 @@ export function DSKpiCardV2(p: DSKpiCardV2Props) {
       ) : (
         <div className="des2-kpi__corpo">
           <div className="des2-kpi__linha">
-            <div className={`des2-kpi__valor${semNumero ? ' des2-kpi__valor--vazio' : p.estado === 'desatualizado' ? ' des2-kpi__valor--velho' : ''}`} data-des-valor>
+            <div className={`des2-kpi__valor${semNumero ? ' des2-kpi__valor--vazio' : p.estado === 'desatualizado' ? ' des2-kpi__valor--velho' : ''}`} data-des-valor
+              data-des-longo={semNumero ? undefined : longo(p.valor, p.formato)} onCopy={copiarValor(semNumero ? null : p.valor, p.formato)}>
               {semNumero || p.valor === null ? '—' : <Numero v={p.valor} f={p.formato} animar={p.animar} />}
             </div>
           </div>
           {/* linha própria, sempre: a variação (em destaque) ou, fora de 'ok', o selo do estado — nunca espreme o número nem o rótulo */}
-          {p.variacao && !semNumero && p.variacao.valor !== null ? <Variacao v={p.variacao} anterior={p.anterior} formato={p.formato} />
-            : selo && <span className={`des-selo des-selo--${selo.tom} des2-kpi__selo`} data-des-selo>{selo.texto}</span>}
+          {(selo || (p.variacao && !semNumero && p.variacao.valor !== null)) && (
+            <div className="des2-kpi__marcas">
+              {selo && <span className={`des-selo des-selo--${selo.tom} des2-kpi__selo`} data-des-selo>{selo.texto}</span>}
+              {p.variacao && !semNumero && p.variacao.valor !== null && <Variacao v={p.variacao} anterior={p.anterior} formato={p.formato} />}
+            </div>)}
           {(p.estado !== 'ok' && (p.motivo || p.estado === 'vazio')) ? <span className="des2-kpi__sub">{p.motivo || 'Sem valor informado · nenhum número assumido'}</span>
             : p.sub ? <span className="des2-kpi__sub">{p.sub}</span> : null}
         </div>

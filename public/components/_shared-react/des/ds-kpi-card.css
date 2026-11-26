@@ -1,6 +1,6 @@
 /* ds-kpi-card.css — DES · DSKpiCard (CIMA, 26/11). Opção A (decisão do Jhony): desenho do "metrics" do Untitled UI PRO PORTADO para CSS puro
    com tokens --des-* (sem Tailwind, nada global: tudo sob .des-escopo / .des-*). Texto mínimo 12 px (regra do Jhony).
-   TEMA: segue o shell do Dash (escuro por padrão; claro com :root[data-theme="light"] ou :root.theme-light, como o tokens.css da Geral).
+   TEMA: segue o shell do Dash (escuro por padrão; claro com :root[data-theme="light"] (fonte única: html[data-theme]; o body.theme-* pode ficar velho depois do botão — UX03b), como o tokens.css da Geral).
    USO: o consumidor põe os cartões dentro de um elemento .des-escopo (é onde os tokens valem). No Lab/Storybook o tema é forçado por [data-des-tema="claro"|"escuro"] no próprio .des-escopo. Valores = os da Geral V2 (--ger-*), mais os
    tokens -txt do selo (os de aviso/erro da Geral dão 4,2–4,4:1 sobre o fundo tingido; os -txt dão ≥ 4,5:1 — axe, Lab 26/11). */
 .des-escopo, .des-escopo[data-des-tema="escuro"] {
@@ -8,7 +8,7 @@
   --des-link: #818cf8; --des-ok: #22c55e; --des-aviso: #f59e0b; --des-erro: #ef4444; --des-ok-txt: #4ade80; --des-aviso-txt: #fbbf24; --des-erro-txt: #fca5a5;
   --des-sombra: none; --des-fonte: inherit; --des-raio: 12px; color: var(--des-texto);
 }
-:root[data-theme="light"] .des-escopo:not([data-des-tema="escuro"]), :root.theme-light .des-escopo:not([data-des-tema="escuro"]), .des-escopo[data-des-tema="claro"] {
+:root[data-theme="light"] .des-escopo:not([data-des-tema="escuro"]), .des-escopo[data-des-tema="claro"] {
   --des-fundo: #f4f5fa; --des-sup: #ffffff; --des-sup2: #eef1f8; --des-borda: #dde1ec; --des-texto: #1a1d29; --des-dim: #5a6273;
   --des-link: #4f46e5; --des-ok: #15803d; --des-aviso: #b45309; --des-erro: #dc2626; --des-ok-txt: #166534; --des-aviso-txt: #92400e; --des-erro-txt: #b91c1c;
   --des-sombra: 0 1px 2px rgba(16, 24, 40, .05);
