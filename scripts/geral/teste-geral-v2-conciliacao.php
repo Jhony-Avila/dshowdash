@@ -14,6 +14,15 @@ check('dias úteis: sex→seg = 1, sáb→seg = 1, sex→sáb = 0, seg→qui = 3
     $du('2026-11-13', '2026-11-16') === 1 && $du('2026-11-14', '2026-11-16') === 1 && $du('2026-11-13', '2026-11-14') === 0
     && $du('2026-11-09', '2026-11-12') === 3 && $du('2026-11-11', '2026-11-09') === -2);
 
+// 26/11: feriados (nacionais + SP capital, lista fixa 2025–2027)
+check('feriado 20/11/2026 (sex): qui 19/11 → seg 23/11 = 1 dia útil', $du('2026-11-19', '2026-11-23') === 1);
+check('Natal 25/12/2026 (sex): qui 24/12 → seg 28/12 = 1 dia útil', $du('2026-12-24', '2026-12-28') === 1);
+check('Carnaval 2026 (seg 16 e ter 17/02): sex 13/02 → qua 18/02 = 1 dia útil; 2027 (08–09/02): sex 05/02 → qua 10/02 = 1', $du('2026-02-13', '2026-02-18') === 1 && $du('2027-02-05', '2027-02-10') === 1);
+check('SP capital: 25/01/2027 (seg) e Corpus Christi 04/06/2026 (qui) não são úteis; volta no tempo também desconta', $du('2027-01-22', '2027-01-26') === 1
+    && $du('2026-06-03', '2026-06-05') === 1 && $du('2026-11-23', '2026-11-19') === -1);
+check('lista: 45 datas, 15 por ano, sem repetição, nenhuma em 2024/2028', count(GeralV2Conciliacao::FERIADOS) === 45 && count(array_unique(GeralV2Conciliacao::FERIADOS)) === 45
+    && count(array_filter(GeralV2Conciliacao::FERIADOS, fn($f) => str_starts_with($f, '2026-'))) === 15);
+
 // ---- B. casamento puro (sem banco)
 $it = fn(string $id, string $dia, int $c, ?int $l = null) => ['id' => $id, 'dia' => $dia, 'c' => $c, 'l' => $l];
 $porDia = fn(array $r) => array_column($r['dias'], null, 'dia');
@@ -46,6 +55,9 @@ $r = GeralV2Conciliacao::casar([$it('a', '2026-11-03', 500000)], ['2026-11-10' =
 $d = $porDia($r);
 check('5 dias úteis de distância: sem par dos dois lados, com os motivos curtos', $d['2026-11-03']['motivo'] === 'sem baixa no Precifica' && $d['2026-11-10']['motivo'] === 'sem recebimento no Asaas'
     && $r['resumo']['itens_sem_par'] === 2 && $r['resumo']['conciliados_com_atraso'] === 0);
+// com o feriado de 20/11: recebido qui 19/11, baixa qua 25/11 = 3 dias úteis (20/11 não conta) → casa
+$r = GeralV2Conciliacao::casar([$it('a', '2026-11-19', 300000)], ['2026-11-25' => 300000], '2026-10-28', '2026-11-26');
+check('20/11 fora da conta: 19/11 → 25/11 casa com atraso de 3 dias úteis', $r['resumo']['itens_sem_par'] === 0 && $porDia($r)['2026-11-25']['motivo'] === 'conciliado com atraso de 3 dias úteis');
 // exatamente 3 dias úteis casa; valor quase igual (1 centavo) NÃO casa entre dias
 $r = GeralV2Conciliacao::casar([$it('a', '2026-11-09', 200000)], ['2026-11-12' => 200000], '2026-10-28', '2026-11-26');
 check('3 dias úteis casa', $r['resumo']['itens_sem_par'] === 0 && $r['resumo']['conciliados_com_atraso'] === 1);

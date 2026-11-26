@@ -10,7 +10,7 @@ declare(strict_types=1);
  *
  * 26/11 (validação do Jhony com dados reais: a maior parte dos "dias divergentes" era DESCASAMENTO DE DATA, ex. +38.220 em 10/11 e −38.220 em 11/11):
  *   O Precifica chega AGREGADO por empresa e dia (sem a baixa individual nem a referência da cobrança), então o casamento é feito sobre a SOBRA de
- *   cada dia (sobra = Asaas − Precifica), dentro de ±3 DIAS ÚTEIS (seg–sex; feriados não descontados — A CONFERIR), por VALOR EXATO em centavos:
+ *   cada dia (sobra = Asaas − Precifica), dentro de ±3 DIAS ÚTEIS (seg–sex, fora os feriados nacionais e de SP capital de FERIADOS), por VALOR EXATO em centavos:
  *     1) dia que bate (|sobra| ≤ R$ 1,00) = conciliado no dia;
  *     2) o Asaas inteiro de um dia sem baixa nele = −sobra de outro dia da janela → os dois "conciliados com atraso de N dias úteis";
  *     3) cobrança do Asaas de um dia com sobra ≥ ela, levada ao dia mais perto da janela em que o Precifica sobra ≥ ela → "conciliada com atraso".
@@ -29,6 +29,20 @@ final class GeralV2Conciliacao
     public const TOLERANCIA_CENTAVOS = 100;
     public const JANELA_DIAS_UTEIS = 3;
     public const MARGEM_DIAS = 7;
+    /**
+     * 26/11: dias NÃO úteis além de sáb/dom — lista FIXA 2025–2027, sem chamada externa. Nacionais: 01/01, Carnaval (seg e ter: bancos fechados),
+     * Sexta-feira Santa, 21/04, 01/05, 07/09, 12/10, 02/11, 15/11, 20/11 (nacional desde 2024), 25/12. SP capital: 25/01 (aniversário da cidade),
+     * Corpus Christi (municipal) e 09/07 (estadual, vale na capital). Móveis conferidos pela Páscoa (easter_days). Fora de 2025–2027: só sáb/dom.
+     * Quarta-feira de Cinzas (meio expediente) conta como dia útil.
+     */
+    public const FERIADOS = [
+        '2025-01-01', '2025-01-25', '2025-03-03', '2025-03-04', '2025-04-18', '2025-04-21', '2025-05-01', '2025-06-19', '2025-07-09', '2025-09-07',
+        '2025-10-12', '2025-11-02', '2025-11-15', '2025-11-20', '2025-12-25',
+        '2026-01-01', '2026-01-25', '2026-02-16', '2026-02-17', '2026-04-03', '2026-04-21', '2026-05-01', '2026-06-04', '2026-07-09', '2026-09-07',
+        '2026-10-12', '2026-11-02', '2026-11-15', '2026-11-20', '2026-12-25',
+        '2027-01-01', '2027-01-25', '2027-02-08', '2027-02-09', '2027-03-26', '2027-04-21', '2027-05-01', '2027-05-27', '2027-07-09', '2027-09-07',
+        '2027-10-12', '2027-11-02', '2027-11-15', '2027-11-20', '2027-12-25',
+    ];
 
     public function __construct(private readonly PDO $pdo, private readonly string $pastaChaves, private readonly string $p = '',
                                 private readonly string $finSchema = 'APP_DSHOW', private readonly DateTimeZone $fuso = new DateTimeZone('America/Sao_Paulo'))
@@ -116,12 +130,12 @@ final class GeralV2Conciliacao
                         'divergencias' => $div, 'conciliados_com_atraso' => $atrasoTot, 'ligacoes_a_confirmar' => $aConfirmar, 'empresas' => $out];
     }
 
-    /** Dias úteis (seg–sex) andados de $a até $b, com sinal; o dia de partida não conta. Feriados não descontados. */
+    /** Dias úteis (seg–sex, fora os FERIADOS) andados de $a até $b, com sinal; o dia de partida não conta. */
     public static function diasUteis(string $a, string $b): int
     {
         if ($a === $b) return 0;
         $s = $a < $b ? 1 : -1; $d = new DateTimeImmutable($a); $fim = new DateTimeImmutable($b); $n = 0;
-        while ($d != $fim) { $d = $d->modify(($s > 0 ? '+' : '-') . '1 day'); if ((int) $d->format('N') <= 5) $n++; }
+        while ($d != $fim) { $d = $d->modify(($s > 0 ? '+' : '-') . '1 day'); if ((int) $d->format('N') <= 5 && !in_array($d->format('Y-m-d'), self::FERIADOS, true)) $n++; }
         return $s * $n;
     }
 
