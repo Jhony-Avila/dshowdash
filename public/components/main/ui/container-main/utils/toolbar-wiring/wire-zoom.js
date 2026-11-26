@@ -40,7 +40,7 @@ async function wireZoom(toolbar, wired, failed, logger) {
       });
       toolbar.registerStateProvider("zoomReset", () => {
         const zoom = zoomGetCurrentZoom ? zoomGetCurrentZoom() : 1;
-        return { tooltip: `Zoom ${Math.round(zoom * 100)}%` };
+        return { tooltip: `Zoom 1:1 · atual ${Math.round(zoom * 100)}%` };
       });
       wired.push("zoomReset");
     }
