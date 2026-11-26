@@ -1,0 +1,68 @@
+/* screens/revisao.css — Revisão cadastral (C2). Só tokens --bl-* / --des-* (claro/escuro do Dash; tema só por html[data-theme]).
+   Contrato espacial: topo único (título + ações ≤ 40 px · faixa ≤ 56 px · filtros 32 px) e UMA região de rolagem (as linhas). */
+.cs-raiz { font-family: var(--bl-fonte); color: var(--bl-texto); }
+.cs-tela { display: flex; flex-direction: column; gap: 8px; padding: 8px 16px 0; }
+.cs-topo { display: flex; flex-direction: column; gap: 8px; }
+.cs-topo__linha { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 36px; }
+.cs-titulo { display: flex; align-items: baseline; gap: 10px; flex: none; }
+.cs-titulo__trilha { font-size: 12px; color: var(--bl-texto-2); white-space: nowrap; }
+.cs-titulo__trilha::after { content: ' ›'; }
+.cs-titulo__h1 { margin: 0; font-size: 18px; font-weight: 650; letter-spacing: -.01em; white-space: nowrap; }
+.cs-selo { font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; color: var(--bl-texto-2); border: 1px solid var(--bl-borda); white-space: nowrap; }
+.cs-acoes { display: flex; align-items: center; gap: 10px; flex: none; }
+.cs-botao { font: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 12px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--bl-borda); background: var(--bl-superficie); color: var(--bl-texto); }
+.cs-botao:hover:not(:disabled) { border-color: var(--bl-borda-forte); background: var(--bl-superficie-2); }
+.cs-botao:disabled { opacity: .6; cursor: default; }
+.cs-botao:focus-visible, .cs-chip:focus-visible, .cs-expandir:focus-visible { outline: 2px solid var(--des-linha-marca, var(--bl-verde)); outline-offset: 2px; }
+.cs-botao--primario { border-color: var(--bl-verde-borda); background: var(--bl-verde-suave); }
+
+@media (max-width: 1600px) { .cs-titulo__trilha, .cs-selo { display: none; } }   /* 1440 com a lateral aberta: os 5 filtros cabem na linha do título */
+
+/* faixa ≤ 56 px: cada cartão diz o que conta (CNPJs, fichas ou campos) */
+.cs-faixa { display: grid; grid-template-columns: 1.3fr repeat(4, minmax(0, 1fr)) 1.5fr; gap: 1px; max-height: 56px; overflow: hidden;
+  border: 1px solid var(--bl-borda); border-radius: 10px; background: var(--bl-borda); }
+.cs-kpi { display: flex; flex-direction: column; justify-content: center; gap: 1px; padding: 6px 12px; min-width: 0; background: var(--bl-superficie); }
+.cs-kpi__num { font-size: 18px; font-weight: 650; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cs-kpi__num--txt { font-size: 14px; }
+.cs-kpi__un { font-size: 12px; font-weight: 600; color: var(--bl-texto-2); margin-left: 5px; }
+.cs-kpi__rot { font-size: 11.5px; color: var(--bl-texto-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cs-kpi__rot--aviso { color: var(--bl-texto); }
+.cs-kpi__rot em { font-style: normal; font-weight: 600; margin-left: 4px; }
+
+.cs-incompleta { font-size: 12.5px; padding: 6px 12px; border-radius: 8px; color: var(--bl-texto); background: var(--bl-aviso-bg); border: 1px solid var(--bl-aviso); }
+
+.cs-filtros { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; justify-content: center; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; min-width: 0; }
+.cs-chip { font: inherit; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+  border: 1px solid var(--bl-borda); background: transparent; color: var(--bl-texto-2); }
+.cs-chip:hover { color: var(--bl-texto); background: var(--bl-superficie-2); }
+.cs-chip--ativo { color: var(--bl-texto); background: var(--bl-superficie-2); border-color: var(--bl-borda-forte); font-weight: 600; }
+.cs-chip__n { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.cs-grade { min-height: 280px; }
+.cs-empresa { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }
+.cs-empresa__nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-expandir { font: inherit; font-size: 12px; width: 22px; height: 22px; flex: none; display: inline-grid; place-items: center; cursor: pointer;
+  border: 1px solid var(--bl-borda); border-radius: 6px; background: transparent; color: var(--bl-texto-2); }
+.cs-expandir:hover { color: var(--bl-texto); border-color: var(--bl-borda-forte); }
+[data-bl-root] .cs-dim { color: var(--des-linha-dim, var(--bl-texto-2)); }
+[data-bl-root] .cs-proposto { font-weight: 600; }
+[data-bl-root] .cs-divergem { color: var(--bl-aviso); font-weight: 600; }
+[data-bl-root] .cs-org--compartilhado::after { content: ' · CNPJ compartilhado'; color: var(--bl-texto-2); font-size: 11.5px; }
+
+/* detalhe (linha de largura total) */
+.cs-det { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 24px; padding: 10px 16px 10px 44px; height: 100%; box-sizing: border-box;
+  background: var(--des-linha-expandida, var(--bl-superficie-2)); border-bottom: 1px solid var(--bl-borda); font-size: 12.5px; overflow: auto; }
+.cs-det__tit { margin: 0 0 2px; font-size: 11.5px; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; color: var(--bl-texto-2); }
+.cs-det__tit:not(:first-child) { margin-top: 8px; }
+.cs-det__txt { margin: 0; line-height: 1.45; }
+.cs-det__txt--dim { color: var(--bl-texto-2); margin-top: 6px; }
+.cs-det__aviso { margin: 4px 0 0; padding: 3px 8px; border-left: 0; border-radius: 6px; background: var(--bl-aviso-bg); }
+.cs-det__lista { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; }
+.cs-det__grafia { display: flex; gap: 10px; align-items: baseline; line-height: 1.5; }
+.cs-det__valor { font-family: var(--bl-fonte-mono); white-space: pre; }
+.cs-det__fonte { color: var(--bl-texto-2); font-size: 11.5px; }
+.cs-det__grafia--proposta .cs-det__valor { font-weight: 650; }
+
+.cs-estado { margin: 40px auto; max-width: 560px; padding: 24px; text-align: center; border: 1px solid var(--bl-borda); border-radius: 12px; background: var(--bl-superficie); font-size: 13px; }
+.cs-vazio { font-size: 13px; color: var(--bl-texto-2); }
