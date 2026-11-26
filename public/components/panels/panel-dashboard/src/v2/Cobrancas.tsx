@@ -29,6 +29,9 @@ const plural = (n: number | null, um: string, varios: string) => (n === null ? `
 /** valor curto da faixa, sem "R$" (o nome completo e o valor exato estão no rótulo acessível e no title): 110,8 mil · 1,2 mi */
 /** Data válida (ISO) ou null: o resumo real não manda gerado_em ("Invalid Date" no ar, 26/11). */
 const dataOk = (iso: unknown): string | null => (typeof iso === 'string' && iso !== '' && !Number.isNaN(new Date(iso).getTime()) ? iso : null);
+/** Big number em reais inteiros SEM arredondar para cima (AZUL, QI-008: R$ 999.999.999,99 virava "R$ 1.000.000.000", outra casa): trunca os
+ *  centavos; o valor exato fica no tooltip, na tabela e no detalhe. */
+const inteiro = (v: number | null) => (v === null ? null : Math.trunc(v));
 const curta = (v: number | null) => (v === null ? '—' : fmtMoedaCurta(v).replace(/^R\$\s?/, ''));
 const negativacao = (x: ItemCv) => (x.situacao?.negativacao === true ? 'Pedida' : x.situacao?.negativacao === false ? 'Não' : '—');
 const ORDEM_NULO = (a: number | null, b: number | null) => (a === b ? 0 : a === null ? -1 : b === null ? 1 : a - b);
@@ -208,7 +211,7 @@ export default function CobrancasVencidas({ aoVoltar }: { aoVoltar: () => void }
   const kpi = { formato: 'moeda-inteira' as const, dominio: 'financeiro' as const, compacto: true, animar: true, fonte: 'Asaas', estado: estado(resumo),
     onTentar: resumo.recarregar, tentando: resumo.atualizando, motivo: estado(resumo) === 'erro' ? 'Não foi possível ler agora.' : undefined, quando: undefined };
   const soma = (x: { valor: string | null; cobrancas: number | null } | null | undefined) => { const v = x ? dinheiro(x.valor) : null;
-    return { valor: v, sub: x ? plural(x.cobrancas, 'cobrança', 'cobranças') : undefined, dica: v === null ? undefined : `Valor exato: ${fmtMoeda2(v)}` }; };
+    return { valor: inteiro(v), sub: x ? plural(x.cobrancas, 'cobrança', 'cobranças') : undefined, dica: v === null ? undefined : `Valor exato: ${fmtMoeda2(v)}` }; };
   const pv = r?.por_vencimento ?? null; const mx = r?.maior ?? null;
 
   if (semAcesso) return (
@@ -239,13 +242,13 @@ export default function CobrancasVencidas({ aoVoltar }: { aoVoltar: () => void }
         </div>
         {resumo.erro && r && <Problema motivo="A atualização falhou; mostrando a última leitura." quando={resumo.okEm} onTentar={resumo.recarregar} tentando={resumo.atualizando} />}
         <div className="cv-kpis" data-cv-kpis>
-          <DSKpiCardV2 {...kpi} rotulo="Total vencido" icone={<Wallet02 size={14} />} valor={r?.total ? dinheiro(r.total.valor) : null}
+          <DSKpiCardV2 {...kpi} rotulo="Total vencido" icone={<Wallet02 size={14} />} valor={r?.total ? inteiro(dinheiro(r.total.valor)) : null}
             sub={r?.total ? `${plural(r.total.cobrancas, 'cobrança', 'cobranças')} · ${plural(r.total.clientes, 'cliente', 'clientes')}` : undefined}
             dica={r?.total ? `Valor exato: ${fmtMoeda2(dinheiro(r.total.valor))} · ${plural(r.total.cobrancas, 'cobrança', 'cobranças')} de ${plural(r.total.clientes, 'cliente', 'clientes')}` : undefined} dados={{ 'data-cv-kpi': 'total' }} />
           <DSKpiCardV2 {...kpi} rotulo="Vencido neste mês" icone={<Receipt size={14} />} {...soma(pv?.mes_atual)} dados={{ 'data-cv-kpi': 'mes' }} />
           <DSKpiCardV2 {...kpi} rotulo="Últimos 30 dias" icone={<Receipt size={14} />} {...soma(pv?.ultimos_30_dias)} dados={{ 'data-cv-kpi': 'd30' }} />
           <DSKpiCardV2 {...kpi} rotulo="Últimos 3 meses" icone={<Receipt size={14} />} {...soma(pv?.ultimos_3_meses)} dados={{ 'data-cv-kpi': 'd90' }} />
-          <DSKpiCardV2 {...kpi} rotulo="Maior em aberto" icone={<CurrencyDollarCircle size={14} />} valor={mx ? dinheiro(mx.valor) : null}
+          <DSKpiCardV2 {...kpi} rotulo="Maior em aberto" icone={<CurrencyDollarCircle size={14} />} valor={mx ? inteiro(dinheiro(mx.valor)) : null}
             estado={kpi.estado === 'ok' && !mx ? 'vazio' : kpi.estado} selo={null} motivo={kpi.estado === 'ok' && !mx ? 'Nenhuma vencida' : kpi.motivo}
             sub={mx ? <button type="button" className="des-link cv-maior" onClick={() => setAberta(mx.id)} data-cv-maior title={`${mx.cliente_nome ?? 'Cliente —'} · ${mx.empresa?.rotulo ?? '—'} · ${fmtMoeda2(dinheiro(mx.valor))}`}>{mx.dias_atraso === null ? '—' : `${fmtN(mx.dias_atraso)} dias`} · {mx.cliente_nome ?? 'cliente —'}</button> : undefined}
             dados={{ 'data-cv-kpi': 'maior' }} />

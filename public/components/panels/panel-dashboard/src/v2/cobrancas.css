@@ -75,4 +75,7 @@
 [data-geral-react-root] .cv-det-lista li { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; padding: 6px 0; border-top: 1px solid var(--des-borda); }
 [data-geral-react-root] .cv-num { text-align: right; font-variant-numeric: tabular-nums; }
 @media (max-width: 1100px) { [data-geral-react-root] .cv-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } [data-geral-react-root] .cv-faixas { grid-column: span 3; } }
+/* celular (AZUL, QI-008): a faixa de 56 px é contrato do desktop; aqui a linha de contexto quebra em vez de cortar ("120 cobranças · 86 clientes") */
+@media (max-width: 600px) { [data-geral-react-root] .cv-kpis .des2-kpi--compacto { height: auto; min-height: 56px; padding-block: 6px; }
+  [data-geral-react-root] .cv-kpis .des2-kpi__sub { white-space: normal; overflow: visible; text-overflow: clip; } }
 @media (max-width: 600px) { [data-geral-react-root] .cv-kpis { grid-template-columns: 1fr 1fr; } [data-geral-react-root] .cv-faixas { grid-column: span 2; } [data-geral-react-root] .cv-dir { margin-left: 0; } }
