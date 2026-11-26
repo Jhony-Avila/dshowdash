@@ -112,7 +112,7 @@ export function DSKpiCardV2(p: DSKpiCardV2Props) {
           esticava os cartões de estado acima de 160 px (a linha inteira da Geral cresce junto). Sem marcador, a fonte volta para o rodapé. */}
       {(temSerie || (p.acao && !carregando) || !p.marcador) && (
         <footer className="des2-kpi__rodape" data-des-rodape>
-          {temSerie ? <Sparkline serie={p.serie!} area={v === 'B'} /> : <span className="des2-kpi__fonte">{p.marcador ? '' : p.fonte}</span>}
+          {temSerie ? <Sparkline serie={p.serie!} area={false} /> : <span className="des2-kpi__fonte">{p.marcador ? '' : p.fonte}</span>}
           {p.acao && !carregando && <button type="button" className="des-link des2-kpi__acao" onClick={p.acao.onClick}>{p.acao.rotulo} <ArrowRight size={13} aria-hidden /></button>}
         </footer>)}
     </article>
