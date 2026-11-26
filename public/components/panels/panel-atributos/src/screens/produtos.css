@@ -82,7 +82,7 @@
 [data-bl-root] .at-pl-zero { color: var(--bl-texto-2); }
 
 /* ── Cartões: auto-fill 340 px, intervalo 12, altura FIXA 250 (5 colunas em 2200 e 3 em 1440, menu aberto) ─────────────────── */
-[data-bl-root] .at-pl-cartoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; align-content: start; }
+[data-bl-root] .at-pl-cartoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));   /* 26/11: 3 col. a 1440, 4 com a lateral recolhida, 5 a 2200 */ gap: 12px; align-content: start; }
 [data-bl-root] .at-pl-cartoes__grupo { grid-column: 1 / -1; padding: 6px 2px 0; font-size: 12px; font-weight: 500; color: var(--bl-texto-2); border-top: 1px solid var(--bl-borda); }
 [data-bl-root] .at-pl-cartao { height: 250px; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; min-width: 0;
   background: var(--bl-superficie); border: 1px solid var(--bl-borda); border-radius: var(--bl-raio); font-size: 12.5px; font-weight: 400; }
@@ -143,3 +143,11 @@
 [data-bl-root] .at-pl-grade__corpo { min-width: 0; }
 [data-bl-root] .at-pl-grade__corpo .at-pl-nome { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle; }
 [data-bl-root] .at-pl-grade__corpo .at-pl-ess { width: 100%; }
+
+/* 26/11 · topo integrado (parecer UX FASE 3): a faixa é a ÚNICA barra (≤ 48 px); a paginação e as ferramentas da grade vivem nela */
+[data-bl-root] .at-pl-faixa { min-height: 0; max-height: 48px; padding-bottom: 8px; }
+[data-bl-root] .at-pl-faixa__grade { display: inline-flex; align-items: center; }
+[data-bl-root] .at-pl-grade__barra--faixa { display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+[data-bl-root] .at-pl-grade__barra--faixa .at-link { white-space: nowrap; }
+[data-bl-root] .at-pl-pag { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--bl-texto-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+[data-bl-root] .at-pl-pag__btn { min-width: 28px; justify-content: center; padding: 0 6px; }

@@ -4,6 +4,7 @@
 // (texto/número), colunas fixas (seleção, ID e produto), mostrar/ocultar colunas, exportar CSV e rolagem virtualizada (sem página de 48 neste modo).
 // Seleção = a mesma do módulo (m.selecao): a caixa do cabeçalho marca as linhas que passam nos filtros da grade.
 import React from 'react';
+import { createPortal } from 'react-dom';
 import type { ProdutoResumo } from '../lib/tipos';
 import { corKit, rotuloSubcategoria, tituloFamilia } from '../lib/rotulos';
 import { criarGrade, exportarCsv, type ColDef, type GridApi, type ICellRendererParams } from '@shared/ag-grid/grade';
@@ -16,9 +17,11 @@ const el = (tag: string, cls?: string, texto?: string): HTMLElement => { const e
 const pctEss = (p: Linha): number | null => (p.essencial.total > 0 ? Math.round((p.essencial.feitos / p.essencial.total) * 100) : null);
 const precificaTexto = (p: Linha) => (p.precifica.length ? p.precifica.map(tituloFamilia).join(', ') : '—');
 
-export function ProdutosGrade({ linhas, comSituacao, podeSel, selecao, aoSelecionar, aoAbrir, especificos }: {
+export function ProdutosGrade({ linhas, comSituacao, podeSel, selecao, aoSelecionar, aoAbrir, especificos, slot }: {
   linhas: Linha[]; comSituacao: boolean; podeSel: boolean; selecao: number[]; aoSelecionar: (ids: number[]) => void; aoAbrir: (id: number) => void;
   especificos: (p: Linha) => { id: number; nome: string }[];
+  /** 26/11 (topo integrado): onde pôr Colunas/CSV — a faixa da tela; sem slot, a barra fica acima da grade (como antes). */
+  slot?: HTMLElement | null;
 }) {
   const caixa = React.useRef<HTMLDivElement>(null);
   const apiRef = React.useRef<GridApi<Linha> | null>(null);
@@ -30,7 +33,12 @@ export function ProdutosGrade({ linhas, comSituacao, podeSel, selecao, aoSelecio
 
   // altura: do topo da grade até o fim da janela (a grade rola por dentro; a página não cresce 670 linhas)
   React.useLayoutEffect(() => {
-    const medir = () => { const t = caixa.current?.getBoundingClientRect().top ?? 0; setAltura(Math.max(420, Math.round(window.innerHeight - Math.max(0, t) - 72))); };
+    // a grade vai ATÉ O FIM da tela e a página NÃO rola (contrato UX: uma região de rolagem só — as linhas). 1º passo: do topo da grade ao fim
+    // da janela; 2º passo (depois do layout): se o documento passou da janela (barra inferior e espaçamentos do shell), encolhe exatamente o excesso.
+    const medir = () => {
+      const t = caixa.current?.getBoundingClientRect().top ?? 0; const base = Math.max(360, Math.round(window.innerHeight - Math.max(0, t) - 4)); setAltura(base);
+      requestAnimationFrame(() => requestAnimationFrame(() => { const excesso = document.documentElement.scrollHeight - window.innerHeight; if (excesso > 0) setAltura(Math.max(360, base - excesso)); }));
+    };
     medir(); window.addEventListener('resize', medir); return () => window.removeEventListener('resize', medir);
   }, []);
 
@@ -73,7 +81,7 @@ export function ProdutosGrade({ linhas, comSituacao, podeSel, selecao, aoSelecio
         cellRenderer: (p: ICellRendererParams<Linha>) => el('span', `at-pl-situacao at-pl-situacao--${p.data?.ativo ? 'ativo' : 'inativo'}`, String(p.value ?? '')) },
     ];
     const api = criarGrade<Linha>(raiz, {
-      columnDefs: colunas, rowData: linhas, getRowId: (p) => String(p.data.id),
+      columnDefs: colunas, rowData: linhas, getRowId: (p) => String(p.data.id), rowHeight: 32, headerHeight: 34,   // densidade do parecer UX (linhas 32–34, thead 34–36)
       getRowClass: (p) => (p.data && !p.data.ativo ? 'at-pl-linha--inativa' : undefined),
       ...(podeSel ? { rowSelection: { mode: 'multiRow', checkboxes: true, headerCheckbox: true, selectAll: 'filtered', enableClickSelection: false } } : {}),
       selectionColumnDef: { pinned: 'left', width: 44, suppressHeaderMenuButton: true },
@@ -105,10 +113,9 @@ export function ProdutosGrade({ linhas, comSituacao, podeSel, selecao, aoSelecio
   const csv = () => api && exportarCsv(api, 'produtos.csv', api.getAllDisplayedColumns().map((c) => c.getColId()).filter((c) => c !== 'ag-Grid-SelectionColumn'));
   const limpar = () => { if (!api) return; api.setFilterModel(null); api.applyColumnState({ defaultState: { sort: null } }); };
 
-  return (
-    <div className="at-pl-grade">
-      <div className="at-pl-grade__barra" role="toolbar" aria-label="Ferramentas da tabela">
-        <div className="at-pl-grade__colunas">
+  const barra = (
+      <span className={slot ? "at-pl-grade__barra at-pl-grade__barra--faixa" : "at-pl-grade__barra"} role="group" aria-label="Ferramentas da tabela">
+        <span className="at-pl-grade__colunas">
           <button type="button" className="bl-botao" aria-expanded={colunasAbertas} aria-controls="at-pl-grade-colunas" onClick={() => setColunasAbertas(!colunasAbertas)}>Colunas</button>
           {colunasAbertas && (
             <div id="at-pl-grade-colunas" className="at-pl-painel at-pl-grade__lista" role="group" aria-label="Mostrar ou ocultar colunas"
@@ -118,11 +125,15 @@ export function ProdutosGrade({ linhas, comSituacao, podeSel, selecao, aoSelecio
                   <input type="checkbox" checked={c.isVisible()} onChange={(e) => api?.setColumnsVisible([c.getColId()], e.target.checked)} /> <span>{c.getColDef().headerName}</span>
                 </label>))}
             </div>)}
-        </div>
+        </span>
         <button type="button" className="bl-botao" onClick={csv}>Exportar CSV</button>
-        {filtrosAtivos > 0 && <button type="button" className="at-link" onClick={limpar}>Limpar filtros e ordem da tabela</button>}
-        <span className="at-fraco at-pl-grade__dica">Ctrl/⌘ + clique no título ordena por várias colunas</span>
-      </div>
+        {filtrosAtivos > 0 && <button type="button" className="at-link" onClick={limpar} title="Limpar filtros e ordem da tabela">Limpar tabela</button>}
+        {!slot && <span className="at-fraco at-pl-grade__dica">Ctrl/⌘ + clique no título ordena por várias colunas</span>}
+      </span>);
+
+  return (
+    <div className="at-pl-grade">
+      {slot ? createPortal(barra, slot) : barra}
       <div ref={caixa} className="at-pl-grade__corpo" style={{ height: altura }} data-pl-grade="ag" />
     </div>);
 }

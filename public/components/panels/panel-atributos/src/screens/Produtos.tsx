@@ -4,6 +4,8 @@
 // real) e Cartões (grade auto-fill 340 px, altura fixa 250). Busca, filtros, ordem e página de 48 continuam NO CLIENTE sobre o `GET vitrine` (o
 // endpoint não aceita parâmetros — A.0 §91): nenhuma ordenação nova (nome, ID, menos preenchidos), nenhuma mudança de servidor.
 // UX-1c preservado: memória da lista ao voltar da Ficha (busca, filtros, modo, ordem, página, posição) e os estados de vazio (b).
+// 26/11 (parecer UX FASE 3, item 3 do VERDE): TOPO INTEGRADO ≤ 48 px — uma faixa só com busca · total · Situação · Filtros(n) · seleção ·
+// Tabela|Cartões · [Tabela: Colunas e CSV da grade] · [Cartões: ordem e paginação "1–48 de N ‹ ›"]; sem rodapé preso; a grade vai até o fim da tela.
 // 26/11 (decisão do Jhony): o modo Tabela usa a tabela padrão do Dash — AG Grid Community (ProdutosGrade.tsx) no lugar da TabelaDados;
 // a lista inteira filtrada (sem página de 48 neste modo), ordenação/filtro por coluna, colunas fixas, mostrar/ocultar, CSV. Mesma API.
 import React from 'react';
@@ -68,6 +70,7 @@ export function Produtos() {
   const caixaFiltros = React.useRef<HTMLDivElement>(null);
   const raiz = React.useRef<HTMLDivElement>(null);
   const [area, setArea] = React.useState(1096);
+  const [slotGrade, setSlotGrade] = React.useState<HTMLSpanElement | null>(null);   // onde a grade (modo Tabela) põe Colunas/CSV: na faixa, não numa barra própria
 
   const carregar = React.useCallback(() => {
     setErro(null);
@@ -223,6 +226,13 @@ export function Produtos() {
             <select className="at-select at-pl-select" aria-label="Ordenar por" value={f.ordem} onChange={(e) => setF({ ...f, ordem: e.target.value as Ordem })}>
               {(Object.keys(ROT_ORDEM) as Ordem[]).map((o) => <option key={o} value={o}>Ordenar: {ROT_ORDEM[o]}</option>)}
             </select>)}
+          {f.modo === 'tabela' && <span ref={setSlotGrade} className="at-pl-faixa__grade" title="Ctrl/⌘ + clique no título ordena por várias colunas" />}
+          {f.modo === 'grade' && dados && lista.length > 0 && (
+            <nav className="at-pl-pag" aria-label="Páginas">
+              <span className="at-pl-pag__faixa">{pagina * POR_PAGINA + 1}–{Math.min(lista.length, (pagina + 1) * POR_PAGINA)} de {lista.length}</span>
+              <button type="button" className="bl-botao at-pl-pag__btn" aria-label="Página anterior" disabled={pagina === 0} onClick={() => setPagina(pagina - 1)}>‹</button>
+              <button type="button" className="bl-botao at-pl-pag__btn" aria-label={`Próxima página (${pagina + 1} de ${paginas})`} disabled={pagina >= paginas - 1} onClick={() => setPagina(pagina + 1)}>›</button>
+            </nav>)}
         </div>
         {etiquetas.length > 0 && (
           <div className="at-pl-etiquetas" aria-label="Filtros ativos">
@@ -251,19 +261,11 @@ export function Produtos() {
       ) : (
         <React.Suspense fallback={<Esqueleto modo="tabela" larguras={larguras} />}>
           <ProdutosGrade linhas={lista} comSituacao={comSituacao} podeSel={podeSel} selecao={m.selecao} aoSelecionar={(ids) => m.setSelecao(ids)}
-            aoAbrir={(id) => m.abrirProduto(id)} especificos={especificos} />
+            aoAbrir={(id) => m.abrirProduto(id)} especificos={especificos} slot={slotGrade} />
         </React.Suspense>
       )}
 
-      {dados && lista.length > 0 && f.modo === 'grade' && (
-        <nav className="at-paginas at-pl-rodape" aria-label="Páginas">
-          <span className="at-pl-rodape__faixa">{pagina * POR_PAGINA + 1}–{Math.min(lista.length, (pagina + 1) * POR_PAGINA)} de {lista.length} produto{lista.length === 1 ? '' : 's'}</span>
-          <span className="at-pl-rodape__mola" />
-          <span className="at-fraco">{POR_PAGINA} por página</span>
-          <button type="button" className="bl-botao" disabled={pagina === 0} onClick={() => setPagina(pagina - 1)}>Anterior</button>
-          <span>{pagina + 1} de {paginas}</span>
-          <button type="button" className="bl-botao" disabled={pagina >= paginas - 1} onClick={() => setPagina(pagina + 1)}>Próxima</button>
-        </nav>)}
+      {/* paginação: no TOPO (faixa), não mais no rodapé preso (parecer UX FASE 3) */}
       {m.selecao.length > 0 && (
         <div className="at-barra-selecao" role="region" aria-label="Ações para os produtos selecionados">
           <strong>{m.selecao.length} selecionado{m.selecao.length === 1 ? '' : 's'}</strong>
