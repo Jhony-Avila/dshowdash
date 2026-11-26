@@ -68,7 +68,8 @@ async function ler<T>(caminho: string, sinal?: AbortSignal, timeoutMs = 12000): 
   const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), timeoutMs);
   sinal?.addEventListener('abort', () => ctrl.abort());
   try {
-    const r = await fetch(BASE + caminho, { credentials: 'same-origin', headers: { Accept: 'application/json' }, signal: ctrl.signal });
+    // '/api/…' = rota de outro módulo (Asaas, P34); o resto é relativo à Geral V2
+    const r = await fetch(caminho.startsWith('/api/') ? caminho : BASE + caminho, { credentials: 'same-origin', headers: { Accept: 'application/json' }, signal: ctrl.signal });
     let corpo: { ok?: boolean; data?: T; error?: string; meta?: { message?: string } } = {};
     try { corpo = await r.json(); } catch { /* corpo não-JSON */ }
     const sucesso = corpo.ok === true || (corpo as { success?: boolean }).success === true;   // ApiResponse: {ok,data,error,meta}
@@ -111,6 +112,17 @@ export interface ConcDia { dia: string; asaas: string | null; asaas_liquido: str
 export interface ConcEmpresa { conta: string; nome: string | null; empresa_precifica: string | null; estado: 'ok' | 'sem_par' | 'indisponivel'; motivo: string | null; dias: ConcDia[] | null; divergencias: number | null }
 export interface Conciliacao { gerado_em: string; janela: { de: string; ate: string }; tolerancia: string; estado: 'ok' | 'indisponivel'; motivo: string | null; precifica_em?: string | null; divergencias?: number | null; empresas: ConcEmpresa[] | null }
 export function lerConciliacao(s?: AbortSignal) { return ler<Conciliacao>('/conciliacao-asaas.php?dias=30', s, 20000); }
+/** 26/11 (CIMA): cartão do Asaas — contrato da ACIMA_ESQUERDA (P21, GET /api/geral/v2/asaas.php; GeralV2Asaas::cartao). Dinheiro em TEXTO.
+ *  404 = flag global `geral_v2_asaas` desligada OU sem `financeiro_asaas_leitura` → o cartão NÃO aparece. Total só com TODAS as empresas ok. */
+export interface AsaasValores { recebido_hoje: string; a_receber_7d: string; vencidas: string; vencidas_qtd: number }
+export interface AsaasEmpresa { conta: string; nome: string | null; estado: 'ok' | 'desatualizado' | 'indisponivel'; motivo: string | null; atualizado_em: string | null; valores: AsaasValores | null }
+export interface AsaasCartao { gerado_em: string; janela: { hoje: string; a_receber_ate: string }; empresas: AsaasEmpresa[]; total: AsaasValores | null; total_parcial: boolean; regras?: string }
+export function lerAsaas(s?: AbortSignal) { return ler<AsaasCartao>('/asaas.php', s); }
+/** Drill-down das vencidas (P34, GET /api/asaas/?r=vencidas; AsaasResumo::vencidas). `cliente` = código do cliente no Asaas (o serviço não manda nome). */
+export interface VencidaAsaas { cobranca: string; cliente: string | null; vencimento: string | null; valor: string; dias_atraso: number | null; forma: string | null }
+export interface VencidasConta { conta: string; nome: string | null; disponivel: boolean; motivo: string | null; atualizado_em: string | null; qtd: number | null; total: string | null; truncada: boolean | null; cobrancas: VencidaAsaas[] | null }
+export interface VencidasAsaas { contas: VencidasConta[]; limite_por_empresa: number; gerado_em: string }
+export function lerVencidasAsaas(s?: AbortSignal) { return ler<VencidasAsaas>('/api/asaas/?r=vencidas', s, 20000); }
 export function lerLista(id: IdPrioridade, f: FiltrosLista, s?: AbortSignal) {
   const q = new URLSearchParams({ id, pagina: String(f.pagina), por_pagina: '50', ordem: f.ordem, dir: f.dir });
   if (f.responsavel !== null) q.set('responsavel', String(f.responsavel));

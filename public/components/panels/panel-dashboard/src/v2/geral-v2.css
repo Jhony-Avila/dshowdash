@@ -269,3 +269,27 @@
   [data-geral-react-root] .gv2-conc-tab tbody tr { border-bottom: 1px solid color-mix(in srgb, var(--ger-borda) 60%, transparent); }
   [data-geral-react-root] .gv2-conc-tab td.gv2-conc-motivo { grid-column: 1 / -1; min-width: 0; padding-top: 0; }
 }
+
+/* Cartão "Asaas · financeiro" (CIMA, 26/11): linha inteira da grade dos indicadores, 3 números lado a lado; vencidas abre o drill-down */
+[data-geral-react-root] .gv2-asaas { grid-column: 1 / -1; min-height: 0; }
+[data-geral-react-root] .gv2-asaas-tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+@container (max-width: 880px) { [data-geral-react-root] .gv2-asaas-tres { grid-template-columns: minmax(0, 1fr); gap: 10px; } }
+[data-geral-react-root] .gv2-asaas-item { display: flex; flex-direction: column; gap: 4px; min-width: 0; text-align: left; font: inherit; color: inherit; background: transparent; border: 0; padding: 4px 0; }
+[data-geral-react-root] .gv2-asaas-item + .gv2-asaas-item { border-left: 1px solid var(--ger-borda); padding-left: 18px; }
+@container (max-width: 880px) { [data-geral-react-root] .gv2-asaas-item + .gv2-asaas-item { border-left: 0; padding-left: 0; border-top: 1px solid var(--ger-borda); padding-top: 10px; } }
+[data-geral-react-root] .gv2-asaas-item .gv2-num-valor { margin-top: 0; }
+[data-geral-react-root] .gv2-asaas-rot { font-size: 13px; color: var(--ger-texto-dim); }
+[data-geral-react-root] .gv2-asaas-item--acao { cursor: pointer; border-radius: 8px; }
+[data-geral-react-root] .gv2-asaas-item--acao:hover .gv2-asaas-ver, [data-geral-react-root] .gv2-asaas-item--acao:focus-visible .gv2-asaas-ver { text-decoration: underline; }
+[data-geral-react-root] .gv2-asaas-item--acao:focus-visible { outline: 2px solid var(--ger-link); outline-offset: 2px; }
+[data-geral-react-root] .gv2-asaas-ver { display: inline-flex; align-items: center; gap: 4px; color: var(--ger-link); font-size: 13px; }
+[data-geral-react-root] .gv2-asaas-rolar { overflow-x: auto; margin-top: 10px; }
+[data-geral-react-root] .gv2-asaas-tab { width: 100%; border-collapse: collapse; font-size: 13px; }
+[data-geral-react-root] .gv2-asaas-tab th, [data-geral-react-root] .gv2-asaas-tab td { padding: 7px 10px; border-bottom: 1px solid color-mix(in srgb, var(--ger-borda) 60%, transparent); text-align: left; white-space: nowrap; }
+[data-geral-react-root] .gv2-asaas-tab thead th { font-size: 12px; font-weight: 500; color: var(--ger-texto-dim); }
+[data-geral-react-root] .gv2-asaas-tab tbody th { font-weight: 500; }
+[data-geral-react-root] .gv2-asaas-tab .gv2-conc-num { text-align: right; }
+[data-geral-react-root] [data-gv2-asaas-empresas] thead th:nth-child(n+2):not(:last-child) { text-align: right; }
+[data-geral-react-root] .gv2-asaas-leitura { color: var(--ger-texto-dim); font-size: 12.5px; white-space: normal; min-width: 200px; }
+[data-geral-react-root] .gv2-venc-tab thead th:nth-child(4), [data-geral-react-root] .gv2-venc-tab thead th:nth-child(5) { text-align: right; }
+[data-geral-react-root] .gv2-venc-tab thead th:nth-child(3) { text-align: left; }

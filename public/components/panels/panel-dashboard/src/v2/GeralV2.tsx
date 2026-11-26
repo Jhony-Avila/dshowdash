@@ -8,10 +8,11 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AlertTriangle, ArrowRight, CalendarDays, CheckCircle2, ExternalLink, Layers, Package, PlugZap, TrendingUp, Wallet } from 'lucide-react';
 import {
   ErroV2, fmtData, fmtDiaMes, fmtHora, fmtMoeda, fmtMoeda2, fmtN, fmtQuando, hojeExtenso, numDe,
-  lerPainel, type Painel,
+  lerAsaas, lerPainel, type Painel,
   type Agenda, type EstadoBloco, type Fonte, type IdPrioridade, type PedidosBling, type PeriodoV2, type Prioridade, type Prioridades, type Resumo,
 } from './servico';
 import { Integracoes } from './Integracoes';
+import { CartaoAsaas, VencidasAsaas, fonteAsaas } from './Asaas';
 import { ListaPrioridade } from './ListaPrioridade';
 import { Problema, useBloco } from './comuns';
 import { FONTE_DO_INDICADOR, NOME_FONTE, efetivo, fonteEfetiva, textoSemValor, type Efetivo, type FontesLidas, type IdIndicador } from './coerencia';
@@ -44,11 +45,13 @@ function Osso({ l, a = 12 }: { l: string; a?: number }) { return <span className
 // ════════════════════════════════════════════════════════════════════
 export function GeralV2() {
   const [periodo, setPeriodo] = useState<PeriodoV2>(() => { try { const p = localStorage.getItem(K_PERIODO); return p === 'ontem' || p === 'mes' ? p : '7d'; } catch { return '7d'; } });
-  const [vista, setVista] = useState<{ tipo: 'geral' } | { tipo: 'integracoes' } | { tipo: 'lista'; id: IdPrioridade; quantidade: number | null }>({ tipo: 'geral' });
+  const [vista, setVista] = useState<{ tipo: 'geral' } | { tipo: 'integracoes' } | { tipo: 'vencidas_asaas' } | { tipo: 'lista'; id: IdPrioridade; quantidade: number | null }>({ tipo: 'geral' });
   const trocarPeriodo = (p: PeriodoV2) => { setPeriodo(p); try { localStorage.setItem(K_PERIODO, p); } catch { /* sem storage */ } };
 
   // uma leitura só (painel.php): cada bloco é uma VISTA dela, com o mesmo erro, o mesmo "Tentar de novo" e o mesmo instante
   const painel = useBloco((s) => lerPainel(periodo, s), [periodo]);
+  // 26/11 (CIMA): cartão do Asaas = leitura própria (asaas.php, atrás da flag + financeiro_asaas_leitura); 404 = o cartão não existe
+  const asaas = useBloco((s) => lerAsaas(s), []);
   const vistaDe = <K extends 'resumo' | 'prioridades' | 'agenda' | 'fontes'>(k: K) =>
     ({ dados: painel.dados ? painel.dados[k] : null, erro: painel.erro, carregando: painel.carregando, atualizando: painel.atualizando,
        recarregar: painel.recarregar, okEm: painel.okEm }) as ReturnType<typeof useBloco<Painel[K]>>;
@@ -69,6 +72,7 @@ export function GeralV2() {
   const efs = indicadoresEfetivos(resumo, prioridades, agenda, fl);
 
   if (vista.tipo === 'integracoes') return <div ref={topo} className="gv2" data-gv2-vista="integracoes"><Integracoes aoVoltar={() => setVista({ tipo: 'geral' })} /></div>;
+  if (vista.tipo === 'vencidas_asaas') return <div ref={topo} className="gv2" data-gv2-vista="vencidas-asaas"><VencidasAsaas aoVoltar={() => setVista({ tipo: 'geral' })} /></div>;
   if (vista.tipo === 'lista') {
     return <div ref={topo} className="gv2" data-gv2-vista="lista"><ListaPrioridade id={vista.id} quantidadeGeral={vista.quantidade} aoVoltar={() => setVista({ tipo: 'geral' })} /></div>;
   }
@@ -87,12 +91,12 @@ export function GeralV2() {
       </header>
 
       <BlocoPrioridades b={prioridades} fl={fl} aoAbrir={(id, q) => (id === 'conflito_agenda' ? navegar(agenda.dados?.url_agenda || '#/panel-google-calendar') : setVista({ tipo: 'lista', id, quantidade: q }))} />
-      <BlocoResultado b={resumo} fl={fl} />
+      <BlocoResultado b={resumo} fl={fl} extra={<CartaoAsaas b={asaas} aoVencidas={() => setVista({ tipo: 'vencidas_asaas' })} />} />
       <div className="gv2-dupla">
         <BlocoPedidosGrafico b={resumo} fl={fl} />
         <BlocoAgenda b={agenda} fl={fl} />
       </div>
-      <BlocoFontes b={fontes} efs={efs} aoIntegracoes={() => setVista({ tipo: 'integracoes' })} />
+      <BlocoFontes b={fontes} efs={efs} extra={fonteAsaas(asaas)} aoIntegracoes={() => setVista({ tipo: 'integracoes' })} />
     </div>
   );
 }
@@ -286,7 +290,7 @@ function contagemCompleta(e: Efetivo | undefined, lacunas: string[] | undefined,
   return l.length > 0 && l.every((x) => deValor.includes(x)) ? { ...e, estado: 'ok', semValor: null, motivo: null } : e;
 }
 // ── 2. Indicadores do negócio (4 cartões, decisão de 25/11 — conceitos separados, nunca somados) ──
-function BlocoResultado({ b, fl }: { b: ReturnType<typeof useBloco<Resumo>>; fl: FontesLidas }) {
+function BlocoResultado({ b, fl, extra }: { b: ReturnType<typeof useBloco<Resumo>>; fl: FontesLidas; extra?: ReactNode }) {
   const r = b.dados; const car = b.carregando && !r;
   const ef = (id: IdIndicador, x: Resumo['pedidos_bling'] | Resumo['negocios_ganhos'] | Resumo['funil_aberto'] | Resumo['recebido'] | undefined) => (x ? efetivo(id, x, fl, !!b.erro, b.okEm) : undefined);
   const p = r?.pedidos_bling, g = r?.negocios_ganhos, f = r?.funil_aberto;
@@ -342,6 +346,7 @@ function BlocoResultado({ b, fl }: { b: ReturnType<typeof useBloco<Resumo>>; fl:
           valor={er?.zeroNaoConfirmado || rc?.estado === 'parcial' ? '—' : fmtMoeda2(vr)} problema={problemaRecebido}
           linha={rc && er && rc.estado !== 'aguardando' && linhaEstado(er, <>{plural(rc.quantidade ?? null, 'baixa recebida', 'baixas recebidas')} no período{rc.sem_cnpj ? ` · ${fmtN(rc.sem_cnpj)} sem CNPJ` : ''}</>, vr)}
           rodape="Precifica · recebido" link={null} dica={dicaRecebido} />
+        {extra}
       </div>
     </section>
   );
@@ -465,15 +470,17 @@ function textoFonte(f: Fonte, ef: ReturnType<typeof fonteEfetiva>): string {
   const partes = ef.partes.length ? ` (${ef.partes.join(', ')})` : '';
   return `${ef.rotulo}${partes}${ef.estado === 'desatualizada' && f.ultimo_sucesso ? ` · último sucesso ${fmtQuando(f.ultimo_sucesso)}` : ''}`;
 }
-function BlocoFontes({ b, efs, aoIntegracoes }: { b: ReturnType<typeof useBloco<Fonte[]>>; efs: { id: IdIndicador; e: Efetivo }[]; aoIntegracoes?: () => void }) {
+function BlocoFontes({ b, efs, aoIntegracoes, extra }: { b: ReturnType<typeof useBloco<Fonte[]>>; efs: { id: IdIndicador; e: Efetivo }[]; aoIntegracoes?: () => void; extra?: Fonte | null }) {
   const [aberto, setAberto] = useState(false); const car = b.carregando && !b.dados;
+  // a linha do Asaas vem da leitura do cartão (o painel.php não a traz); se um dia o serviço mandar, vale a do serviço
+  const lista = b.dados ? (extra && !b.dados.some((f) => f.fonte === extra.fonte) ? [...b.dados, extra] : b.dados) : null;
   return (
     <section className="gv2-cartao gv2-fontes" data-gv2-bloco="fontes" data-gv2-estado={car ? 'carregando' : b.dados ? 'conectado' : 'problema'}>
       <div className="gv2-fontes-linha">
         <h2 className="gv2-h2 gv2-fontes-tit">Fontes e atualização</h2>
         {car ? <span className="gv2-fontes-osso"><SeloEstado estado="carregando" />{[0, 1, 2, 3].map((k) => <Osso key={k} l="140px" />)}</span> : !b.dados ? <Problema motivo="Não foi possível ler o estado das fontes agora." quando={null} onTentar={b.recarregar} tentando={b.atualizando} /> : (
           <ul className="gv2-fontes-lista">
-            {b.dados.map((f) => { const ef = fonteEfetiva(f, efs); return (
+            {lista!.map((f) => { const ef = fonteEfetiva(f, efs); return (
               <li key={f.fonte} className={`gv2-fonte gv2-fonte--${ef.estado}`} data-gv2-fonte={f.fonte} data-gv2-fonte-estado={ef.estado}>
                 <span className="gv2-ponto" aria-hidden /><strong>{NOME_FONTE[f.fonte]}</strong> <span>{textoFonte(f, ef)}</span>
               </li>
@@ -485,7 +492,7 @@ function BlocoFontes({ b, efs, aoIntegracoes }: { b: ReturnType<typeof useBloco<
       </div>
       {aberto && b.dados && (
         <dl className="gv2-fontes-det">
-          {b.dados.map((f) => (
+          {lista!.map((f) => (
             <div key={f.fonte}><dt>{NOME_FONTE[f.fonte]}</dt><dd>{textoFonte(f, fonteEfetiva(f, efs))}{f.motivo ? ` — ${f.motivo}` : ''}</dd></div>
           ))}
         </dl>
