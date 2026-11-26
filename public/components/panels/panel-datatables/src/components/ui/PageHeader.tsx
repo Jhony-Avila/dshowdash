@@ -1,6 +1,8 @@
 // components/ui/PageHeader.tsx — cabeçalho ÚNICO de página (Elevação visual §1).
 // @version 1.1.0  @updated 2026-07-20
-// Estrutura alinhada: breadcrumb em linha própria no topo; abaixo, o título
+// 26/11 (auditoria UX07: topo de 158 px → bloco ÚNICO ≤ 84): no App, PageHeader e Navegação dividem UMA linha (grid do .topoFixo):
+// ícone + título | abas | ambiente + Atualizar. A trilha e o subtítulo ficam para leitor de tela (o subtítulo também no title do h1).
+// Estrutura original: breadcrumb em linha própria no topo; abaixo, o título
 // (ícone + título grande + subtítulo) e as ações na MESMA linha, centradas
 // verticalmente — as ações deixam de flutuar na altura do breadcrumb.
 import { type JSX, type ReactNode } from 'react';
@@ -33,7 +35,7 @@ export function PageHeader({
         <div className={css.tituloLinha}>
           {icone && <span className={css.icone}><Icone nome={icone} size={20} /></span>}
           <div className={css.tituloBloco}>
-            <h1 className={css.titulo}>{titulo}</h1>
+            <h1 className={css.titulo} title={subtitulo}>{titulo}</h1>
             {subtitulo && <p className={css.subtitulo}>{subtitulo}</p>}
           </div>
         </div>

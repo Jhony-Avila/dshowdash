@@ -48,3 +48,10 @@
 @keyframes girar { to { transform: rotate(360deg); } }
 
 .conteudo { flex: 1; min-width: 0; }
+
+/* 26/11 · UX07 (auditoria independente; contrato espacial aprovado pelo Jhony às 13:44): topo ÚNICO — título | abas | ações numa linha
+   (≤ 48 px) e as sub-abas, quando houver, na linha de baixo. Era trilha + título/subtítulo + abas empilhados (158 px). */
+.topoFixo {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "titulo nav acoes" "sub sub sub";
+  align-items: center; column-gap: var(--dt-space-4); row-gap: 4px; padding: 6px 0;
+}

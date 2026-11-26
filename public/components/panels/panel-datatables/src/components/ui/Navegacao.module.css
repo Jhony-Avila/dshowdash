@@ -50,3 +50,11 @@
   .grupo, .grupoAtivo { padding: 8px 11px; }
   .telas { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
 }
+
+/* 26/11 · UX07: as abas entram na MESMA linha do título (área "nav" do grid do .topoFixo); as sub-abas ocupam a linha de baixo inteira. */
+.raiz { display: contents; }
+.grupos { grid-area: nav; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; padding: 3px; min-width: 0; }
+.grupo, .grupoAtivo { padding: 6px 11px; white-space: nowrap; }
+.telas { grid-area: sub; }
+.grupo svg, .grupoAtivo svg { flex: none; }   /* na linha única os ícones não podem encolher */
+@media (max-width: 1600px) { .grupo svg, .grupoAtivo svg { display: none; } }   /* 1440 com a lateral aberta: as 6 abas cabem sem rolar (o rótulo fica) */
