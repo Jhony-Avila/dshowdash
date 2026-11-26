@@ -9,9 +9,9 @@ declare(strict_types=1);
  *   1) método ≠ GET → 404 (o endpoint é inerte para qualquer outro método)
  *   2) flag `financeiro_asaas_leitura` global ausente/desligada/ilegível → 404
  *   3) sessão completa (sessão ativa + usuário ativo) → 401 / 503
- *   4) rota ≠ resumo → 404
+ *   4) rota fora de ROTAS (resumo · vencidas) → 404
  *   5) flag para a PESSOA (canário: só o 75) → 404
- *   6) resumo do banco local; banco fora → 503 `dados_indisponiveis` (nunca zero)
+ *   6) resumo (ou o drill-down das vencidas, 26/11) do banco local; banco fora → 503 `dados_indisponiveis` (nunca zero)
  * Resposta sempre `Cache-Control: private, no-store` + `nosniff`.
  */
 
@@ -45,6 +45,7 @@ final class AsaasPortaoDeps
      * @param Closure(): ?array            $sessao    SessionGate::validate()
      * @param Closure(): string            $token     session_id()
      * @param Closure(): array             $resumo    AsaasResumo::montar(...) já com as contas
+     * @param ?Closure(): array            $vencidas  AsaasResumo::vencidas(...) já com as contas (26/11; ausente → 404)
      */
     public function __construct(
         public readonly Closure $flag,
@@ -52,13 +53,14 @@ final class AsaasPortaoDeps
         public readonly Closure $token,
         public readonly AsaasSessaoRepositorio $repo,
         public readonly Closure $resumo,
+        public readonly ?Closure $vencidas = null,
     ) {}
 }
 
 final class AsaasPortao
 {
     public const FLAG = 'financeiro_asaas_leitura';
-    public const ROTAS = ['resumo'];
+    public const ROTAS = ['resumo', 'vencidas'];
     private const DESLIGADO = ['not_found', 'disabled', 'not_started', 'expired', 'environment_mismatch', 'error'];
 
     /** @return array{0:int, 1:array} status HTTP e corpo JSON */
@@ -84,8 +86,10 @@ final class AsaasPortao
             $p = ($d->flag)(self::FLAG, $uid);
             if ((string) ($p['source'] ?? 'error') === 'error' || ($p['enabled'] ?? false) !== true) return self::erro(404, 'NOT_FOUND');
 
-            try { $dados = ($d->resumo)(); }
-            catch (Throwable $e) { error_log('[asaas] resumo: ' . get_class($e)); return self::erro(503, 'dados_indisponiveis'); }
+            $ler = $rota === 'vencidas' ? $d->vencidas : $d->resumo;
+            if ($ler === null) return self::erro(404, 'NOT_FOUND');
+            try { $dados = $ler(); }
+            catch (Throwable $e) { error_log('[asaas] ' . $rota . ': ' . get_class($e)); return self::erro(503, 'dados_indisponiveis'); }
             return [200, ['ok' => true, 'data' => $dados, 'error' => null]];
         } catch (Throwable $e) {
             error_log('[asaas] portão: ' . get_class($e));

@@ -309,6 +309,7 @@ final class AsaasSincronizador
 final class AsaasResumo
 {
     public const LIMITE_ATRASO_MIN = 180;
+    public const LIMITE_VENCIDAS = 500;
     private const RECEBIDO = ['RECEIVED', 'CONFIRMED', 'RECEIVED_IN_CASH'];
 
     /** @param ?Closure(string):void $aposPonteiro SÓ para teste: chamado depois de ler o ponteiro da geração de cada conta */
@@ -325,29 +326,26 @@ final class AsaasResumo
      */
     public function montar(array $rotulos, DateTimeImmutable $agora): array
     {
-        if ($this->pdo->inTransaction()) throw new LogicException('AsaasResumo precisa de uma conexão fora de transação');
         $agora = $agora->setTimezone($this->fuso);
-        $this->pdo->exec('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
-        $this->pdo->exec('START TRANSACTION READ ONLY, WITH CONSISTENT SNAPSHOT');
-        try {
-            $contas = []; $todas = $rotulos !== [];
-            $tot = ['saldo' => 0, 'a_receber' => 0, 'vencido' => 0, 'recebido_mes' => 0];   // centavos
+        $contas = []; $todas = $rotulos !== [];
+        $tot = ['saldo' => 0, 'a_receber' => 0, 'vencido' => 0, 'recebido_mes' => 0];   // centavos
+        $this->noRetrato(function () use ($rotulos, $agora, &$contas, &$todas, &$tot): void {
             foreach ($rotulos as $r) {
                 $c = $this->conta($r, $agora);
                 $contas[] = $c;
                 if ($c['disponivel'] !== true) { $todas = false; continue; }
                 foreach ($tot as $k => $v) $tot[$k] = $v + AsaasValor::centavos($c['valores'][$k]);
             }
-            $this->pdo->exec('COMMIT');
-        } catch (Throwable $e) {
-            try { $this->pdo->exec('ROLLBACK'); } catch (Throwable) {}
-            throw $e;
-        }
+        });
         return ['contas' => $contas, 'total' => $todas ? array_map([AsaasValor::class, 'deCentavos'], $tot) : null,
                 'total_parcial' => !$todas && $rotulos !== [], 'moeda' => 'BRL', 'gerado_em' => $agora->format(DATE_ATOM)];
     }
 
-    private function conta(string $r, DateTimeImmutable $agora): array
+    /**
+     * Ponteiro da conta e as mesmas portas do resumo (divergente / nunca sincronizada / desatualizada): sem número quando a porta fecha.
+     * @return array{0:array, 1:?array}  [linha base já com o motivo, null] ou [linha base, ['c' => linha da conta, 'ok' => horário, 'ger' => geração ativa]]
+     */
+    private function ponteiro(string $r, DateTimeImmutable $agora): array
     {
         $st = $this->pdo->prepare("SELECT `nome`,`estado`,`erro_codigo`,`geracao_ativa`,`ultima_sync_ok`,`saldo` FROM `{$this->p}asaas_contas` WHERE `conta`=?");
         $st->execute([$r]);
@@ -355,15 +353,67 @@ final class AsaasResumo
         $st->closeCursor();
         if ($this->aposPonteiro !== null) ($this->aposPonteiro)($r);
         $base =['conta' => $r, 'nome' => $c['nome'] ?? null, 'disponivel' => false, 'valores' => null, 'atualizado_em' => null, 'aviso' => null, 'motivo' => null];
-        if ($c !== null && $c['estado'] === 'divergente') return ['motivo' => 'conta_divergente'] + $base;   // B2: nunca mostra números de conta trocada
+        if ($c !== null && $c['estado'] === 'divergente') return [['motivo' => 'conta_divergente'] + $base, null];   // B2: nunca mostra números de conta trocada
         if ($c === null || $c['ultima_sync_ok'] === null || $c['geracao_ativa'] === null) {
-            return ['motivo' => $c !== null && $c['estado'] === 'erro' ? 'erro:' . $c['erro_codigo'] : 'nunca_sincronizada'] + $base;
+            return [['motivo' => $c !== null && $c['estado'] === 'erro' ? 'erro:' . $c['erro_codigo'] : 'nunca_sincronizada'] + $base, null];
         }
         $ok = new DateTimeImmutable((string) $c['ultima_sync_ok'], $this->fuso);
         if ($agora->getTimestamp() - $ok->getTimestamp() > self::LIMITE_ATRASO_MIN * 60) {
-            return ['motivo' => 'desatualizada', 'atualizado_em' => $ok->format(DATE_ATOM), 'aviso' => $c['estado'] === 'erro' ? 'erro:' . $c['erro_codigo'] : null] + $base;
+            return [['motivo' => 'desatualizada', 'atualizado_em' => $ok->format(DATE_ATOM), 'aviso' => $c['estado'] === 'erro' ? 'erro:' . $c['erro_codigo'] : null] + $base, null];
         }
-        $ger = (int) $c['geracao_ativa'];
+        return [$base, ['c' => $c, 'ok' => $ok, 'ger' => (int) $c['geracao_ativa']]];
+    }
+
+    /** Leitura de TODAS as contas sob um mesmo retrato do banco (Codex DSHOW-112 A). */
+    private function noRetrato(Closure $ler): mixed
+    {
+        if ($this->pdo->inTransaction()) throw new LogicException('AsaasResumo precisa de uma conexão fora de transação');
+        $this->pdo->exec('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+        $this->pdo->exec('START TRANSACTION READ ONLY, WITH CONSISTENT SNAPSHOT');
+        try { $v = $ler(); $this->pdo->exec('COMMIT'); return $v; }
+        catch (Throwable $e) { try { $this->pdo->exec('ROLLBACK'); } catch (Throwable) {} throw $e; }
+    }
+
+    /**
+     * Drill-down das VENCIDAS (ACIMA_ESQUERDA, 26/11) — por empresa: cobrança, cliente (código do cliente no Asaas: o nome não é sincronizado),
+     * vencimento, valor e dias de atraso. Mesmas portas e mesmo retrato do resumo; `qtd` e `total` batem com `vencido_qtd` e `vencido` do resumo.
+     * A lista vem da MAIS atrasada para a menos; acima de `$limite` por empresa, `truncada` = true (o total continua sendo o de todas).
+     */
+    public function vencidas(array $rotulos, DateTimeImmutable $agora, int $limite = self::LIMITE_VENCIDAS): array
+    {
+        $agora = $agora->setTimezone($this->fuso); $limite = max(1, min($limite, self::LIMITE_VENCIDAS));
+        $hoje = new DateTimeImmutable($agora->format('Y-m-d'), $this->fuso);
+        $contas = $this->noRetrato(function () use ($rotulos, $agora, $hoje, $limite): array {
+            $out = [];
+            foreach ($rotulos as $r) {
+                [$base, $pt] = $this->ponteiro($r, $agora);
+                unset($base['valores']);
+                $base += ['qtd' => null, 'total' => null, 'truncada' => null, 'cobrancas' => null];
+                if ($pt === null) { $out[] = $base; continue; }
+                $q = $this->pdo->prepare("SELECT `payment_id`,`cliente_id`,`vencimento`,`valor`,`billing_type` FROM `{$this->p}asaas_cobrancas`
+                       WHERE `conta`=? AND `geracao`=? AND `presente`=1 AND `deletada`=0 AND `status`='OVERDUE' ORDER BY `vencimento` IS NULL, `vencimento`, `payment_id`");
+                $q->execute([$r, $pt['ger']]);
+                $lista = []; $n = 0; $tot = 0;
+                while (($x = $q->fetch(PDO::FETCH_ASSOC)) !== false) {
+                    $n++; $c = AsaasValor::centavos((string) $x['valor']); $tot += $c;
+                    if ($n > $limite) continue;
+                    $v = $x['vencimento'] !== null ? new DateTimeImmutable((string) $x['vencimento'], $this->fuso) : null;
+                    $lista[] = ['cobranca' => $x['payment_id'], 'cliente' => $x['cliente_id'], 'vencimento' => $v?->format('Y-m-d'), 'valor' => AsaasValor::deCentavos($c),
+                                'dias_atraso' => $v !== null ? (int) $v->diff($hoje)->format('%r%a') : null, 'forma' => $x['billing_type']];
+                }
+                $out[] = ['disponivel' => true, 'atualizado_em' => $pt['ok']->format(DATE_ATOM), 'qtd' => $n, 'total' => AsaasValor::deCentavos($tot),
+                          'truncada' => $n > $limite, 'cobrancas' => $lista] + $base;
+            }
+            return $out;
+        });
+        return ['contas' => $contas, 'limite_por_empresa' => $limite, 'moeda' => 'BRL', 'gerado_em' => $agora->format(DATE_ATOM)];
+    }
+
+    private function conta(string $r, DateTimeImmutable $agora): array
+    {
+        [$base, $pt] = $this->ponteiro($r, $agora);
+        if ($pt === null) return $base;
+        ['c' => $c, 'ok' => $ok, 'ger' => $ger] = $pt;
         $mesIni = $agora->format('Y-m-01'); $mesFim = $agora->format('Y-m-t');
         $in = implode(',', array_fill(0, count(self::RECEBIDO), '?'));
         $q = $this->pdo->prepare("SELECT COALESCE(SUM(CASE WHEN `status`='PENDING' THEN `valor` END),0) a_receber,

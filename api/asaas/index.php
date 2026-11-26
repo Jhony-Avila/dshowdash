@@ -28,5 +28,6 @@ $deps = new AsaasPortaoDeps(
         public function situacao(string $t, int $u): array { return (new AsaasSessaoPdo(($this->db)()))->situacao($t, $u); }
     },
     resumo: static fn(): array => (new AsaasResumo($db()))->montar(AsaasChaves::padrao()->rotulos(), new DateTimeImmutable('now')),
+    vencidas: static fn(): array => (new AsaasResumo($db()))->vencidas(AsaasChaves::padrao()->rotulos(), new DateTimeImmutable('now')),
 );
 AsaasPortao::emitir(AsaasPortao::atender((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'), $_GET, $deps));

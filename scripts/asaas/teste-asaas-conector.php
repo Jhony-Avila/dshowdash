@@ -197,6 +197,24 @@ $l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'resumo'], deps
 check('portão: 75 com override → 200 na ordem certa', $r[0] === 200 && $l->getArrayCopy() === ['flag:g', 'sessao', 'repo', 'flag:75', 'resumo']);
 $l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'resumo'], deps($l, $g, ['user_id' => 75], $sOk, $on, function (): array { throw new PDOException('fora'); }));
 check('portão: banco local fora → 503 dados_indisponiveis (nunca zero)', $r[0] === 503 && $r[1]['data'] === null && $r[1]['error']['code'] === 'dados_indisponiveis');
+// 26/11: drill-down das vencidas — mesma ordem de portas; só lê as vencidas depois da flag da pessoa; sem leitor → 404
+$depsV = function (ArrayObject $l, ?array $sess, array $flagP, ?Closure $v) use ($g, $sOk): AsaasPortaoDeps {
+    $d = deps($l, $g, $sess, $sOk, $flagP);
+    return new AsaasPortaoDeps(flag: $d->flag, sessao: $d->sessao, token: $d->token, repo: $d->repo, resumo: $d->resumo, vencidas: $v);
+};
+$lerV = fn(ArrayObject $l) => function () use ($l): array { $l[] = 'vencidas'; return ['contas' => []]; };
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'vencidas'], $depsV($l, ['user_id' => 75], $on, $lerV($l)));
+check('portão vencidas: 75 com override → 200 na ordem certa, sem ler o resumo', $r[0] === 200 && $l->getArrayCopy() === ['flag:g', 'sessao', 'repo', 'flag:75', 'vencidas']);
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'vencidas'], $depsV($l, ['user_id' => 12], ['enabled' => false, 'source' => 'rollout_excluded'], $lerV($l)));
+check('portão vencidas: sem financeiro_asaas_leitura → 404, vencidas não lidas', $r[0] === 404 && !in_array('vencidas', $l->getArrayCopy(), true));
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'vencidas'], $depsV($l, null, $on, $lerV($l)));
+check('portão vencidas: sem sessão → 401', $r[0] === 401 && !in_array('vencidas', $l->getArrayCopy(), true));
+$l = new ArrayObject(); $r = AsaasPortao::atender('POST', ['r' => 'vencidas'], $depsV($l, ['user_id' => 75], $on, $lerV($l)));
+check('portão vencidas: POST → 404 sem tocar em nada', $r[0] === 404 && $l->getArrayCopy() === []);
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'vencidas'], $depsV($l, ['user_id' => 75], $on, null));
+check('portão vencidas: sem leitor montado → 404', $r[0] === 404);
+$l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'vencidas'], $depsV($l, ['user_id' => 75], $on, function (): array { throw new PDOException('fora'); }));
+check('portão vencidas: banco fora → 503 dados_indisponiveis', $r[0] === 503 && $r[1]['data'] === null && $r[1]['error']['code'] === 'dados_indisponiveis');
 
 // ================= F. sincronização + resumo no BANCO DE VALIDAÇÃO =================
 $semBanco = in_array('--sem-banco', $argv, true);
@@ -293,6 +311,35 @@ if ($pdo !== null) {
     $rs2 = $resumo->montar(['conta-a', 'conta-c'], $agora->modify('+5 minutes'));
     check('total soma em centavos quando todas disponíveis', $rs2['total'] === ['saldo' => '12345.67', 'a_receber' => '2500.00', 'vencido' => '300.00', 'recebido_mes' => '1200.50']);
     check('conta sem nenhuma sincronização: nunca_sincronizada', $resumo->montar(['conta-z'], $agora)['contas'][0]['motivo'] === 'nunca_sincronizada');
+
+    // 26/11: drill-down das vencidas (mesmo retrato e mesmas portas do resumo)
+    $vs = $resumo->vencidas(['conta-a', 'conta-b', 'conta-c', 'conta-z'], $agora->modify('+5 minutes'));
+    $vp = array_column($vs['contas'], null, 'conta');
+    check('vencidas A: 1 cobrança, bate com o resumo (300.00, 1)', $vp['conta-a']['qtd'] === $vA['vencido_qtd'] && $vp['conta-a']['total'] === $vA['vencido'] && $vp['conta-a']['truncada'] === false);
+    check('vencidas A: cobrança, cliente, vencimento, valor, 22 dias de atraso, forma', $vp['conta-a']['cobrancas'] === [['cobranca' => 'pay_venc1', 'cliente' => 'cus_000001',
+        'vencimento' => '2026-11-01', 'valor' => '300.00', 'dias_atraso' => 22, 'forma' => 'PIX']]);
+    check('vencidas B: indisponível → lista e total null (nunca 0), motivo erro:limite', $vp['conta-b']['disponivel'] === false && $vp['conta-b']['cobrancas'] === null
+        && $vp['conta-b']['qtd'] === null && $vp['conta-b']['total'] === null && $vp['conta-b']['motivo'] === 'erro:limite');
+    check('vencidas C: zero DE VERDADE → qtd 0, total 0.00, lista vazia', $vp['conta-c']['qtd'] === 0 && $vp['conta-c']['total'] === '0.00' && $vp['conta-c']['cobrancas'] === []);
+    check('vencidas Z: nunca sincronizada → null', $vp['conta-z']['motivo'] === 'nunca_sincronizada' && $vp['conta-z']['cobrancas'] === null);
+    check('vencidas: sem descrição nem chave na resposta', !str_contains(json_encode($vs), 'NÃO GRAVAR') && !str_contains(json_encode($vs), '$aact_'));
+    check('vencidas: desatualizada (> 180 min) → sem lista', array_column($resumo->vencidas(['conta-a'], $agora->modify('+4 hours'))['contas'], null, 'conta')['conta-a']['motivo'] === 'desatualizada');
+    // conta-v montada direto nas tabelas de teste: ordem (mais atrasada primeiro, sem vencimento por último), limite, e o que NÃO entra
+    $ins = $pdo->prepare("INSERT INTO `{$P}asaas_cobrancas` (`conta`,`geracao`,`payment_id`,`status`,`billing_type`,`valor`,`vencimento`,`cliente_id`,`deletada`,`presente`,`execucao`,`atualizado_em`)
+                          VALUES ('conta-v',?,?,?,'BOLETO',?,?,'cus_v',?,?,1,'2026-11-23 10:00:00')");
+    foreach ([[0, 'v1', 'OVERDUE', '10.00', '2026-11-20', 0, 1], [0, 'v2', 'OVERDUE', '20.50', '2026-10-01', 0, 1], [0, 'v3', 'OVERDUE', '5.00', null, 0, 1],
+              [0, 'v4', 'OVERDUE', '999.00', '2026-01-01', 0, 0], [0, 'v5', 'OVERDUE', '999.00', '2026-01-01', 1, 1], [1, 'v6', 'OVERDUE', '999.00', '2026-01-01', 0, 1],
+              [0, 'v7', 'PENDING', '999.00', '2026-01-01', 0, 1]] as $x) $ins->execute($x);
+    $pdo->prepare("INSERT INTO `{$P}asaas_contas` (`conta`,`estado`,`geracao_ativa`,`ultima_sync_ok`,`saldo`,`atualizado_em`) VALUES ('conta-v','ok',0,?,0,?)")
+        ->execute([$agora->format('Y-m-d H:i:s'), $agora->format('Y-m-d H:i:s')]);
+    $vv = $resumo->vencidas(['conta-v'], $agora, 2)['contas'][0];
+    check('vencidas V: só OVERDUE presente, não apagada, da geração ativa → 3, total 35.50', $vv['qtd'] === 3 && $vv['total'] === '35.50');
+    check('vencidas V: limite 2 → truncada, mais atrasada primeiro (53 e 3 dias)', $vv['truncada'] === true && array_column($vv['cobrancas'], 'cobranca') === ['v2', 'v1']
+        && array_column($vv['cobrancas'], 'dias_atraso') === [53, 3]);
+    $vt = $resumo->vencidas(['conta-v'], $agora)['contas'][0]['cobrancas'];
+    check('vencidas V: sem vencimento vai por último, dias null (nunca 0)', end($vt)['cobranca'] === 'v3' && end($vt)['vencimento'] === null && end($vt)['dias_atraso'] === null);
+    check('vencidas: recusa conexão dentro de transação', (function () use ($pdo, $resumo, $agora) { $pdo->beginTransaction();
+        try { $resumo->vencidas(['conta-a'], $agora); return false; } catch (LogicException) { return true; } finally { $pdo->rollBack(); } })());
 
     // 2ª rodada: pay_a0250 sumiu da janela de nov → ausente (lógico), não apagada; estatística diverge → aviso
     array_splice($estado['A']['nov'], 249, 1);
