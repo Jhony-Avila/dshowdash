@@ -64,6 +64,26 @@ export function GeralV2() {
   const resumo = trocando ? ({ ...resumo0, dados: null, erro: null, carregando: true } as typeof resumo0) : resumo0;
   const prioridades = vistaDe('prioridades'), agenda = vistaDe('agenda'), fontes = vistaDe('fontes');
   const topo = useRef<HTMLDivElement>(null);
+  // 26/11 (ROXO, auditoria UX/UI F3 item 6 · DSStickyHeader): quando o cabeçalho (título + períodos) sai da tela ao rolar, ele fica PRESO logo
+  // abaixo da faixa fixa do shell, compacto (≤ 48 px: título menor, sem subtítulo) — os períodos nunca saem de alcance. position: fixed com a
+  // largura do miolo (não depende de nenhum ancestral sem overflow, nem mexe no shell); um espaçador da mesma altura evita o pulo.
+  const cab = useRef<HTMLElement>(null); const espaco = useRef<HTMLDivElement>(null);   // sem sentinela: um elemento a mais entrava no gap do layout (+22 px a 2200)
+  const [preso, setPreso] = useState<{ top: number; left: number; width: number; alt: number } | null>(null);
+  useEffect(() => {
+    setPreso(null);   // troca de vista (Geral ↔ lista/Integrações): recomeça solto
+    let quadro = 0;
+    const faixaShell = () => Math.max(0, ...[...document.querySelectorAll('.dsd-shell__region--header, .dsd-shell__region--ticker')]
+      .map((e) => { const r = e.getBoundingClientRect(); return getComputedStyle(e).position === 'fixed' && r.height > 0 ? r.bottom : 0; }));
+    const medir = () => {
+      const g = topo.current, h = cab.current; if (!g || !h) return;
+      const ref = espaco.current ?? h;   // solto: o próprio cabeçalho; preso: o espaçador que ocupa o lugar dele
+      const t = faixaShell(), rs = ref.getBoundingClientRect(), rg = g.getBoundingClientRect();
+      setPreso((p) => (rs.top < t ? { top: t, left: rg.left, width: rg.width, alt: p?.alt ?? h.offsetHeight } : null));
+    };
+    const pedir = () => { cancelAnimationFrame(quadro); quadro = requestAnimationFrame(medir); };
+    window.addEventListener('scroll', pedir, true); window.addEventListener('resize', pedir); pedir();
+    return () => { window.removeEventListener('scroll', pedir, true); window.removeEventListener('resize', pedir); cancelAnimationFrame(quadro); };
+  }, [vista.tipo]);
   // Retorno do mockup (P10, 2ª rodada): NÃO rolar ao montar — o scrollIntoView alinhava a página ao topo da JANELA, por baixo da barra
   // fixa do shell (título "Geral" e períodos escondidos em 1440). Ao trocar de vista (lista ↔ geral), o contêiner que rola volta ao topo.
   const montou = useRef(false);
@@ -79,7 +99,9 @@ export function GeralV2() {
   }
   return (
     <div ref={topo} className="gv2" data-gv2-vista="geral">
-      <header className="gv2-topo">
+      {preso && <div ref={espaco} className="gv2-topo-espaco" style={{ height: preso.alt }} aria-hidden />}
+      <header ref={cab} className={`gv2-topo${preso ? ' gv2-topo--preso' : ''}`} data-gv2-topo-preso={preso ? '1' : undefined}
+        style={preso ? { top: preso.top, left: preso.left, width: preso.width } : undefined}>
         <div>
           <h1 className="gv2-h1">Geral</h1>
           <p className="gv2-sub">Painel executivo · ações e resultados com origem verificável</p>

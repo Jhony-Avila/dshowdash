@@ -320,3 +320,12 @@
 [data-geral-react-root] .gv2-asaas-leitura { color: var(--ger-texto-dim); font-size: 12.5px; white-space: normal; min-width: 200px; }
 [data-geral-react-root] .gv2-venc-tab thead th:nth-child(4), [data-geral-react-root] .gv2-venc-tab thead th:nth-child(5) { text-align: right; }
 [data-geral-react-root] .gv2-venc-tab thead th:nth-child(3) { text-align: left; }
+
+/* 26/11 (ROXO, auditoria F3 item 6 · DSStickyHeader): cabeçalho com os períodos preso no topo ao rolar, compacto (≤ 48 px) */
+[data-geral-react-root] .gv2-topo--preso { position: fixed; z-index: 25; box-sizing: border-box; align-items: center; min-height: 0; padding: 4px 0;
+  background: var(--ger-fundo); border-bottom: 1px solid var(--ger-borda); box-shadow: 0 6px 12px -10px rgba(0, 0, 0, .25); }
+[data-geral-react-root] .gv2-topo--preso .gv2-h1 { font-size: 16px; line-height: 1.2; }
+[data-geral-react-root] .gv2-topo--preso .gv2-sub { display: none; }
+[data-geral-react-root] .gv2-topo--preso .gv2-periodos { padding: 2px; }
+[data-geral-react-root] .gv2-topo--preso .gv2-periodo { padding: 4px 12px; }
+@media (max-width: 600px) { [data-geral-react-root] .gv2-topo--preso .gv2-h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } }
