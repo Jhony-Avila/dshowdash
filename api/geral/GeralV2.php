@@ -66,11 +66,17 @@ final class GeralV2
         $this->agora = ($agora ?? new DateTimeImmutable('now'))->setTimezone($this->br);
     }
 
-    /** 26/11 F03 (P0): flag POR PESSOA financeiro_asaas_leitura (a mesma do Asaas). O nível NÃO libera. Falha ao ler = NEGA (fail-closed). */
+    /**
+     * 26/11 F03 (P0): permissão financeira POR PESSOA = override do próprio usuário na flag financeiro_asaas_leitura (o mecanismo oficial do canário:
+     * global ligada a 0% + override por pessoa). FAIL-CLOSED e INDEPENDENTE do UARPS (não consulta UARPS, sombra nem enforcement): só libera com
+     * enabled === true E source === 'user_override'. Liberação global/rollout (alguém subir o %), nível, flag desligada, ausente ou ilegível = NEGA.
+     */
     public static function podeFinanceiro(int $usuario, Closure $resolver): bool
     {
-        try { return (bool) ($resolver('financeiro_asaas_leitura', $usuario)['enabled'] ?? false); }
+        if ($usuario <= 0) return false;
+        try { $r = $resolver('financeiro_asaas_leitura', $usuario); }
         catch (Throwable $e) { error_log('[geral-v2] flag financeiro: ' . get_class($e)); return false; }
+        return is_array($r) && ($r['enabled'] ?? null) === true && ($r['source'] ?? null) === 'user_override';
     }
 
     // ─────────────────────────────────────────── resumo ───────────────────────────────────────────
