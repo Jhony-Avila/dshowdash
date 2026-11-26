@@ -12,10 +12,11 @@ require_once __DIR__ . '/AsaasDados.php';
 
 final class AsaasCobrancas
 {
-    /** Rótulo CURTO da empresa (nosso), por rótulo técnico da conta. Revisável: conta fora do mapa usa o nome da conta no Asaas. */
+    /** Rótulo CURTO da empresa (nosso), pelo identificador da conta em produção. CONFIRMADO pelo Jhony em 26/11 (19:3x). Conta fora do mapa = nome no Asaas. */
     public const ROTULO_CURTO = [
-        'astrelux' => 'Astrelux', 'gav' => 'GAV', 'jwa' => 'J.W.A.', 'j-w-a' => 'J.W.A.', 'led-lovers' => 'LED Lovers', 'ledlovers' => 'LED Lovers',
-        'loja-do-painel' => 'Loja do Painel', 'lojadopainel' => 'Loja do Painel', 'lunvox' => 'Lunvox',
+        'zenthra' => 'Zenthra', 'neoled' => 'NeoLED', 'loja-painel-led' => 'Loja do Painel', 'led-lovers' => 'LED Lovers', 'astrelux' => 'Astrelux',
+        'gav' => 'GAV', 'lunvox' => 'Lunvox', 'j-carvalho' => 'J. Carvalho', 'a-marques' => 'A. Marques', 'rovic' => 'Rovic',
+        'jwa' => 'J.W.A.',   // J.W.A. = DSHOW (ligação confirmada na conciliação)
     ];
     public const FORMA = ['BOLETO' => 'Boleto', 'PIX' => 'Pix', 'CREDIT_CARD' => 'Cartão', 'DEBIT_CARD' => 'Cartão de débito', 'UNDEFINED' => 'A definir',
                           'TRANSFER' => 'Transferência', 'DEPOSIT' => 'Depósito'];
@@ -23,6 +24,7 @@ final class AsaasCobrancas
     public const ORDENS = ['dias', 'valor', 'vencimento'];
 
     private readonly string $hoje;
+    private readonly string $geradoEm;
     private array $empresas = [];
 
     /** @param array{contas:list<array>, sem_leitura:list<array>, itens:list<array>} $retrato */
@@ -30,6 +32,7 @@ final class AsaasCobrancas
     {
         if ($filtro !== null && preg_match(AsaasChaves::RE_ROTULO, $filtro) !== 1) throw new InvalidArgumentException('empresa');
         $this->hoje = $agora->setTimezone(new DateTimeZone('America/Sao_Paulo'))->format('Y-m-d');
+        $this->geradoEm = $agora->setTimezone(new DateTimeZone('America/Sao_Paulo'))->format(DATE_ATOM);   // hora da conferência (o contrato v1 já previa)
         foreach (array_merge($retrato['contas'], $retrato['sem_leitura']) as $c) $this->empresas[$c['conta']] = self::rotulo($c['conta'], $c['nome'] ?? null);
     }
 
@@ -89,7 +92,7 @@ final class AsaasCobrancas
             $porCli[$k]['c'] += $i['c']; $porCli[$k]['cobrancas']++;
         }
         usort($porCli, fn($a, $b) => [$b['c'], $b['cobrancas']] <=> [$a['c'], $a['cobrancas']]);
-        return ['empresa' => $this->filtro !== null ? $this->empresa($this->filtro) : null] + $this->cobertura() + [
+        return ['gerado_em' => $this->geradoEm, 'empresa' => $this->filtro !== null ? $this->empresa($this->filtro) : null] + $this->cobertura() + [
             'total' => self::soma($it) + ['clientes' => count($clientes)],
             'por_vencimento' => ['mes_atual' => self::soma(array_filter($it, fn($i) => $i['venc'] !== null && str_starts_with($i['venc'], $mes))),
                                  'ultimos_30_dias' => self::soma(array_filter($it, fn($i) => $i['venc'] !== null && $i['venc'] >= $d30)),

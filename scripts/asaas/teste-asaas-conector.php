@@ -372,6 +372,7 @@ if ($pdo !== null) {
         count($rt['itens']) === 4 && $rt['sem_leitura'][0]['conta'] === 'conta-z' && $rt['sem_leitura'][0]['motivo'] === 'nunca_sincronizada');
     $cb = new AsaasCobrancas($rt, $agora);
     $rs = $cb->resumo();
+    check('cobranças · vencidas_resumo traz gerado_em (hora da conferência, ISO com fuso de Brasília)', isset($rs['gerado_em']) && preg_match('/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d-03:00$/', $rs['gerado_em']) === 1);
     check('cobranças · resumo: total 135.50 em 4 cobranças de 2 clientes; parcial (conta-z sem leitura)', $rs['total'] === ['valor' => '135.50', 'cobrancas' => 4, 'clientes' => 2]
         && $rs['completo'] === false && $rs['empresas_sem_leitura'][0]['empresa']['conta'] === 'conta-z', json_encode($rs['total']));
     check('cobranças · faixas: 1-30 (3 dias: 10.00), 31-90 (53 dias: 20.50), 91-180 (114 dias: 100.00); sem vencimento 1', $rs['faixas'][0] === ['faixa' => '1-30', 'valor' => '10.00', 'cobrancas' => 1]
@@ -392,7 +393,10 @@ if ($pdo !== null) {
     check('cobranças · filtro de empresa inválido e ordem inválida → InvalidArgumentException', (function () use ($rt, $agora) { try { new AsaasCobrancas($rt, $agora, '../x'); return false; } catch (InvalidArgumentException) { return true; } })()
         && (function () use ($cb) { try { $cb->lista('nome'); return false; } catch (InvalidArgumentException) { return true; } })());
     check('cobranças · filtro empresa=conta-z: nada lido, total 0 de verdade não aparece como completo', ($fz = (new AsaasCobrancas($rt, $agora, 'conta-z'))->resumo())['completo'] === false && $fz['total']['cobrancas'] === 0);
-    check('cobranças · rótulo curto pelo mapa fixo; fora dele, o nome da conta', AsaasCobrancas::rotulo('jwa', 'JWA LTDA') === 'J.W.A.' && AsaasCobrancas::rotulo('led-lovers', null) === 'LED Lovers'
+    $mapa = ['zenthra' => 'Zenthra', 'neoled' => 'NeoLED', 'loja-painel-led' => 'Loja do Painel', 'led-lovers' => 'LED Lovers', 'astrelux' => 'Astrelux', 'gav' => 'GAV',
+             'lunvox' => 'Lunvox', 'j-carvalho' => 'J. Carvalho', 'a-marques' => 'A. Marques', 'rovic' => 'Rovic', 'jwa' => 'J.W.A.'];
+    $todos = true; foreach ($mapa as $k => $v) $todos = $todos && AsaasCobrancas::rotulo($k, 'RAZAO SOCIAL LTDA') === $v;
+    check('cobranças · rótulo curto CONFIRMADO para as 11 contas de produção (pela ordem das chaves); fora dele, o nome da conta', $todos && count(AsaasCobrancas::ROTULO_CURTO) === 11
         && AsaasCobrancas::rotulo('nova', 'Nova Empresa') === 'Nova Empresa');
     check('vencidas: recusa conexão dentro de transação', (function () use ($pdo, $resumo, $agora) { $pdo->beginTransaction();
         try { $resumo->vencidas(['conta-a'], $agora); return false; } catch (LogicException) { return true; } finally { $pdo->rollBack(); } })());
