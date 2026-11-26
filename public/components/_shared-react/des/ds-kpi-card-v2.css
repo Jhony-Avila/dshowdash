@@ -53,7 +53,7 @@
 .des2-kpi__valor { height: 34px; display: flex; align-items: center; overflow: visible; }
 /* Dash (26/11): os cartões da Geral têm uma linha de contexto real ("Fechados no período · 1 sem valor") além da variação e do micrográfico.
    Ritmo vertical mais justo para caber em 136–160 px (parecer UX) com tudo: 12 + 30 + 6 + 34 + 18 + 16 + 6 + 26 + 10 ≈ 158. */
-.des2-kpi { gap: 6px; padding: 12px 16px 10px; }
+.des2-kpi { gap: 6px; padding: 12px 16px 9px; }
 .des2-kpi__ic { width: 30px; height: 30px; border-radius: 8px; }
 .des2-kpi__corpo { gap: 0; }
 .des2-var { line-height: 18px; }
