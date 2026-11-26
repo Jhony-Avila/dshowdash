@@ -88,7 +88,7 @@ $provDe = function (?Closure $cf) use (&$EVENTOS): ?Closure {
     };
 };
 $sv = fn(?PDO $pipe = null, ?PDO $gcal = null, ?PDO $bling = null, ?Closure $cf = null, ?DateTimeImmutable $ag = null, bool $semPdo = false)
-    => new GeralV2($semPdo ? $pipe : ($pipe ?? $pdo), $semPdo ? $gcal : ($gcal ?? $pdo), $semPdo ? $bling : ($bling ?? $pdo), 75, $ag ?? $AGORA, $provDe($cf), $P);
+    => new GeralV2($semPdo ? $pipe : ($pipe ?? $pdo), $semPdo ? $gcal : ($gcal ?? $pdo), $semPdo ? $bling : ($bling ?? $pdo), 75, $ag ?? $AGORA, $provDe($cf), $P, financeiro: true);
 $prio = fn(array $r, string $id) => array_values(array_filter($r['prioridades'], fn($x) => $x['id'] === $id))[0];
 
 // ---------- dados sintéticos ----------
@@ -253,9 +253,9 @@ $r = $sv(cf: $cf)->resumo('7d');
 check('Pipedrive sem conta conectada → aguardando_conexao e TODOS os números do Pipedrive null', $nulos($r) && $r['funil']['estado'] === 'aguardando_conexao' && $prio($r, 'atividade_vencida')['estado'] === 'aguardando_conexao');
 check('lista com Pipedrive aguardando → total null, sem itens', ($x = $sv()->lista('atividade_vencida'))['total'] === null && $x['itens'] === [] && $x['estado'] === 'aguardando_conexao');
 $pdo->exec("UPDATE `{$P}pipe_accounts` SET status='connected'");
-$r = (new GeralV2(null, $pdo, $pdo, 75, $AGORA, $provDe($cf), $P))->resumo('7d');
+$r = (new GeralV2(null, $pdo, $pdo, 75, $AGORA, $provDe($cf), $P, financeiro: true))->resumo('7d');
 check('banco do Pipedrive fora → indisponivel, números null; Bling e agenda seguem', $nulos($r) && $r['ganhos']['estado'] === 'indisponivel' && $r['pedidos']['quantidade'] === 4 && $prio($r, 'conflito_agenda')['total'] === 1);
-$r = (new GeralV2($pdo, $pdo, null, 75, $AGORA, $provDe($cf), $P))->resumo('7d');
+$r = (new GeralV2($pdo, $pdo, null, 75, $AGORA, $provDe($cf), $P, financeiro: true))->resumo('7d');
 check('banco do Bling fora → pedidos null em todos os dias (nunca 0)', $r['pedidos']['quantidade'] === null && $r['pedidos']['estado'] === 'indisponivel'
     && count(array_filter($r['pedidos']['por_dia'], fn($d) => $d['quantidade'] !== null)) === 0);
 $pdo->exec("UPDATE `{$P}bling_accounts` SET estado_conexao='nao_configurado'");
@@ -293,7 +293,7 @@ $deal(300, 'won', ['won_time' => '2026-11-20 15:00:00', 'currency' => 'USD', 'va
 $r = $sv(cf: $cf)->resumo('7d');
 check('ganho em USD: conta na quantidade, fica fora do valor e NÃO deixa o cartão parcial (116: o cartão é a quantidade)', $r['ganhos']['quantidade'] === 3 && $r['ganhos']['valor'] === '300.35' && $r['ganhos']['fora_brl'] === 1 && $r['ganhos']['estado'] === 'ok' && $r['ganhos']['lacunas'] === []);
 check('período inválido recusado', (function () use ($sv) { try { $sv()->resumo('ano'); return false; } catch (GeralV2Erro) { return true; } })());
-check('prefixo inválido recusado', (function () use ($pdo) { try { new GeralV2($pdo, $pdo, $pdo, 75, null, null, 'x; DROP'); return false; } catch (InvalidArgumentException) { return true; } })());
+check('prefixo inválido recusado', (function () use ($pdo) { try { new GeralV2($pdo, $pdo, $pdo, 75, null, null, 'x; DROP', financeiro: true); return false; } catch (InvalidArgumentException) { return true; } })());
 
 // ---------- CONTRATO DA TELA (proposta da CIMA, 23/11 ~21:30) ----------
 require_once dirname($argv[1] ?? "$RAIZ/api/geral/GeralV2.php") . '/GeralV2Contrato.php';
@@ -346,7 +346,7 @@ check('contrato · P2: critério com o limite de +7 e "inclui vencidos"', $L2['c
 $ag = $K()->agenda();
 check('contrato · agenda: só os próximos de hoje (sem o que já passou, sem cancelada), em ordem, com conflito marcado', array_column($ag['itens'], 'titulo') === ['Agora', 'Reunião A', 'Reunião B']
     && $ag['itens'][1]['conflito'] === true && $ag['itens'][0]['conflito'] === false && $ag['itens'][0]['duracao_min'] === 60 && $ag['url_agenda'] === '#/panel-google-calendar', json_encode($ag['itens']));
-$agN = (new GeralV2Contrato(new GeralV2($pdo, $pdo, $pdo, 75, $AGORA, null, $P)))->agenda();
+$agN = (new GeralV2Contrato(new GeralV2($pdo, $pdo, $pdo, 75, $AGORA, null, $P, financeiro: true)))->agenda();
 check('contrato · agenda sem provedor: erro e itens null (nunca lista vazia)', $agN['estado'] === 'erro' && $agN['itens'] === null && is_string($agN['motivo']));
 $fo = array_column($K()->fontes(), null, 'fonte');
 check('contrato · fontes (116): pipedrive, bling, calendar, precifica — nessa ordem; Precifica sem acesso = problema', array_keys($fo) === ['pipedrive', 'bling', 'calendar', 'precifica']
@@ -376,7 +376,7 @@ $pdo->exec("UPDATE `{$P}bling_sync_state` SET ultima_execucao_em='2026-11-23 12:
 $pdo->exec("UPDATE `{$P}gcal_sync_state` SET last_sync_at='2026-11-23 08:00:00' WHERE calendar_id='b@exemplo.test'");
 check('contrato · agenda parcial: "1 de 2 agendas com atualização atrasada."', $K()->agenda()['motivo'] === '1 de 2 agendas com atualização atrasada.');
 $pdo->exec("UPDATE `{$P}gcal_sync_state` SET last_sync_at='2026-11-23 12:50:00'");
-$c = (new GeralV2Contrato(new GeralV2($pdo, $pdo, null, 75, $AGORA, $provDe($cf2), $P)))->resumo('7d');
+$c = (new GeralV2Contrato(new GeralV2($pdo, $pdo, null, 75, $AGORA, $provDe($cf2), $P, financeiro: true)))->resumo('7d');
 check('contrato · Bling fora: "erro", números null, motivo sem detalhe técnico', $c['pedidos_bling']['estado'] === 'erro' && $c['pedidos_bling']['quantidade'] === null && $c['pedidos_bling']['motivo'] === 'Não foi possível ler o Bling agora.');
 $pr = array_column((new GeralV2Contrato($sv(cf: fn() => [])))->prioridades()['itens'], null, 'id');
 check('contrato · zero confirmado: "zero", quantidade 0, motivo null', $pr['conflito_agenda']['estado'] === 'zero' && $pr['conflito_agenda']['quantidade'] === 0 && $pr['conflito_agenda']['motivo'] === null);
@@ -735,18 +735,18 @@ $conta = 0; $pdoConta = new class ($pdo, $conta) extends PDO {
     public function query(string $q, ?int $m = null, mixed ...$a): PDOStatement|false { return $this->real->query($q); }
     public function exec(string $q): int|false { return $this->real->exec($q); }
 };
-(new GeralV2Contrato(new GeralV2($pdo, $pdo, $pdoConta, 75, $AGORA, $provDe($cf2), $P)))->painel('7d');
+(new GeralV2Contrato(new GeralV2($pdo, $pdo, $pdoConta, 75, $AGORA, $provDe($cf2), $P, financeiro: true)))->painel('7d');
 check('D3 · o painel lê os pedidos do período UMA vez (a série reaproveita o por_dia) + 1 vez o período ANTERIOR (26/11) = 2', $conta === 2, (string) $conta);
 
 // ─── 26/11 · anterior + série dos 4 KPIs ───
-$gp = fn(string $agora) => new GeralV2(null, null, null, 75, new DateTimeImmutable($agora, $BR));
+$gp = fn(string $agora) => new GeralV2(null, null, null, 75, new DateTimeImmutable($agora, $BR), financeiro: true);
 $fmt = fn(array $x) => $x[0]->format('Y-m-d') . '..' . $x[1]->format('Y-m-d');
 check('anterior · ontem 22/11 → 21/11; 7d 16–22/11 → 09–15/11; mês 01–22/11 → 01–22/10', $fmt($gp('2026-11-23 10:00')->periodoAnterior('ontem')) === '2026-11-21..2026-11-21'
     && $fmt($gp('2026-11-23 10:00')->periodoAnterior('7d')) === '2026-11-09..2026-11-15' && $fmt($gp('2026-11-23 10:00')->periodoAnterior('mes')) === '2026-10-01..2026-10-22');
 check('anterior · mês 01–30/03 → 01–28/02 (limitado ao fim do mês); no dia 1º/03 (fev inteiro) → 01–28/01', $fmt($gp('2026-03-31 10:00')->periodoAnterior('mes')) === '2026-02-01..2026-02-28'
     && $fmt($gp('2026-03-01 10:00')->periodoAnterior('mes')) === '2026-01-01..2026-01-28');
-$G26 = new GeralV2($pdo, $pdo, $pdo, 75, $AGORA, $provDe($cf2), $P);
-$c26 = (new GeralV2Contrato($G26))->resumo('7d'); $G7 = new GeralV2($pdo, $pdo, $pdo, 75, $AGORA->modify('-7 days'), $provDe($cf2), $P);
+$G26 = new GeralV2($pdo, $pdo, $pdo, 75, $AGORA, $provDe($cf2), $P, financeiro: true);
+$c26 = (new GeralV2Contrato($G26))->resumo('7d'); $G7 = new GeralV2($pdo, $pdo, $pdo, 75, $AGORA->modify('-7 days'), $provDe($cf2), $P, financeiro: true);
 $n7 = $G7->numeros('7d');
 check('anterior · ganhos e pedidos do 7d = o 7d de 7 dias atrás (mesmas regras)', $c26['periodo_anterior'] === ['de' => '2026-11-09', 'ate' => '2026-11-15']
     && ($c26['negocios_ganhos']['anterior']['quantidade'] ?? 'x') === $n7['ganhos']['quantidade'] && ($c26['negocios_ganhos']['anterior']['valor'] ?? 'x') === $n7['ganhos']['valor']
@@ -759,7 +759,7 @@ check('série · ganhos na borda do dia de Brasília: 16/11 00:00 BR entra em 16
 check('série · pedidos = o por_dia do cartão (mesma leitura)', $c26['pedidos_bling']['serie'] === $c26['pedidos_bling']['por_dia']);
 check('funil: sem fotografia diária → anterior e série null, com o motivo (nunca 0)', $c26['funil_aberto']['anterior'] === null && $c26['funil_aberto']['serie'] === null
     && $c26['funil_aberto']['serie_motivo'] === 'sem_fotografia_diaria');
-$sem = (new GeralV2Contrato(new GeralV2(null, null, null, 75, $AGORA, null, $P)))->resumo('7d');
+$sem = (new GeralV2Contrato(new GeralV2(null, null, null, 75, $AGORA, null, $P, financeiro: true)))->resumo('7d');
 check('sem conexão: anterior e série null nos 4 (nunca 0)', $sem['negocios_ganhos']['anterior'] === null && $sem['negocios_ganhos']['serie'] === null
     && $sem['pedidos_bling']['anterior'] === null && $sem['pedidos_bling']['serie'] === null && $sem['recebido']['anterior'] === null && $sem['recebido']['serie'] === null,
     json_encode([$sem['negocios_ganhos']['anterior'], $sem['pedidos_bling']['serie'], $sem['recebido']['serie']]));
@@ -770,7 +770,7 @@ $pdoFunil = new class ($pdo) extends PDO {
     public function query(string $q, ?int $m = null, mixed ...$a): PDOStatement|false { return $this->real->query($q); }
     public function exec(string $q): int|false { return $this->real->exec($q); }
 };
-$pa = (new GeralV2Contrato(new GeralV2($pdoFunil, $pdo, $pdo, 75, $AGORA, $provDe($cf2), $P)))->painel('7d');
+$pa = (new GeralV2Contrato(new GeralV2($pdoFunil, $pdo, $pdo, 75, $AGORA, $provDe($cf2), $P, financeiro: true)))->painel('7d');
 $fp = array_column($pa['fontes'], null, 'fonte')['pipedrive'];
 check('CIMA · só o funil falha → "Pipedrive · Com problema (funil)": rotulo_estado e afetado = [funil erro]; ganhos seguem ok', $pa['resumo']['funil_aberto']['estado'] === 'erro'
     && $pa['resumo']['negocios_ganhos']['quantidade'] !== null && $fp['rotulo_estado'] === 'Com problema'
@@ -840,7 +840,7 @@ $volta = $foto(['pipe_accounts', 'pipe_sync_runs', 'gcal_accounts', 'gcal_sync_s
 $errosM = []; $errosAtual = []; $casosM = 0; $naoCompletas = 0; $CASOS = [];
 foreach ($PIPE as $np => [$pp, $sqlP]) foreach ($GCAL as $ng => [$pg, $sqlG, $cfG]) {
     foreach (array_merge($sqlP, $sqlG) as $q) $pdo->exec($q);
-    $svc = new GeralV2($pp === 'fora' ? null : ($pp ?? $pdo), $pg === 'fora' ? null : $pdo, $pdo, 75, $AGORA, $provDe($cfG), $P);
+    $svc = new GeralV2($pp === 'fora' ? null : ($pp ?? $pdo), $pg === 'fora' ? null : $pdo, $pdo, 75, $AGORA, $provDe($cfG), $P, financeiro: true);
     $pa = (new GeralV2Contrato($svc))->painel('7d'); $CASOS["$np|$ng"] = $pa; $casosM++;
     $v = $pa['prioridades']['verificacao']; $fo = array_column($pa['fontes'], null, 'fonte');
     if ($v['estado'] !== 'completa') $naoCompletas++;
@@ -911,7 +911,7 @@ foreach (["fin_pcf_snapshot (`id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMAR
           "fin_pcf_empresa (`empresa_id` INT NOT NULL PRIMARY KEY, `cnpj` VARCHAR(20) NOT NULL, `nome` VARCHAR(100) NULL, `ativo` TINYINT(1) NOT NULL, `atualizado_em` DATETIME(3) NOT NULL)"] as $ddl) {
     $nomeT = strtok($ddl, ' '); $pdo->exec("CREATE TABLE `{$P}{$nomeT}` " . substr($ddl, strlen($nomeT) + 1)); $criadas[] = $P . $nomeT;
 }
-$KF = fn(?PDO $fin = null) => new GeralV2Contrato(new GeralV2($pdoReg, $pdoReg, $pdoReg, 75, $AGORA, $provDe($cf2), $P, $fin ?? $pdoReg, $SCH));
+$KF = fn(?PDO $fin = null) => new GeralV2Contrato(new GeralV2($pdoReg, $pdoReg, $pdoReg, 75, $AGORA, $provDe($cf2), $P, $fin ?? $pdoReg, $SCH, financeiro: true));
 $utc = fn(string $rel) => $AGORA->modify($rel)->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
 check('recebido sem snapshot utilizável (só um "erro"): aguardando, "—"', ($pdo->exec("INSERT INTO `{$P}fin_pcf_snapshot` (gerado_em, estado) VALUES ('{$utc('-5 minutes')}', 'erro')") === 1)
     && ($rx = $KF()->resumo('7d')['recebido'])['estado'] === 'aguardando' && $rx['valor'] === null && $rx['motivo'] === 'O Precifica ainda não tem uma leitura completa de recebimentos.', json_encode($rx ?? null));

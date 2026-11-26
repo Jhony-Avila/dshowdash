@@ -70,9 +70,15 @@ function geral_v2_contrato(int $usuario): GeralV2Contrato
     $gcal = geral_v2_pdo('GCAL_DSHOW');
     // 25/11: o "Recebido" lê APP_DSHOW.fin_pcf_* pela conexão do Dash (DSHOWDASH), com GRANT SELECT SÓ nessas tabelas (portão GERAL-V2-PRECIFICA-ACESSO).
     // Sem o GRANT a consulta falha → "—" com "Não foi possível ler…" (nunca zero).
+    // 26/11 F03 (P0): o "Recebido" (financeiro) só para quem tem a flag POR PESSOA financeiro_asaas_leitura; sem ela (ou flag ilegível) nem a conexão é passada.
+    $fin = GeralV2::podeFinanceiro($usuario, static function (string $k, int $u): array {
+        require_once __DIR__ . '/../feature-flags/resolver.php';
+        return (new FeatureFlagResolver(getConnection('DSHOWDASH')))->resolve($k, $u);
+    });
     return new GeralV2Contrato(new GeralV2(geral_v2_pdo('PIPE_DSHOW'), $gcal, geral_v2_pdo('BLING'), $usuario, null, geral_v2_provedor_agenda($gcal, $usuario),
-        fin: geral_v2_pdo('DSHOWDASH')));
+        fin: $fin ? geral_v2_pdo('DSHOWDASH') : null, financeiro: $fin));
 }
+
 
 /** Texto da query (ou null). */
 function geral_v2_q(string $k): ?string

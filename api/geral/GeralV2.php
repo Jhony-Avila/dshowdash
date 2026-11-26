@@ -58,11 +58,19 @@ final class GeralV2
         private string $p = '',
         private ?PDO $fin = null,                 // 25/11: conexão do Dash com SELECT só nas APP_DSHOW.fin_pcf_* (portão de acesso); null = sem acesso
         private string $finSchema = 'APP_DSHOW',
+        private bool $financeiro = false,         // 26/11 F03 (P0): flag POR PESSOA financeiro_asaas_leitura; sem ela o "Recebido" é negado ANTES de consultar (padrão = negar)
     ) {
         if ($p !== '' && preg_match('/^[a-z0-9_]{1,24}\z/', $p) !== 1) throw new InvalidArgumentException('prefixo inválido');
         $this->br = new DateTimeZone(self::FUSO);
         $this->utc = new DateTimeZone('UTC');
         $this->agora = ($agora ?? new DateTimeImmutable('now'))->setTimezone($this->br);
+    }
+
+    /** 26/11 F03 (P0): flag POR PESSOA financeiro_asaas_leitura (a mesma do Asaas). O nível NÃO libera. Falha ao ler = NEGA (fail-closed). */
+    public static function podeFinanceiro(int $usuario, Closure $resolver): bool
+    {
+        try { return (bool) ($resolver('financeiro_asaas_leitura', $usuario)['enabled'] ?? false); }
+        catch (Throwable $e) { error_log('[geral-v2] flag financeiro: ' . get_class($e)); return false; }
     }
 
     // ─────────────────────────────────────────── resumo ───────────────────────────────────────────
@@ -123,6 +131,7 @@ final class GeralV2
         $chave = $de->format('Y-m-d') . '|' . $ate->format('Y-m-d');
         if (isset($this->recebidoCache[$chave])) return $this->recebidoCache[$chave];
         $nada = ['valor' => null, 'quantidade' => null, 'snapshot_em' => null, 'por_empresa' => null, 'sem_cnpj' => null, 'por_dia' => null];
+        if (!$this->financeiro) return $this->recebidoCache[$chave] = ['estado' => 'sem_permissao', 'motivo' => 'sem_permissao'] + $nada;   // F03: nenhuma consulta financeira, nem do período anterior
         $s = $this->finSchema; if (preg_match('/^[A-Za-z0-9_]{1,64}\z/', $s) !== 1) throw new InvalidArgumentException('schema inválido');
         $t = fn(string $x) => "`{$s}`.`{$this->p}{$x}`";
         if ($this->fin === null) {

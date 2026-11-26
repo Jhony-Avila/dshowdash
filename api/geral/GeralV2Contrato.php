@@ -25,7 +25,7 @@ require_once __DIR__ . '/GeralV2.php';
 final class GeralV2Contrato
 {
     private const ESTADO = ['ok' => 'ok', 'zero_confirmado' => 'zero', 'parcial' => 'parcial', 'desatualizado' => 'desatualizado',
-                            'aguardando_conexao' => 'aguardando', 'indisponivel' => 'erro'];
+                            'aguardando_conexao' => 'aguardando', 'indisponivel' => 'erro', 'sem_permissao' => 'sem_permissao'];
     private const NOME = ['pipedrive' => 'Pipedrive', 'pipedrive_negocios' => 'Pipedrive', 'bling' => 'Bling', 'google_calendar' => 'Google Calendar'];   // um nome só na tela (pedido da CIMA, 24/11): o do resto do Dash
     public const URL_AGENDA = '#/panel-google-calendar';
     private const GRAVIDADE = ['atividade_vencida' => 1, 'sem_proxima_atividade' => 2, 'conflito_agenda' => 3];
@@ -103,6 +103,7 @@ final class GeralV2Contrato
     }
 
     private const MOTIVO_RECEBIDO = [
+        'sem_permissao' => 'Você não tem permissão para ver dados financeiros.',
         'sem_acesso' => 'Sem acesso de leitura aos recebimentos do Precifica.',
         'leitura_falhou' => 'Não foi possível ler os recebimentos do Precifica agora.',
         'sem_snapshot' => 'O Precifica ainda não tem uma leitura completa de recebimentos.',
@@ -257,7 +258,9 @@ final class GeralV2Contrato
                     'rotulo_estado' => $this->rotuloParte($i['id'], $i['estado'])], array_filter($inds, fn($i) => $i['estado'] !== 'ok')))];
         }
         // 25/11: Precifica (recebimentos) — a ÚNICA fonte do "Recebido" (nunca o Asaas); estado = o do último snapshot utilizável
-        $rc = $r['recebido']; $e = $rc['estado'] === 'zero' ? 'ok' : $rc['estado'];   // estado da CONSULTA (zero de verdade = ok)
+        $rc = $r['recebido'];
+        if ($rc['estado'] === 'sem_permissao') return $out;   // F03: quem não tem a permissão financeira não vê nem o estado da fonte financeira
+        $e = $rc['estado'] === 'zero' ? 'ok' : $rc['estado'];   // estado da CONSULTA (zero de verdade = ok)
         // linha da fonte no MESMO enum das outras: conectada · problema · aguardando · desatualizado · parcial
         $linha = ['ok' => 'conectada', 'erro' => 'problema', 'aguardando' => 'aguardando', 'desatualizado' => 'desatualizado', 'parcial' => 'parcial'][$e];
         $con = ['ok' => 'conectada', 'erro' => 'problema', 'aguardando' => 'aguardando'][$e] ?? 'conectada';
