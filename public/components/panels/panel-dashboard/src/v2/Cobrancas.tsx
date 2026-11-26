@@ -14,7 +14,7 @@ import '@shared/styles/tokens.css';
 // registrado só por esta tela — o grade.ts compartilhado não muda
 ModuleRegistry.registerModules([ClientSideRowModelApiModule]);
 import {
-  ErroV2, LIMITE_CV, dinheiro, fmtData, fmtHora, fmtMoeda2, fmtMoedaCurta, fmtN, fmtQuando, lerDetalheCv, lerListaCv, lerResumoCv,
+  ErroV2, LIMITE_CV, dinheiro, lerAsaas, fmtData, fmtHora, fmtMoeda2, fmtMoedaCurta, fmtN, fmtQuando, lerDetalheCv, lerListaCv, lerResumoCv,
   type DetalheCv, type EmpresaCv, type FaixaCv, type ItemCv, type ResumoCv,
 } from './servico';
 import { Problema, useBloco } from './comuns';
@@ -27,6 +27,8 @@ const FAIXAS: { id: FaixaCv; rotulo: string; curto: string; de: number; ate: num
 const faixaDe = (d: number | null) => (d === null ? null : FAIXAS.find((f) => d >= f.de && d <= f.ate) ?? null);
 const plural = (n: number | null, um: string, varios: string) => (n === null ? `— ${varios}` : `${fmtN(n)} ${n === 1 ? um : varios}`);
 /** valor curto da faixa, sem "R$" (o nome completo e o valor exato estão no rótulo acessível e no title): 110,8 mil · 1,2 mi */
+/** Data válida (ISO) ou null: o resumo real não manda gerado_em ("Invalid Date" no ar, 26/11). */
+const dataOk = (iso: unknown): string | null => (typeof iso === 'string' && iso !== '' && !Number.isNaN(new Date(iso).getTime()) ? iso : null);
 const curta = (v: number | null) => (v === null ? '—' : fmtMoedaCurta(v).replace(/^R\$\s?/, ''));
 const negativacao = (x: ItemCv) => (x.situacao?.negativacao === true ? 'Pedida' : x.situacao?.negativacao === false ? 'Não' : '—');
 const ORDEM_NULO = (a: number | null, b: number | null) => (a === b ? 0 : a === null ? -1 : b === null ? 1 : a - b);
@@ -59,11 +61,18 @@ function celulaAtraso(p: ICellRendererParams<ItemCv>) {
 
 function somarApi(api: GridApi<ItemCv>) { let n = 0, soma = 0, desc = 0;
   api.forEachNodeAfterFilter((r) => { if (!r.data) return; n++; const v = dinheiro(r.data.valor_original); if (v === null) desc++; else soma += v; }); return { n, soma, desconhecidos: desc }; }
+/** Larguras (26/11, pedido do Jhony): Empresa pelo rótulo curto; Cliente flexível SÓ quando há nomes — com todos "—" (cache de nomes
+ *  ainda vazio) ela fica estreita e o espaço vai para as colunas da direita, sem um vão vazio no meio da tabela. */
+function larguras(temNome: boolean): Record<string, Partial<ColDef<ItemCv>>> {
+  return temNome
+    ? { empresa: { width: 130, flex: 0 }, cliente: { flex: 1, minWidth: 200, maxWidth: undefined, width: undefined }, forma: { width: 120, flex: 0 }, negativacao: { width: 130, flex: 0 } }
+    : { empresa: { width: 130, flex: 0 }, cliente: { flex: 0, width: 120, minWidth: 100 }, forma: { flex: 1, minWidth: 120 }, negativacao: { flex: 1, minWidth: 130 } };
+}
 function Grade({ itens, aoAbrir, aoTotais, apiRef, selecionada }: {
   itens: ItemCv[]; aoAbrir: (id: string) => void; aoTotais: (t: { n: number; soma: number; desconhecidos: number }) => void;
   apiRef: React.MutableRefObject<GridApi<ItemCv> | null>; selecionada: string | null;
 }) {
-  const el = useRef<HTMLDivElement>(null);
+  const el = useRef<HTMLDivElement>(null); const temNomeRef = useRef<boolean | null>(null);
   const abrir = useRef(aoAbrir); abrir.current = aoAbrir; const totais = useRef(aoTotais); totais.current = aoTotais;
   useEffect(() => {
     if (!el.current) return;
@@ -93,7 +102,11 @@ function Grade({ itens, aoAbrir, aoTotais, apiRef, selecionada }: {
     apiRef.current = api;
     return () => { apiRef.current = null; api.destroy(); };
   }, [apiRef]);
-  useEffect(() => { const api = apiRef.current; if (!api) return; api.setGridOption('rowData', itens); totais.current(somarApi(api)); }, [itens, apiRef]);
+  useEffect(() => { const api = apiRef.current; if (!api) return; api.setGridOption('rowData', itens); totais.current(somarApi(api));
+    const tem = itens.some((x) => x.cliente_nome !== null); if (temNomeRef.current === tem) return; temNomeRef.current = tem;   // só quando muda: não desfaz a ordenação
+    const L = larguras(tem);
+    api.setGridOption('columnDefs', (api.getColumnDefs() ?? []).map((c) => { const id = (c as ColDef<ItemCv>).colId ?? ''; const sem: ColDef<ItemCv> = { ...(c as ColDef<ItemCv>) }; delete sem.sort; return L[id] ? { ...sem, ...L[id] } : sem; }));   // sort ausente = mantém o atual
+  }, [itens, apiRef]);
   useEffect(() => { const api = apiRef.current; if (!api) return; if (!selecionada) api.deselectAll(); else api.getRowNode(selecionada)?.setSelected(true, true); }, [selecionada, apiRef]);
   return <div ref={el} className="cv-grade" data-cv-grade role="region" aria-label="Cobranças vencidas" />;
 }
@@ -162,6 +175,11 @@ export default function CobrancasVencidas({ aoVoltar }: { aoVoltar: () => void }
   const resumo = useBloco((s) => lerResumoCv(empresa, s), [empresa]);
   const lista = useBloco((s) => lerListaCv(empresa, s), [empresa]);
   const r: ResumoCv | null = resumo.dados;
+  // "conferido às": a hora do resumo, se vier; senão a da última sincronização das empresas que a Geral já lê (asaas.php · atualizado_em,
+  // a MAIS ANTIGA entre as empresas com leitura = até quando tudo está conferido); nenhuma → "—"
+  const asaas = useBloco((s) => lerAsaas(s), []);
+  const conferido = dataOk(r?.gerado_em) ?? (asaas.dados?.empresas ?? []).filter((e) => e.estado !== 'indisponivel').map((e) => dataOk(e.atualizado_em))
+    .filter((x): x is string => x !== null).sort()[0] ?? null;
   const apiRef = useRef<GridApi<ItemCv> | null>(null);
   const raiz = useRef<HTMLDivElement>(null);
   const alt = useAlturaDisponivel(raiz);
@@ -210,7 +228,8 @@ export default function CobrancasVencidas({ aoVoltar }: { aoVoltar: () => void }
             </select></label>
           {r && !r.completo && <span className="des-selo des-selo--aviso" data-cv-parcial title={semLeitura.map((x) => `${x.empresa.rotulo}: ${textoMotivo(x.motivo)}`).join(' · ')}>
             Parcial · {semLeitura.length} sem leitura<span className="des-sr"> (fora das somas: {semLeitura.map((x) => x.empresa.rotulo).join(', ')})</span></span>}
-          <span className="cv-conferido" data-cv-conferido>{r ? `conferido às ${fmtHora(r.gerado_em)}` : resumo.carregando ? 'lendo…' : 'conferido às —'}</span>
+          <span className="cv-conferido" data-cv-conferido title={conferido ? `Última conferência: ${fmtQuando(conferido)}` : 'Hora da última conferência não informada'}>
+            {resumo.carregando && !r ? 'lendo…' : `conferido às ${conferido ? fmtHora(conferido) : '—'}`}</span>
           <div className="cv-total cv-dir" data-cv-total aria-live="polite">
             {totais ? <><strong>{plural(totais.n, 'cobrança', 'cobranças')} · {fmtMoeda2(totais.soma)}</strong>{totais.desconhecidos ? ` · ${totais.desconhecidos} sem valor` : ''}{faixa ? ' na faixa' : ''}</> : '—'}
             {truncada && <span className="cv-dim" data-cv-truncada> · as {fmtN(LIMITE_CV)} maiores de {fmtN(total)}</span>}
@@ -256,7 +275,6 @@ export default function CobrancasVencidas({ aoVoltar }: { aoVoltar: () => void }
       {aberta && <Detalhe id={aberta} aoFechar={fechar} aoAbrir={setAberta} />}
       {/* a soma dos totais não troca de empresa sem leitura: as listadas em "Parcial" ficam fora de todos os números */}
       {lista.dados && !lista.dados.completo && semLeitura.length > 0 && <span className="des-sr">Empresas sem leitura: {semLeitura.map((x) => x.empresa.rotulo).join(', ')}</span>}
-      {r?.gerado_em && <span hidden data-cv-gerado={fmtQuando(r.gerado_em)} />}
     </div>
   );
 }
