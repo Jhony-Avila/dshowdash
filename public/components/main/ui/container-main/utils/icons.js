@@ -22,7 +22,7 @@ const ICONS = {
   // Zoom
   zoomIn: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l2 2M6 4v4M4 6h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
   zoomOut: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l2 2M4 6h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
-  zoomReset: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><text x="6" y="8" font-size="5" fill="currentColor" text-anchor="middle">1:1</text></svg>',
+  zoomReset: '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><text x="6" y="8" font-size="5" fill="currentColor" text-anchor="middle">1:1</text></svg>',
   // Split view
   splitHorizontal: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="1.5" width="11" height="11" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M7 1.5v11" stroke="currentColor" stroke-width="1.5"/></svg>',
   splitVertical: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="1.5" width="11" height="11" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M1.5 7h11" stroke="currentColor" stroke-width="1.5"/></svg>',
