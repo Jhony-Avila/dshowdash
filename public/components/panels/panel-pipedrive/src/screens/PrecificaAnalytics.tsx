@@ -5,11 +5,14 @@
 // Desfecho, Ranking de vendedores). Contrato: ACIMA_DIREITA, CONTRATO-PRECIFICA-ANALYTICS.md (v1, aceito-provisório):
 // GET /v1/precifica-analytics?from=&to=&seller= (app; flag PRECIFICA_ANALYTICS_ENABLED). Valores em centavos.
 //
-// ⚠ ENQUANTO O BACKEND NÃO ESTIVER PUBLICADO: a tela usa dados SINTÉTICOS no formato EXATO do contrato, marcados como
-// ILUSTRATIVO em todo lugar (selo no cabeçalho e motivo da leitura). Nada aqui lê o Precifica. A rota fica fora do menu.
+// P19 (26/11): lê o backend REAL do Dash (P29 4e35e5d3, ACIMA_DIREITA): GET /api/pipedrive/precifica-analytics?from=&to=
+// (tabelas APP_DSHOW.pa_* pelo GRANT PRECIFICA-ANALYTICS-ACESSO; contrato v1.1). Sem acesso/sem dados → "—" com o motivo.
+// O gerador `sintetico` abaixo só existe para capturas de homologação (resposta marcada `ilustrativo: true` → selo "Ilustrativo").
+// A rota segue fora do menu até a decisão do Jhony (DUVIDAS-PARA-O-JHONY.md).
 // Sem lista de registros no contrato v1 → sem painel lateral (os cartões não oferecem "Ver negócios").
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { apiGet } from '../lib/api';
 import { Calculator, TriangleAlert } from 'lucide-react';
 import { PageHeader } from './PageHeader';
 import { HudKpis, BlocoGanhos, RankingVendedores, IlustrativoCtx, UnidadeCtx } from './VisaoHud';
@@ -76,9 +79,13 @@ const reais = (c: number | null | undefined) => (c == null ? null : c / 100);
 const MOTIVO: Record<string, string> = {
   valor_em_carga: 'orçamentos ainda não relidos com o valor novo', cache_atrasado: 'leitura do Precifica com mais de 2 h',
   sem_dados: 'o Precifica ainda não foi agregado', sem_vinculo_vendedor: 'sua conta não tem vendedor vinculado no Precifica',
+  sem_acesso: 'o Dash ainda não tem leitura do Precifica Analytics', fora_do_escopo: 'vendedor fora do seu escopo',
 };
-export function paraResumo(a: PrecificaAnalytics, ant: PrecificaAnalytics | null, rotulo: string): PipeSummary {
-  const base = ESTADO[a.estado]; const valorParcial = a.motivos.includes('valor_em_carga');
+export function paraResumo(a0: PrecificaAnalytics, ant0: PrecificaAnalytics | null, rotulo: string): PipeSummary {
+  // indisponível vem SEM totais/por_dia/por_vendedor: completa com vazios (os valores ficam null → "—", nunca 0)
+  const vazio = { totais: somaVazia(), por_dia: [], por_vendedor: [], motivos_perda: [], em_aberto: { abertos: 0, valor_cents: null, abertos_sem_valor_financeiro: 0, idade_media_dias: null, por_vendedor: [] } };
+  const a = { ...vazio, ...a0, motivos: a0.motivos ?? [] } as PrecificaAnalytics; const ant = ant0 && ant0.totais ? ant0 : null;
+  const base = ESTADO[a.estado] ?? 'indisponivel'; const valorParcial = a.motivos.includes('valor_em_carga');
   const dias = a.por_dia.length; const diasAnt = ant?.por_dia.length ?? dias;
   const serie = (f: (x: Soma) => number | null) => a.por_dia.map((d) => f(d) ?? NaN);
   const k = (chave: string, rot: string, formato: PipeSummaryKpi['formato'], valor: number | null, anterior: number | null, s: number[], extra: Partial<PipeSummaryKpi> = {}): PipeSummaryKpi => ({
@@ -106,7 +113,8 @@ export function paraResumo(a: PrecificaAnalytics, ant: PrecificaAnalytics | null
       motivo: a.ilustrativo ? 'ILUSTRATIVO — dados sintéticos (backend não publicado)' : a.motivos.map((m) => MOTIVO[m] ?? m).join(' · ') || null },
   };
 }
-export function paraRanking(a: PrecificaAnalytics): Pick<PipeMetrics, 'owners' | 'owners_resumo' | 'owners_periodo'> {
+export function paraRanking(a: PrecificaAnalytics): Pick<PipeMetrics, 'owners' | 'owners_resumo' | 'owners_periodo'> | undefined {
+  if (!a.por_vendedor || a.estado === 'indisponivel') return undefined;
   const com = a.por_vendedor.filter((v) => v.vendedor !== '-');
   const sem = a.por_vendedor.find((v) => v.vendedor === '-');
   return {
@@ -127,11 +135,18 @@ function janela(dias: number, deslocar = 0) {
 
 export function PrecificaAnalyticsTela() {
   const [dias, setDias] = useState(90);
-  // ILUSTRATIVO até o backend publicar: o mesmo formato do contrato, gerado aqui (troca = uma linha: apiApp('/v1/precifica-analytics', …))
+  // P19: o backend real do Dash (P29). Duas leituras: o período e a janela anterior (para a variação).
   const q = useQuery({
-    queryKey: ['precifica', 'analytics', 'ilustrativo', dias],
-    queryFn: async () => { const j = janela(dias), ja = janela(dias, 1); return { atual: sintetico(j.from, j.to, 20261125 + dias), anterior: sintetico(ja.from, ja.to, 20261124 + dias) }; },
-    staleTime: Infinity,
+    queryKey: ['precifica', 'analytics', dias],
+    queryFn: async ({ signal }) => {
+      const j = janela(dias), ja = janela(dias, 1);
+      const [atual, anterior] = await Promise.all([
+        apiGet<PrecificaAnalytics>('/precifica-analytics', { from: j.from, to: j.to }, signal),
+        apiGet<PrecificaAnalytics>('/precifica-analytics', { from: ja.from, to: ja.to }, signal).catch(() => null),
+      ]);
+      return { atual, anterior };
+    },
+    refetchInterval: 300_000,
   });
   const rot = JANELAS.find((x) => x.d === dias)?.rot ?? '';
   const resumo = useMemo(() => (q.data ? paraResumo(q.data.atual, q.data.anterior, rot) : undefined), [q.data, rot]);
@@ -145,10 +160,12 @@ export function PrecificaAnalyticsTela() {
           <div className="pp-seg" role="group" aria-label="Período">
             {JANELAS.map((x) => <button key={x.d} type="button" className={`pp-seg-b${dias === x.d ? ' is-active' : ''}`} aria-pressed={dias === x.d} onClick={() => setDias(x.d)}>{x.rot}</button>)}
           </div>} />
-      <div className="pp-periodo-nota" data-precifica-ilustrativo>
-        <span className="hud-status part" style={{ marginLeft: 0 }}>ILUSTRATIVO</span>
-        <span><strong>Dados sintéticos</strong> no formato do contrato v1 (ACIMA_DIREITA) · o backend ainda não está publicado · nada aqui vem do Precifica</span>
-        {resumo && <span className="pp-periodo-alerta"><TriangleAlert size={11} aria-hidden />variação contra {resumo.periodo.comparacao}</span>}
+      <div className="pp-periodo-nota" {...(q.data?.atual.ilustrativo ? { 'data-precifica-ilustrativo': '' } : {})}>
+        {q.data?.atual.ilustrativo && <><span className="hud-status part" style={{ marginLeft: 0 }}>ILUSTRATIVO</span>
+          <span><strong>Dados sintéticos</strong> no formato do contrato · nada aqui vem do Precifica</span></>}
+        {resumo && <span><strong>{rot}</strong> · variação contra {resumo.periodo.comparacao}</span>}
+        {q.data && q.data.atual.estado !== 'ok' && !q.data.atual.ilustrativo && (
+          <span className="pp-periodo-alerta"><TriangleAlert size={11} aria-hidden />{q.data.atual.motivos.map((m) => MOTIVO[m] ?? m).join(' · ') || q.data.atual.estado}</span>)}
       </div>
       <IlustrativoCtx.Provider value={!!q.data?.atual.ilustrativo}><UnidadeCtx.Provider value={['orçamento', 'orçamentos']}>
       <HudKpis resumo={resumo} carregando={q.isLoading} falhou={!!q.error} onDrill={nada} semDrill rotuloAgora="Orçamentos em aberto" />
