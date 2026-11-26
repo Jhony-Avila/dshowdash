@@ -7,6 +7,7 @@
 import { ArrowLeft, Plug } from 'lucide-react';
 import { ErroV2, fmtQuando, lerIntegracoes, type Integracao } from './servico';
 import { Problema, useBloco } from './comuns';
+import { Conciliacao } from './Conciliacao';
 
 const ESTADO: Record<Integracao['estado'], [string, string]> = {
   ok: ['Em dia', 'ok'], atrasado: ['Atrasada', 'aviso'], com_problema: ['Com problema', 'erro'],
@@ -55,6 +56,7 @@ export function Integracoes({ aoVoltar }: { aoVoltar: () => void }) {
           </ul>
         )}
       </section>
+      <Conciliacao />
     </div>
   );
 }

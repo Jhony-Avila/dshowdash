@@ -106,6 +106,11 @@ export const lerFontes = (s?: AbortSignal) => ler<Fonte[]>('/fontes.php', s);
 /** 25/11 noite (CIMA): estado das integrações — contrato da ACIMA_ESQUERDA (P22), nível ≥ 80, só leitura. */
 export interface Integracao { id: string; nome: string; estado: 'ok' | 'atrasado' | 'com_problema' | 'aguardando' | 'sem_acesso' | 'nao_integrado'; ultima_sincronizacao: string | null; erro: string | null; proximo_passo: string | null }
 export function lerIntegracoes(s?: AbortSignal) { return ler<{ gerado_em: string; integracoes: Integracao[] }>('/integracoes.php', s); }
+/** 26/11 (CIMA): conciliação Asaas × Precifica — contrato da ACIMA_ESQUERDA (P31 c5451876). Dinheiro em TEXTO "1234.56" ou null. */
+export interface ConcDia { dia: string; asaas: string | null; asaas_liquido: string | null; precifica: string | null; diferenca: string | null; divergente: boolean; motivo: string | null }
+export interface ConcEmpresa { conta: string; nome: string | null; empresa_precifica: string | null; estado: 'ok' | 'sem_par' | 'indisponivel'; motivo: string | null; dias: ConcDia[] | null; divergencias: number | null }
+export interface Conciliacao { gerado_em: string; janela: { de: string; ate: string }; tolerancia: string; estado: 'ok' | 'indisponivel'; motivo: string | null; precifica_em?: string | null; divergencias?: number | null; empresas: ConcEmpresa[] | null }
+export function lerConciliacao(s?: AbortSignal) { return ler<Conciliacao>('/conciliacao-asaas.php?dias=30', s, 20000); }
 export function lerLista(id: IdPrioridade, f: FiltrosLista, s?: AbortSignal) {
   const q = new URLSearchParams({ id, pagina: String(f.pagina), por_pagina: '50', ordem: f.ordem, dir: f.dir });
   if (f.responsavel !== null) q.set('responsavel', String(f.responsavel));
