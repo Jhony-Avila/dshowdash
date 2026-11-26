@@ -1627,7 +1627,7 @@ class Zi {
   }
   _clearAllHighlights() {
     this._items.forEach((e) => {
-      e.classList.remove("ticker-item--focused"), e.setAttribute("aria-selected", "false");
+      e.classList.remove("ticker-item--focused"), e.removeAttribute("aria-current");
     });
   }
   _navigateNext() {
@@ -1647,7 +1647,7 @@ class Zi {
     this._items.forEach((n, r) => {
       n.setAttribute("tabindex", r === e ? "0" : "-1");
       const o = this._keyboardActive && r === e;
-      n.classList.toggle("ticker-item--focused", o), n.setAttribute("aria-selected", r === e ? "true" : "false");
+      n.classList.toggle("ticker-item--focused", o), r === e ? n.setAttribute("aria-current", "true") : n.removeAttribute("aria-current");
     });
     const t = this._currentIndex;
     this._currentIndex = e;
@@ -1667,7 +1667,7 @@ class Zi {
   }
   refresh() {
     this._items = Array.from(this._container.querySelectorAll(this.itemSelector)), this._items.forEach((e, t) => {
-      e.setAttribute("role", "listitem"), e.setAttribute("tabindex", t === this._currentIndex ? "0" : "-1"), e.setAttribute("aria-selected", "false"), e.classList.remove("ticker-item--focused");
+      e.setAttribute("role", "listitem"), e.setAttribute("tabindex", t === this._currentIndex ? "0" : "-1"), e.removeAttribute("aria-selected"), e.removeAttribute("aria-current"), e.classList.remove("ticker-item--focused");
     }), B("debug", `Refreshed: ${this._items.length} items`);
   }
   getCurrentIndex() {
@@ -1693,7 +1693,7 @@ class Zi {
   }
   destroy() {
     this._container && (this._container.removeEventListener("keydown", this._boundKeyHandler), this._container.removeEventListener("focusin", this._boundFocusIn), this._container.removeEventListener("focusout", this._boundFocusOut), this._container.removeAttribute("tabindex"), this._container.removeAttribute("role"), this._container.removeAttribute("aria-label")), this._items.forEach((e) => {
-      e.removeAttribute("tabindex"), e.removeAttribute("role"), e.removeAttribute("aria-selected"), e.classList.remove("ticker-item--focused");
+      e.removeAttribute("tabindex"), e.removeAttribute("role"), e.removeAttribute("aria-selected"), e.removeAttribute("aria-current"), e.classList.remove("ticker-item--focused");
     }), this._container = null, this._items = [], this._keyboardActive = !1;
   }
   healthCheck() {
