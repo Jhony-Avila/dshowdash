@@ -1,0 +1,51 @@
+/* _shared-react/ag-grid/grade-tema.css — TOKENS DE LINHA E ESTADO da tabela padrão (AG Grid Community), auditoria UX/UI FASE 3 (ROXO/CIMA,
+   PROPOSTA-COMPONENTES.md §"Tokens de linha e estado"); degrau do VERDE/ACIMA_DIREITA, 26/11. Valores = os propostos; contraste MEDIDO (WCAG AA):
+   texto ≥ 11,4:1 e texto apagado ≥ 5,0:1 sobre TODOS os fundos, nos dois temas (ver o PARA-STATUS da ACIMA_DIREITA).
+   Escopo [data-bl-root] e o mesmo detector de tema de styles/tokens.css: ESCURO por padrão; claro só por html[data-theme="light"] / body.theme-light.
+   Os fallbacks (--bl-*) valem enquanto o pacote DES (--des-link, --des-aviso…) não estiver na tela. Regras: hover ≠ seleção (a seleção tem também
+   a borda esquerda: não depende só da cor); estado sempre com texto/ícone na própria linha além da cor; nada pisca nem fica em loop. */
+
+[data-bl-root] {
+  --des-linha-par: #1e1e2e;
+  --des-linha-hover: #25253a;
+  --des-linha-selecao: #2a2a4a;
+  --des-linha-edicao: #2e2717;
+  --des-linha-erro: #2d1e24;
+  --des-linha-sucesso: #18291f;
+  --des-linha-expandida: var(--des-sup2, var(--bl-superficie-2));
+  --des-linha-dim: var(--des-dim, #9a9ab2);
+  --des-linha-altura: 34px;
+  --des-linha-marca: var(--des-link, #818cf8);
+  --des-linha-aviso: var(--des-aviso, var(--bl-aviso));
+  --des-linha-erro-borda: var(--des-erro, var(--bl-erro));
+  --des-linha-ok: var(--des-ok, var(--bl-sucesso));
+}
+html[data-theme="light"] [data-bl-root],
+body.theme-light [data-bl-root] {
+  --des-linha-par: #f8f9fc;
+  --des-linha-hover: #eef1f8;
+  --des-linha-selecao: #e7e9ff;
+  --des-linha-edicao: #fff8e6;
+  --des-linha-erro: #fdecec;
+  --des-linha-sucesso: #e9f7ef;
+  --des-linha-dim: var(--des-dim, #5a6273);
+  --des-linha-marca: var(--des-link, #4f46e5);
+}
+
+/* seleção: fundo próprio (≠ hover) + borda esquerda 3 px na 1ª coluna (AG Grid 36: a linha é UM elemento com parte fixa e parte que rola;
+   a 1ª célula tem .ag-column-first, fixa ou não) */
+[data-bl-root] .ag-row-selected .ag-cell.ag-column-first { box-shadow: inset 3px 0 0 var(--des-linha-marca); }
+/* edição na célula */
+[data-bl-root] .ag-cell-inline-editing { background-color: var(--des-linha-edicao) !important; outline: 2px solid var(--des-linha-aviso); outline-offset: -2px; }
+/* estados de linha (classes aplicadas pelo criarGrade a partir de `estadoLinha`) */
+[data-bl-root] .ag-row.des-edicao { background-color: var(--des-linha-edicao); }
+[data-bl-root] .ag-row.des-pendente .ag-cell.ag-column-first { box-shadow: inset 3px 0 0 var(--des-linha-aviso); }
+[data-bl-root] .ag-row.des-erro { background-color: var(--des-linha-erro); }
+[data-bl-root] .ag-row.des-erro .ag-cell.ag-column-first { box-shadow: inset 3px 0 0 var(--des-linha-erro-borda); }
+[data-bl-root] .ag-row.des-sucesso { background-color: var(--des-linha-sucesso); }
+[data-bl-root] .ag-row.des-sucesso .ag-cell.ag-column-first { box-shadow: inset 3px 0 0 var(--des-linha-ok); }
+[data-bl-root] .ag-row.des-expandida { background-color: var(--des-linha-expandida); }
+[data-bl-root] .ag-row.des-expandida .ag-cell.ag-column-first { box-shadow: inset 3px 0 0 var(--bl-borda); }
+[data-bl-root] .ag-row.des-desabilitada { color: var(--des-linha-dim); }
+[data-bl-root] .ag-row.des-desabilitada.ag-row-hover { background-color: inherit; }
+[data-bl-root] .ag-row.des-desabilitada.ag-row-hover::before { display: none; }

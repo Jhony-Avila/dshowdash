@@ -13,7 +13,7 @@
 .bl-ag__dens { flex: 1; height: 24px; font-size: 11px; justify-content: center; }
 .bl-ag__dens[aria-pressed="true"] { background: var(--bl-verde-suave); border-color: var(--bl-verde-borda); }
 .bl-ag__corpo { min-width: 0; }
-.bl-ag__corpo .ag-row-odd { background-color: var(--bl-superficie-2); }
+/* zebra: a do tema (--des-linha-par, grade-tema.css) — a regra própria saiu em 26/11 (tokens da FASE 3) */
 .bl-ag__corpo .ag-row-pinned { font-weight: 600; background: var(--bl-bg-elevado); }
 .bl-ag__corpo .bl-ag-txt { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; font-size: 12px; }
 .bl-ag__corpo .bl-ag-total { font-variant-numeric: tabular-nums; font-size: 12px; }

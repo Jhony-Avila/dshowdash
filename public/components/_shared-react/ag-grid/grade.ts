@@ -11,6 +11,7 @@ import {
   createGrid, themeQuartz, type GridApi, type GridOptions,
 } from 'ag-grid-community';
 import { AG_GRID_LOCALE_PT_BR } from '@ag-grid-community/locale';
+import './grade-tema.css';   // tokens de linha e estado (auditoria FASE 3): alternância, hover ≠ seleção, edição, pendente, erro, sucesso, expandida, desabilitada
 
 let registrado = false;
 function registrar(): void {
@@ -24,19 +25,27 @@ function registrar(): void {
 export const temaDshow = themeQuartz.withParams({
   backgroundColor: 'var(--bl-superficie)', foregroundColor: 'var(--bl-texto)', headerBackgroundColor: 'var(--bl-superficie-2, var(--bl-superficie))',
   headerTextColor: 'var(--bl-texto-2, var(--bl-texto))', borderColor: 'var(--bl-borda)', accentColor: 'var(--bl-verde)', chromeBackgroundColor: 'var(--bl-superficie)',
-  oddRowBackgroundColor: 'transparent', rowHoverColor: 'var(--bl-verde-suave)', selectedRowBackgroundColor: 'var(--bl-verde-suave)',
+  // 26/11 (FASE 3): alternância suave e hover ≠ seleção — tokens --des-linha-* (grade-tema.css); antes hover = seleção e sem alternância
+  oddRowBackgroundColor: 'var(--des-linha-par)', rowHoverColor: 'var(--des-linha-hover)', selectedRowBackgroundColor: 'var(--des-linha-selecao)',
   fontFamily: 'var(--bl-fonte)', fontSize: 13, headerFontSize: 12, headerFontWeight: 500, dataFontSize: 13,
   spacing: 6, rowVerticalPaddingScale: 0.6, wrapperBorderRadius: 10, borderRadius: 6, columnBorder: false, headerColumnBorder: false, rowBorder: true,
   inputBackgroundColor: 'var(--bl-superficie)', inputBorder: { color: 'var(--bl-borda)' },
 });
 
-/** Padrões da grade do Dash: linhas compactas, ordenação múltipla (Ctrl/⌘ + clique), filtro e redimensionamento em toda coluna. */
-export function criarGrade<T>(el: HTMLElement, opcoes: GridOptions<T>): GridApi<T> {
+/** Estado de uma linha (tokens --des-linha-*): a tela diz o estado; a grade aplica a classe `des-<estado>`. Sempre com texto/ícone na linha também. */
+export type EstadoLinha = 'edicao' | 'pendente' | 'erro' | 'sucesso' | 'expandida' | 'desabilitada';
+const ESTADOS: EstadoLinha[] = ['edicao', 'pendente', 'erro', 'sucesso', 'expandida', 'desabilitada'];
+
+/** Padrões da grade do Dash: linhas compactas, ordenação múltipla (Ctrl/⌘ + clique), filtro e redimensionamento em toda coluna.
+ *  `estadoLinha` (opcional): estado de cada linha → classe des-<estado> (rowClassRules; as regras da tela continuam valendo). */
+export function criarGrade<T>(el: HTMLElement, opcoes: GridOptions<T>, estadoLinha?: (dado: T) => EstadoLinha | null | undefined): GridApi<T> {
   registrar();
+  const regras = estadoLinha ? Object.fromEntries(ESTADOS.map((e) => [`des-${e}`, (p: { data?: T }) => !!p.data && estadoLinha(p.data) === e])) : {};
   return createGrid<T>(el, {
     theme: temaDshow, localeText: AG_GRID_LOCALE_PT_BR, rowHeight: 34, headerHeight: 36, animateRows: false, multiSortKey: 'ctrl',
     enableCellTextSelection: true, ensureDomOrder: true, tooltipShowDelay: 400,
     ...opcoes,
+    rowClassRules: { ...regras, ...opcoes.rowClassRules },
     defaultColDef: { sortable: true, resizable: true, filter: true, minWidth: 56, ...opcoes.defaultColDef },
   });
 }

@@ -63,7 +63,7 @@
 [data-bl-root] .at-mx__grade-conta { margin-left: auto; font-size: 12px; }
 [data-bl-root] .at-mx__grade-corpo { min-width: 0; }
 [data-bl-root] .at-mx__grade-carregando { height: 420px; }
-[data-bl-root] .at-mx__grade-corpo .ag-row-odd { background-color: color-mix(in srgb, var(--bl-superficie-2) 55%, var(--bl-superficie)); }
+/* zebra: a do tema (--des-linha-par, grade-tema.css) — a regra própria saiu em 26/11 (tokens da FASE 3) */
 [data-bl-root] .at-mx__grade-corpo .at-mx__ag-kit .ag-header-cell-label { justify-content: center; text-align: center; }
 [data-bl-root] .at-mx__grade-corpo .at-mx__ag-cel { display: flex; align-items: center; justify-content: center; }
 [data-bl-root] .at-mx__grade-corpo .at-mx__ag-prod { display: flex; align-items: center; }
