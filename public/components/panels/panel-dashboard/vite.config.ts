@@ -19,7 +19,11 @@ export default defineConfig({
   plugins: [react()],
 
   resolve: {
-    alias: { '@': resolve(RAIZ, 'src') },
+    alias: {
+      '@': resolve(RAIZ, 'src'),
+      // 26/11 (CIMA): pacote DES (DSKpiCard) na biblioteca compartilhada, como o Bling (decisão 8.4)
+      '@shared': resolve(RAIZ, '../../_shared-react'),
+    },
   },
 
   css: {

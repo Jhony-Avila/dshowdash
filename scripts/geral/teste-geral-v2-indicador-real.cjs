@@ -45,7 +45,7 @@ function rotear(ctx, troca = {}) {
     return { ctx, pg };
   };
   const cartoes = (pg) => pg.$$eval('.gv2 [data-gv2-cartao]', (xs) => Object.fromEntries(xs.map((x) => [x.dataset.gv2Cartao, {
-    estado: x.dataset.gv2Estado, selo: x.querySelector('.gv2-selo')?.textContent || '', valor: (x.querySelector('.gv2-num-valor')?.textContent || '').replace(/\s+/g, ' ').trim(),
+    estado: x.dataset.gv2Estado, selo: x.querySelector('[data-des-selo]')?.textContent || '', valor: (x.querySelector('[data-des-valor] .des-sr, [data-des-valor]')?.textContent || '').replace(/\s+/g, ' ').trim(),
     linha: (x.querySelector('.gv2-num-linha')?.textContent || '').replace(/\s+/g, ' ').trim() }])));
   const conferir = (rotulo, c, ind) => {
     const zeroNc = ind.quantidade === 0 && ind.estado !== 'zero';

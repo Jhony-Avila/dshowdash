@@ -37,11 +37,11 @@ const massa = JSON.parse(fs.readFileSync(RESP)).data; const r = massa.resumo;
     if ((await pg.evaluate(() => document.documentElement.getAttribute('data-theme'))) !== TEMA) { await pg.click('[data-dsd-theme-toggle]').catch(() => {}); await pg.waitForTimeout(600); }
     await pg.waitForFunction(() => !document.querySelector('.gv2 [data-gv2-estado="carregando"]'), null, { timeout: 30000 }); await pg.waitForTimeout(700);
 
-    const c = await pg.$$eval('.gv2 [data-gv2-cartao]', (xs) => xs.map((x) => ({ id: x.dataset.gv2Cartao, estado: x.dataset.gv2Estado, marcador: x.querySelector('[data-gv2-marcador]')?.textContent.trim() ?? null,
-      valor: x.querySelector('.gv2-num-valor')?.textContent.trim() ?? null, texto: x.innerText.replace(/\s+/g, ' '), dica: x.getAttribute('title') || '',
-      rodape: [...x.querySelectorAll('.gv2-num-rodape .gv2-fraco')].map((e) => ({ t: e.textContent.trim(), inteiro: e.scrollWidth <= e.clientWidth + 1 })), alt: Math.round(x.getBoundingClientRect().height), top: Math.round(x.getBoundingClientRect().top),
-      cortado: [...x.querySelectorAll('.gv2-h3, [data-gv2-marcador], .gv2-num-valor, .gv2-num-rodape .gv2-fraco')].some((e) => e.scrollWidth > e.clientWidth + 1),
-      tituloUmaLinha: (() => { const h = x.querySelector('.gv2-h3'); return !!h && h.getClientRects().length === 1 && h.getBoundingClientRect().height < parseFloat(getComputedStyle(h).fontSize) * 1.9; })() })));
+    const c = await pg.$$eval('.gv2 [data-gv2-cartao]', (xs) => xs.map((x) => ({ id: x.dataset.gv2Cartao, estado: x.dataset.gv2Estado, marcador: x.querySelector('[data-des-marcador]')?.textContent.trim() ?? null,
+      valor: x.querySelector('[data-des-valor] .des-sr, [data-des-valor]')?.textContent.trim() ?? null, texto: x.innerText.replace(/\s+/g, ' '), dica: x.getAttribute('title') || '',
+      rodape: [...x.querySelectorAll('[data-des-rodape] .des-kpi__fonte')].map((e) => ({ t: e.textContent.trim(), inteiro: e.scrollWidth <= e.clientWidth + 1 })), alt: Math.round(x.getBoundingClientRect().height), top: Math.round(x.getBoundingClientRect().top),
+      cortado: [...x.querySelectorAll('[data-des-rotulo], [data-des-marcador], [data-des-valor], [data-des-rodape] .des-kpi__fonte')].some((e) => e.scrollWidth > e.clientWidth + 1),
+      tituloUmaLinha: (() => { const h = x.querySelector('[data-des-rotulo]'); return !!h && h.getClientRects().length === 1 && h.getBoundingClientRect().height < parseFloat(getComputedStyle(h).fontSize) * 1.9; })() })));
     const porId = Object.fromEntries(c.map((x) => [x.id, x]));
     afirma('4 cartões, nesta ordem: Negócios ganhos · Funil aberto agora · Pedidos / OS lançados · Recebido no período', JSON.stringify(c.map((x) => x.id)) === '["ganhos","funil","pedidos","recebido"]', c.map((x) => x.id));
     afirma('marcadores: Comercial · Pipedrive (2×), Operação · Bling, Financeiro · Precifica', JSON.stringify(c.map((x) => x.marcador)) === JSON.stringify(['Comercial · Pipedrive', 'Comercial · Pipedrive', 'Operação · Bling', 'Financeiro · Precifica']), c.map((x) => x.marcador));
