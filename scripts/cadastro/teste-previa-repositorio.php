@@ -64,6 +64,10 @@ $pipe->exec('SET SESSION TRANSACTION READ WRITE'); $pipe->exec("UPDATE pipe_orga
 $ck('revalidação direcionada: destino preenchido desde a prévia = mudou', $repo->revalidar($x) === 'mudou');
 $pipe->exec('SET SESSION TRANSACTION READ WRITE'); $pipe->exec("UPDATE pipe_organizations SET custom_fields = JSON_SET(custom_fields, '$.\"{$K['4025']}\"', CAST('null' AS JSON)) WHERE pipedrive_id = 1");
 $ck('revalidação direcionada: RDS inacessível = indisponivel (não "mudou")', (new PreviaRepositorio($pipe, new class('mysql:unix_socket=/run/mysqld/mysqld.sock', 'root', '') extends PDO { public function prepare(string $q, array $o = []): PDOStatement|false { throw new PDOException('timeout simulado'); } }))->revalidar($x) === 'indisponivel');
+$pipe->exec("SET SESSION TRANSACTION READ WRITE"); $pipe->exec("INSERT INTO pipe_organizations (pipedrive_id, name, custom_fields) VALUES (3, 'Nova', '{\"{$K['4022']}\":\"11444777000161\",\"{$K['4025']}\":null}')");
+$pipe->exec("INSERT INTO pipe_deals VALUES (3,'won','2026-11-26 09:00',0)");
+$ck('F14 · ranking mudou (CNPJ novo, ganho mais recente, entrou na frente) e a evidência da linha está intacta → continua ok (sem corte na revalidação)', $repo->revalidar($x) === 'ok');
+$pipe->exec("SET SESSION TRANSACTION READ WRITE"); $pipe->exec("DELETE FROM pipe_organizations WHERE pipedrive_id = 3"); $pipe->exec("DELETE FROM pipe_deals WHERE org_id = 3");
 $res2 = PreviaCadastral::montar($fo['orgs'], $fo['prec'], $fo['precCliente'], $fo['leg'], $fo['fontes'], ['ganhos', 'sem_cnpj_id_precifica'], '2026-11-26T17:20:00-03:00', $repo->decididas());
 $ck('lote seguinte: o caso decidido com a mesma evidência sai antes do corte', count($res2['linhas']) === 2);
 $ck('nenhuma escrita nas fontes (Pipedrive local, Precifica e legado cnpj_detalhes intactos)', $hash() === $antes);

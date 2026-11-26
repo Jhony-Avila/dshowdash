@@ -103,4 +103,26 @@ ck('F11/F12 · aprovável: sugestão/divergem/nome→razão; bloqueado: identida
     PreviaCadastral::aprovavel(['campo' => '4025', 'classificacao' => 'sugestao']) && PreviaCadastral::aprovavel(['campo' => '4025', 'classificacao' => 'nome_para_razao_revisar'])
     && !PreviaCadastral::aprovavel(['campo' => '4025', 'classificacao' => 'identidade_duvidosa']) && !PreviaCadastral::aprovavel(['campo' => '4036', 'classificacao' => 'sem_valor_legado_presente'])
     && !PreviaCadastral::aprovavel(['campo' => '4025', 'classificacao' => 'fonte_indisponivel']) && !PreviaCadastral::aprovavel(['campo' => '4022', 'classificacao' => 'fontes_divergem']));
+// ── I. Degrau 2 da RC-008: F15/F19, F17/F21 (permutação)
+$g1 = $r1['lote']['filas']['ganhos'];
+ck('F19 · universo × lote separados, CNPJs e fichas distintos (101/102 no universo; 100 CNPJs no lote)', $g1['universo']['cnpjs'] === 101 && $g1['universo']['fichas'] === 102
+    && $g1['lote']['cnpjs'] === 100 && $g1['lote']['fichas'] === count(array_unique(array_column($r1['linhas'], 'org_id'))) && $g1['lote']['campos'] === count($r1['linhas']));
+$dec = array_fill_keys(array_column(array_slice($r2['linhas'], 0, 1), 'evidencia_versao'), true);
+$r2d = PreviaCadastral::montar($o2, $p2, [], $l2, $OK, ['ganhos'], 'x', $dec); $g2 = $r2d['lote']['filas']['ganhos'];
+$soma = 0; foreach ($g2['por_desfecho'] as $cc) $soma += array_sum($cc);
+ck('F15 · desfechos e campos vazios contam as MESMAS linhas devolvidas (com caso decidido fora)', $soma === count($r2d['linhas']) && $g2['campos_vazios'] === count(array_filter($r2d['linhas'], fn($l) => $l['classificacao'] !== 'nome_para_razao_revisar'))
+    && count($r2d['linhas']) === count($r2['linhas']) - 1);
+$p7 = [$m => [['id' => '502', 'razao' => 'MATRIZ LTDA', 'fantasia' => 'M'], ['id' => '501', 'razao' => 'Matriz Ltda', 'fantasia' => 'M']]];
+$o7 = [$org(1, 'Loja Um', $m, '2026-11-20', ['4025' => $S(null), '4036' => $S('M')]), $org(9, 'Loja Um B', $m, '2026-11-10', ['4025' => $S(null), '4036' => $S('M')])];
+$r7a = PreviaCadastral::montar($o7, $p7, [], $l2, $OK, ['ganhos'], 'x'); $la = $achar($r7a, 1, '4025');
+ck('F17 · grafias equivalentes do Precifica PRESERVADAS com as 2 doadoras (+ legado); alternativas na mesma prioridade → precisa_escolha', count(array_filter($la['grafias'], fn($g) => $g['origem'] === 'precifica')) === 2
+    && $la['precisa_escolha'] === true && $la['pre_selecionada'] === false);
+$assin = fn(array $r) => json_encode(array_map(fn($l) => [$l['id'], $l['evidencia_versao'], $l['grafias'], $l['cnpj_compartilhado_com'], $l['classificacao']], $r['linhas']));
+$ref = $assin($r7a); $refA = $assin($r1); $iguais = true; mt_srand(26112026);
+for ($t = 0; $t < 20; $t++) {
+    $oo = $o7; shuffle($oo); $pp = $p7; shuffle($pp[$m]);
+    $iguais = $iguais && $assin(PreviaCadastral::montar($oo, $pp, [], $l2, $OK, ['ganhos'], 'x')) === $ref;
+    $ob = $orgs; shuffle($ob); $iguais = $iguais && $assin(PreviaCadastral::montar($ob, $prec, [], [], $OK, ['ganhos'], 'x')) === $refA;
+}
+ck('F21 · permutação (20 embaralhamentos das fichas e das doadoras) = mesmas linhas, ids, evidências e grafias', $iguais);
 echo "teste-previa-cadastral: $ok ok, ", count($f), " falha(s)\n"; exit($f === [] ? 0 : 1);

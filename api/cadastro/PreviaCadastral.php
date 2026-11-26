@@ -124,13 +124,20 @@ final class PreviaCadastral
                 }
             }
             $ls = array_values(array_filter($ls, fn($l) => !isset($decididas[$l['evidencia_versao']])));
+            usort($ls, fn($a, $b) => [$a['org_id'], $a['campo']] <=> [$b['org_id'], $b['campo']]);   // F21: independe da ordem de entrada
             if ($ls !== []) $grupos[$d] = [$ganho, $ls];
         }
         uksort($grupos, fn($a, $b) => [$grupos[$b][0], (string) $a] <=> [$grupos[$a][0], (string) $b]);
-        $elegiveis = count($grupos); $grupos = array_slice($grupos, 0, self::TETO_CNPJ, true);
-        $linhas = []; $fichas = []; foreach ($grupos as [, $ls]) foreach ($ls as $l) { $linhas[] = $l; $fichas[$l['org_id']] = true; }
-        return [$linhas, ['cnpjs_elegiveis' => $elegiveis, 'cnpjs_no_lote' => count($grupos), 'fichas' => count($fichas), 'campos_vazios' => $vaziosTotal,
-                          'protegidos_nao_lacuna' => $protegidos, 'por_desfecho' => $desf]];
+        $todas = []; foreach ($grupos as [, $ls]) foreach ($ls as $l) $todas[] = $l;
+        $universo = self::contagem($todas);   // F19: universo (todos os elegíveis, já sem os decididos) × lote (depois do corte), CNPJs e fichas separados
+        $grupos = array_slice($grupos, 0, self::TETO_CNPJ, true);
+        $linhas = []; foreach ($grupos as [, $ls]) foreach ($ls as $l) $linhas[] = $l;
+        $lote = self::contagem($linhas);
+        // F15: desfechos e campos vazios contados sobre as MESMAS linhas devolvidas
+        $desf = []; foreach (self::CAMPOS as $c => $_) $desf[(string) $c] = array_fill_keys(self::DESFECHOS, 0);
+        $vaziosTotal = 0; foreach ($linhas as $l) { $desf[$l['campo']][self::desfecho($l['classificacao'], $l['grafias'])]++; if ($l['classificacao'] !== 'nome_para_razao_revisar') $vaziosTotal++; }
+        return [$linhas, ['cnpjs_elegiveis' => $universo['cnpjs'], 'cnpjs_no_lote' => $lote['cnpjs'], 'fichas' => $lote['fichas'], 'campos_vazios' => $vaziosTotal,
+                          'protegidos_nao_lacuna' => $protegidos, 'por_desfecho' => $desf, 'universo' => $universo, 'lote' => $lote]];
     }
 
     /** grafias do campo para o CNPJ, com origem e doadora; ambíguo = Precifica com >1 organização de conteúdos distintos */
@@ -139,8 +146,8 @@ final class PreviaCadastral
         $g = []; $amb = false;
         if ($precOk) {
             $pp = $prec[$d] ?? [];
-            $vals = []; foreach ($pp as $p) if (!self::marcador($p[$nomeCampo] ?? null)) $vals[self::k($p[$nomeCampo])] = $p;
-            if (count($pp) > 1 && count($vals) > 1) $amb = true;
+            $vals = []; foreach ($pp as $p) if (!self::marcador($p[$nomeCampo] ?? null)) $vals[] = $p;   // F17: TODAS as grafias e doadoras (nada colapsa por chave)
+            if (count($pp) > 1 && count(array_unique(array_map(fn($p) => self::k($p[$nomeCampo]), $vals))) > 1) $amb = true;
             foreach ($vals as $p) $g[] = ['valor' => trim((string) $p[$nomeCampo]), 'origem' => 'precifica', 'doadora' => ['tipo' => 'precifica', 'id' => (string) $p['id']]];
         }
         if ($legOk && isset($leg[$d])) {
@@ -155,7 +162,7 @@ final class PreviaCadastral
             if (self::estadoCampo((string) $at['tipo'], $at['valor'], $x['nome']) === 'preenchido')
                 $g[] = ['valor' => trim((string) $at['valor']), 'origem' => 'crm_outra_ficha', 'doadora' => ['tipo' => 'crm', 'id' => (string) $x['id']]];
         }
-        usort($g, fn($a, $b) => self::PRECEDENCIA[$a['origem']] <=> self::PRECEDENCIA[$b['origem']]);
+        usort($g, fn($a, $b) => [self::PRECEDENCIA[$a['origem']], $a['valor'], $a['doadora']['id']] <=> [self::PRECEDENCIA[$b['origem']], $b['valor'], $b['doadora']['id']]);   // F21: ordem canônica
         return ['grafias' => $g, 'ambiguo' => $amb, 'fonte_ok' => $precOk && $legOk];
     }
 
@@ -163,7 +170,7 @@ final class PreviaCadastral
     {
         if (in_array($cl, ['sem_valor_legado_presente', 'sem_valor_legado_ausente', 'identidade_duvidosa'], true)) return $cl;
         if ($cl === 'fontes_divergem') return 'divergem';
-        if ($cl === 'fonte_indisponivel') return 'fonte_indisponivel';   // F22: não é identidade duvidosa
+        if (in_array($cl, ['fonte_indisponivel', 'nome_para_razao_revisar'], true)) return $cl;   // F22: indisponível não é identidade duvidosa
         $o = array_unique(array_map(fn($x) => $x['origem'] === 'legado_json' ? 'legado' : $x['origem'], $g));
         if (count($o) > 1) return 'concordam';
         return ['precifica' => 'so_precifica', 'legado' => 'so_legado', 'crm_outra_ficha' => 'so_crm'][reset($o)] ?? 'concordam';
@@ -176,12 +183,20 @@ final class PreviaCadastral
             $top = $g[0]; $prop = ['valor' => $top['valor'], 'origem' => $top['origem']];
             foreach ($g as $x) if ($x['origem'] === $top['origem'] && $x['valor'] !== $top['valor']) $escolha = true;   // alternativas na mesma prioridade
         }
-        $outros = []; foreach ($os as $x) if ((int) $x['id'] !== (int) $o['id']) $outros[] = (int) $x['id'];
+        $outros = []; foreach ($os as $x) if ((int) $x['id'] !== (int) $o['id']) $outros[] = (int) $x['id']; sort($outros);
         $ev = sha1(json_encode([$o['id'], $campo, $d, $anterior, $cl, array_map(fn($x) => [$x['valor'], $x['origem'], $x['doadora']['id']], $g)]));
         return ['id' => 'ln_' . substr(sha1($o['id'] . '|' . $campo . '|' . $ev), 0, 20), 'fila' => $fila, 'org_id' => (int) $o['id'], 'empresa' => $o['nome'],
                 'cnpj' => $d, 'cnpj_compartilhado_com' => $outros, 'ultimo_ganho' => $ganho, 'campo' => $campo, 'campo_rotulo' => $rot,
                 'valor_anterior' => $anterior, 'classificacao' => $cl, 'proposto' => $prop, 'grafias' => $g, 'precisa_escolha' => $escolha,
                 'pre_selecionada' => $cl === 'sugestao' && !$escolha, 'evidencia_versao' => $ev, 'decisao' => null];
+    }
+
+    /** F19: CNPJs distintos, fichas distintas e campos distintos (ficha+campo) de um conjunto de linhas */
+    private static function contagem(array $ls): array
+    {
+        $cn = []; $fi = []; $ca = [];
+        foreach ($ls as $l) { if ($l['cnpj'] !== '') $cn[$l['cnpj']] = true; $fi[$l['org_id']] = true; $ca[$l['org_id'] . '|' . $l['campo']] = true; }
+        return ['cnpjs' => count($cn), 'fichas' => count($fi), 'campos' => count($ca)];
     }
 
     /** F11/F12: o que pode ser APROVADO. Identidade bloqueada nunca é liberada por grafia; no 4022 só sugestão. */
@@ -226,6 +241,7 @@ final class PreviaCadastral
             if (!isset($decididas[$l['evidencia_versao']])) $ls[] = $l;
         }
         usort($ls, fn($a, $b) => [(string) $b['ultimo_ganho'], $a['org_id']] <=> [(string) $a['ultimo_ganho'], $b['org_id']]);
-        return [array_slice($ls, 0, self::TETO_CNPJ), $c];
+        $c['universo'] = self::contagem($ls); $ls = array_slice($ls, 0, self::TETO_CNPJ); $c['lote'] = self::contagem($ls);   // F19
+        return [$ls, $c];
     }
 }
