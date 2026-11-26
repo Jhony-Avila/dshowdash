@@ -1,7 +1,7 @@
 /* _shared-react/ag-grid/grade-tema.css — TOKENS DE LINHA E ESTADO da tabela padrão (AG Grid Community), auditoria UX/UI FASE 3 (ROXO/CIMA,
    PROPOSTA-COMPONENTES.md §"Tokens de linha e estado"); degrau do VERDE/ACIMA_DIREITA, 26/11. Valores = os propostos; contraste MEDIDO (WCAG AA):
    texto ≥ 11,4:1 e texto apagado ≥ 5,0:1 sobre TODOS os fundos, nos dois temas (ver o PARA-STATUS da ACIMA_DIREITA).
-   Escopo [data-bl-root] e o mesmo detector de tema de styles/tokens.css: ESCURO por padrão; claro só por html[data-theme="light"] / body.theme-light.
+   Escopo [data-bl-root] e o mesmo detector de tema de styles/tokens.css: ESCURO por padrão; claro só por html[data-theme="light"] (fonte ÚNICA do tema, GOVERNANCA-DES 26/11 14:52 — UX03b: body.theme-* e :root.theme-* não entram).
    Os fallbacks (--bl-*) valem enquanto o pacote DES (--des-link, --des-aviso…) não estiver na tela. Regras: hover ≠ seleção (fundo próprio + a caixa marcada:
    não depende só da cor; sem barra lateral colorida, 26/11); estado sempre com texto/ícone na própria linha além da cor; nada pisca nem fica em loop. */
 
@@ -20,8 +20,7 @@
   --des-linha-erro-borda: var(--des-erro, var(--bl-erro));
   --des-linha-ok: var(--des-ok, var(--bl-sucesso));
 }
-html[data-theme="light"] [data-bl-root],
-body.theme-light [data-bl-root] {
+html[data-theme="light"] [data-bl-root] {
   --des-linha-par: #f8f9fc;
   --des-linha-hover: #eef1f8;
   --des-linha-selecao: #e7e9ff;
