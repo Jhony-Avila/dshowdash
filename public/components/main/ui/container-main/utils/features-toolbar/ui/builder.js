@@ -38,7 +38,7 @@ function _buildToolbar() {
     // @ts-expect-error TS migration - TS2345
     _createButton("zoomOut", ICONS.zoomOut, "Zoom -", "Ctrl+-"),
     // @ts-expect-error TS migration - TS2345
-    _createButton("zoomReset", ICONS.zoomReset, "Zoom 1:1 · atual 100%", "Ctrl+0"),
+    _createButton("zoomReset", ICONS.zoomReset, "Zoom 1:1 \xB7 atual 100%", "Ctrl+0"),
     // @ts-expect-error TS migration - TS2345
     _createButton("zoomIn", ICONS.zoomIn, "Zoom +", "Ctrl++")
   ], "zoom"));
