@@ -21,8 +21,14 @@ export interface Fontes {
   legado: { estado: EstadoFonte; lido_em: string | null };
 }
 
-/** Resumo por fila ("ganhos", "sem_cnpj_id_precifica", depois "sem_cnpj_geral"): as chaves variam por fila; ausente = desconhecido. */
-export interface ResumoFila { cnpjs_elegiveis?: number; cnpjs_no_lote?: number; fichas?: number; campos_vazios?: number; [k: string]: unknown }
+/** Contagem DISTINTA de um recorte (C1 v1.2, F19): CNPJs, fichas e campos (ficha + campo). */
+export interface Contagem { cnpjs: number | null; fichas: number | null; campos: number | null }
+/** Resumo por fila ("ganhos", "sem_cnpj_id_precifica", depois "sem_cnpj_geral"). v1.2: `universo` (todos os elegíveis, sem os decididos) e
+ *  `lote` (depois do corte); `bloqueada` quando a fila não pôde ser montada (ex.: campo_4038_ausente). Chaves v1.1 ficam como reserva. */
+export interface ResumoFila {
+  universo?: Contagem; lote?: Contagem; bloqueada?: string;
+  cnpjs_elegiveis?: number; cnpjs_no_lote?: number; fichas?: number | null; campos_vazios?: number; [k: string]: unknown;
+}
 
 export interface Lote {
   id: string; regras_versao: string; gerado_em: string; completa: boolean; fontes: Fontes;

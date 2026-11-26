@@ -10,7 +10,7 @@ import { ROTULO_CLASSE, ROTULO_DOADORA, ROTULO_FONTE, ROTULO_ORIGEM, type Classe
 type Filtro = 'todas' | 'com_sugestao' | 'divergem' | 'identidade' | 'indisponivel' | 'revisar' | 'sem_valor' | 'paga_opcional';
 // Os 4 filtros pedidos (+ "Todos"); "Razão = nome: revisar" (v1.1 da C1) só aparece quando existir caso no lote.
 const FILTROS: { id: Filtro; rotulo: string; dica: string; casa: (c: Classe) => boolean; soComCaso?: boolean }[] = [
-  { id: 'todas', rotulo: 'Todos os campos vazios', dica: 'Todos os destinos (ficha + campo) do lote', casa: () => true },
+  { id: 'todas', rotulo: 'Todos em revisão', dica: 'Todos os campos em revisão do lote (ficha + campo)', casa: () => true },
   { id: 'com_sugestao', rotulo: 'Com sugestão', dica: 'Há valor proposto por uma fonte interna (ou mais, concordando)', casa: (c) => c === 'sugestao' },
   // RC-008 F29: cada bloqueio no seu filtro (antes "Fontes divergem" juntava identidade duvidosa); os dois novos só aparecem se houver caso
   { id: 'divergem', rotulo: 'Fontes divergem', dica: 'Conteúdos diferentes: nada é proposto até a escolha humana', casa: (c) => c === 'fontes_divergem' },
@@ -35,11 +35,17 @@ const data = (iso: string | null | undefined) => {
   if (!iso) return '—'; const d = new Date(iso); if (Number.isNaN(d.getTime())) return '—';
   return d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 };
-/** Soma uma chave de todas as filas do lote; nenhuma fila com a chave = desconhecido (null), nunca 0. */
-const somaFilas = (lote: Lote, k: string): number | null => {
-  const v = Object.values(lote.filas ?? {}).map((f) => f[k]).filter((x): x is number => typeof x === 'number');
+/** RC-008 F27/F28 (C1 v1.2, F19): soma um recorte (`universo` ou `lote`) de todas as filas NÃO bloqueadas; reserva = a chave v1.1.
+ *  Nenhuma fila com o número = desconhecido (null → "—"), nunca 0. */
+const somaFilas = (lote: Lote, recorte: 'universo' | 'lote', k: 'cnpjs' | 'fichas' | 'campos'): number | null => {
+  const v11: Record<string, Record<string, string>> = { lote: { cnpjs: 'cnpjs_no_lote', fichas: 'fichas', campos: 'campos_vazios' }, universo: { cnpjs: 'cnpjs_elegiveis' } };
+  const v = Object.values(lote.filas ?? {}).filter((f) => !f.bloqueada).map((f) => {
+    const novo = f[recorte]?.[k]; if (typeof novo === 'number') return novo;
+    const velho = v11[recorte][k] ? f[v11[recorte][k]] : undefined; return typeof velho === 'number' ? velho : null;
+  }).filter((x): x is number => x !== null);
   return v.length ? v.reduce((a, b) => a + b, 0) : null;
 };
+const ROTULO_BLOQUEIO: Record<string, string> = { campo_4038_ausente: 'o campo 4038 (Id_Precifica) não foi encontrado' };
 const retrato = (f: Fontes[keyof Fontes]) => ('ultimo_sync' in f ? f.ultimo_sync : f.lido_em);
 
 function textoProposto(l: Linha): string {
@@ -212,6 +218,15 @@ export function RevisaoCadastral() {
   const fontes = (Object.keys(ROTULO_FONTE) as (keyof Fontes)[]).filter((k) => lote.fontes?.[k]).map((k) => ({ k, rotulo: ROTULO_FONTE[k], estado: lote.fontes[k].estado, em: retrato(lote.fontes[k]) }));
   const falhas = fontes.filter((f) => f.estado !== 'ok');
   const custoOpc = decimal(lote.custo_opcional?.total);
+  const bloqueadas = Object.entries(lote.filas ?? {}).filter(([, f]) => f.bloqueada);
+  const uCnpjs = somaFilas(lote, 'universo', 'cnpjs'); const lCnpjs = somaFilas(lote, 'lote', 'cnpjs');
+  const foraDoCorte = uCnpjs !== null && lCnpjs !== null ? Math.max(0, uCnpjs - lCnpjs) : null;
+  // VINHO 18:29 (C1 v1.2): lote.campos conta TODAS as linhas do lote, inclusive nome_para_razao_revisar (razão = nome: preenchida, não é lacuna).
+  // Lacunas = Σ lote.campos − totais.revisar_nome_razao; o total em revisão continua Σ lote.campos. Na reserva v1.1 (campos_vazios) já não entra.
+  const emRevisao = somaFilas(lote, 'lote', 'campos');
+  const temV12 = Object.values(lote.filas ?? {}).some((f) => !f.bloqueada && typeof f.lote?.campos === 'number');
+  const revisarNR = lote.totais?.revisar_nome_razao;
+  const lacunas = emRevisao === null ? null : !temV12 ? emRevisao : typeof revisarNR === 'number' ? Math.max(0, emRevisao - revisarNR) : null;
   return (
     <div className="cs-tela" data-cs-tela="revisao-cadastral">
       <div className="cs-topo">
@@ -237,10 +252,12 @@ export function RevisaoCadastral() {
             <span className="cs-kpi__num cs-kpi__num--txt">{dataHora(lote.gerado_em)}</span>
             {aviso ? <span className="cs-kpi__rot cs-kpi__rot--aviso" role="status">{aviso}</span>
               : <span className="cs-kpi__rot">Leitura · {fontes.length - falhas.length}/{fontes.length} fontes · regras {lote.regras_versao}</span>}</div>
-          <div className="cs-kpi" data-cs-kpi="estabelecimentos" title="Estabelecimentos: conta CNPJs"><span className="cs-kpi__num">{n(somaFilas(lote, 'cnpjs_no_lote'))}<span className="cs-kpi__un">CNPJs</span></span><span className="cs-kpi__rot">Estabelecimentos</span></div>
-          <div className="cs-kpi" data-cs-kpi="fichas" title="Fichas de destino: conta fichas"><span className="cs-kpi__num">{n(somaFilas(lote, 'fichas'))}<span className="cs-kpi__un">fichas</span></span><span className="cs-kpi__rot">Fichas de destino</span></div>
-          <div className="cs-kpi" data-cs-kpi="vazios" title="Campos vazios: conta campos"><span className="cs-kpi__num">{n(lote.totais?.destinos ?? null)}<span className="cs-kpi__un">campos</span></span><span className="cs-kpi__rot">Campos vazios</span></div>
-          <div className="cs-kpi" data-cs-kpi="sugestoes" title="Com sugestão: conta campos"><span className="cs-kpi__num">{n(lote.totais?.sugestoes ?? null)}<span className="cs-kpi__un">campos</span></span><span className="cs-kpi__rot">Com sugestão</span></div>
+          <div className="cs-kpi" data-cs-kpi="estabelecimentos" title={`Estabelecimentos no lote: conta CNPJs distintos. Universo: ${n(uCnpjs)} CNPJs elegíveis (fora do corte: ${n(foraDoCorte)}).`}>
+            <span className="cs-kpi__num">{n(lCnpjs)}<span className="cs-kpi__un">CNPJs</span></span><span className="cs-kpi__rot">no lote · universo {n(uCnpjs)}</span></div>
+          <div className="cs-kpi" data-cs-kpi="fichas" title="Fichas de destino no lote: conta organizações distintas"><span className="cs-kpi__num">{n(somaFilas(lote, 'lote', 'fichas'))}<span className="cs-kpi__un">fichas</span></span><span className="cs-kpi__rot">Fichas de destino</span></div>
+          <div className="cs-kpi" data-cs-kpi="vazios" title={`Lacunas no lote: campos vazios distintos (ficha + campo); preenchidos e protegidos não entram (razão = nome fica de fora). Em revisão no total: ${n(emRevisao)} campos.`}>
+            <span className="cs-kpi__num">{n(lacunas)}<span className="cs-kpi__un">lacunas</span></span><span className="cs-kpi__rot">de {n(emRevisao)} campos em revisão</span></div>
+          <div className="cs-kpi" data-cs-kpi="sugestoes" title="Com sugestão: conta campos (lacunas) com valor proposto"><span className="cs-kpi__num">{n(lote.totais?.sugestoes ?? null)}<span className="cs-kpi__un">campos</span></span><span className="cs-kpi__rot">Com sugestão</span></div>
           <div className="cs-kpi" data-cs-kpi="custo"><span className="cs-kpi__num">{reais(0)}</span>
             <span className="cs-kpi__rot" title="A prévia só lê (custo zero). A consulta paga é OPCIONAL e nunca é disparada aqui.">Prévia · opcional {n(lote.custo_opcional?.cnpjs_distintos ?? null)} CNPJs = {reais(custoOpc)}</span></div>
         </div>
@@ -248,6 +265,10 @@ export function RevisaoCadastral() {
           <div className="cs-erro" role="alert" data-cs-erro-gerar>
             <span>{erroGerar}</span>
             <button type="button" className="cs-botao" onClick={() => setErroGerar(null)} aria-label="Fechar o aviso de erro">Fechar</button>
+          </div>)}
+        {bloqueadas.length > 0 && (
+          <div className="cs-incompleta" role="status" data-cs-fila-bloqueada>
+            <strong>Fila fora deste lote.</strong> {bloqueadas.map(([fila, f]) => `${fila === 'sem_cnpj_id_precifica' ? 'Fichas sem CNPJ com Id_Precifica' : fila}: ${ROTULO_BLOQUEIO[f.bloqueada as string] ?? f.bloqueada}`).join(' · ')}. Não é zero: a fila não foi contada.
           </div>)}
         {(lote.completa === false || falhas.length > 0) && (
           <div className="cs-incompleta" role="alert" data-cs-incompleta>
