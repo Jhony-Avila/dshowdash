@@ -116,11 +116,16 @@ $res = $cc->comparar(['jcar', 'jwa', 'amb', 'sp'], new DateTimeImmutable('2026-1
 $e = array_column($res['empresas'], null, 'conta');
 check('banco: J. Carvalho conciliada com atraso (só RECEIVED, presente, não apagada, da geração ativa)', $e['jcar']['divergencias'] === 0 && $e['jcar']['resumo']['conciliados_com_atraso'] === 1
     && $e['jcar']['resumo']['asaas'] === '39220.00' && $e['jcar']['ligacao_a_confirmar'] === false && $e['jcar']['empresa_precifica'] === 'J. Carvalho', json_encode($e['jcar'], JSON_UNESCAPED_UNICODE));
-check('banco: J.W.A. ligada à "DSHOW" sem recebimento no Asaas → ligação a confirmar, fora do total geral', $e['jwa']['ligacao_a_confirmar'] === true && $e['jwa']['empresa_precifica'] === 'DSHOW'
-    && str_starts_with((string) $e['jwa']['motivo'], 'ligação a confirmar: o Asaas desta conta não tem recebimento') && $e['jwa']['divergencias'] === 1 && $e['jwa']['resumo']['precifica'] === '5000.00');
+check('banco: J.W.A. ligada à "DSHOW" — ligação CONFIRMADA (26/11): sem "a confirmar", motivo null e as divergências entram no total', $e['jwa']['ligacao_a_confirmar'] === false && $e['jwa']['empresa_precifica'] === 'DSHOW'
+    && $e['jwa']['motivo'] === null && $e['jwa']['divergencias'] === 1 && $e['jwa']['resumo']['precifica'] === '5000.00', json_encode($e['jwa'], JSON_UNESCAPED_UNICODE));
+$pdo->exec("UPDATE `{$P}fin_pcf_empresa` SET nome = 'Outra Empresa' WHERE empresa_id = 2");
+$e2 = array_column($cc->comparar(['jwa'], new DateTimeImmutable('2026-11-26 12:00:00', new DateTimeZone('America/Sao_Paulo')), 30)['empresas'], null, 'conta');
+check('banco: a mesma situação numa empresa NÃO confirmada continua "ligação a confirmar" (a regra segue valendo)', $e2['jwa']['ligacao_a_confirmar'] === true
+    && str_starts_with((string) $e2['jwa']['motivo'], 'ligação a confirmar: o Asaas desta conta não tem recebimento'));
+$pdo->exec("UPDATE `{$P}fin_pcf_empresa` SET nome = 'DSHOW' WHERE empresa_id = 2");
 check('banco: CNPJ em 2 empresas do Precifica → ligação a confirmar (ambígua)', $e['amb']['ligacao_a_confirmar'] === true && $e['amb']['motivo'] === 'ligação a confirmar: mais de uma empresa/conta com o mesmo CNPJ');
 check('banco: sem par continua sem par', $e['sp']['estado'] === 'sem_par' && $e['sp']['dias'] === null && $e['sp']['resumo'] === null);
-check('banco: total geral sem as ligações a confirmar; contagens no topo', $res['divergencias'] === 0 && $res['ligacoes_a_confirmar'] === 2 && $res['conciliados_com_atraso'] === 1
+check('banco: total geral com a J.W.A. confirmada (1) e sem a ambígua; contagens no topo', $res['divergencias'] === 1 && $res['ligacoes_a_confirmar'] === 1 && $res['conciliados_com_atraso'] === 1
     && $res['casamento']['dias_uteis'] === 3, json_encode(array_diff_key($res, ['empresas' => 1]), JSON_UNESCAPED_UNICODE));
 check('banco: nenhum CNPJ na resposta', !preg_match('/\d{11,14}|\d{2}\.\d{3}\.\d{3}/', json_encode($res)));
 

@@ -30,6 +30,12 @@ final class GeralV2Conciliacao
     public const JANELA_DIAS_UTEIS = 3;
     public const MARGEM_DIAS = 7;
     /**
+     * 26/11 15:3x · ligações CONFIRMADAS pelo Jhony (empresa do Precifica, pelo nome em fin_pcf_empresa): a regra "Asaas sem recebimento no
+     * período com baixas no Precifica" deixa de marcar "ligação a confirmar" para elas, e as divergências entram no total. O CNPJ AMBÍGUO
+     * continua sempre "a confirmar". J.W.A. (Asaas) = DSHOW (Precifica): o CNPJ da conta J.W.A. no Asaas é o da DSHOW (confirmado em 26/11).
+     */
+    public const LIGACOES_CONFIRMADAS = ['DSHOW'];
+    /**
      * 26/11: dias NÃO úteis além de sáb/dom — lista FIXA 2025–2027, sem chamada externa. Nacionais: 01/01, Carnaval (seg e ter: bancos fechados),
      * Sexta-feira Santa, 21/04, 01/05, 07/09, 12/10, 02/11, 15/11, 20/11 (nacional desde 2024), 25/12. SP capital: 25/01 (aniversário da cidade),
      * Corpus Christi (municipal) e 09/07 (estadual, vale na capital). Móveis conferidos pela Páscoa (easter_days). Fora de 2025–2027: só sáb/dom.
@@ -118,7 +124,7 @@ final class GeralV2Conciliacao
             $res = self::casar($itens, $P, $de, $ate);
             $ligacao = null;
             if ($par[$r]['ambigua']) $ligacao = 'ligação a confirmar: mais de uma empresa/conta com o mesmo CNPJ';
-            elseif ($res['resumo']['asaas'] === '0.00' && $res['tem_precifica']) {
+            elseif ($res['resumo']['asaas'] === '0.00' && $res['tem_precifica'] && !in_array(mb_strtoupper(trim((string) ($par[$r]['nome'] ?? ''))), self::LIGACOES_CONFIRMADAS, true)) {
                 $ligacao = 'ligação a confirmar: o Asaas desta conta não tem recebimento no período e o Precifica tem baixas (confirme se o CNPJ do Asaas é o desta empresa do Precifica)';
             }
             $nd = $res['resumo']['itens_sem_par'];
