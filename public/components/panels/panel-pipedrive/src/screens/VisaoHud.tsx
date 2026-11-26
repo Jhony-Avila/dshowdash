@@ -64,6 +64,9 @@ export interface Drill {
 /** Selo de estado: sempre com o texto, nunca só a cor. */
 /** Dados ILUSTRATIVOS (Precifica sem backend, P20): o selo diz "Ilustrativo" em vez de afirmar frescor que não existe. */
 export const IlustrativoCtx = createContext(false);
+/** Palavra da contagem (Pipedrive: negócio/negócios; Precifica P20: orçamento/orçamentos). */
+export const UnidadeCtx = createContext<[string, string]>(['negócio', 'negócios']);
+const contar = (n: number | null | undefined, u: [string, string]) => `${fmtNum(n)} ${n === 1 ? u[0] : u[1]}`;
 export function Selo({ estado, titulo }: { estado: EstadoTela; titulo?: string }) {
   const ilustr = useContext(IlustrativoCtx);
   if (ilustr && estado !== 'carregando') return <span className="hud-status part" title="Dados sintéticos: não vêm da fonte real">Ilustrativo</span>;
@@ -171,7 +174,7 @@ export function HudKpis({ resumo, carregando, falhou, onDrill, onDetalhes, semDr
   /** Precifica (P20): ainda sem lista de registros no contrato → sem "Ver negócios". */
   semDrill?: boolean; rotuloAgora?: string;
 }) {
-  const pal = usePaleta();
+  const pal = usePaleta(); const unidade = useContext(UnidadeCtx);
   const per = resumo?.periodo;
   const ctx = per ? `Mesmo filtro da origem · Período: ${faixa(per.de, per.ate)} · Pipedrive` : '';
   const leitura = resumo?.leitura;
@@ -233,7 +236,7 @@ export function HudKpis({ resumo, carregando, falhou, onDrill, onDetalhes, semDr
       <div className="hud-delta">
         {estAgora === 'carregando' ? <small>lendo a base sincronizada…</small>
           : estAgora === 'indisponivel' ? <small title="Consulta indisponível: a foto da carteira (funil aberto) não retornou"><span className="hud-link-off">Consulta indisponível</span></small>
-          : <small>{fmtNum(e?.abertos)} negócios · {estAgora === 'desatualizado' && leitura?.atualizado_em ? `última leitura ${hhmm(leitura.atualizado_em)}` : 'foto do agora'}</small>}
+          : <small>{contar(e?.abertos, unidade)} · {estAgora === 'desatualizado' && leitura?.atualizado_em ? `última leitura ${hhmm(leitura.atualizado_em)}` : 'foto do agora'}</small>}
       </div>
       {estAgora !== 'carregando' && !semDrill && <span className="hud-action">{estAgora === 'indisponivel' ? 'Ver detalhes →' : 'Ver negócios →'}</span>}
     </div>,
@@ -262,7 +265,7 @@ function agrupar(diasJ: string[], valor: number[], n: number[], gran: Gran): Pon
   return out;
 }
 
-function optGanhos(pal: ReturnType<typeof usePaleta>, escuro: boolean, pts: Ponto[], gran: Gran, animar: boolean): Opcao {
+function optGanhos(pal: ReturnType<typeof usePaleta>, escuro: boolean, pts: Ponto[], gran: Gran, animar: boolean, unidade: [string, string] = ['negócio', 'negócios']): Opcao {
   const mint = escuro ? '#12e6a8' : '#05c994';
   return {
     animation: animar, animationDuration: 550, animationDurationUpdate: 360, animationEasing: 'cubicOut',
@@ -275,7 +278,7 @@ function optGanhos(pal: ReturnType<typeof usePaleta>, escuro: boolean, pts: Pont
       formatter: (ps: unknown) => {
         const p = (ps as { dataIndex: number }[])[0]; const x = pts[p?.dataIndex ?? 0]; if (!x) return '';
         const quando = gran === 'dia' ? ddmmaaaa(x.de) : `${ddmm(x.de)}–${ddmmaaaa(x.ate)}`;
-        return `<div style="opacity:.8">${quando}</div><div style="font-size:14px;font-weight:500;margin-top:6px">${fmtBRL(x.valor)} · ${fmtNum(x.n)} ${x.n === 1 ? 'negócio' : 'negócios'}</div>`
+        return `<div style="opacity:.8">${quando}</div><div style="font-size:14px;font-weight:500;margin-top:6px">${fmtBRL(x.valor)} · ${contar(x.n, unidade)}</div>`
           + `<div style="color:${mint};margin-top:4px">Clique no ponto para ver negócios →</div>`;
       },
     },
@@ -316,7 +319,7 @@ function optDesfecho(escuro: boolean, ganhos: number, perdidos: number, animar: 
 export function BlocoGanhos({ resumo, carregando, falhou, onDrill, semDrill = false }: {
   resumo?: PipeSummary; carregando: boolean; falhou: boolean; onDrill: (d: Drill) => void; semDrill?: boolean;
 }) {
-  const pal = usePaleta(); const escuro = useTemaPipe() === 'dark';
+  const pal = usePaleta(); const escuro = useTemaPipe() === 'dark'; const unidade = useContext(UnidadeCtx);
   const [gran, setGran] = useState<Gran>('dia');
   const animar = useMemo(semReducao, []);
   const per = resumo?.periodo;
@@ -366,7 +369,7 @@ export function BlocoGanhos({ resumo, carregando, falhou, onDrill, semDrill = fa
           {estado === 'carregando' ? <div className="hud-skelbox" /> : estado === 'indisponivel' ? (
             <div className="hud-vazio">— · Consulta indisponível: a série do período não retornou.</div>
           ) : (
-            <EChart opcao={optGanhos(pal, escuro, pts, gran, animar)} altura="100%" aria={`Valor ganho por ${gran}`}
+            <EChart opcao={optGanhos(pal, escuro, pts, gran, animar, unidade)} altura="100%" aria={`Valor ganho por ${gran}`}
               eventos={semDrill ? undefined : { 'zr:click': (params, inst) => {
                 // clique em qualquer lugar da área de plotagem → o ponto (dia/semana/mês) daquela coluna do eixo
                 const ev = params as { offsetX: number; offsetY: number };
@@ -407,7 +410,7 @@ export function BlocoGanhos({ resumo, carregando, falhou, onDrill, semDrill = fa
             {([['won', 'Ganhos', g, 'mint'], ['lost', 'Perdidos', p, 'red']] as const).map(([q, rot, v, cor]) => (
               <button key={q} type="button" className="hud-legendrow" onClick={() => abrirDesf(q)} disabled={estDesf === 'indisponivel' || estDesf === 'carregando'}>
                 <span className={`hud-bullet ${cor}`} />
-                <span>{rot}<em>{v != null ? `${fmtNum(v)} negócios` : '—'}</em></span>
+                <span>{rot}<em>{v != null ? contar(v, unidade) : '—'}</em></span>
                 <strong>{v != null && fechados ? `${Math.round((v / fechados) * 100)}%` : '—'}</strong><span aria-hidden>›</span>
               </button>
             ))}
@@ -446,7 +449,8 @@ export function RankingVendedores({ periodo, resumo, onDrill, fonte }: {
   const top5 = ordenada.slice(0, 5); const outros = ordenada.slice(5);
   const somaTop = top5.reduce((a, o) => a + (modo === 'valor' ? o.valor_ganho : o.ganhos), 0);
   const somaOutros = outros.reduce((a, o) => a + (modo === 'valor' ? o.valor_ganho : o.ganhos), 0);
-  const fmt = (v: number) => (modo === 'valor' ? fmtBRL(v) : `${fmtNum(v)} ${v === 1 ? 'negócio' : 'negócios'}`);
+  const unidade = useContext(UnidadeCtx);
+  const fmt = (v: number) => (modo === 'valor' ? fmtBRL(v) : contar(v, unidade));
   const total = modo === 'valor' ? rs?.valor_total : rs?.ganhos_total;
   const ALT = 39;
   const abrir = (o: PipeOwnerRow) => {

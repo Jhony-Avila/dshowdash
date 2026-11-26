@@ -12,7 +12,7 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Calculator, TriangleAlert } from 'lucide-react';
 import { PageHeader } from './PageHeader';
-import { HudKpis, BlocoGanhos, RankingVendedores, IlustrativoCtx } from './VisaoHud';
+import { HudKpis, BlocoGanhos, RankingVendedores, IlustrativoCtx, UnidadeCtx } from './VisaoHud';
 import type { PipeSummary, PipeSummaryKpi, PipeMetrics, PipeEstadoDado } from '../shell/types';
 
 // ── contrato v1 (ACIMA_DIREITA) ──────────────────────────────────────────────
@@ -150,11 +150,11 @@ export function PrecificaAnalyticsTela() {
         <span><strong>Dados sintéticos</strong> no formato do contrato v1 (ACIMA_DIREITA) · o backend ainda não está publicado · nada aqui vem do Precifica</span>
         {resumo && <span className="pp-periodo-alerta"><TriangleAlert size={11} aria-hidden />variação contra {resumo.periodo.comparacao}</span>}
       </div>
-      <IlustrativoCtx.Provider value={!!q.data?.atual.ilustrativo}>
+      <IlustrativoCtx.Provider value={!!q.data?.atual.ilustrativo}><UnidadeCtx.Provider value={['orçamento', 'orçamentos']}>
       <HudKpis resumo={resumo} carregando={q.isLoading} falhou={!!q.error} onDrill={nada} semDrill rotuloAgora="Orçamentos em aberto" />
       <BlocoGanhos resumo={resumo} carregando={q.isLoading} falhou={!!q.error} onDrill={nada} semDrill />
       <RankingVendedores periodo="d30" resumo={resumo} onDrill={nada} fonte={{ data: ranking, isLoading: q.isLoading, error: q.error }} />
-      </IlustrativoCtx.Provider>
+      </UnidadeCtx.Provider></IlustrativoCtx.Provider>
     </div>
   );
 }
