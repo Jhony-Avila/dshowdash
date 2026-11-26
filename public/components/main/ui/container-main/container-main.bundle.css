@@ -1,8 +1,8 @@
 /* Container-Main Styles Bundle — COMPILED (single request, zero CSS imports) */
 /* @version 11.1.0-MODULAR-BUILD */
-/* @description Modular build: 8 modules concatenated in numeric order */
-/* @build-timestamp: 2026-03-27T18:17:29-03:00 */
-/* @modules: 01-tokens, 02-base, 03-layout, 04-components, 05-states, 06-responsive, 07-animations, 08-overrides */
+/* @description Modular build: 9 modules concatenated in numeric order */
+/* @build-timestamp: 2026-11-26T19:30:19-03:00 */
+/* @modules: 01-tokens, 02-base, 03-layout, 04-components, 05-states, 06-responsive, 07-animations, 08-overrides, 09-contrato-rolagem */
 
 /* Container-Main Design Tokens */
 /* @version 6.0.0-UX-ENHANCED */
@@ -6017,3 +6017,21 @@
     display: none \!important;
   }
 }
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════════
+   09 · CONTRATO DE ROLAGEM/OFFSET DO SHELL (UX01, auditoria independente 26/11; aceito pelo arquiteto 26/11 19:3x)
+   ROXO/CIMA · prova no Lab 6a766e7 (maquetes v1 e v2: 6/0) · documento experience-system/CONTRATO-ROLAGEM-SHELL-UX01.md
+   Um módulo que quer o cabeçalho travado SÓ marca a própria raiz com  data-shell-sticky  — nunca toca em ancestral. Enquanto essa raiz
+   existir dentro do contêiner, o SHELL (aqui) libera os intermediários e trava a barra do painel; ao sair, o :has() deixa de casar
+   sozinho (nada a desfazer). Elementos = os medidos no shell real que o panel-atributos/lib/shellSticky.ts troca hoje por estilo inline
+   (#container-main = a .dsd-container, o .dsd-container__body e a barra .dsd-container__header). Sem a marca, NADA muda.
+   Tokens garantidos (o módulo só LÊ):
+     --shell-topo      topo da área visível: header + ticker no Shell Layout v2 (o documento rola) · 0 no v1 (o main#main rola)
+     --shell-barra-h   altura da barra do painel (= --cm-header-height)
+     --modulo-topo     onde o topo do módulo gruda = --shell-topo + --shell-barra-h
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════════ */
+.dsd-container { --shell-topo: 0px; --shell-barra-h: var(--cm-header-height, 32px); }
+html[data-shell-layout-v2="on"] .dsd-container { --shell-topo: var(--lv2-top, 0px); }
+.dsd-container:has([data-shell-sticky]),
+.dsd-container:has([data-shell-sticky]) .dsd-container__body { overflow: clip; }
+.dsd-container:has([data-shell-sticky]) > .dsd-container__header { position: sticky; top: var(--shell-topo); z-index: 30; }
+[data-shell-sticky] { --modulo-topo: calc(var(--shell-topo) + var(--shell-barra-h)); }
