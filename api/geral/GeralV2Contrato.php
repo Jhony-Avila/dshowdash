@@ -72,9 +72,11 @@ final class GeralV2Contrato
         $r = $this->g->numeros($periodo);
         $p = $r['pedidos']; $w = $r['ganhos']; $f = $r['funil'];
         $fb = $this->g->fonte('bling'); $fp = $this->g->fonte('pipedrive_negocios');
+        $cmp = $this->g->comparativo($periodo, $p['quantidade'] === null ? null : $p['por_dia']);   // 26/11: anterior + série dos 4 KPIs
         return [
             'gerado_em' => $r['gerado_em'],
             'periodo' => ['id' => $periodo, 'de' => $r['periodo']['de'], 'ate' => $r['periodo']['ate'], 'rotulo' => $this->rotuloPeriodo($periodo, $r['periodo']['de'], $r['periodo']['ate'])],
+            'periodo_anterior' => $cmp['periodo_anterior'],
             // 116 (Jhony 25/11): Pedidos/OS em QUANTIDADE, só a conta da fonte (44); nenhum `valor` (o valor de pedido da 44 não é financeiro);
             // pedido sem canal = informação (`sem_canal`), não "Dados parciais"
             'pedidos_bling' => [
@@ -82,20 +84,21 @@ final class GeralV2Contrato
                 'inclui_canceladas' => $p['inclui_cancelados'], 'inclui_teste_ml' => $p['inclui_teste_ml'], 'sem_canal' => $p['sem_canal'],
                 'conta' => $p['conta'], 'universo' => self::UNIVERSO_PEDIDOS,
                 'ultimo_sucesso' => $p['atualizado_em'], 'motivo' => $this->motivo('bling', $p['estado'], $fb),
-                'aviso' => null,
+                'aviso' => null, 'anterior' => $cmp['pedidos']['anterior'], 'serie' => $p['quantidade'] === null ? null : $cmp['pedidos']['serie'],
             ] + $this->meta('bling', $p['estado'], $p['quantidade'] !== null, $p['lacunas']),
             'negocios_ganhos' => [
                 'estado' => self::ESTADO[$w['estado']], 'quantidade' => $w['quantidade'], 'valor' => $w['valor'], 'sem_valor' => $w['sem_valor'],
                 'fora_brl' => $w['fora_brl'], 'ultimo_sucesso' => $w['atualizado_em'], 'motivo' => $this->motivo('pipedrive_negocios', $w['estado'], $fp, $this->lacunaDado($w)),
-                'aviso' => $this->aviso($w, $this->avisoValor($w)),
+                'aviso' => $this->aviso($w, $this->avisoValor($w)), 'anterior' => $cmp['ganhos']['anterior'], 'serie' => $cmp['ganhos']['serie'],
             ] + $this->meta('pipedrive_negocios', $w['estado'], $w['quantidade'] !== null, $w['lacunas']),
             'funil_aberto' => [
                 'estado' => self::ESTADO[$f['estado']], 'quantidade' => $f['quantidade'], 'valor' => $f['valor'], 'sem_valor' => $f['sem_valor'],
                 'fora_brl' => $f['fora_brl'], 'ultimo_sucesso' => $f['atualizado_em'], 'motivo' => $this->motivo('pipedrive_negocios', $f['estado'], $fp, $this->lacunaDado($f)),
                 'aviso' => $this->aviso($f, $this->avisoValor($f)), 'fotografia_em' => $f['fotografia_em'],
+                'anterior' => null, 'serie' => null, 'serie_motivo' => $cmp['funil']['motivo'],   // sem fotografia diária do funil: nada inventado
             ] + $this->meta('pipedrive_negocios', $f['estado'], $f['quantidade'] !== null, $f['lacunas']),
             // 25/11: "Recebido no período" = último snapshot utilizável do coletor do Precifica (nunca Asaas/Bling/Pipedrive); sem snapshot/acesso = "—" + motivo
-            'recebido' => $this->recebido($periodo),
+            'recebido' => $this->recebido($periodo) + ['anterior' => $cmp['recebido']['anterior'], 'serie' => $cmp['recebido']['serie']],
         ];
     }
 

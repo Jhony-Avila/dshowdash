@@ -103,7 +103,7 @@ final class GeralV2
 
     /** Coletor do Precifica: um snapshot a cada 15 min; mais velho que isto = desatualizado (o valor continua, com o horário). */
     public const PRECIFICA_VELHA_MIN = 60;
-    private ?array $recebidoCache = null;
+    private array $recebidoCache = [];
 
     /**
      * 25/11 · "Recebido no período" = último snapshot UTILIZÁVEL (estado ok|parcial) do coletor do Precifica (APP_DSHOW.fin_pcf_*), regras do Walter:
@@ -113,9 +113,16 @@ final class GeralV2
      */
     public function recebido(string $periodo): array
     {
-        if ($this->recebidoCache !== null && $this->recebidoCache['periodo'] === $periodo) return $this->recebidoCache['r'];
         [$de, $ate] = $this->periodo($periodo);
-        $nada = ['valor' => null, 'quantidade' => null, 'snapshot_em' => null, 'por_empresa' => null, 'sem_cnpj' => null];
+        return $this->recebidoJanela($de, $ate);
+    }
+
+    /** O mesmo "Recebido" para uma janela qualquer de dias de Brasília, com `por_dia` (série: dia sem baixa até o dia do snapshot = 0; depois = null). */
+    public function recebidoJanela(DateTimeImmutable $de, DateTimeImmutable $ate): array
+    {
+        $chave = $de->format('Y-m-d') . '|' . $ate->format('Y-m-d');
+        if (isset($this->recebidoCache[$chave])) return $this->recebidoCache[$chave];
+        $nada = ['valor' => null, 'quantidade' => null, 'snapshot_em' => null, 'por_empresa' => null, 'sem_cnpj' => null, 'por_dia' => null];
         $s = $this->finSchema; if (preg_match('/^[A-Za-z0-9_]{1,64}\z/', $s) !== 1) throw new InvalidArgumentException('schema inválido');
         $t = fn(string $x) => "`{$s}`.`{$this->p}{$x}`";
         if ($this->fin === null) {
@@ -141,18 +148,28 @@ final class GeralV2
                         'quantidade' => (int) $x['baixas'], 'valor' => $centsTxt($x['cents'], $x['nulos'])], $pe->fetchAll(PDO::FETCH_ASSOC));
                     $linhas = (int) $a['linhas']; $nulos = (int) $a['nulos'];
                     $valor = $linhas === 0 ? '0.00' : $centsTxt($a['cents'], $nulos);
+                    $pd = $this->fin->prepare("SELECT `dia`, SUM(`baixas`) AS baixas, SUM(`valor_cents`) AS cents, SUM(`valor_cents` IS NULL) AS nulos
+                                                 FROM {$t('fin_pcf_recebido_dia')} WHERE `snapshot_id` = ? AND `dia` BETWEEN ? AND ? GROUP BY `dia`");
+                    $pd->execute([(int) $snap['id'], $de->format('Y-m-d'), $ate->format('Y-m-d')]);
+                    $lidos = []; foreach ($pd->fetchAll(PDO::FETCH_ASSOC) as $x) $lidos[substr((string) $x['dia'], 0, 10)] = $x;
+                    $diaSnap = $em->setTimezone($this->br)->format('Y-m-d'); $porDia = [];
+                    for ($d = $de; $d <= $ate; $d = $d->modify('+1 day')) {
+                        $k = $d->format('Y-m-d'); $x = $lidos[$k] ?? null;
+                        $porDia[] = $x !== null ? ['dia' => $k, 'valor' => $centsTxt($x['cents'], $x['nulos']), 'quantidade' => (int) $x['baixas']]
+                                  : ($k <= $diaSnap ? ['dia' => $k, 'valor' => '0.00', 'quantidade' => 0] : ['dia' => $k, 'valor' => null, 'quantidade' => null]);
+                    }
                     $velho = $this->idadeMin($em) > self::PRECIFICA_VELHA_MIN;
                     $estado = $nulos > 0 ? 'parcial' : ($velho ? 'desatualizado' : ($linhas === 0 ? 'zero_confirmado' : 'ok'));
                     $r = ['estado' => $estado, 'motivo' => $nulos > 0 ? 'valor_desconhecido' : ($velho ? 'snapshot_antigo' : null),
                           'valor' => $valor, 'quantidade' => (int) $a['baixas'], 'snapshot_em' => $em->setTimezone($this->br)->format(DATE_ATOM),
-                          'por_empresa' => $porEmp, 'sem_cnpj' => (int) $a['sem_cnpj']];
+                          'por_empresa' => $porEmp, 'sem_cnpj' => (int) $a['sem_cnpj'], 'por_dia' => $porDia];
                 }
             } catch (PDOException $e) {
                 error_log('[geral-v2] precifica: ' . get_class($e));   // nunca a mensagem
                 $r = ['estado' => 'indisponivel', 'motivo' => 'leitura_falhou'] + $nada;
             }
         }
-        $this->recebidoCache = ['periodo' => $periodo, 'r' => $r];
+        $this->recebidoCache[$chave] = $r;
         return $r;
     }
 
@@ -185,6 +202,67 @@ final class GeralV2
             'mes'   => [$ontem->modify('first day of this month'), $ontem],
             default => throw new GeralV2Erro('periodo_invalido'),
         };
+    }
+
+    /**
+     * 26/11 · período ANTERIOR equivalente: ontem → anteontem; 7d → os 7 dias antes; mes (dia 1 até ontem, N dias) → os mesmos N dias do mês
+     * anterior a partir do dia 1 (limitado ao último dia daquele mês: 31/03 → 28/02).
+     */
+    public function periodoAnterior(string $chave): array
+    {
+        [$de, $ate] = $this->periodo($chave);
+        if ($chave === 'ontem') return [$de->modify('-1 day'), $ate->modify('-1 day')];
+        if ($chave === '7d') return [$de->modify('-7 days'), $de->modify('-1 day')];
+        $ini = $de->modify('first day of previous month');
+        $fim = $ini->modify('+' . ((int) $ate->format('j') - 1) . ' days');
+        $ult = $ini->modify('last day of this month');
+        return [$ini, $fim > $ult ? $ult : $fim];
+    }
+
+    /**
+     * 26/11 · `anterior` (mesmo indicador no período anterior equivalente, mesmas regras) e `serie` (pontos por dia do período) dos 4 KPIs.
+     * Desconhecido = null, nunca 0. Funil: o Dash não guarda fotografia diária do funil aberto (pipe_metrics_* só tem criados/ganhos/perdidos
+     * por dia) → anterior e série null com o motivo; reconstruir pelo histórico de datas daria número inventado.
+     */
+    public function comparativo(string $periodo, ?array $porDiaPedidos = null): array
+    {
+        [$de, $ate] = $this->periodo($periodo); [$da, $aa] = $this->periodoAnterior($periodo);
+        $g = $this->ganhos($da, $aa); $pe = $this->pedidos($da, $aa); $r = $this->recebidoJanela($da, $aa); $ra = $this->recebidoJanela($de, $ate);
+        return [
+            'periodo_anterior' => ['de' => $da->format('Y-m-d'), 'ate' => $aa->format('Y-m-d')],
+            'ganhos' => ['anterior' => $g['quantidade'] === null ? null : ['quantidade' => $g['quantidade'], 'valor' => $g['valor']], 'serie' => $this->ganhosSerie($de, $ate)],
+            'funil' => ['anterior' => null, 'serie' => null, 'motivo' => 'sem_fotografia_diaria'],
+            'pedidos' => ['anterior' => $pe['quantidade'] === null ? null : ['quantidade' => $pe['quantidade']],
+                          'serie' => $porDiaPedidos ?? $this->pedidos($de, $ate)['por_dia']],
+            'recebido' => ['anterior' => $r['quantidade'] === null ? null : ['valor' => $r['valor'], 'quantidade' => $r['quantidade']], 'serie' => $ra['por_dia']],
+        ];
+    }
+
+    /** Ganhos por dia de Brasília (won_time é UTC). Dia sem ganho = 0 só com a fonte em dia; senão null. Fonte sem número → null. */
+    private function ganhosSerie(DateTimeImmutable $de, DateTimeImmutable $ate): ?array
+    {
+        $f = $this->fonte('pipedrive_negocios');
+        if ($this->semNumero($f) || $this->pipe === null) return null;
+        $dias = [];
+        for ($d = $de; $d <= $ate; $d = $d->modify('+1 day')) $dias[$d->format('Y-m-d')] = $f['estado'] === 'ok'
+            ? ['dia' => $d->format('Y-m-d'), 'quantidade' => 0, 'valor' => '0.00'] : ['dia' => $d->format('Y-m-d'), 'quantidade' => null, 'valor' => null];
+        try {
+            $off = $de->format('P');
+            $st = $this->pipe->prepare(
+                "SELECT DATE(CONVERT_TZ(won_time, '+00:00', ?)) AS d, COUNT(*) AS n,
+                        SUM(CASE WHEN currency = 'BRL' AND value IS NOT NULL AND value <> 0 THEN value END) AS v,
+                        SUM(currency = 'BRL' AND value IS NOT NULL AND value <> 0) AS inf
+                   FROM `{$this->p}pipe_deals` WHERE is_deleted = 0 AND status = 'won' AND won_time >= ? AND won_time < ? GROUP BY d");
+            $st->execute([$off, $de->setTimezone($this->utc)->format('Y-m-d H:i:s'), $ate->modify('+1 day')->setTimezone($this->utc)->format('Y-m-d H:i:s')]);
+            foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $x) {
+                $k = substr((string) $x['d'], 0, 10); if (!isset($dias[$k])) continue;
+                $dias[$k] = ['dia' => $k, 'quantidade' => (int) $x['n'], 'valor' => (int) $x['inf'] === 0 ? null : $this->dinheiro($x['v'], (int) $x['inf'])];
+            }
+        } catch (Throwable $e) {
+            error_log('[geral-v2] ganhos serie: ' . get_class($e));
+            return null;
+        }
+        return array_values($dias);
     }
 
     // ─────────────────────────────────────────── fontes ───────────────────────────────────────────

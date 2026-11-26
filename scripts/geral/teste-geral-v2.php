@@ -309,7 +309,7 @@ $cf2 = fn(string $de, string $ate): array => $conf2;
 $K = fn(?Closure $cf = null) => new GeralV2Contrato($sv(cf: $cf ?? $cf2));
 $E = ['ok', 'zero', 'parcial', 'desatualizado', 'aguardando', 'erro'];
 $c = $K()->resumo('7d');
-check('contrato · resumo: chaves da tela', array_keys($c) === ['gerado_em', 'periodo', 'pedidos_bling', 'negocios_ganhos', 'funil_aberto', 'recebido'], implode(',', array_keys($c)));
+check('contrato · resumo: chaves da tela (26/11: + periodo_anterior)', array_keys($c) === ['gerado_em', 'periodo', 'periodo_anterior', 'pedidos_bling', 'negocios_ganhos', 'funil_aberto', 'recebido'], implode(',', array_keys($c)));
 check('contrato · período com rótulo "16 a 22/11/2026 · 7 dias completos"', $c['periodo'] === ['id' => '7d', 'de' => '2026-11-16', 'ate' => '2026-11-22', 'rotulo' => '16 a 22/11/2026 · 7 dias completos'], json_encode($c['periodo']));
 check('contrato · rótulos ontem e mês', $K()->resumo('ontem')['periodo']['rotulo'] === '22/11/2026 · ontem' && $K()->resumo('mes')['periodo']['rotulo'] === '01 a 22/11/2026 · mês até ontem');
 check('contrato · rótulo cruzando meses', (new GeralV2Contrato($sv(ag: new DateTimeImmutable('2026-12-03 10:00', $BR))))->resumo('7d')['periodo']['rotulo'] === '26/11 a 02/12/2026 · 7 dias completos');
@@ -736,7 +736,33 @@ $conta = 0; $pdoConta = new class ($pdo, $conta) extends PDO {
     public function exec(string $q): int|false { return $this->real->exec($q); }
 };
 (new GeralV2Contrato(new GeralV2($pdo, $pdo, $pdoConta, 75, $AGORA, $provDe($cf2), $P)))->painel('7d');
-check('D3 · o painel lê os pedidos UMA vez (antes: resumo + fontes = 2)', $conta === 1, (string) $conta);
+check('D3 · o painel lê os pedidos do período UMA vez (a série reaproveita o por_dia) + 1 vez o período ANTERIOR (26/11) = 2', $conta === 2, (string) $conta);
+
+// ─── 26/11 · anterior + série dos 4 KPIs ───
+$gp = fn(string $agora) => new GeralV2(null, null, null, 75, new DateTimeImmutable($agora, $BR));
+$fmt = fn(array $x) => $x[0]->format('Y-m-d') . '..' . $x[1]->format('Y-m-d');
+check('anterior · ontem 22/11 → 21/11; 7d 16–22/11 → 09–15/11; mês 01–22/11 → 01–22/10', $fmt($gp('2026-11-23 10:00')->periodoAnterior('ontem')) === '2026-11-21..2026-11-21'
+    && $fmt($gp('2026-11-23 10:00')->periodoAnterior('7d')) === '2026-11-09..2026-11-15' && $fmt($gp('2026-11-23 10:00')->periodoAnterior('mes')) === '2026-10-01..2026-10-22');
+check('anterior · mês 01–30/03 → 01–28/02 (limitado ao fim do mês); no dia 1º/03 (fev inteiro) → 01–28/01', $fmt($gp('2026-03-31 10:00')->periodoAnterior('mes')) === '2026-02-01..2026-02-28'
+    && $fmt($gp('2026-03-01 10:00')->periodoAnterior('mes')) === '2026-01-01..2026-01-28');
+$G26 = new GeralV2($pdo, $pdo, $pdo, 75, $AGORA, $provDe($cf2), $P);
+$c26 = (new GeralV2Contrato($G26))->resumo('7d'); $G7 = new GeralV2($pdo, $pdo, $pdo, 75, $AGORA->modify('-7 days'), $provDe($cf2), $P);
+$n7 = $G7->numeros('7d');
+check('anterior · ganhos e pedidos do 7d = o 7d de 7 dias atrás (mesmas regras)', $c26['periodo_anterior'] === ['de' => '2026-11-09', 'ate' => '2026-11-15']
+    && ($c26['negocios_ganhos']['anterior']['quantidade'] ?? 'x') === $n7['ganhos']['quantidade'] && ($c26['negocios_ganhos']['anterior']['valor'] ?? 'x') === $n7['ganhos']['valor']
+    && ($c26['pedidos_bling']['anterior']['quantidade'] ?? 'x') === $n7['pedidos']['quantidade'], json_encode([$c26['negocios_ganhos']['anterior'], $c26['pedidos_bling']['anterior'], $n7['ganhos']['quantidade'], $n7['pedidos']['quantidade']]));
+$sg = $c26['negocios_ganhos']['serie'];
+check('série · ganhos: 7 pontos (16–22/11, dia de Brasília); soma = o total do cartão', is_array($sg) && array_column($sg, 'dia') === ['2026-11-16', '2026-11-17', '2026-11-18', '2026-11-19', '2026-11-20', '2026-11-21', '2026-11-22']
+    && array_sum(array_column($sg, 'quantidade')) === $c26['negocios_ganhos']['quantidade'], json_encode($sg));
+check('série · ganhos na borda do dia de Brasília: 16/11 00:00 BR entra em 16/11 (100.10); 22/11 23:59 BR entra em 22/11 (200.25)', $sg[0]['valor'] === '100.10' && $sg[0]['quantidade'] === 1
+    && $sg[6]['valor'] === '200.25' && $sg[6]['quantidade'] === 1, json_encode($sg));
+check('série · pedidos = o por_dia do cartão (mesma leitura)', $c26['pedidos_bling']['serie'] === $c26['pedidos_bling']['por_dia']);
+check('funil: sem fotografia diária → anterior e série null, com o motivo (nunca 0)', $c26['funil_aberto']['anterior'] === null && $c26['funil_aberto']['serie'] === null
+    && $c26['funil_aberto']['serie_motivo'] === 'sem_fotografia_diaria');
+$sem = (new GeralV2Contrato(new GeralV2(null, null, null, 75, $AGORA, null, $P)))->resumo('7d');
+check('sem conexão: anterior e série null nos 4 (nunca 0)', $sem['negocios_ganhos']['anterior'] === null && $sem['negocios_ganhos']['serie'] === null
+    && $sem['pedidos_bling']['anterior'] === null && $sem['pedidos_bling']['serie'] === null && $sem['recebido']['anterior'] === null && $sem['recebido']['serie'] === null,
+    json_encode([$sem['negocios_ganhos']['anterior'], $sem['pedidos_bling']['serie'], $sem['recebido']['serie']]));
 // CIMA (20:0x) · "fonte com problema numa parte (funil)": SÓ a consulta do funil falha (o banco recusa essa consulta); ganhos e atividades leem
 $pdoFunil = new class ($pdo) extends PDO {
     public function __construct(private PDO $real) {}
@@ -897,8 +923,13 @@ $r7 = $KF()->resumo('7d')['recebido'];   // 7d = 16–22/11: só 18/11 e 20/11 (
 check('recebido 7d: soma em centavos das baixas do período (1050.00, 3 baixas), CNPJ da parcela; sem CNPJ entra no total e aparece à parte', $r7['estado'] === 'ok' && $r7['valor'] === '1050.00'
     && $r7['quantidade'] === 3 && $r7['sem_cnpj'] === 1 && $r7['lacunas'] === [] && count($r7['por_empresa']) === 2 && $r7['por_empresa'][0]['cnpj'] === '12345678000199' && $r7['por_empresa'][0]['valor'] === '1000.00'
     && $r7['ultimo_sucesso'] === $AGORA->modify('-10 minutes')->format(DATE_ATOM), json_encode($r7, JSON_UNESCAPED_UNICODE));
+$rk = $KF()->resumo('7d')['recebido'];
+check('recebido · anterior (09–15/11) = 7777.00 em 9 baixas; série 16–22/11: 18 → 1000.00, 20 → 50.00, dias sem baixa até o snapshot = 0.00', $rk['anterior'] === ['valor' => '7777.00', 'quantidade' => 9]
+    && count($rk['serie']) === 7 && $rk['serie'][2] === ['dia' => '2026-11-18', 'valor' => '1000.00', 'quantidade' => 2] && $rk['serie'][4]['valor'] === '50.00' && $rk['serie'][0] === ['dia' => '2026-11-16', 'valor' => '0.00', 'quantidade' => 0],
+    json_encode([$rk['anterior'], $rk['serie']]));
 check('recebido ontem (22/11) sem baixa: zero de verdade ("0.00")', ($r0 = $KF()->resumo('ontem')['recebido'])['estado'] === 'zero' && $r0['valor'] === '0.00', json_encode($r0));
 $pdo->exec("INSERT INTO `{$P}fin_pcf_recebido_dia` VALUES ($sid, '2026-11-19', 1, 1, NULL)");
+check('série · recebido: o dia com valor desconhecido fica null; os outros seguem', ($sx = $KF()->resumo('7d')['recebido']['serie'])[3]['dia'] === '2026-11-19' && $sx[3]['valor'] === null && $sx[2]['valor'] === '1000.00', json_encode($sx ?? null));
 check('recebido com valor desconhecido no período: parcial e "—" (nunca soma parcial)', ($rp = $KF()->resumo('7d')['recebido'])['estado'] === 'parcial' && $rp['valor'] === null
     && $rp['lacunas'] === ['valor_desconhecido'], json_encode($rp));
 $pdo->exec("DELETE FROM `{$P}fin_pcf_recebido_dia` WHERE valor_cents IS NULL"); $pdo->exec("UPDATE `{$P}fin_pcf_snapshot` SET gerado_em = '{$utc('-3 hours')}' WHERE id = $sid");
