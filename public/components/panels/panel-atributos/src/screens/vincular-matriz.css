@@ -53,3 +53,18 @@
 [data-bl-root] .at-mx__m--subcat { background: var(--bl-info-bg); color: color-mix(in srgb, var(--bl-info) 70%, var(--bl-texto)); }
 [data-bl-root] .at-mx__m--direto { background: color-mix(in srgb, var(--bl-serie-4) 14%, transparent); color: color-mix(in srgb, var(--bl-serie-4) 70%, var(--bl-texto)); }
 [data-bl-root] .at-mx__m--todos { background: var(--bl-neutro-bg); color: color-mix(in srgb, var(--bl-texto-2) 70%, var(--bl-texto)); }
+
+/* 26/11 · Matriz na tabela padrão do Dash (AG Grid Community, MatrizGrade.tsx). O tema vem de _shared-react/ag-grid/grade.ts; os marcadores
+   (.at-mx__m*) e a zebra suave continuam os de cima. As regras .at-mx__cab/.at-mx__corpo/.at-mx__tabela ficam sem uso (nada apagado). */
+[data-bl-root] .at-mx__grade { display: flex; flex-direction: column; gap: 8px; padding: 8px 16px 12px; background: var(--bl-superficie); border: 1px solid var(--bl-borda); border-top: 0; border-radius: 0 0 var(--bl-raio) var(--bl-raio); }
+[data-bl-root] .at-mx__grade-barra { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+[data-bl-root] .at-mx__grade-colunas { position: relative; }
+[data-bl-root] .at-mx__grade-lista { position: absolute; top: calc(100% + 4px); left: 0; z-index: 30; display: flex; flex-direction: column; gap: 2px; min-width: 240px; max-height: 360px; overflow: auto; }
+[data-bl-root] .at-mx__grade-conta { margin-left: auto; font-size: 12px; }
+[data-bl-root] .at-mx__grade-corpo { min-width: 0; }
+[data-bl-root] .at-mx__grade-carregando { height: 420px; }
+[data-bl-root] .at-mx__grade-corpo .ag-row-odd { background-color: color-mix(in srgb, var(--bl-superficie-2) 55%, var(--bl-superficie)); }
+[data-bl-root] .at-mx__grade-corpo .at-mx__ag-kit .ag-header-cell-label { justify-content: center; text-align: center; }
+[data-bl-root] .at-mx__grade-corpo .at-mx__ag-cel { display: flex; align-items: center; justify-content: center; }
+[data-bl-root] .at-mx__grade-corpo .at-mx__ag-prod { display: flex; align-items: center; }
+[data-bl-root] .at-mx__grade-corpo .at-mx__produto { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 550; font-size: 12.5px; }
