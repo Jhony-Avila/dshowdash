@@ -108,9 +108,12 @@ export const lerFontes = (s?: AbortSignal) => ler<Fonte[]>('/fontes.php', s);
 export interface Integracao { id: string; nome: string; estado: 'ok' | 'atrasado' | 'com_problema' | 'aguardando' | 'sem_acesso' | 'nao_integrado'; ultima_sincronizacao: string | null; erro: string | null; proximo_passo: string | null }
 export function lerIntegracoes(s?: AbortSignal) { return ler<{ gerado_em: string; integracoes: Integracao[] }>('/integracoes.php', s); }
 /** 26/11 (CIMA): conciliação Asaas × Precifica — contrato da ACIMA_ESQUERDA (P31 c5451876). Dinheiro em TEXTO "1234.56" ou null. */
-export interface ConcDia { dia: string; asaas: string | null; asaas_liquido: string | null; precifica: string | null; diferenca: string | null; divergente: boolean; motivo: string | null }
-export interface ConcEmpresa { conta: string; nome: string | null; empresa_precifica: string | null; estado: 'ok' | 'sem_par' | 'indisponivel'; motivo: string | null; dias: ConcDia[] | null; divergencias: number | null }
-export interface Conciliacao { gerado_em: string; janela: { de: string; ate: string }; tolerancia: string; estado: 'ok' | 'indisponivel'; motivo: string | null; precifica_em?: string | null; divergencias?: number | null; empresas: ConcEmpresa[] | null }
+/** P38 (26/11, janela ±3 dias úteis): `restante` = sobra do dia depois do casamento; `conciliado_com` = os pares (dia, dias úteis, valor). */
+export interface ConcPar { dia: string; dias_uteis: number; valor: string }
+export interface ConcDia { dia: string; asaas: string | null; asaas_liquido: string | null; precifica: string | null; diferenca: string | null; divergente: boolean; motivo: string | null; restante?: string | null; conciliado_com?: ConcPar[] }
+export interface ConcResumo { asaas: string | null; precifica: string | null; diferenca: string | null; itens_sem_par: number | null; conciliados_com_atraso: number | null }
+export interface ConcEmpresa { conta: string; nome: string | null; empresa_precifica: string | null; estado: 'ok' | 'sem_par' | 'indisponivel'; motivo: string | null; dias: ConcDia[] | null; divergencias: number | null; resumo?: ConcResumo | null; ligacao_a_confirmar?: boolean }
+export interface Conciliacao { gerado_em: string; janela: { de: string; ate: string }; tolerancia: string; estado: 'ok' | 'indisponivel'; motivo: string | null; precifica_em?: string | null; divergencias?: number | null; conciliados_com_atraso?: number | null; ligacoes_a_confirmar?: number | null; casamento?: { dias_uteis: number; por: string } | null; empresas: ConcEmpresa[] | null }
 export function lerConciliacao(s?: AbortSignal) { return ler<Conciliacao>('/conciliacao-asaas.php?dias=30', s, 20000); }
 /** 26/11 (CIMA): cartão do Asaas — contrato da ACIMA_ESQUERDA (P21, GET /api/geral/v2/asaas.php; GeralV2Asaas::cartao). Dinheiro em TEXTO.
  *  404 = flag global `geral_v2_asaas` desligada OU sem `financeiro_asaas_leitura` → o cartão NÃO aparece. Total só com TODAS as empresas ok. */
