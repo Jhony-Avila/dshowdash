@@ -133,3 +133,13 @@
   background: var(--bl-bg, var(--bl-superficie)); border-top: 1px solid var(--bl-borda); font-size: 12.5px; font-weight: 400; }
 [data-bl-root] .at-pl-rodape__mola { flex: 1 1 0; }
 [data-bl-root] .at-pl ~ .at-barra-selecao, [data-bl-root] .at-pl .at-barra-selecao { bottom: 52px; }
+
+/* 26/11 · modo Tabela na tabela padrão do Dash (AG Grid Community, ProdutosGrade.tsx). O tema vem de _shared-react/ag-grid/grade.ts. */
+[data-bl-root] .at-pl-grade { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+[data-bl-root] .at-pl-grade__barra { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+[data-bl-root] .at-pl-grade__colunas { position: relative; }
+[data-bl-root] .at-pl-grade__lista { position: absolute; top: calc(100% + 4px); left: 0; z-index: 30; display: flex; flex-direction: column; gap: 2px; min-width: 220px; }
+[data-bl-root] .at-pl-grade__dica { font-size: 12px; margin-left: auto; }
+[data-bl-root] .at-pl-grade__corpo { min-width: 0; }
+[data-bl-root] .at-pl-grade__corpo .at-pl-nome { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle; }
+[data-bl-root] .at-pl-grade__corpo .at-pl-ess { width: 100%; }

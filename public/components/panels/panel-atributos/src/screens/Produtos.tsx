@@ -4,6 +4,8 @@
 // real) e Cartões (grade auto-fill 340 px, altura fixa 250). Busca, filtros, ordem e página de 48 continuam NO CLIENTE sobre o `GET vitrine` (o
 // endpoint não aceita parâmetros — A.0 §91): nenhuma ordenação nova (nome, ID, menos preenchidos), nenhuma mudança de servidor.
 // UX-1c preservado: memória da lista ao voltar da Ficha (busca, filtros, modo, ordem, página, posição) e os estados de vazio (b).
+// 26/11 (decisão do Jhony): o modo Tabela usa a tabela padrão do Dash — AG Grid Community (ProdutosGrade.tsx) no lugar da TabelaDados;
+// a lista inteira filtrada (sem página de 48 neste modo), ordenação/filtro por coluna, colunas fixas, mostrar/ocultar, CSV. Mesma API.
 import React from 'react';
 import type { ProdutoResumo, Vitrine } from '../lib/tipos';
 import { obter, urlFoto } from '../lib/api';
@@ -11,8 +13,8 @@ import { casaBusca, comparaMenosPreenchidos } from '../lib/formatar';
 import { rotuloCategoria, rotuloSubcategoria, tituloFamilia } from '../lib/rotulos';
 import { useModulo } from '../app/contexto';
 import { CabecalhoTravado, ChipKit, Erro, Etiqueta, Botao } from '../ui/Comuns';
-import { IconeOrdenacao, TabelaDados, type ColunaTabela } from '../ui/TabelaDados';
-import type { DefGrupo } from '../lib/ordenar';
+// AG Grid só carrega quando alguém abre o modo Tabela (chunk próprio `ag-grid`; o primeiro paint do painel não muda)
+const ProdutosGrade = React.lazy(() => import('./ProdutosGrade').then((x) => ({ default: x.ProdutosGrade })));
 import './produtos.css';
 
 const POR_PAGINA = 48;   // §0.3: vale 48 (as pranchas mostram 50)
@@ -101,7 +103,7 @@ export function Produtos() {
   React.useEffect(() => {
     if (filtroAntes.current === chaveFiltro) return; filtroAntes.current = chaveFiltro; setPagina(0);
     if (!dados || !m.selecao.length) return;
-    const visiveis = new Set(lista.slice(0, POR_PAGINA).map((p) => p.id));
+    const visiveis = new Set((f.modo === 'tabela' ? lista : lista.slice(0, POR_PAGINA)).map((p) => p.id));   // Tabela (AG Grid): a lista inteira está na grade
     const fica = m.selecao.filter((id) => visiveis.has(id)); const saiu = m.selecao.length - fica.length;
     if (saiu > 0) { m.setSelecao(fica); setAviso(`${saiu} produto${saiu === 1 ? '' : 's'} selecionado${saiu === 1 ? '' : 's'} ficaria${saiu === 1 ? '' : 'm'} fora da lista e ${saiu === 1 ? 'foi desmarcado' : 'foram desmarcados'}.`); }
   }, [chaveFiltro]);   // eslint-disable-line react-hooks/exhaustive-deps
@@ -247,11 +249,13 @@ export function Produtos() {
           </React.Fragment>))}
         </div>
       ) : (
-        <Tabela vis={vis} larguras={larguras} comSituacao={comSituacao} podeSel={podeSel} sel={sel} paginaToda={paginaToda} algumaDaPagina={algumaDaPagina}
-          ordem={f.ordem} aoOrdenar={(o) => setF({ ...f, ordem: o })} aoMarcarPagina={marcarPagina} aoSelecionar={alternar} aoAbrir={(id) => m.abrirProduto(id)} especificos={especificos} />
+        <React.Suspense fallback={<Esqueleto modo="tabela" larguras={larguras} />}>
+          <ProdutosGrade linhas={lista} comSituacao={comSituacao} podeSel={podeSel} selecao={m.selecao} aoSelecionar={(ids) => m.setSelecao(ids)}
+            aoAbrir={(id) => m.abrirProduto(id)} especificos={especificos} />
+        </React.Suspense>
       )}
 
-      {dados && lista.length > 0 && (
+      {dados && lista.length > 0 && f.modo === 'grade' && (
         <nav className="at-paginas at-pl-rodape" aria-label="Páginas">
           <span className="at-pl-rodape__faixa">{pagina * POR_PAGINA + 1}–{Math.min(lista.length, (pagina + 1) * POR_PAGINA)} de {lista.length} produto{lista.length === 1 ? '' : 's'}</span>
           <span className="at-pl-rodape__mola" />
@@ -336,45 +340,6 @@ function Cartao({ p, kits, selecionado, podeSel, comSituacao, aoSelecionar, aoAb
         <button type="button" className="at-link at-pl-cartao__abrir" onClick={aoAbrir} aria-label={`Abrir ficha: ${p.nome}`}>Abrir ficha</button>
       </div>
     </article>);
-}
-
-function Tabela({ vis, larguras, comSituacao, podeSel, sel, paginaToda, algumaDaPagina, ordem, aoOrdenar, aoMarcarPagina, aoSelecionar, aoAbrir, especificos }: {
-  vis: ProdutoResumo[]; larguras: Record<string, number>; comSituacao: boolean; podeSel: boolean; sel: Set<number>; paginaToda: boolean; algumaDaPagina: boolean;
-  ordem: Ordem; aoOrdenar: (o: Ordem) => void; aoMarcarPagina: () => void; aoSelecionar: (id: number) => void; aoAbrir: (id: number) => void; especificos: (p: ProdutoResumo) => { id: number; nome: string }[];
-}) {
-  // setas só nas ordens que JÁ existem (nada novo): "ID e produto" alterna nome ↔ ID; "Essenciais" = menos preenchidos
-  const ordenador = (titulo: string, ativa: boolean, proxima: Ordem, dica: string) => (
-    <button type="button" className="at-td__ordenar" onClick={() => aoOrdenar(proxima)} title={dica} aria-label={`${titulo}: ${dica}`} data-pl-ordem={ativa ? ordem : ''}>
-      <span>{titulo}</span><IconeOrdenacao estado={ativa ? 'ascending' : 'none'} />
-    </button>);
-  const dicaProduto = ordem === 'nome' ? 'ordenado por nome; clique para ordenar por ID' : ordem === 'id' ? 'ordenado por ID; clique para ordenar por nome' : 'ordenar por nome';
-  const colunas: ColunaTabela<ProdutoResumo>[] = [
-    ...(podeSel ? [{ chave: 'sel', titulo: 'Selecionar', tipo: 'texto' as const, alinhamento: 'centro' as const, ordenavel: false,
-      cabecalho: <input type="checkbox" aria-label="Selecionar a página" checked={paginaToda} ref={(el: HTMLInputElement | null) => { if (el) el.indeterminate = !paginaToda && algumaDaPagina; }} onChange={aoMarcarPagina} />,
-      render: (p: ProdutoResumo) => <input type="checkbox" checked={sel.has(p.id)} onChange={() => aoSelecionar(p.id)} aria-label={`Selecionar ${p.nome}`} /> }] : []),
-    { chave: 'produto', titulo: 'ID e produto', tipo: 'texto', ordenavel: false,
-      cabecalho: ordenador('ID e produto', ordem === 'nome' || ordem === 'id', ordem === 'nome' ? 'id' : 'nome', dicaProduto),
-      render: (p) => <span className="at-pl-produto"><span className="at-pl-id">{p.id}</span><button type="button" className="at-link-produto at-pl-nome" title={p.nome} data-completo={p.nome} onClick={() => aoAbrir(p.id)}>{p.nome}</button></span> },
-    { chave: 'subcategoria', titulo: 'Subcategoria', tipo: 'texto', ordenavel: false, render: (p) => <Corta texto={rotuloSubcategoria(p.subcategoria)} /> },
-    { chave: 'kit', titulo: 'Kit específico', tipo: 'texto', ordenavel: false, render: (p) => <Kit kits={especificos(p)} /> },
-    { chave: 'essenciais', titulo: 'Essenciais', tipo: 'texto', ordenavel: false,
-      cabecalho: ordenador('Essenciais', ordem === 'preenchimento', 'preenchimento', ordem === 'preenchimento' ? 'ordenado por menos preenchidos' : 'ordenar por menos preenchidos'),
-      render: (p) => <Essenciais feitos={p.essencial.feitos} total={p.essencial.total} /> },
-    { chave: 'obrigatorios', titulo: 'Obrigatórios', tipo: 'numero', ordenavel: false,
-      render: (p) => <span className={p.obrigatorios_vazios > 0 ? 'at-pl-pendente' : 'at-pl-zero'} title={`${p.obrigatorios_vazios} obrigatório(s) sem valor`}>{p.obrigatorios_vazios}</span> },
-    { chave: 'fotos', titulo: 'Fotos', tipo: 'numero', ordenavel: false, render: (p) => <span className={p.fotos === 0 ? 'at-pl-pendente' : undefined}>{p.fotos}</span> },
-    { chave: 'precifica', titulo: 'Precifica', tipo: 'texto', ordenavel: false, render: (p) => <Corta texto={precificaTexto(p)} className={p.precifica.length ? '' : 'at-fraco'} /> },
-    ...(comSituacao ? [{ chave: 'situacao', titulo: 'Situação', tipo: 'texto' as const, ordenavel: false, render: (p: ProdutoResumo) => situacao(p.ativo) }] : []),
-  ];
-  const estilo = Object.fromEntries(Object.entries(larguras).map(([k, v]) => [`--pl-w-${k}`, `${v}px`])) as React.CSSProperties;
-  const temSemEss = ordem === 'preenchimento' && vis.some((p) => p.essencial.total === 0);
-  const grupos: DefGrupo[] | undefined = temSemEss ? [{ chave: 'com', titulo: 'Com atributos essenciais' }, { chave: 'sem', titulo: 'Sem atributos essenciais definidos' }] : undefined;
-  return (
-    <div className="at-pl-tabela-moldura" style={estilo}>
-      <TabelaDados rolagem="container" className="at-pl-tabela" legenda="Produtos" colunas={colunas} linhas={vis} chaveLinha={(p) => p.id}
-        classeLinha={(p) => `${sel.has(p.id) ? 'at-pl-linha--sel' : ''} ${p.ativo ? '' : 'at-pl-linha--inativa'}`.trim() || undefined}
-        grupos={grupos} grupoDaLinha={grupos ? (p) => (p.essencial.total === 0 ? 'sem' : 'com') : undefined} />
-    </div>);
 }
 
 /** Carregando: esqueleto do MESMO tamanho da estrutura (nunca "0 produtos" antes da resposta). */
