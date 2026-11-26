@@ -24,4 +24,12 @@ $c('vazio sem base', [$r2['totais']['conversao'], $r2['totais']['valor_ganho_cen
 $g = new DateTimeImmutable('2026-11-26 02:00:00', new DateTimeZone('UTC'));   // 25/11 23:00 em Brasília
 $c('período padrão em Brasília', PrecificaAnalytics::periodo(null, null, $g), ['2026-08-28', '2026-11-25']);
 $c('período inválido', PrecificaAnalytics::periodo('2026-11-31', null, $g), null);
+// W1 (Walter, 26/11): ganho em garantia entra no funil (ganhos_funil e conversão), fora de ganhos/R$/ticket
+$dg = $d('2026-11-12', '7', 1, 3000, 1); $dg['ganhos_garantia'] = 2;
+$r3 = PrecificaAnalytics::montar(['estado' => 'ok', 'motivos' => '', 'g' => $agora - 60, 'cs' => $agora - 60], [$dg], [], [], ['7' => 'Ana'], $agora);
+$c('W1 ganhos sem garantia', $r3['totais']['ganhos'], 1);
+$c('W1 ganhos_funil = ganhos + garantia', $r3['totais']['ganhos_funil'], 3);
+$c('W1 conversão do funil 3/(3+1)', $r3['totais']['conversao'], 0.75);
+$c('W1 ticket só sem garantia', $r3['totais']['ticket_cents'], 3000);
+$c('W1 por vendedor também traz ganhos_funil', $r3['por_vendedor'][0]['ganhos_funil'], 3);
 echo "$ok/$falha\n"; exit($falha ? 1 : 0);

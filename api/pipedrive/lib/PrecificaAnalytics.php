@@ -100,8 +100,11 @@ final class PrecificaAnalytics
             $s['valor_ganho_cents'] = ($s['valor_ganho_cents'] === null || $d['valor_ganho_cents'] === null) ? null : $s['valor_ganho_cents'] + (int) $d['valor_ganho_cents'];
             $cs += (int) $d['ciclo_dias_soma']; $cn += (int) $d['ciclo_n'];
         }
-        $base = $s['ganhos'] + $s['perdidos'];
-        $s['conversao'] = $base > 0 ? round($s['ganhos'] / $base, 4) : null;
+        // W1 (Walter, 26/11; contrato v1.2): a garantia CONTA no funil. `ganhos` segue SEM garantia (receita, ticket, ranking/Top Sellers, meta);
+        // `ganhos_funil` = ganhos + ganhos_garantia, e a conversão é a do funil. `criados`/`perdidos` já chegam com a garantia (regras pa-2026-11-26).
+        $s['ganhos_funil'] = $s['ganhos'] + $s['ganhos_garantia'];
+        $base = $s['ganhos_funil'] + $s['perdidos'];
+        $s['conversao'] = $base > 0 ? round($s['ganhos_funil'] / $base, 4) : null;
         $s['ticket_cents'] = ($s['valor_ganho_cents'] !== null && $s['ganhos_com_valor'] > 0) ? (int) round($s['valor_ganho_cents'] / $s['ganhos_com_valor']) : null;
         $s['ciclo_medio_dias'] = $cn > 0 ? round($cs / $cn, 1) : null;
         return $s;
