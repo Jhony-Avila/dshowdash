@@ -30,6 +30,9 @@ function geral_v2_pdo(string $fonte): ?PDO
 {
     try {
         if ($fonte === 'BLING') {
+            // 26/11 (404 da Geral V2 em produção): o BlingRepository encerra com 404 quando incluído fora de uma entrada declarada.
+            // A Geral V2 é uma entrada autenticada (sessão + nível ≥ 50, acima), como a do /api/status: declara a entrada antes de incluir.
+            if (!defined('BLING_ENTRADA')) define('BLING_ENTRADA', true);
             require_once __DIR__ . '/../bling/repositories/BlingRepository.php';
             return (new BlingRepository())->pdo();   // o próprio repositório fixa a sessão em UTC
         }
