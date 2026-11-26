@@ -2351,3 +2351,7 @@ dist/
 # Asaas SÓ LEITURA (23/11/2026): conector api/asaas/ e scripts/asaas/ (guarda das chaves, sincronização, testes). Chaves em config/asaas/*.key, fora do git.
 !/api/asaas/
 !/scripts/asaas/
+# RD Station Marketing SÓ LEITURA (26/11/2026, VINHO/ACIMA_ESQUERDA): conector api/rdstation/, roteador OAuth api/integracoes/ e scripts/rdstation/ (segredo por read -s, sincronização, teste). Segredos e token cifrado em config/rdstation/, fora do git.
+!/api/rdstation/
+!/api/integracoes/
+!/scripts/rdstation/

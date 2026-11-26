@@ -12,13 +12,14 @@ declare(strict_types=1);
  */
 require_once __DIR__ . '/GeralV2.php';
 require_once __DIR__ . '/../asaas/AsaasDados.php';
+require_once __DIR__ . '/../rdstation/RdStation.php';
 
 final class GeralV2Integracoes
 {
     private const PRECIFICA_ATRASO_MIN = 60;
 
     public function __construct(private readonly GeralV2 $g, private readonly ?PDO $dash, private readonly DateTimeImmutable $agora,
-                                private readonly string $p = '', private readonly string $finSchema = 'APP_DSHOW') {}
+                                private readonly string $p = '', private readonly string $finSchema = 'APP_DSHOW', private readonly ?RdSegredos $rd = null) {}
 
     public function lista(): array
     {
@@ -28,6 +29,7 @@ final class GeralV2Integracoes
             $this->deFonte('google', 'Google (Agenda)', 'google_calendar'),
             $this->asaas(),
             $this->precifica(),
+            $this->rdstation(),   // 26/11: RD Station Marketing (status sem segredo; ação "Conectar")
             ['id' => 'meta', 'nome' => 'Meta (Facebook/Instagram Ads)', 'estado' => 'nao_integrado', 'ultima_sincronizacao' => null,
              'erro' => null, 'proximo_passo' => 'Não há integração com a Meta no Dash: decidir se e quando integrar.'],
         ]];
@@ -87,6 +89,17 @@ final class GeralV2Integracoes
         return ['id' => 'asaas', 'nome' => 'Asaas', 'estado' => $estado, 'ultima_sincronizacao' => $ult?->format(DATE_ATOM),
                 'erro' => $ruins !== [] ? count($ruins) . ' de ' . count($rows) . ' empresas com problema: ' . $codigos . '.' : ($velha ? 'Há empresa sem sincronização boa nas últimas 3 h.' : null),
                 'proximo_passo' => $passo];
+    }
+
+    /** O card do RD nunca derruba a tela: qualquer falha ao ler o estado local vira com_problema. */
+    private function rdstation(): array
+    {
+        try { return RdCard::montar($this->rd ?? RdSegredos::padrao(), $this->agora); }
+        catch (Throwable $e) {
+            error_log('[geral-v2] integracoes rdstation: ' . get_class($e));
+            return ['id' => 'rdstation', 'nome' => 'RD Station Marketing', 'estado' => 'com_problema', 'ultima_sincronizacao' => null, 'acao' => null,
+                    'erro' => 'Falha ao ler o estado do RD Station.', 'proximo_passo' => 'Ver o log do Dash (geral-v2).'];
+        }
     }
 
     private function precifica(): array

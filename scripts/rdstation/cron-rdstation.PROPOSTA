@@ -1,0 +1,5 @@
+# PROPOSTA (não instalado; instalar só por portão de infra com a frase do Jhony) — /etc/cron.d/dshow-rdstation
+# Sincronização do RD Station Marketing de hora em hora (minuto 41), como o usuário do php-fpm (dono da pasta de segredos).
+# O portão cria ANTES o log com o dono certo:  install -o www-data -g www-data -m 640 /dev/null /var/log/rdstation-sincronizar.log
+# (sem isso o cron do www-data não consegue abrir o >> e a linha não roda). O log só tem "resultado=… erro=<código> em=…", nunca segredo.
+41 * * * * www-data /usr/bin/php /var/www/dshowdash/scripts/rdstation/rd-sincronizar.php >> /var/log/rdstation-sincronizar.log 2>&1
