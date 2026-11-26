@@ -167,7 +167,7 @@ final class RdAuth
     public const TOKEN_URL = 'https://api.rd.services/auth/token';            // renovação (refresh_token)
     public const TOKEN_CODE_URL = 'https://api.rd.services/auth/token?token_by=code';   // troca do code (documentação do RD)
     /** O callback cadastrado no app privado (Diogo). Mudou no RD → muda aqui (degrau de 1 linha). */
-    public const RETORNO_URL = 'https://dshowdash.com.br/api/integracoes/index.php/oauth/rdstation/retorno';
+    public const RETORNO_URL = 'https://dshowdash.com.br/api/integracoes/index.php?r=oauth/rdstation/retorno';   // ?r= (o nginx não passa PATH_INFO)
 
     public function __construct(private readonly RdTransporte $http, private readonly RdSegredos $seg) {}
 
@@ -333,7 +333,7 @@ final class RdSincronizador
 final class RdCard
 {
     public const ATRASO_MIN = 180;
-    public const CONECTAR_URL = '/api/integracoes/index.php/oauth/rdstation/conectar';
+    public const CONECTAR_URL = '/api/integracoes/index.php?r=oauth/rdstation/conectar';
 
     public static function montar(RdSegredos $seg, DateTimeImmutable $agora): array
     {

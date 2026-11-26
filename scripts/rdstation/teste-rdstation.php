@@ -66,7 +66,7 @@ $f->rotas['POST /auth/token'] = function (?string $b) use ($ACC, $REF) {
 };
 $S = []; $url = RdOAuth::iniciar($auth, 75, $S, $agora); parse_str((string) parse_url($url, PHP_URL_QUERY), $q);
 check('conectar: URL do diálogo com client_id, redirect cadastrado e state de 64 hex; a sessão guarda só o HASH', str_starts_with($url, RdAuth::DIALOGO_URL . '?')
-    && $q['client_id'] === $ID && $q['redirect_uri'] === RdAuth::RETORNO_URL && preg_match('/^[0-9a-f]{64}$/', $q['state']) === 1
+    && $q['client_id'] === $ID && $q['redirect_uri'] === RdAuth::RETORNO_URL && $q['redirect_uri'] === 'https://dshowdash.com.br/api/integracoes/index.php?r=oauth/rdstation/retorno' && preg_match('/^[0-9a-f]{64}$/', $q['state']) === 1
     && $S[RdOAuth::CHAVE_SESSAO]['h'] === hash('sha256', $q['state']) && !str_contains(json_encode($S), $q['state']));
 $n0 = count($f->chamadas);
 $casos = ['state ausente' => [[], 75, 'state_invalido'], 'state trocado' => [['state' => str_repeat('a', 64), 'code' => 'codigoBom-123'], 75, 'state_invalido'],

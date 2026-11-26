@@ -2,11 +2,12 @@
 declare(strict_types=1);
 
 /**
- * /api/integracoes/index.php — roteador PATH_INFO das integrações com OAuth do Dash · VINHO (ACIMA_ESQUERDA), 26/11/2026.
- *   GET /api/integracoes/index.php/oauth/rdstation/conectar  → 302 para o diálogo do RD (state anti-CSRF na sessão)
- *   GET /api/integracoes/index.php/oauth/rdstation/retorno   → callback cadastrado no app "Dash DSHOW" (RdAuth::RETORNO_URL)
+ * /api/integracoes/index.php — roteador das integrações com OAuth do Dash · VINHO (ACIMA_ESQUERDA), 26/11/2026; rota por ?r= (ROXO/CIMA, 26/11).
+ *   GET /api/integracoes/index.php?r=oauth/rdstation/conectar  → 302 para o diálogo do RD (state anti-CSRF na sessão)
+ *   GET /api/integracoes/index.php?r=oauth/rdstation/retorno   → callback cadastrado no app "Dash DSHOW" (RdAuth::RETORNO_URL)
  * Só GET. Sessão + nível ≥ 80 (o mesmo da tela Integrações). Volta sempre para o Dash com ?rdstation=<resultado> (nunca token, nunca
- * mensagem crua do RD). O caminho com PATH_INFO precisa do nginx passar /api/integracoes/index.php/… ao PHP: A CONFERIR na produção.
+ * mensagem crua do RD). 26/11: o nginx da produção manda /api/integracoes/index.php/… (PATH_INFO) para o SPA (200 text/html, nunca chega
+ * ao PHP); por ?r= chega (curl sem sessão: 404 JSON antes desta troca). Por isso a rota vem de ?r= — sem mexer no nginx.
  */
 @ini_set('display_errors', '0');
 require_once __DIR__ . '/../core/SessionGate.php';
@@ -20,7 +21,7 @@ $volta = static function (string $res): void {
     exit;
 };
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') ApiResponse::error(ApiResponse::ERR_METHOD_NOT_ALLOWED, 405);
-$rota = trim((string) ($_SERVER['PATH_INFO'] ?? ''), '/');
+$rota = trim(is_string($_GET['r'] ?? null) ? $_GET['r'] : '', '/');
 if (!in_array($rota, ['oauth/rdstation/conectar', 'oauth/rdstation/retorno'], true)) ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404);
 
 SessionGate::start();
