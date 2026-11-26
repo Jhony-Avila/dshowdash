@@ -68,6 +68,10 @@ export function GeralV2() {
   const resumo = trocando ? ({ ...resumo0, dados: null, erro: null, carregando: true } as typeof resumo0) : resumo0;
   const prioridades = vistaDe('prioridades'), agenda = vistaDe('agenda'), fontes = vistaDe('fontes');
   const topo = useRef<HTMLDivElement>(null);
+  // a rota é lida ao montar E a cada troca de hash: navegar da Geral para #/panel-integracoes não remonta o painel (é o mesmo bundle)
+  const ehIntegracoes = () => typeof window !== 'undefined' && window.location.hash.startsWith('#/panel-integracoes');
+  const [rotaIntegracoes, setRotaIntegracoes] = useState(ehIntegracoes);
+  useEffect(() => { const f = () => setRotaIntegracoes(ehIntegracoes()); window.addEventListener('hashchange', f); return () => window.removeEventListener('hashchange', f); }, []);
   // 26/11 (ROXO, auditoria UX/UI F3 item 6 · DSStickyHeader): quando o cabeçalho (título + períodos) sai da tela ao rolar, ele fica PRESO logo
   // abaixo da faixa fixa do shell, compacto (≤ 48 px: título menor, sem subtítulo) — os períodos nunca saem de alcance. position: fixed com a
   // largura do miolo (não depende de nenhum ancestral sem overflow, nem mexe no shell); um espaçador da mesma altura evita o pulo.
@@ -96,6 +100,8 @@ export function GeralV2() {
   const fl: FontesLidas = fontes.carregando && !fontes.dados ? 'carregando' : fontes.dados ?? null;
   const efs = indicadoresEfetivos(resumo, prioridades, agenda, fl);
 
+  // 26/11 (Fase 1): Integrações tem rota própria (#/panel-integracoes, item do menu); o shell monta este mesmo bundle e a página inteira abre aqui
+  if (rotaIntegracoes) return <div ref={topo} className="gv2" data-gv2-vista="integracoes-pagina"><Integracoes pagina aoVoltar={() => navegar('#/panel-dashboard')} />   {/* '#/' cru o roteador resolve para outro painel; o id do painel é direto */}</div>;
   if (vista.tipo === 'integracoes') return <div ref={topo} className="gv2" data-gv2-vista="integracoes"><Integracoes aoVoltar={() => setVista({ tipo: 'geral' })} /></div>;
   if (vista.tipo === 'vencidas_asaas') return <div ref={topo} className="gv2" data-gv2-vista="vencidas-asaas"><Suspense fallback={<p className="gv2-fraco" aria-busy>Abrindo as cobranças vencidas…</p>}><CobrancasVencidas aoVoltar={() => setVista({ tipo: 'geral' })} /></Suspense></div>;
   if (vista.tipo === 'lista') {
@@ -122,7 +128,7 @@ export function GeralV2() {
         <BlocoPedidosGrafico b={resumo} fl={fl} />
         <BlocoAgenda b={agenda} fl={fl} />
       </div>
-      <BlocoFontes b={fontes} efs={efs} extra={fonteAsaas(asaas)} aoIntegracoes={() => setVista({ tipo: 'integracoes' })} />
+      <BlocoFontes b={fontes} efs={efs} extra={fonteAsaas(asaas)} aoIntegracoes={() => navegar('#/panel-integracoes')} />
     </div>
   );
 }

@@ -55,6 +55,7 @@ export const PANEL_ID_PATHS = Object.freeze({
   
   // Painéis nomeados - datadriven (from API manifest)
   'panel-dashboard': '/components/panels/panel-dashboard/index.js',
+  'panel-integracoes': '/components/panels/panel-dashboard/index.js',   // 26/11 (Fase 1): Integrações em página inteira — o mesmo bundle da Geral; a tela lê a rota
   'panel-cards': '/components/panels/panel-cards/index.js',
   'panel-datahub': '/components/panels/panel-datahub/index.js',
   'panel-files': '/components/panels/panel-files/index.js',

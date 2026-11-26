@@ -7,6 +7,7 @@
 import { ArrowLeft, Plug } from 'lucide-react';
 import { ErroV2, fmtQuando, lerIntegracoes, type Integracao } from './servico';
 import { Problema, useBloco } from './comuns';
+import { DSWorkspaceTop } from '@shared/des/DSWorkspaceTop';
 import { Conciliacao } from './Conciliacao';
 
 const ESTADO: Record<Integracao['estado'], [string, string]> = {
@@ -15,19 +16,27 @@ const ESTADO: Record<Integracao['estado'], [string, string]> = {
 };
 const ORDEM: Integracao['estado'][] = ['com_problema', 'atrasado', 'sem_acesso', 'aguardando', 'nao_integrado', 'ok'];
 
-export function Integracoes({ aoVoltar }: { aoVoltar: () => void }) {
+/** pagina = rota própria #/panel-integracoes (26/11, Fase 1): página inteira com o DSWorkspaceTop; sem a trilha nem o título da vista antiga. */
+export function Integracoes({ aoVoltar, pagina }: { aoVoltar: () => void; pagina?: boolean }) {
   const b = useBloco((s) => lerIntegracoes(s), []);
   const lista = [...(b.dados?.integracoes ?? [])].sort((x, y) => ORDEM.indexOf(x.estado) - ORDEM.indexOf(y.estado));
   const semAcesso = b.erro instanceof ErroV2 && b.erro.semAcesso;
   const pendentes = lista.filter((x) => x.estado === 'com_problema' || x.estado === 'atrasado').length;
   return (
-    <div className="gv2-lista" data-gv2-integracoes>
-      <nav className="gv2-trilha" aria-label="Você está em">
+    <div className="gv2-lista" data-gv2-integracoes={pagina ? 'pagina' : 'vista'}>
+      {pagina && (
+        <div className="des-escopo">
+          <DSWorkspaceTop titulo="Integrações" icone={<Plug size={18} aria-hidden />} dados={{ 'data-gv2-integ-topo': '1' }}
+            trilha={<button type="button" className="gv2-link" onClick={aoVoltar}><ArrowLeft size={13} aria-hidden /> Geral</button>}
+            controles={<><span className="des-wt__mola" /><span className="gv2-fraco" data-gv2-integ-resumo>{b.dados ? `${lista.length} conectores · ${pendentes ? `${pendentes} pedem atenção` : 'nenhum pede atenção'} · conferido ${fmtQuando(b.dados.gerado_em)}` : b.carregando ? 'Carregando…' : '—'}</span></>} />
+        </div>
+      )}
+      {!pagina && <nav className="gv2-trilha" aria-label="Você está em">
         <button type="button" className="gv2-link" onClick={aoVoltar}><ArrowLeft size={13} aria-hidden /> Geral</button>
         <span aria-hidden>›</span><span>Integrações</span>
-      </nav>
+      </nav>}
       <section className="gv2-sec">
-        <div className="gv2-sec-cab">
+        <div className="gv2-sec-cab" hidden={pagina}>
           <h2 className="gv2-h2"><Plug size={18} aria-hidden /> Integrações</h2>
           <span className="gv2-fraco gv2-dir">
             {b.dados ? `${lista.length} conectores · ${pendentes ? `${pendentes} pedem atenção` : 'nenhum pede atenção'} · conferido ${fmtQuando(b.dados.gerado_em)}` : b.carregando ? 'Carregando…' : '—'}

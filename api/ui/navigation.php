@@ -9,7 +9,7 @@ require_once __DIR__ . '/../core/UARPSGate.php';
 require_once __DIR__ . '/../core/helpers/RedisHelper.php';
 require_once __DIR__ . '/../_helpers/ApiResponse.php';
 require_once __DIR__ . '/../../config/db_connection.php';
-require_once __DIR__ . '/nav-flags.php';   // 18/11: visibilidade do menu por feature flag
+require_once __DIR__ . '/nav-flags.php';   // 18/11: visibilidade do menu por feature flag · 26/11: + nível opcional por item (navFiltrarPorNivel)
 
 CorsPolicy::setupApiEndpoint(['methods' => ['GET', 'OPTIONS']]);
 
@@ -61,14 +61,14 @@ function getNavItems($pdo, $context, $userId, $includeInactive) {
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     $allItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    if ($userId === null) { return navFiltrarPorFlags($pdo, array_filter($allItems, fn($item) => empty($item['uarps_trigger_id'])), null); }
+    if ($userId === null) { return navFiltrarPorNivel(navFiltrarPorFlags($pdo, array_filter($allItems, fn($item) => empty($item['uarps_trigger_id'])), null), null); }   // 26/11: + nível opcional por item
     $filteredItems = [];
     foreach ($allItems as $item) {
         if (empty($item['uarps_trigger_id'])) { $filteredItems[] = $item; continue; }
         $check = UARPSGate::checkTrigger($userId, $item['uarps_trigger_id']);
         if ($check['allowed']) { $filteredItems[] = $item; }
     }
-    return navFiltrarPorFlags($pdo, $filteredItems, $userId);
+    return navFiltrarPorNivel(navFiltrarPorFlags($pdo, $filteredItems, $userId), $userId);   // 26/11: metadata.nivel_minimo (só quem declarar)
 }
 
 function buildNavTree($items) {

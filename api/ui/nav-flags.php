@@ -44,3 +44,35 @@ function navFiltrarPorFlags($pdo, array $itens, $userId, ?callable $resolver = n
     }
     return array_is_list($itens) ? array_values($out) : $out;   // mantém o formato que cada caminho já devolvia
 }
+
+/**
+ * 26/11 (ROXO/CIMA; decisão do Jhony: "regra opcional de nível por item, valendo SÓ para o item novo"): metadata.nivel_minimo (inteiro).
+ * O item só aparece se o nível do usuário for ≥ nivel_minimo; anônimo ou nível ilegível = SOME (fail-closed). Item SEM nivel_minimo: nada
+ * muda (a coluna min_level da tabela continua sem efeito, como hoje; respeitá-la mudaria 7 itens). Primeiro uso: sidebar.integracoes (80 =
+ * o mesmo nível exigido por api/geral/v2/integracoes.php). O nível vem da sessão, a mesma fonte do AuthHelpers::requireAuth.
+ */
+function navFiltrarPorNivel(array $itens, $userId, ?callable $nivelDe = null) {
+    $minimo = [];
+    foreach ($itens as $i => $item) {
+        $meta = is_string($item['metadata'] ?? null) ? json_decode($item['metadata'], true) : ($item['metadata'] ?? null);
+        $v = is_array($meta) ? ($meta['nivel_minimo'] ?? null) : null;
+        if (is_int($v) || (is_string($v) && ctype_digit($v))) $minimo[$i] = (int) $v;
+    }
+    if (!$minimo) return $itens;   // sem item com nivel_minimo: nem lê o nível (o menu de hoje fica idêntico)
+    $nivel = null;
+    if ($userId !== null) {
+        try {
+            $nivelDe ??= static function (int $u): ?int {
+                $l = $_SESSION['level'] ?? ($_SESSION['user']['level'] ?? null);
+                return is_numeric($l) ? (int) $l : null;
+            };
+            $nivel = $nivelDe((int) $userId);
+        } catch (Throwable $e) { error_log('[nav] nível do menu: ' . $e->getMessage()); $nivel = null; }
+    }
+    $out = [];
+    foreach ($itens as $i => $item) {
+        if (isset($minimo[$i]) && ($nivel === null || $nivel < $minimo[$i])) continue;
+        $out[$i] = $item;
+    }
+    return array_is_list($itens) ? array_values($out) : $out;
+}

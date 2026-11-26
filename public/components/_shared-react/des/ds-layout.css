@@ -1,0 +1,13 @@
+/* _shared-react/des/ds-layout.css — DES · DSWorkspaceTop (contrato espacial: 1 bloco travado; linha local 36 px + controles 48 px = 84).
+   Tokens --des-* (válidos dentro de .des-escopo). Sombra em vez de borda (a borda somava 1 px ao bloco). Texto mínimo 12 px. */
+.des-wt { position: sticky; z-index: 20; background: var(--des-fundo); box-shadow: 0 1px 0 var(--des-borda); padding: 0 4px; font-family: var(--des-fonte, inherit); color: var(--des-texto); }
+.des-wt__local { display: flex; align-items: center; gap: 16px; height: 36px; min-width: 0; }
+.des-wt__titulo { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap; }
+.des-wt__trilha { color: var(--des-dim); font-size: 12px; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.des-wt__nav { display: flex; gap: 2px; margin-left: auto; height: 36px; align-items: stretch; }
+.des-wt__nav button { border: 0; background: transparent; color: var(--des-dim); font: 400 13px var(--des-fonte, inherit); padding: 0 10px; border-bottom: 2px solid transparent; cursor: pointer; }
+.des-wt__nav button[aria-current] { color: var(--des-texto); font-weight: 500; border-bottom-color: var(--des-link); }
+.des-wt__nav button:focus-visible { outline: 2px solid var(--des-link); outline-offset: -2px; }
+.des-wt__controles { display: flex; align-items: center; gap: 8px; height: 48px; min-width: 0; font-size: 13px; }
+.des-wt__mola { flex: 1 1 0; }
+@media (max-width: 600px) { .des-wt__local, .des-wt__controles { height: auto; min-height: 36px; flex-wrap: wrap; } }
