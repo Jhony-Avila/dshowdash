@@ -1,0 +1,62 @@
+/* ds-kpi-card-v2.css — DES · DSKpiCard v2 (ROXO/CIMA, 26/11, Lab). Tokens --des-* (os da v1) + cor por DOMÍNIO. Sem Tailwind.
+   Hierarquia (parecer UX): número 28–32 px peso 600 · rótulo 13 px 500 · rodapé 12 px · altura 136–160 px · 4 numa linha.
+   Variação A (sóbria) — escolhida pelo Jhony no Chromatic (26/11); a B ficou só no Lab. */
+.des-escopo, .des-escopo[data-des-tema="escuro"] {
+  --des-dom-comercial: #818cf8; --des-dom-operacao: #22d3ee; --des-dom-financeiro: #34d399; --des-dom-marketing: #f472b6; --des-dom-neutro: #9a9ab2;
+  --des2-sombra: 0 1px 2px rgba(0, 0, 0, .3); --des2-sombra-hover: 0 8px 24px -12px rgba(0, 0, 0, .7);
+}
+:root[data-theme="light"] .des-escopo:not([data-des-tema="escuro"]), :root.theme-light .des-escopo:not([data-des-tema="escuro"]), .des-escopo[data-des-tema="claro"] {
+  --des-dom-comercial: #4f46e5; --des-dom-operacao: #0e7490; --des-dom-financeiro: #047857; --des-dom-marketing: #be185d; --des-dom-neutro: #5a6273;
+  --des2-sombra: 0 1px 2px rgba(16, 24, 40, .05); --des2-sombra-hover: 0 10px 24px -14px rgba(16, 24, 40, .35);
+}
+.des2-kpi { --dom: var(--des-dom-neutro); position: relative; display: flex; flex-direction: column; gap: 8px; min-height: 136px; box-sizing: border-box;
+  padding: 14px 16px 10px; background: var(--des-sup); border: 1px solid var(--des-borda); border-radius: 14px; box-shadow: var(--des2-sombra);
+  font-family: var(--des-fonte); color: var(--des-texto); min-width: 0; overflow: hidden; }
+.des2-kpi[data-des-dominio="comercial"] { --dom: var(--des-dom-comercial); }
+.des2-kpi[data-des-dominio="operacao"] { --dom: var(--des-dom-operacao); }
+.des2-kpi[data-des-dominio="financeiro"] { --dom: var(--des-dom-financeiro); }
+.des2-kpi[data-des-dominio="marketing"] { --dom: var(--des-dom-marketing); }
+/* hover sutil com elevação (sem movimento com "reduzir movimento") */
+.des2-kpi { transition: box-shadow .18s ease, border-color .18s ease, transform .18s ease; }
+.des2-kpi:hover { box-shadow: var(--des2-sombra-hover); border-color: color-mix(in srgb, var(--dom) 35%, var(--des-borda)); }
+@media (prefers-reduced-motion: no-preference) {
+  .des2-kpi:hover { transform: translateY(-1px); }
+  .des2-kpi { animation: des2-entra .32s ease-out both; }
+  .des2-kpi__valor { animation: des2-entra-num .42s ease-out .06s both; }
+}
+@keyframes des2-entra { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes des2-entra-num { from { opacity: 0; } to { opacity: 1; } }
+
+.des2-kpi__cab { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.des2-kpi__ic { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 9px;
+  color: var(--dom); background: color-mix(in srgb, var(--dom) 13%, transparent); }
+.des2-kpi__tit { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+.des2-kpi__rotulo { margin: 0; font-size: 13px; font-weight: 500; line-height: 1.25; color: var(--des-texto); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.des2-kpi__marcador { font-size: 12px; font-weight: 400; line-height: 1.25; color: var(--des-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.des2-kpi__corpo { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+.des2-kpi__selo { margin-top: 2px; }
+.des2-kpi__linha { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
+.des2-kpi__valor { font-size: 30px; line-height: 34px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.des2-kpi__valor--vazio, .des2-kpi__valor--velho { color: var(--des-dim); }
+.des2-kpi__sub { font-size: 12px; color: var(--des-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* variação em destaque: ▲ +12% verde / ▼ −8% vermelho pela polaridade; o valor anterior no tooltip (title) e no texto do leitor de tela */
+.des2-var { display: inline-flex; align-items: baseline; gap: 6px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; cursor: default; }
+.des2-var--bom { color: var(--des-ok-txt); } .des2-var--ruim { color: var(--des-erro-txt); } .des2-var--neutro { color: var(--des-dim); }
+.des2-var__base { font-size: 12px; font-weight: 400; color: var(--des-dim); }
+.des2-kpi__rodape { display: flex; align-items: center; gap: 10px; margin-top: auto; min-height: 28px; min-width: 0; }
+.des2-kpi__fonte { flex: 1 1 auto; min-width: 0; font-size: 12px; color: var(--des-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.des2-spark { flex: 1 1 auto; min-width: 0; height: 28px; color: var(--dom); }
+.des2-kpi__acao { flex: 0 0 auto; font-size: 12px; }
+
+@media (max-width: 600px) { .des2-kpi__valor { font-size: 26px; line-height: 32px; } }
+/* o NumberFlow mede ~46 px (máscara da rolagem dos dígitos): a linha do número fica com a altura da tipografia e a máscara transborda sem empurrar */
+.des2-kpi__valor { height: 34px; display: flex; align-items: center; overflow: visible; }
+/* Dash (26/11): os cartões da Geral têm uma linha de contexto real ("Fechados no período · 1 sem valor") além da variação e do micrográfico.
+   Ritmo vertical mais justo para caber em 136–160 px (parecer UX) com tudo: 12 + 30 + 6 + 34 + 18 + 16 + 6 + 26 + 10 ≈ 158. */
+.des2-kpi { gap: 6px; padding: 12px 16px 10px; }
+.des2-kpi__ic { width: 30px; height: 30px; border-radius: 8px; }
+.des2-kpi__corpo { gap: 0; }
+.des2-var { line-height: 18px; }
+.des2-kpi__sub { line-height: 16px; }
+.des2-kpi__rodape { min-height: 26px; }
+.des2-spark { height: 26px; }

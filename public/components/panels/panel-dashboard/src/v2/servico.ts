@@ -14,22 +14,27 @@ export interface Periodo { id: PeriodoV2; de: string; ate: string; rotulo: strin
 interface Base { estado: EstadoBloco; ultimo_sucesso: string | null; motivo: string | null; lacunas?: string[]; fonte?: IdFonte; consulta_completa?: boolean; fonte_atualizada_em?: string | null; valor_em?: string | null }
 /** Pedidos / OS do Bling principal (decisão de 25/11): SÓ QUANTIDADE. Nenhum valor em R$ entra na tela — nem se o serviço mandar
  *  (`normalizarResumo` descarta). `conta` = a conta da fonte (44); `universo` = o que é contado (texto do serviço). */
-export interface PedidosBling extends Base { quantidade: number | null; por_dia: { dia: string; quantidade: number | null }[]; inclui_canceladas: boolean; conta?: number | null; universo?: string | null; sem_canal?: number | null }
-export interface NegociosGanhos extends Base { quantidade: number | null; valor: number | null; sem_valor: number | null }
+export interface PedidosBling extends Base, Comparativo { quantidade: number | null; por_dia: { dia: string; quantidade: number | null }[]; inclui_canceladas: boolean; conta?: number | null; universo?: string | null; sem_canal?: number | null }
+export interface NegociosGanhos extends Base, Comparativo { quantidade: number | null; valor: number | null; sem_valor: number | null }
 /** `fotografia_em` (serviço, 116): horário da leitura dos negócios usada na soma — o funil é fotografia, não movimento do período. */
-export interface FunilAberto extends Base { quantidade: number | null; valor: number | null; sem_valor: number | null; fotografia_em?: string | null }
+export interface FunilAberto extends Base, Comparativo { quantidade: number | null; valor: number | null; sem_valor: number | null; fotografia_em?: string | null }
 /** Recebido no período · Precifica (decisão de 25/11). No 116 o cartão é SEMPRE "— · Aguardando conexão": não existe leitura de
  *  recebimentos do Precifica. Nunca Asaas, Bling ou Pipedrive. */
 /** 25/11 (P15): recebido do Precifica — `valor` em TEXTO "1234.56" (centavos exatos) ou null; por empresa = CNPJ da parcela. */
 export interface RecebidoEmpresa { empresa_id: number | null; cnpj: string | null; nome: string | null; quantidade: number; valor: string | null }
-export interface Recebido extends Base { valor: string | number | null; quantidade?: number | null; por_empresa?: RecebidoEmpresa[] | null; sem_cnpj?: number | null }
+export interface Recebido extends Base, Comparativo { valor: string | number | null; quantidade?: number | null; por_empresa?: RecebidoEmpresa[] | null; sem_cnpj?: number | null }
 /** Valor monetário do serviço ("1234.56" ou número) → número; texto inválido = null (desconhecido, nunca 0). */
 export const numDe = (v: string | number | null | undefined): number | null => {
   if (v === null || v === undefined) return null; if (typeof v === 'number') return Number.isFinite(v) ? v : null;
   return /^-?\d+(\.\d+)?$/.test(v) ? Number(v) : null;
 };
 export const fmtMoeda2 = (v: number | null) => (v === null ? '—' : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-export interface Resumo { periodo: Periodo; pedidos_bling: PedidosBling; negocios_ganhos: NegociosGanhos; funil_aberto: FunilAberto; recebido?: Recebido }
+/** 26/11 (VINHO, ed297028): `anterior` = o mesmo indicador no período anterior equivalente; `serie` = pontos por dia do período. null = desconhecido
+ *  (nunca 0). Funil: sem fotografia diária → null + `serie_motivo`. O % da variação é calculado na tela a partir dos dois números do serviço. */
+export interface AnteriorKpi { quantidade?: number | null; valor?: string | number | null }
+export interface PontoSerie { dia: string; quantidade?: number | null; valor?: string | number | null }
+export interface Comparativo { anterior?: AnteriorKpi | null; serie?: PontoSerie[] | null; serie_motivo?: string | null }
+export interface Resumo { periodo_anterior?: { de: string; ate: string } | null; periodo: Periodo; pedidos_bling: PedidosBling; negocios_ganhos: NegociosGanhos; funil_aberto: FunilAberto; recebido?: Recebido }
 
 export type IdPrioridade = 'atividade_vencida' | 'sem_proxima_atividade' | 'conflito_agenda';
 export interface Prioridade extends Base { id: IdPrioridade; quantidade: number | null; gravidade: 1 | 2 | 3; desde: string | null; responsaveis: number | null; detalhe: string | null }

@@ -5,14 +5,16 @@
 // (não mudam com o período), no máximo 3, por gravidade e depois antiguidade; pedidos, ganhos e funil são conceitos SEPARADOS
 // (nunca somados); sem "Comparação: período anterior"; texto mínimo de 12 px; falha nunca vira zero; estado sempre escrito.
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { AlertTriangle, ArrowRight, CalendarDays, CheckCircle2, ExternalLink, Layers, Package, PlugZap, TrendingUp, Wallet } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CalendarDays, CheckCircle2, ExternalLink, PlugZap } from 'lucide-react';
 import {
-  ErroV2, fmtData, fmtDiaMes, fmtHora, fmtMoeda2, fmtN, fmtQuando, hojeExtenso, numDe,
+  ErroV2, dinheiro, fmtData, fmtDiaMes, fmtHora, fmtMoeda2, fmtN, fmtQuando, hojeExtenso, numDe,
   lerAsaas, lerPainel, type Painel,
   type Agenda, type EstadoBloco, type Fonte, type IdPrioridade, type PedidosBling, type PeriodoV2, type Prioridade, type Prioridades, type Resumo,
 } from './servico';
 import { Integracoes } from './Integracoes';
-import { DSKpiCard, type FormatoKpi } from '@shared/des/DSKpiCard';
+import type { FormatoKpi } from '@shared/des/DSKpiCard';
+import { DSKpiCardV2 as DSKpiCard, type DominioKpi } from '@shared/des/DSKpiCardV2';   // v2, variação A (escolha do Jhony, 26/11)
+import { BarChartSquare02, Package as IcPacote, TrendUp01, Wallet02 } from '@shared/des/icones-pro';
 import { CartaoAsaas, VencidasAsaas, fonteAsaas } from './Asaas';
 import { ListaPrioridade } from './ListaPrioridade';
 import { Problema, useBloco } from './comuns';
@@ -104,7 +106,6 @@ export function GeralV2() {
         style={preso ? { top: preso.top, left: preso.left, width: preso.width } : undefined}>
         <div>
           <h1 className="gv2-h1">Geral</h1>
-          <p className="gv2-sub">Painel executivo · ações e resultados com origem verificável</p>
         </div>
         <div className="gv2-periodos" role="tablist" aria-label="Período dos resultados">
           {PERIODOS.map((p) => (
@@ -275,12 +276,19 @@ type Bloco = { estado: EstadoBloco; ultimo_sucesso: string | null; motivo: strin
  * 26/11 (CIMA, opção A do Jhony): os 4 cartões de KPI usam o DSKpiCard do pacote DES (@shared/des). Este adaptador só traduz o estado da Geral
  * (EstadoBloco + carregando/semacesso, mesmos dados e mesma API de antes) para o contrato do DSKpiCard; mantém data-gv2-cartao/data-gv2-estado.
  */
-function CartaoNumero({ data, marcador, titulo, icone, estado, valor, formato, linha, bloco, falha, aguardando, rodape, link, dica, onTentar, tentando }: {
-  data: string; marcador: string; titulo: string; icone: ReactNode; estado: EstadoGeral; valor: number | null; formato: FormatoKpi; linha: ReactNode;
+/** 26/11 (VINHO ed297028): variação % = (atual − anterior) / anterior, dos DOIS números do serviço; anterior desconhecido ou 0 → sem variação. */
+type Comparacao = { anterior: number | null; serie: (number | null)[] | null; base: string } | null;
+const pct = (atual: number | null, anterior: number | null) => (atual === null || anterior === null || anterior === 0 ? null : Math.round(((atual - anterior) / anterior) * 1000) / 10);
+function CartaoNumero({ data, marcador, titulo, icone, dominio, estado, valor, formato, linha, bloco, falha, aguardando, rodape, link, dica, onTentar, tentando, comparacao }: {
+  data: string; marcador: string; titulo: string; icone: ReactNode; dominio: DominioKpi; estado: EstadoGeral; valor: number | null; formato: FormatoKpi; linha: ReactNode;
   bloco: Bloco; falha: 'semacesso' | 'erro' | null; aguardando: string; rodape: string; link: { rotulo: string; rota: string } | null; dica?: string;
-  onTentar: () => void; tentando: boolean;
+  onTentar: () => void; tentando: boolean; comparacao?: Comparacao;
 }) {
-  const comum = { marcador, rotulo: titulo, icone, formato, fonte: rodape, dica, animar: true, onTentar, tentando,
+  // variação e micrográfico só com o número em dia (ok / zero real) e com o dado do serviço; nunca inventados
+  const cmp = (estado === 'ok' || estado === 'zero') && comparacao ? comparacao : null;
+  const v = cmp ? pct(valor, cmp.anterior) : null;
+  const extra = cmp ? { variacao: v === null ? null : { valor: v, polaridade: 'maior-melhor' as const, base: cmp.base }, anterior: cmp.anterior, serie: cmp.serie } : {};
+  const comum = { marcador, rotulo: titulo, icone, dominio, variante: 'A' as const, formato, fonte: rodape, dica, animar: true, onTentar, tentando,
     acao: link ? { rotulo: link.rotulo, onClick: () => navegar(link.rota) } : null, dados: { 'data-gv2-cartao': data, 'data-gv2-estado': estado } as const };
   if (estado === 'carregando') return <DSKpiCard {...comum} estado="carregando" valor={null} />;
   if (falha === 'semacesso') return <DSKpiCard {...comum} estado="vazio" valor={null} selo={{ texto: 'Sem acesso', tom: 'neutro' }} motivo="Seu nível de acesso não inclui este resultado." />;
@@ -288,10 +296,10 @@ function CartaoNumero({ data, marcador, titulo, icone, estado, valor, formato, l
   if (estado === 'aguardando' || bloco?.estado === 'aguardando') return <DSKpiCard {...comum} estado="vazio" valor={null} selo={{ texto: 'Aguardando conexão', tom: 'neutro' }} motivo={aguardando} />;
   if (bloco?.estado === 'erro') return <DSKpiCard {...comum} estado="erro" valor={null} motivo={bloco.motivo || 'A leitura desta fonte falhou.'} quando={bloco.ultimo_sucesso ? `Último sucesso ${fmtQuando(bloco.ultimo_sucesso)}` : null} />;
   // o número existe: o estado efetivo vira selo (zero real, problema na fonte) ou o estado do DSKpiCard (desatualizado, parcial)
-  if (estado === 'zero') return <DSKpiCard {...comum} estado="ok" valor={valor} sub={linha} selo={{ texto: 'Zero real', tom: 'ok' }} />;
+  if (estado === 'zero') return <DSKpiCard {...comum} {...extra} estado="ok" valor={valor} sub={linha} selo={{ texto: 'Zero real', tom: 'ok' }} />;
   if (estado === 'erro') return <DSKpiCard {...comum} estado="ok" valor={valor} sub={linha} selo={{ texto: 'Com problema', tom: 'erro' }} />;
   const e = estado === 'desatualizado' || estado === 'parcial' ? estado : 'ok';
-  return <DSKpiCard {...comum} estado={e} valor={valor} sub={linha} />;
+  return <DSKpiCard {...comum} {...(e === 'ok' ? extra : {})} estado={e} valor={valor} sub={linha} />;
 }
 /** Linha do cartão pelo estado EFETIVO (coerencia.ts): zero não confirmado, desatualizado, soma parcial. */
 function linhaEstado(e: Efetivo, normal: ReactNode, valor: number | null = 0): ReactNode {
@@ -325,6 +333,8 @@ function BlocoResultado({ b, fl, extra }: { b: ReturnType<typeof useBloco<Resumo
   const num = (e: Efetivo | undefined, v: number | null | undefined) => (e?.zeroNaoConfirmado || v === null || v === undefined ? null : v);   // "—" nunca vira 0
   const falha: 'semacesso' | 'erro' | null = !r && !car ? (semAcesso(b.erro) ? 'semacesso' : 'erro') : null;
   const tentar = { onTentar: b.recarregar, tentando: b.atualizando };
+  const pa = r?.periodo_anterior; const baseCmp = pa ? `vs. ${fmtDiaMes(pa.de)}–${fmtDiaMes(pa.ate)}` : 'vs. período anterior';
+  const qtdSerie = (x?: { serie?: { quantidade?: number | null }[] | null }) => x?.serie ? x.serie.map((q) => (typeof q.quantidade === 'number' ? q.quantidade : null)) : null;
   const plural = (n: number | null, um: string, varios: string) => `${fmtN(n)} ${n === 1 ? um : varios}`;
   const foto = f ? (f.fotografia_em ?? f.valor_em ?? f.ultimo_sucesso ?? null) : null;
   // Recebido no período (Precifica, P15): estados REAIS do coletor. "aguardando" (sem leitura) = "— · Aguardando conexão"; parcial = "—" com o
@@ -342,21 +352,24 @@ function BlocoResultado({ b, fl, extra }: { b: ReturnType<typeof useBloco<Resumo
       {r && b.erro && <Problema motivo="A atualização falhou; os cartões mostram a última leitura válida." quando={b.okEm} onTentar={b.recarregar} tentando={b.atualizando} />}
       {/* des-escopo: onde valem os tokens --des-* do pacote DES (o tema segue o do shell) */}
       <div className="gv2-quatro des-escopo">
-        <CartaoNumero data="ganhos" marcador="Comercial · Pipedrive" titulo="Negócios ganhos" icone={<TrendingUp size={18} />} estado={est(eg)} {...tentar}
-          valor={num(eg, g?.quantidade)} formato="inteiro" bloco={g} falha={falha} aguardando="Sem valor disponível · nenhum número assumido"
+        <CartaoNumero data="ganhos" marcador="Comercial · Pipedrive" titulo="Negócios ganhos" icone={<TrendUp01 size={18} />} estado={est(eg)} {...tentar}
+          valor={num(eg, g?.quantidade)} formato="inteiro" bloco={g} falha={falha} dominio="comercial"
+          comparacao={g ? { anterior: typeof g.anterior?.quantidade === 'number' ? g.anterior.quantidade : null, serie: qtdSerie(g), base: baseCmp } : null} aguardando="Sem valor disponível · nenhum número assumido"
           linha={g && eg && linhaEstado(eg, <>Fechados no período{typeof g.sem_valor === 'number' && g.sem_valor > 0 ? ` · ${fmtN(g.sem_valor)} sem valor` : ''}</>)}
           rodape="Pipedrive · contagem" link={{ rotulo: 'Ver ganhos', rota: '#/panel-pipedrive' }} dica="Quantidade de negócios ganhos no período. Não é receita." />
-        <CartaoNumero data="funil" marcador="Comercial · Pipedrive" titulo="Funil aberto agora" icone={<Layers size={18} />} estado={est(eu)} {...tentar}
-          valor={num(eu, f?.valor)} formato="moeda-inteira" bloco={f} falha={falha} aguardando="Sem valor disponível · nenhum número assumido"
+        <CartaoNumero data="funil" marcador="Comercial · Pipedrive" titulo="Funil aberto agora" icone={<BarChartSquare02 size={18} />} estado={est(eu)} {...tentar}
+          valor={num(eu, f?.valor)} formato="moeda-inteira" bloco={f} falha={falha} dominio="comercial" aguardando="Sem valor disponível · nenhum número assumido"
           linha={f && eu && linhaEstado(eu, <>{plural(f.quantidade, 'negócio aberto', 'negócios abertos')}{foto && <span className="gv2-num-sub" data-gv2-fotografia>Fotografia {/^às /.test(fmtQuando(foto)) ? `de hoje ${fmtQuando(foto)}` : `de ${fmtQuando(foto)}`}</span>}</>, f.valor)}
           rodape="Pipedrive · valor potencial" link={{ rotulo: 'Abrir funil', rota: '#/panel-pipedrive' }} dica="Soma dos valores informados nos negócios abertos agora. Fotografia atual: não filtra pelo período." />
-        <CartaoNumero data="pedidos" marcador="Operação · Bling" titulo="Pedidos / OS lançados" icone={<Package size={18} />} estado={est(ep)} {...tentar}
-          valor={num(ep, p?.quantidade)} formato="inteiro" bloco={p} falha={falha} aguardando="Sem valor disponível · nenhum número assumido" dica={`Bling principal${p?.conta ? ` (conta ${p.conta})` : ''} · ${p?.universo ?? 'pedidos de venda lançados no período'}. Não é faturamento nem recebimento.`}
+        <CartaoNumero data="pedidos" marcador="Operação · Bling" titulo="Pedidos / OS lançados" icone={<IcPacote size={18} />} estado={est(ep)} {...tentar}
+          valor={num(ep, p?.quantidade)} formato="inteiro" bloco={p} falha={falha} dominio="operacao"
+          comparacao={p ? { anterior: typeof p.anterior?.quantidade === 'number' ? p.anterior.quantidade : null, serie: qtdSerie(p), base: baseCmp } : null} aguardando="Sem valor disponível · nenhum número assumido" dica={`Bling principal${p?.conta ? ` (conta ${p.conta})` : ''} · ${p?.universo ?? 'pedidos de venda lançados no período'}. Não é faturamento nem recebimento.`}
           linha={p && ep && linhaEstado(ep, <>Quantidade no período · não é faturamento{p.inclui_canceladas && <span className="gv2-nota">Inclui pedidos cancelados depois do lançamento.</span>}</>)}
           rodape="Bling · pedidos/OS" link={{ rotulo: 'Ver registros', rota: '#/panel-bling' }} />
-        <CartaoNumero data="recebido" marcador="Financeiro · Precifica" titulo="Recebido no período" icone={<Wallet size={18} />}
+        <CartaoNumero data="recebido" marcador="Financeiro · Precifica" titulo="Recebido no período" icone={<Wallet02 size={18} />}
           estado={car || er?.conferindo ? 'carregando' : falha ? (falha === 'semacesso' ? 'semacesso' : 'erro') : !rc ? 'aguardando' : est(er)} {...tentar}
-          valor={er?.zeroNaoConfirmado || rc?.estado === 'parcial' ? null : vr} formato="moeda" bloco={rc} falha={falha} aguardando="Aguardando conexão · valor desconhecido, não é R$ 0"
+          valor={er?.zeroNaoConfirmado || rc?.estado === 'parcial' ? null : vr} formato="moeda" bloco={rc} falha={falha} dominio="financeiro"
+          comparacao={rc ? { anterior: dinheiro(rc.anterior?.valor ?? null), serie: rc.serie ? rc.serie.map((x) => dinheiro(x.valor ?? null)) : null, base: baseCmp } : null} aguardando="Aguardando conexão · valor desconhecido, não é R$ 0"
           linha={rc && er && rc.estado !== 'aguardando' && linhaEstado(er, <>{plural(rc.quantidade ?? null, 'baixa recebida', 'baixas recebidas')} no período{rc.sem_cnpj ? ` · ${fmtN(rc.sem_cnpj)} sem CNPJ` : ''}</>, vr)}
           rodape="Precifica · recebido" link={null} dica={dicaRecebido} />
         {extra}
