@@ -36,6 +36,7 @@
 //   GET    /metas                metas comerciais do mes + vendedores + historico (nivel 80; EC Fase 2)
 //   PUT    /metas                define meta global/vendedor (MetaLib, origem 'dash'; nivel 80)
 //   DELETE /metas/{id}           remove meta (MetaLib; nivel 80)
+//   GET    /precifica-analytics  orcamentos do Precifica por dia x vendedor (APP_DSHOW.pa_*; escopo: >= 80 todos, abaixo os seus)
 declare(strict_types=1);
 
 @ini_set('display_errors', '0');   // nunca vazar stack/paths ao cliente
@@ -199,6 +200,10 @@ switch ($segments[0] ?? '') {
 
     case 'metas':
         PipeMetasController::route($method, $segments, $pdo);
+        break;
+
+    case 'precifica-analytics':
+        PipePrecificaAnalyticsController::get($method);
         break;
 
     default:

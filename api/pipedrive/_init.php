@@ -44,6 +44,8 @@ require_once __DIR__ . '/controllers/HealthController.php';
 require_once __DIR__ . '/../ponte/PonteErro.php';            // EC Fase 2: aba Metas (mesma lib da Ponte v2)
 require_once __DIR__ . '/../ponte/libs/MetaLib.php';
 require_once __DIR__ . '/controllers/MetasController.php';
+require_once __DIR__ . '/lib/PrecificaAnalytics.php';                   // 25/11: Precifica Analytics (leitura das APP_DSHOW.pa_*)
+require_once __DIR__ . '/controllers/PrecificaAnalyticsController.php';
 
 CorsPolicy::setupApiEndpoint([
     'methods'  => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
