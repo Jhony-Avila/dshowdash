@@ -23,6 +23,7 @@ function createContainerPort(adapter) {
     const statusEl = document.createElement("span");
     statusEl.className = "dsd-container__status";
     statusEl.setAttribute("data-status", "ready");
+    statusEl.setAttribute("role", "img");
     statusEl.setAttribute("aria-label", "Status: pronto");
     headerLeft.appendChild(statusEl);
     const titleEl = document.createElement("span");

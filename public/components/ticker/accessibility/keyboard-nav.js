@@ -106,7 +106,7 @@ class KeyboardNavigator {
   _clearAllHighlights() {
     this._items.forEach((item) => {
       item.classList.remove("ticker-item--focused");
-      item.setAttribute("aria-selected", "false");
+      item.removeAttribute("aria-current");
     });
   }
   _navigateNext() {
@@ -139,7 +139,8 @@ class KeyboardNavigator {
       item.setAttribute("tabindex", i === index ? "0" : "-1");
       const shouldHighlight = this._keyboardActive && i === index;
       item.classList.toggle("ticker-item--focused", shouldHighlight);
-      item.setAttribute("aria-selected", i === index ? "true" : "false");
+      if (i === index) item.setAttribute("aria-current", "true");
+      else item.removeAttribute("aria-current");
     });
     const oldIndex = this._currentIndex;
     this._currentIndex = index;
@@ -179,7 +180,8 @@ class KeyboardNavigator {
     this._items.forEach((item, i) => {
       item.setAttribute("role", "listitem");
       item.setAttribute("tabindex", i === this._currentIndex ? "0" : "-1");
-      item.setAttribute("aria-selected", "false");
+      item.removeAttribute("aria-selected");
+      item.removeAttribute("aria-current");
       item.classList.remove("ticker-item--focused");
     });
     _log("debug", `Refreshed: ${this._items.length} items`);
@@ -218,6 +220,7 @@ class KeyboardNavigator {
       item.removeAttribute("tabindex");
       item.removeAttribute("role");
       item.removeAttribute("aria-selected");
+      item.removeAttribute("aria-current");
       item.classList.remove("ticker-item--focused");
     });
     this._container = null;

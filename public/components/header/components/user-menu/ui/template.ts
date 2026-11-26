@@ -35,7 +35,7 @@ let _metrics = { triggers: 0, dropdowns: 0 };
 
 export function createTriggerHTML() {
   _metrics.triggers++;
-  return `<button class="user-menu-trigger" aria-haspopup="true" aria-expanded="false" aria-label="Menu do usuário" data-uarps-trigger="trigger:header:user-menu"><div class="user-avatar"><img class="avatar-img" src="" alt="" style="display:none"><span class="avatar-initials">--</span></div><span class="user-name">...</span><span class="user-chevron">${ICONS.chevron}</span></button>`;
+  return `<button class="user-menu-trigger" aria-haspopup="true" aria-expanded="false" data-uarps-trigger="trigger:header:user-menu"><div class="user-avatar" aria-hidden="true"><img class="avatar-img" src="" alt="" style="display:none"><span class="avatar-initials">--</span></div><span class="user-name">...</span><span class="user-chevron">${ICONS.chevron}</span></button>`;
 }
 
 export function createDropdownHTML() {

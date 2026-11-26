@@ -44,7 +44,7 @@ function createContainerTemplate(options = {}) {
   }
   return `<div id="${id}" class="dsd-container ${variantClass} ${className} dsd-container--animate-in" data-container-id="${id}" data-state="${state}" data-uarps-region="${UARPS_REGION}" role="region" aria-labelledby="${id}-title" tabindex="0">
     <header class="dsd-container__header" data-draggable="true">
-      ${showStatus ? `<div class="dsd-container__status ${statusClass}" aria-label="Status: ${state}"></div>` : ""}
+      ${showStatus ? `<div class="dsd-container__status ${statusClass}" role="img" aria-label="Status: ${state}"></div>` : ""}
       ${icon ? `<span class="dsd-container__icon" aria-hidden="true">${icon}</span>` : ""}
       <h2 id="${id}-title" class="dsd-container__title">${title}</h2>
       ${controlsHtml}

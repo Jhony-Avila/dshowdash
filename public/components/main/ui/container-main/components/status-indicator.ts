@@ -55,7 +55,7 @@ export function createStatusIndicator(container: HTMLElement, options: Record<st
       _statusEl.className = 'dsd-container__status';
       _statusEl.classList.add(`dsd-container__status--${status}`);
       container.setAttribute('data-state', status);
-      _statusEl.setAttribute('aria-label', `Status: ${status}`);
+      _statusEl.setAttribute('role', 'img'); _statusEl.setAttribute('aria-label', `Status: ${status}`);
       return this;
     },
     getStatus() { return _currentStatus; },

@@ -26,6 +26,7 @@ function createStatusIndicator(container, options = {}) {
       _statusEl.className = "dsd-container__status";
       _statusEl.classList.add(`dsd-container__status--${status}`);
       container.setAttribute("data-state", status);
+      _statusEl.setAttribute("role", "img");
       _statusEl.setAttribute("aria-label", `Status: ${status}`);
       return this;
     },

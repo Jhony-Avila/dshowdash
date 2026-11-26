@@ -106,6 +106,7 @@ export function createContainerPort(adapter: ContainerAdapterParam | null) {
     const statusEl = document.createElement('span');
     statusEl.className = 'dsd-container__status';
     statusEl.setAttribute('data-status', 'ready');
+    statusEl.setAttribute('role', 'img');   // a11y (CIMA 26/11): aria-label só vale com papel; LED = imagem com nome
     statusEl.setAttribute('aria-label', 'Status: pronto');
     headerLeft.appendChild(statusEl);
     

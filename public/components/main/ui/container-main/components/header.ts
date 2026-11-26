@@ -72,6 +72,7 @@ export function createHeader(container: HTMLElement, config: Record<string, unkn
       _statusEl = document.createElement('span');
       _statusEl.className = 'dsd-container__status';
       _statusEl.setAttribute('data-status', 'ready');
+      _statusEl.setAttribute('role', 'img');   // a11y (CIMA 26/11): aria-label só vale com papel
       _statusEl.setAttribute('aria-label', 'Status: pronto');
       leftSection.appendChild(_statusEl);
     }

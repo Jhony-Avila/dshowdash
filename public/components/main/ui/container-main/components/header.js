@@ -36,6 +36,7 @@ function createHeader(container, config = {}) {
       _statusEl = document.createElement("span");
       _statusEl.className = "dsd-container__status";
       _statusEl.setAttribute("data-status", "ready");
+      _statusEl.setAttribute("role", "img");
       _statusEl.setAttribute("aria-label", "Status: pronto");
       leftSection.appendChild(_statusEl);
     }
