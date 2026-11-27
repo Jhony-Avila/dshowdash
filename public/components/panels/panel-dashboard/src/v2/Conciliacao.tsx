@@ -129,7 +129,7 @@ function LinhaEmpresa({ e }: { e: ConcEmpresa }) {
 }
 
 export function Conciliacao() {
-  const b = useBloco((s) => lerConciliacao(s), []);
+  const b = useBloco((s) => lerConciliacao(s), [], { reconsultarAoVoltar: true });
   const [legenda, setLegenda] = useState(false);
   // Reforço P2 (AZUL, 27/11): 404 (flag) ou sem acesso (403/semAcesso) RETIRA o bloco na hora, MESMO com uma leitura anterior na tela —
   // conteúdo financeiro protegido não fica visível depois da revogação. Falha transitória (5xx/rede) continua mostrando a última leitura.

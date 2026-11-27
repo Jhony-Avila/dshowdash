@@ -149,7 +149,7 @@ function PorEmpresa({ itens, total, completo, selecionada, aoSelecionar }: { ite
 // CB-UX-001 · LIB-03 (VERDE, 27/11): o painel do detalhe é o DSSidePanel compartilhado (modo NÃO modal: a grade continua utilizável —
 // filtro, ordenação, seleção e rolagem preservados; Esc fecha; o foco volta à linha de origem). Os dados e a ação continuam aqui.
 function Detalhe({ id, aoFechar, aoAbrir }: { id: string; aoFechar: () => void; aoAbrir: (id: string) => void }) {
-  const b = useBloco((s) => lerDetalheCv(id, s), [id]);
+  const b = useBloco((s) => lerDetalheCv(id, s), [id], { reconsultarAoVoltar: true });
   const d: DetalheCv | null = b.dados;
   const orig = d ? dinheiro(d.valor_original) : null, atu = d ? dinheiro(d.valor_atualizado) : null, jm = d ? dinheiro(d.juros_multa) : null;
   const f = faixaDe(d?.dias_atraso ?? null);
@@ -202,12 +202,12 @@ export default function CobrancasVencidas({ aoVoltar }: { aoVoltar: () => void }
   const [faixa, setFaixa] = useState<FaixaCv | null>(null);
   const [aberta, setAberta] = useState<string | null>(null);
   const [totais, setTotais] = useState<{ n: number; soma: number; desconhecidos: number } | null>(null);
-  const resumo = useBloco((s) => lerResumoCv(empresa, s), [empresa]);
-  const lista = useBloco((s) => lerListaCv(empresa, s), [empresa]);
+  const resumo = useBloco((s) => lerResumoCv(empresa, s), [empresa], { reconsultarAoVoltar: true });
+  const lista = useBloco((s) => lerListaCv(empresa, s), [empresa], { reconsultarAoVoltar: true });
   const r: ResumoCv | null = resumo.dados;
   // "conferido às": a hora do resumo, se vier; senão a da última sincronização das empresas que a Geral já lê (asaas.php · atualizado_em,
   // a MAIS ANTIGA entre as empresas com leitura = até quando tudo está conferido); nenhuma → "—"
-  const asaas = useBloco((s) => lerAsaas(s), []);
+  const asaas = useBloco((s) => lerAsaas(s), [], { reconsultarAoVoltar: true });
   const conferido = dataOk(r?.gerado_em) ?? (asaas.dados?.empresas ?? []).filter((e) => e.estado !== 'indisponivel').map((e) => dataOk(e.atualizado_em))
     .filter((x): x is string => x !== null).sort()[0] ?? null;
   const apiRef = useRef<GridApi<ItemCv> | null>(null);
