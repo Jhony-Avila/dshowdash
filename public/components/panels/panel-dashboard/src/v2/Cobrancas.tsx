@@ -207,7 +207,7 @@ export default function CobrancasVencidas({ aoVoltar }: { aoVoltar: () => void }
   const r: ResumoCv | null = resumo.dados;
   // "conferido às": a hora do resumo, se vier; senão a da última sincronização das empresas que a Geral já lê (asaas.php · atualizado_em,
   // a MAIS ANTIGA entre as empresas com leitura = até quando tudo está conferido); nenhuma → "—"
-  const asaas = useBloco((s) => lerAsaas(s), [], { reconsultarAoVoltar: true });
+  const asaas = useBloco((s) => lerAsaas(s), [], { reconsultarAoVoltar: true, reconsultarEm: (d) => d.proxima_sincronizacao });
   const conferido = dataOk(r?.gerado_em) ?? (asaas.dados?.empresas ?? []).filter((e) => e.estado !== 'indisponivel').map((e) => dataOk(e.atualizado_em))
     .filter((x): x is string => x !== null).sort()[0] ?? null;
   const apiRef = useRef<GridApi<ItemCv> | null>(null);

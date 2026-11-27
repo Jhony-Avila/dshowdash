@@ -8,7 +8,9 @@ import { ErroV2, fmtQuando } from './servico';
 // valor protegido nunca fica na tela depois da recusa; erro transitório (5xx/rede) continua com a última leitura + aviso. (2) `reconsultarAoVoltar`:
 // a mesma montagem lê de novo quando a aba volta a ficar visível ou a janela recebe foco (no máximo 1×/min), para a revogação chegar sem recarregar.
 export const negativaDeAcesso = (e: unknown) => e instanceof ErroV2 && (e.http === 401 || e.http === 403 || e.http === 404);
-export function useBloco<T>(carregar: (s: AbortSignal) => Promise<T>, deps: unknown[], opc: { reconsultarAoVoltar?: boolean } = {}) {
+// (3) `reconsultarEm` (decisão do arquiteto 27/11): relê no horário que o SERVIDOR informa (a próxima rodada do coletor + 2 min) SÓ com a aba visível;
+// com a aba oculta o relógio é desarmado (nenhum timer em segundo plano) e a volta à aba cobre a leitura. Sem o horário do servidor, nada é inventado.
+export function useBloco<T>(carregar: (s: AbortSignal) => Promise<T>, deps: unknown[], opc: { reconsultarAoVoltar?: boolean; reconsultarEm?: (d: T) => string | null | undefined } = {}) {
   const [dados, setDados] = useState<T | null>(null);
   const [erro, setErro] = useState<ErroV2 | Error | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -27,6 +29,16 @@ export function useBloco<T>(carregar: (s: AbortSignal) => Promise<T>, deps: unkn
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
   useEffect(() => executar(), [executar]);
+  const alvoIso = dados && opc.reconsultarEm ? opc.reconsultarEm(dados) ?? null : null;
+  useEffect(() => {
+    if (!alvoIso) return; const alvo = Date.parse(alvoIso) + 120_000; if (!Number.isFinite(alvo)) return;
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const armar = () => { if (t) { clearTimeout(t); t = null; } if (document.visibilityState !== 'visible') return;   // oculta: nada armado
+      const falta = alvo - Date.now(); if (falta <= 0) return;                                                         // passou: a volta à aba cobre
+      t = setTimeout(() => { t = null; if (document.visibilityState === 'visible') executar(); }, Math.min(falta, 2_147_000_000)); };
+    armar(); document.addEventListener('visibilitychange', armar);
+    return () => { if (t) clearTimeout(t); document.removeEventListener('visibilitychange', armar); };
+  }, [alvoIso, executar]);
   const reconsultar = !!opc.reconsultarAoVoltar;
   useEffect(() => {
     if (!reconsultar) return;

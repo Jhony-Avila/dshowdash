@@ -131,7 +131,9 @@ export const vencidasDoCartao = (v: AsaasValores) => ({ valor: v.vencidas_total 
   /** quebra (arquiteto 27/11): "N vencidas" = só as OVERDUE, para a quebra somar o total (75 + 52 = 127) */
   overdueQtd: v.vencidas_qtd });
 export interface AsaasEmpresa { conta: string; nome: string | null; estado: 'ok' | 'desatualizado' | 'indisponivel'; motivo: string | null; atualizado_em: string | null; valores: AsaasValores | null }
-export interface AsaasCartao { gerado_em: string; janela: { hoje: string; a_receber_ate: string }; empresas: AsaasEmpresa[]; total: AsaasValores | null; total_parcial: boolean; regras?: string }
+export interface AsaasCartao { gerado_em: string; janela: { hoje: string; a_receber_ate: string }; empresas: AsaasEmpresa[]; total: AsaasValores | null; total_parcial: boolean; regras?: string;
+  /** a próxima rodada do coletor (AsaasAgenda::proxima, servidor) — OPCIONAL; sem ela a tela só relê ao voltar à aba (decisão do arquiteto 27/11) */
+  proxima_sincronizacao?: string | null }
 export function lerAsaas(s?: AbortSignal) { return ler<AsaasCartao>('/asaas.php', s); }
 /** Drill-down das vencidas (P34, GET /api/asaas/?r=vencidas; AsaasResumo::vencidas). `cliente` = código do cliente no Asaas (o serviço não manda nome). */
 export interface VencidaAsaas { cobranca: string; cliente: string | null; vencimento: string | null; valor: string; dias_atraso: number | null; forma: string | null }

@@ -56,7 +56,7 @@ export function GeralV2() {
   // uma leitura só (painel.php): cada bloco é uma VISTA dela, com o mesmo erro, o mesmo "Tentar de novo" e o mesmo instante
   const painel = useBloco((s) => lerPainel(periodo, s), [periodo]);
   // 26/11 (CIMA): cartão do Asaas = leitura própria (asaas.php, atrás da flag + financeiro_asaas_leitura); 404 = o cartão não existe
-  const asaas = useBloco((s) => lerAsaas(s), [], { reconsultarAoVoltar: true });
+  const asaas = useBloco((s) => lerAsaas(s), [], { reconsultarAoVoltar: true, reconsultarEm: (d) => d.proxima_sincronizacao });
   const vistaDe = <K extends 'resumo' | 'prioridades' | 'agenda' | 'fontes'>(k: K) =>
     ({ dados: painel.dados ? painel.dados[k] : null, erro: painel.erro, carregando: painel.carregando, atualizando: painel.atualizando,
        recarregar: painel.recarregar, okEm: painel.okEm }) as ReturnType<typeof useBloco<Painel[K]>>;
