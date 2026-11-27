@@ -16,6 +16,7 @@ import React from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Badge, Medidor, EstadoVazio, BlocoCarregando, InfoSituacao } from './Primitivos';
 import { porTipo, TipoFormato, truncar } from '../lib/formato';
+import { celulaCsv } from '../csv/neutralizar';
 
 export interface ColunaGrid {
   id: string;
@@ -87,10 +88,7 @@ function gravarPreferencias(chave: string | undefined, v: { ocultas: string[]; d
 
 /** CSV com BOM: sem ele o Excel em pt-BR abre acento quebrado. */
 function paraCsv(colunas: ColunaGrid[], linhas: Record<string, unknown>[]): string {
-  const esc = (v: unknown) => {
-    const s = v === null || v === undefined ? '' : String(v);
-    return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  };
+  const esc = celulaCsv;   // CSV/Excel Injection: fórmula neutralizada + aspas (csv/neutralizar.ts)
   const cab = colunas.map(c => esc(c.rotulo)).join(';');
   const corpo = linhas.map(l => colunas.map(c => esc(l[c.id])).join(';')).join('\n');
   return `﻿${cab}\n${corpo}`;

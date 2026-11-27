@@ -1,17 +1,19 @@
 const VERSION = "9.3.0-P2-ENTERPRISE";
 const MODULE_ID = "panel-01/utils/export";
+const FORMULA_PERIGOSA = /^[\s\u00a0\u2000-\u200b\u3000\ufeff]*[=+\-@\uff1d\uff0b\uff0d\uff20\t\r\n]/u;
+function celulaCsv(v) {
+  if (v === null || v === void 0) return "";
+  if (typeof v === "number" || typeof v === "bigint" || typeof v === "boolean") return String(v);
+  let s = String(v);
+  if (FORMULA_PERIGOSA.test(s)) s = `'${s}`;
+  return /[";\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
 function toCSV(data, columns) {
   if (!data || !data.length) return "";
   const cols = columns || Object.keys(data[0]);
-  const header = cols.join(";");
+  const header = cols.map(celulaCsv).join(";");
   const rows = data.map(
-    (row) => cols.map((col) => {
-      let val = row[col] ?? "";
-      if (typeof val === "string" && (val.includes(";") || val.includes('"') || val.includes("\n"))) {
-        val = `"${val.replace(/"/g, '""')}"`;
-      }
-      return val;
-    }).join(";")
+    (row) => cols.map((col) => celulaCsv(row[col])).join(";")
   );
   return `\uFEFF${header}
 ${rows.join("\n")}`;
@@ -72,6 +74,7 @@ var export_default = { toCSV, downloadCSV, toJSON, downloadJSON, printData };
 export {
   MODULE_ID,
   VERSION,
+  celulaCsv,
   export_default as default,
   downloadCSV,
   downloadJSON,

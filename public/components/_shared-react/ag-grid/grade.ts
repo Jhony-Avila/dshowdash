@@ -12,6 +12,7 @@ import {
 } from 'ag-grid-community';
 import { AG_GRID_LOCALE_PT_BR } from '@ag-grid-community/locale';
 import './grade-tema.css';   // tokens de linha e estado (auditoria FASE 3): alternância, hover ≠ seleção, edição, pendente, erro, sucesso, expandida, desabilitada
+import { neutralizarFormula } from '../csv/neutralizar';
 
 let registrado = false;
 function registrar(): void {
@@ -71,7 +72,10 @@ export function criarGrade<T>(el: HTMLElement, opcoes: GridOptions<T>, estadoLin
 
 /** CSV que abre certo no Excel pt-BR: separador ";" (o BOM UTF-8 o próprio AG Grid já põe no arquivo baixado — conferido no teste logado). */
 export function exportarCsv<T>(api: GridApi<T>, nome: string, colunas?: string[]): void {
-  api.exportDataAsCsv({ fileName: nome, columnSeparator: ';', ...(colunas ? { columnKeys: colunas } : {}) });
+  // CSV/Excel Injection: toda célula e cabeçalho passam pelo MESMO critério (csv/neutralizar.ts); números tipados ficam números
+  api.exportDataAsCsv({ fileName: nome, columnSeparator: ';', ...(colunas ? { columnKeys: colunas } : {}),
+    // QI VERDE (27/11): o valor FORMATADO (valueFormatter) entra no CSV, como antes da correção; a neutralização vem depois
+    processCellCallback: (p) => neutralizarFormula(p.formatValue ? p.formatValue(p.value) : p.value), processHeaderCallback: (p) => neutralizarFormula(p.column.getColDef().headerName ?? p.column.getColId()) });
 }
 
 export type { GridApi, GridOptions, ColDef, ICellRendererParams, ValueGetterParams } from 'ag-grid-community';

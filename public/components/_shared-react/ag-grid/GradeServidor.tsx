@@ -14,6 +14,7 @@ import type { ColunaGrid, Densidade, PropsDataGrid } from '../components/DataGri
 import { porTipo, truncar, type TipoFormato } from '../lib/formato';
 import { criarGrade, type ColDef, type GridApi } from './grade';
 import './grade-servidor.css';
+import { celulaCsv } from '../csv/neutralizar';
 
 type Linha = Record<string, unknown>;
 const ALTURA_LINHA: Record<Densidade, number> = { compacta: 30, normal: 36, confortavel: 44 };
@@ -32,7 +33,7 @@ function gravarPreferencias(chave: string | undefined, v: { ocultas: string[]; d
 }
 /** CSV com BOM e ";" (o mesmo do DataGrid): a página atual, colunas visíveis. */
 function paraCsv(colunas: ColunaGrid[], linhas: Linha[]): string {
-  const esc = (v: unknown) => { const s = v === null || v === undefined ? '' : String(v); return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const esc = celulaCsv;   // CSV/Excel Injection: fórmula neutralizada + aspas (csv/neutralizar.ts)
   return `﻿${colunas.map((c) => esc(c.rotulo)).join(';')}\n${linhas.map((l) => colunas.map((c) => esc(l[c.id])).join(';')).join('\n')}`;
 }
 const larguraCol = (c: ColunaGrid) => c.largura ?? (c.tipo === 'moeda' || c.tipo === 'numero' ? 118 : c.tipo === 'inteiro' ? 90 : c.tipo === 'percentual' ? 92

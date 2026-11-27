@@ -15,6 +15,7 @@ import {
   ArrowLeftToLine, ArrowRightToLine, ChevronDown, ChevronRight, Columns3, Download, Maximize2,
   Minimize2, PinOff, RotateCw, Rows3, SearchX, SlidersHorizontal, Star, X, type LucideIcon,
 } from 'lucide-react';
+import { celulaCsv } from '@shared/csv/neutralizar';
 import { apiGet, ApiError } from '../lib/api';
 import { PageHeader } from './PageHeader';
 import { EstadoErro, EstadoVazio, SkeletonLinhas } from './Estados';
@@ -298,7 +299,7 @@ export function EntityGrid<T extends { id: number | string }>(p: Props<T>) {
     enabled: p.status?.status === 'connected',
   });
 
-  const esc = (v: unknown) => { const s = v == null ? '' : String(v); return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const esc = celulaCsv;   // CSV/Excel Injection: fórmula neutralizada + aspas (_shared-react/csv/neutralizar.ts)
   const valorCsv = (c: GridColuna<T>, row: T) => c.csv ? c.csv(row) : (row as Record<string, unknown>)[c.key] ?? '';
   function baixarCsv(linhas: T[], sufixo = '') {
     const cols = colsVisiveis;

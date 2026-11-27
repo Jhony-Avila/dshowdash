@@ -33,19 +33,24 @@
 export const VERSION = '9.3.0-P2-ENTERPRISE';
 export const MODULE_ID = 'panel-01/utils/export';
 
+// CSV/Excel Injection (AZUL, 27/11): o MESMO critério de _shared-react/csv/neutralizar.ts (cópia mínima: este arquivo é carregado sem bundle).
+// Texto que começa com = + - @ TAB CR LF (também depois de espaços/NBSP e nas formas de largura total) ganha apóstrofo; números tipados intactos.
+const FORMULA_PERIGOSA = /^[\s\u00a0\u2000-\u200b\u3000\ufeff]*[=+\-@\uff1d\uff0b\uff0d\uff20\t\r\n]/u;
+export function celulaCsv(v: unknown): string {
+  if (v === null || v === undefined) return '';
+  if (typeof v === 'number' || typeof v === 'bigint' || typeof v === 'boolean') return String(v);
+  let s = String(v);
+  if (FORMULA_PERIGOSA.test(s)) s = `'${s}`;
+  return /[";\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
 export function toCSV(data: Record<string, unknown>[], columns?: string[]) {
   if (!data || !data.length) return '';
   
   const cols = columns || Object.keys(data[0]);
-  const header = cols.join(';');
+  const header = cols.map(celulaCsv).join(';');
   const rows = data.map((row: Record<string, unknown>) =>
-    cols.map((col: string) => {
-      let val = row[col] ?? '';
-      if (typeof val === 'string' && (val.includes(';') || val.includes('"') || val.includes('\n'))) {
-        val = `"${val.replace(/"/g, '""')}"`;
-      }
-      return val;
-    }).join(';')
+    cols.map((col: string) => celulaCsv(row[col])).join(';')
   );
   
   return `\uFEFF${header}\n${rows.join('\n')}`;
