@@ -38,13 +38,18 @@ if (!defined('ERP_V_REQUISICAO')) {
         . "(SELECT u.name FROM sys_user u WHERE u.id=x.salesperson_id) AS Nome_Vendedor, " . $tz('x.won_at') . " AS Data_Ganho, " . $tz('x.created_at') . " AS Data_Criacao, x.loss_reason AS Motivo_Perda, " . $tz('x.lost_at') . " AS Data_Perda FROM qte_quote x WHERE x.deleted=0)");
     define('ERP_V_CONTAS_A_RECEBER', "(SELECT p.id AS Id, cr.customer_id AS Id_Organizacao, p.value AS Valor, p.due_date AS Vencimento, CASE WHEN p.status IN ('OPEN','PARTIAL','OVERDUE') THEN 1 WHEN p.status IN ('RECEIVED','RECOVERED') THEN 2 ELSE 3 END AS Id_Situacao, p.status AS Situacao "
         . "FROM fin_accounts_receivable_installment p JOIN fin_accounts_receivable cr ON cr.id=p.accounts_receivable_id AND cr.deleted=0 WHERE p.deleted=0)");
+    // 26/11 CP-003 (ChatGPT, LOTE7, incorporado): uma linha por fornecedor NÃO excluído com entidade NÃO excluída (o 0002 não filtrava e.deleted);
+    // organização/pessoa só pelo TIPO da entidade e só quando há exatamente 1 subtipo vigente (sem escolher "o primeiro"); requisições sem
+    // canceladas; Total_Pago = NULL (o pago real é a BAIXA, fonte ainda não confirmada); status cadastral com o desconhecido separado.
     define('ERP_V_FORNECEDOR', "(SELECT f.id AS Id_Fornecedor, e.type AS Tipo, o.cnpj AS Cnpj, p.cpf AS Cpf, COALESCE(p.name, o.company_name) AS Nome, o.company_name AS Nome_Empresa, NULLIF(o.trade_name,'') AS Fantasia, CASE WHEN e.active=1 THEN -1 ELSE 0 END AS Ativo, "
-        . "(SELECT COUNT(*) FROM fin_payment_request r WHERE r.supplier_id=f.id AND r.deleted=0) AS Qtd_Requisicoes, (SELECT COALESCE(SUM(r.total),0) FROM fin_payment_request r WHERE r.supplier_id=f.id AND r.deleted=0 AND r.status IN ('PAID','PARTIALLY_PAID')) AS Total_Pago, "
-        . "CASE f.status WHEN 'UP_TO_DATE' THEN 'Ativo' ELSE 'Desatualizado' END AS Status, "
+        . "(SELECT COUNT(*) FROM fin_payment_request r WHERE r.supplier_id=f.id AND r.deleted=0 AND r.status NOT IN ('CANCELLED','ACCOUNTS_CANCELLED')) AS Qtd_Requisicoes, NULL AS Total_Pago, "
+        . "CASE f.status WHEN 'UP_TO_DATE' THEN 'Atualizado' WHEN 'OUTDATED' THEN 'Desatualizado' ELSE 'Desconhecido' END AS Status, "
         . "(SELECT ct.`key` FROM pty_supplier_email fe JOIN shr_contact ct ON ct.id=fe.contact_id AND ct.deleted=0 WHERE fe.supplier_id=f.id ORDER BY ct.`default` DESC, ct.id LIMIT 1) AS Email, "
         . "(SELECT ct.`key` FROM pty_supplier_telephone ft JOIN shr_contact ct ON ct.id=ft.contact_id AND ct.deleted=0 WHERE ft.supplier_id=f.id ORDER BY ct.`default` DESC, ct.id LIMIT 1) AS Telefone, NULL AS Celular, f.supplier_type AS Tipo_Relacao, "
         . "ad.street AS Endereco_Logradouro, ad.number AS Endereco_Numero, ad.neighborhood AS Endereco_Bairro, ad.city AS Endereco_Municipio, ad.state AS Endereco_Uf, ad.zip_code AS Endereco_Cep, " . $tz('f.created_at') . " AS Data_Criacao, " . $tz('f.updated_at') . " AS Ultima_Modificacao "
-        . "FROM pty_supplier f JOIN pty_party_base e ON e.id=f.entity_id LEFT JOIN pty_organization o ON o.entity_id=e.id AND o.deleted=0 LEFT JOIN pty_person p ON p.entity_id=e.id AND p.deleted=0 "
+        . "FROM pty_supplier f JOIN pty_party_base e ON e.id=f.entity_id AND e.deleted=0 "
+        . "LEFT JOIN pty_organization o ON o.entity_id=e.id AND e.type='PJ' AND o.deleted=0 AND (SELECT COUNT(*) FROM pty_organization oc WHERE oc.entity_id=e.id AND oc.deleted=0)=1 "
+        . "LEFT JOIN pty_person p ON p.entity_id=e.id AND e.type='PF' AND p.deleted=0 AND (SELECT COUNT(*) FROM pty_person pc WHERE pc.entity_id=e.id AND pc.deleted=0)=1 "
         . "LEFT JOIN shr_address ad ON ad.id=(SELECT s.id FROM shr_address s WHERE s.entity_id=e.id AND s.deleted=0 ORDER BY s.`default` DESC, s.id LIMIT 1) WHERE f.deleted=0)");
     define('ERP_V_FORNECEDOR_CONTA_BANCARIA', "(SELECT b.id AS Id_Conta, b.supplier_id AS Id_Fornecedor, NULL AS Cpf_Cnpj, b.beneficiary AS Nome_Titular, b.branch AS Agencia, CONCAT_WS(' ', b.bank, b.account_number) AS Conta, "
         . "(SELECT px.pix_key FROM fin_bank_account_pix_key px WHERE px.supplier_id=b.supplier_id AND px.deleted=0 AND px.active=1 ORDER BY px.id LIMIT 1) AS Pix FROM fin_bank_account_bank_data b WHERE b.deleted=0 AND b.supplier_id IS NOT NULL "
