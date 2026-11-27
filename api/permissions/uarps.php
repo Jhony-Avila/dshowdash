@@ -64,7 +64,7 @@ try {
         switch ($action) {
             case 'check-trigger':
                 $triggerId = $validator->string('trigger_id', '', ['maxLength' => 100]) ?: null;
-                $targetUserId = $validator->id('user_id', false) ?: $userId;
+                $targetUserId = $validator->id('user_id', 0) ?: $userId;
                 if (!$triggerId) {
                     ApiResponse::error('TRIGGER_ID_REQUIRED', 400, ['message' => 'Parâmetro trigger_id obrigatório']);
                 }
@@ -73,7 +73,7 @@ try {
 
             case 'check-region':
                 $regionId = $validator->string('region_id', '', ['maxLength' => 100]) ?: null;
-                $targetUserId = $validator->id('user_id', false) ?: $userId;
+                $targetUserId = $validator->id('user_id', 0) ?: $userId;
                 if (!$regionId) {
                     ApiResponse::error('REGION_ID_REQUIRED', 400, ['message' => 'Parâmetro region_id obrigatório']);
                 }
@@ -83,7 +83,7 @@ try {
             case 'check-multiple':
                 $idsRaw = $validator->string('ids', '', ['maxLength' => 1000]);
                 $entityIds = $idsRaw ? explode(',', $idsRaw) : [];
-                $targetUserId = $validator->id('user_id', false) ?: $userId;
+                $targetUserId = $validator->id('user_id', 0) ?: $userId;
                 if (empty($entityIds)) {
                     ApiResponse::error('IDS_REQUIRED', 400, ['message' => 'Parâmetro ids obrigatório']);
                 }
@@ -96,7 +96,7 @@ try {
 
             case 'user-permissions':
                 enforceUarpsAdmin($userId);
-                $targetUserId = $validator->id('user_id', false);
+                $targetUserId = $validator->id('user_id', 0);
                 if (!$targetUserId) {
                     ApiResponse::error('USER_ID_REQUIRED', 400, ['message' => 'Parâmetro user_id obrigatório']);
                 }
@@ -105,7 +105,7 @@ try {
 
             case 'user-matrix':
                 enforceUarpsAdmin($userId);
-                $targetUserId = $validator->id('user_id', false);
+                $targetUserId = $validator->id('user_id', 0);
                 if (!$targetUserId) {
                     ApiResponse::error('USER_ID_REQUIRED', 400, ['message' => 'Parâmetro user_id obrigatório']);
                 }
@@ -129,7 +129,7 @@ try {
             case 'audit':
                 enforceUarpsAdmin($userId);
                 $limit = min($validator->int('limit', 50), 200);
-                $targetUserId = $validator->id('user_id', false);
+                $targetUserId = $validator->id('user_id', 0);
                 ApiResponse::success($service->getAuditLogs($limit, $targetUserId));
                 break;
 
@@ -193,7 +193,7 @@ try {
 
         switch ($action) {
             case 'remove-trigger':
-                $targetUserId = $validator->id('user_id', false);
+                $targetUserId = $validator->id('user_id', 0);
                 $triggerId = $validator->string('trigger_id', '', ['maxLength' => 100]) ?: null;
                 if (!$targetUserId || !$triggerId) {
                     ApiResponse::error('USER_ID_AND_TRIGGER_ID_REQUIRED', 400, ['message' => 'user_id e trigger_id obrigatórios']);
@@ -202,7 +202,7 @@ try {
                 break;
 
             case 'remove-region':
-                $targetUserId = $validator->id('user_id', false);
+                $targetUserId = $validator->id('user_id', 0);
                 $regionId = $validator->string('region_id', '', ['maxLength' => 100]) ?: null;
                 if (!$targetUserId || !$regionId) {
                     ApiResponse::error('USER_ID_AND_REGION_ID_REQUIRED', 400, ['message' => 'user_id e region_id obrigatórios']);
