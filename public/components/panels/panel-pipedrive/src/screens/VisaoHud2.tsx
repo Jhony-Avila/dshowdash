@@ -200,7 +200,8 @@ export function TopProdutos({ periodo }: { periodo: PipePeriodoId }) {
         : estado === 'indisponivel' ? <Indisponivel q={q} texto="— · Consulta indisponível: os produtos não retornaram." />
         : lista.length === 0 ? <Vazio texto="Nenhum ganho do período com produtos lançados." />
         : (
-          <div className="hud-tabela-wrap">
+          // UX08 (27/11): a tabela rola na horizontal em tela estreita → a região precisa receber foco pelo teclado (axe scrollable-region-focusable)
+          <div className="hud-tabela-wrap" tabIndex={0} role="region" aria-label="Tabela dos top produtos (role para os lados em tela estreita)">
             <table className="hud-tabela">
               <thead><tr><th>Produto</th><th className="r">Negócios</th><th className="r">Qtd.</th><th>Valor ganho (itens)</th></tr></thead>
               <tbody>

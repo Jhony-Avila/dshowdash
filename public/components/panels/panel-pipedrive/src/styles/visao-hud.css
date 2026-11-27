@@ -187,6 +187,7 @@
 [data-pp-react-root] .hud-charts + .hud-charts { margin-top:15px; }
 [data-pp-react-root] .hud-tabela-card, [data-pp-react-root] .hud-atencao { min-height:var(--hud-panelh); display:flex; flex-direction:column; }
 [data-pp-react-root] .hud-tabela-wrap { padding:0 16px 14px; overflow-x:auto; }
+[data-pp-react-root] .hud-tabela-wrap:focus-visible { outline:2px solid var(--hud-blue); outline-offset:-2px; }   /* UX08: região rolável focável */
 [data-pp-react-root] .hud-tabela { width:100%; border-collapse:collapse; font-size:12px; }
 [data-pp-react-root] .hud-tabela th { text-align:left; font-weight:500; color:var(--hud-muted); font-size:11px; padding:8px 8px; border-bottom:1px solid var(--hud-stroke); white-space:nowrap; }
 [data-pp-react-root] .hud-tabela td { padding:9px 8px; border-bottom:1px solid var(--hud-stroke); font-variant-numeric:tabular-nums; }
