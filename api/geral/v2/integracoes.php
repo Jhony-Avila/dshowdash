@@ -17,6 +17,12 @@ $gcal = geral_v2_pdo('GCAL_DSHOW');
 $g = new GeralV2(geral_v2_pdo('PIPE_DSHOW'), $gcal, geral_v2_pdo('BLING'), $usuario);
 $v = is_string($_GET['v'] ?? null) ? $_GET['v'] : null;
 if ($v !== null && $v !== '1' && $v !== '2') ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 400);
-$integ = new GeralV2Integracoes($g, geral_v2_pdo('DSHOWDASH'), new DateTimeImmutable('now'));
-// 26/11 INT-001: ?v=2 = Central de Integrações (aditivo); sem v (ou v=1) = o formato de hoje, intocado
-ApiResponse::success($v === '2' ? $integ->listaV2() : $integ->lista());
+try {
+    $integ = new GeralV2Integracoes($g, geral_v2_pdo('DSHOWDASH'), new DateTimeImmutable('now'));
+    // 26/11 INT-001: ?v=2 = Central de Integrações (aditivo); sem v (ou v=1) = o formato de hoje, intocado
+    $dados = $v === '2' ? $integ->listaV2() : $integ->lista();
+} catch (Throwable $e) {   // 27/11 INT-UX-001: fonte de estados indisponível = erro EXPLÍCITO (503), nunca uma lista vazia que a tela leria como zero
+    error_log('[geral-v2] integracoes: ' . get_class($e));
+    ApiResponse::error('dados_indisponiveis', 503, ['fonte' => 'estados_das_integracoes', 'estado' => 'indisponivel']);
+}
+ApiResponse::success($dados);

@@ -26,7 +26,20 @@ $AGORA = new DateTimeImmutable('2026-11-26 22:10:00', new DateTimeZone('America/
 $seg = new RdSegredos($TMP);
 $I = new GeralV2Integracoes(new GeralV2($pdo, $pdo, null, 75, $AGORA), $pdo, $AGORA, '', 'zz_int2', $seg);
 $v2 = $I->listaV2(); $by = array_column($v2['integracoes'], null, 'id');
-$ck('versao 2 + catálogo de 10 (7 do pacote + Google Analytics, Ads e Outlook), na ordem', $v2['versao'] === 2 && array_keys($by) === ['pipedrive', 'bling', 'google', 'asaas', 'precifica', 'rdstation', 'meta', 'google_analytics', 'google_ads', 'outlook'], json_encode(array_keys($by)));
+$ids = array_keys($by); $esp = ['pipedrive', 'bling', 'google', 'asaas', 'precifica', 'rdstation', 'meta', 'gmail', 'mercado_livre', 'loja_integrada', 'google_analytics', 'google_ads']; sort($ids); sort($esp);
+$ck('versao 2 + catálogo de 12 (7 do pacote + Gmail + Mercado Livre e Loja Integrada via Bling + Google Analytics e Ads; o Outlook saiu em 27/11), ordenado por gravidade', $v2['versao'] === 2 && $ids === $esp && !isset($by['outlook'])
+    && array_column($v2['integracoes'], 'gravidade') === (function ($g) { sort($g); return $g; })(array_column($v2['integracoes'], 'gravidade')), json_encode(array_keys($by)));
+// INT-UX-001: classificação do servidor
+$R = $v2['resumo']; $cat = array_count_values(array_column($v2['integracoes'], 'categoria'));
+$ck('INT-UX-AC01: 4 categorias exclusivas que somam o catálogo; resumo = contagem da tabela', $R['em_dia'] + $R['com_falha'] + $R['atencao'] + $R['nao_conectada'] === $R['total'] && $R['total'] === count($v2['integracoes'])
+    && ($cat['em_dia'] ?? 0) === $R['em_dia'] && ($cat['atencao'] ?? 0) === $R['atencao'] && ($cat['com_falha'] ?? 0) === $R['com_falha'] && ($cat['nao_conectada'] ?? 0) === $R['nao_conectada'], json_encode($R));
+$ck('INT-UX-AC02: pedem_atencao = com_falha + atencao', $R['pedem_atencao'] === $R['com_falha'] + $R['atencao'], json_encode($R));
+$ck('INT-UX-AC03: desconhecida nunca é em_dia (Analytics/Ads sem leitura → desconhecida/atencao)', $by['google_analytics']['estado_principal'] === 'desconhecida' && $by['google_analytics']['categoria'] === 'atencao'
+    && count(array_filter($v2['integracoes'], fn($i) => $i['estado_principal'] === 'em_dia' && $i['ultimo_sucesso'] === null)) === 0);
+$ck('INT-UX-AC05: Mercado Livre e Loja Integrada com dependencia=bling e desconhecida (não herdam o Bling)', $by['mercado_livre']['dependencia'] === 'bling' && $by['loja_integrada']['dependencia'] === 'bling'
+    && $by['mercado_livre']['estado_principal'] === 'desconhecida' && $by['loja_integrada']['estado_principal'] === 'desconhecida', json_encode($by['mercado_livre']));
+$ck('não conectadas: Meta e Gmail = nao_integrada/nao_conectada (não contam em pedem atenção)', $by['meta']['categoria'] === 'nao_conectada' && $by['gmail']['estado_principal'] === 'nao_integrada');
+$ck('Gmail: não integrada (decisão do Jhony 27/11), sem horário, sem cobertura, com o próximo passo', $by['gmail']['estado'] === 'nao_integrado' && $by['gmail']['ultima_tentativa'] === null && $by['gmail']['cobertas'] === null && $by['gmail']['recurso'] === 'E-mail (Google)' && is_string($by['gmail']['proximo_passo']));
 $chaves = ['id', 'nome', 'recurso', 'estado', 'ultima_tentativa', 'ultimo_sucesso', 'cobertas', 'esperadas', 'erro', 'proximo_passo', 'acao'];
 $todas = true; foreach ($v2['integracoes'] as $x) $todas = $todas && array_slice(array_keys($x), 0, 11) === $chaves && is_string($x['recurso']);
 $estados = ['ok', 'atrasado', 'parcial', 'com_problema', 'aguardando', 'sem_acesso', 'nao_integrado', 'desconhecido'];
@@ -42,8 +55,8 @@ $pr = $by['precifica'];
 $ck('Precifica: tentativa = a leitura que falhou (21:55) e último sucesso = a boa (21:40); cobertura null (sem prova)', $pr['ultima_tentativa'] === '2026-11-26T21:55:00-03:00' && $pr['ultimo_sucesso'] === '2026-11-26T21:40:00-03:00'
     && $pr['cobertas'] === null && $pr['estado'] === 'com_problema', json_encode($pr, JSON_UNESCAPED_UNICODE));
 $ck('Bling sem conexão: sem horário inventado (null) e nunca "ok"', $by['bling']['ultima_tentativa'] === null && $by['bling']['estado'] !== 'ok');
-$ck('GA, Ads e Outlook: desconhecido, tudo null, com o motivo — nunca "ok" sem prova', array_unique(array_map(fn($k) => $by[$k]['estado'], ['google_analytics', 'google_ads', 'outlook'])) === ['desconhecido']
-    && $by['outlook']['ultimo_sucesso'] === null && $by['outlook']['cobertas'] === null && str_contains((string) $by['outlook']['erro'], 'desconhecido'));
+$ck('GA e Ads: desconhecido, tudo null, com o motivo — nunca "ok" sem prova', array_unique(array_map(fn($k) => $by[$k]['estado'], ['google_analytics', 'google_ads'])) === ['desconhecido']
+    && $by['google_ads']['ultimo_sucesso'] === null && $by['google_ads']['cobertas'] === null && str_contains((string) $by['google_ads']['erro'], 'desconhecido'));
 $ck('Meta: nao_integrado; RD sem credenciais: aguardando, sem tentativa', $by['meta']['estado'] === 'nao_integrado' && $by['rdstation']['estado'] === 'aguardando' && $by['rdstation']['ultima_tentativa'] === null);
 $v1 = $I->lista();
 $ck('v1 INTOCADO (a Geral): sem versao, 7 linhas, sem os campos novos', !isset($v1['versao']) && count($v1['integracoes']) === 7 && !array_key_exists('ultima_tentativa', $v1['integracoes'][0]) && !array_key_exists('recurso', $v1['integracoes'][0]));

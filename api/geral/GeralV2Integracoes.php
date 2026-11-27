@@ -39,12 +39,12 @@ final class GeralV2Integracoes
     /** INT-001: recurso (texto nosso) por integração */
     private const RECURSO = ['pipedrive' => 'Negócios e atividades', 'bling' => 'Pedidos de venda', 'google' => 'Agenda (calendários)', 'asaas' => 'Cobranças e recebimentos',
         'precifica' => 'Recebimentos (financeiro)', 'rdstation' => 'Marketing (funil e conversões)', 'meta' => 'Anúncios (Facebook/Instagram)',
-        'google_analytics' => 'Tráfego do site', 'google_ads' => 'Anúncios do Google', 'outlook' => 'E-mail e agenda (Microsoft)'];
+        'gmail' => 'E-mail (Google)', 'mercado_livre' => 'Pedidos do marketplace (via Bling)', 'loja_integrada' => 'Pedidos da loja virtual (via Bling)', 'google_analytics' => 'Tráfego do site', 'google_ads' => 'Anúncios do Google'];   // 27/11: Outlook saiu (a DSHOW não usa mais); Gmail entrou (não integrada)
 
     /**
      * 26/11 INT-001 · Central de Integrações (contrato v2, ADITIVO: o v1 acima continua para a Geral). Por integração: estado (os do v1 + parcial e
      * desconhecido), ultima_tentativa (inclui falha) SEPARADA de ultimo_sucesso, cobertas/esperadas (Asaas: empresas; Google: calendários; demais null),
-     * recurso, erro + proximo_passo (texto nosso), acao (só RD) e, no Asaas, as contas. null = a origem não comprova; nunca "ok" sem prova.
+     * recurso, erro + proximo_passo (texto nosso), acao (só RD) e, no Asaas, as contas. Catálogo de 10 (27/11: Outlook saiu; Gmail entrou como não integrada). null = a origem não comprova; nunca "ok" sem prova.
      */
     public function listaV2(): array
     {
@@ -62,10 +62,18 @@ final class GeralV2Integracoes
         catch (Throwable $e) { error_log('[geral-v2] integracoes v2 rd: ' . get_class($e)); }
         $out[] = $this->v2($rd, $rd['estado'], $t, $rd['ultima_sincronizacao'], null, null);
         $out[] = $this->v2($v1['meta'], 'nao_integrado', null, null, null, null);
-        foreach (['google_analytics' => 'Google Analytics', 'google_ads' => 'Google Ads', 'outlook' => 'Outlook'] as $id => $nome)
+        // 27/11 (decisão do Jhony): o Gmail substitui o Outlook no menu; na Central entra como "não integrada" (o Dash não lê o Gmail)
+        // 27/11 INT-UX-001: marketplaces que chegam PELO Bling — sem evidência própria de cobertura, o estado é "desconhecida" (nunca herda o do Bling)
+        foreach (['mercado_livre' => 'Mercado Livre', 'loja_integrada' => 'Loja Integrada'] as $id => $nome)
+            $out[] = $this->v2(['id' => $id, 'nome' => $nome, 'dependencia' => 'bling', 'erro' => null,
+                                'proximo_passo' => 'Os pedidos chegam pelo Bling; o Dash ainda não comprova a cobertura própria desta origem.'], 'desconhecido', null, null, null, null);
+        $out[] = $this->v2(['id' => 'gmail', 'nome' => 'Gmail', 'erro' => null, 'proximo_passo' => 'Não há integração com o Gmail no Dash: decidir se e quando integrar.'],
+                           'nao_integrado', null, null, null, null);
+        foreach (['google_analytics' => 'Google Analytics', 'google_ads' => 'Google Ads'] as $id => $nome)   // 27/11: Outlook retirado do catálogo (a DSHOW não usa mais)
             $out[] = $this->v2(['id' => $id, 'nome' => $nome, 'erro' => 'O Dash ainda não lê o estado desta integração: sem prova, o estado é desconhecido.',
                                 'proximo_passo' => 'Ligar a leitura do estado desta integração (degrau seguinte da Central).'], 'desconhecido', null, null, null, null);
-        return ['versao' => 2, 'gerado_em' => $this->agora->format(DATE_ATOM), 'integracoes' => $out];
+        usort($out, fn($a, $b) => [$a['gravidade'], $a['nome']] <=> [$b['gravidade'], $b['nome']]);   // ordenação inicial por gravidade (INT-UX-001 §5)
+        return ['versao' => 2, 'gerado_em' => $this->agora->format(DATE_ATOM), 'integracoes' => $out, 'resumo' => self::resumo($out)];
     }
 
     private function v2(array $x, string $estado, ?string $tentativa, ?string $sucesso, ?int $cobertas, ?int $esperadas, ?array $contas = null): array
@@ -74,7 +82,8 @@ final class GeralV2Integracoes
               'ultima_tentativa' => $tentativa, 'ultimo_sucesso' => $sucesso, 'cobertas' => $cobertas, 'esperadas' => $esperadas,
               'erro' => $x['erro'] ?? null, 'proximo_passo' => $x['proximo_passo'] ?? null, 'acao' => $x['acao'] ?? null];
         if ($contas !== null) $r['contas'] = $contas;
-        return $r;
+        $r['dependencia'] = $x['dependencia'] ?? null;
+        return $r + self::classificar($r);
     }
 
     private function asaasV2(array $x): array
@@ -208,5 +217,49 @@ final class GeralV2Integracoes
             default                 => ['ok', null, null],
         };
         return $base + ['estado' => $estado, 'ultima_sincronizacao' => $t->setTimezone(new DateTimeZone('America/Sao_Paulo'))->format(DATE_ATOM), 'erro' => $erro, 'proximo_passo' => $passo];
+    }
+
+    /**
+     * 27/11 INT-UX-001 (Manager Visual, aprovado pelo arquiteto): a classificação vem do SERVIDOR e a MESMA regra alimenta tabela, KPIs e o selo
+     * do menu. Um estado PRINCIPAL por integração, pela PRECEDÊNCIA abaixo (a mais grave vence); as demais condições ficam em estados_detalhe.
+     * Categorias dos KPIs, exclusivas: em_dia · com_falha (com_falha, credencial_expirada) · atencao (atrasada, parcial, desconhecida) ·
+     * nao_conectada (aguardando_conexao, nao_integrada). "Pedem atenção" = com_falha + atencao. Desconhecida nunca vira em_dia; em_dia exige
+     * último sucesso comprovado e cobertura completa (quando a origem tem cobertura). Credencial expirada = código de erro de chave recusada.
+     */
+    public const PRECEDENCIA = ['credencial_expirada', 'com_falha', 'atrasada', 'parcial', 'desconhecida', 'aguardando_conexao', 'nao_integrada', 'em_dia'];
+    public const CATEGORIA = ['credencial_expirada' => 'com_falha', 'com_falha' => 'com_falha', 'atrasada' => 'atencao', 'parcial' => 'atencao',
+                              'desconhecida' => 'atencao', 'aguardando_conexao' => 'nao_conectada', 'nao_integrada' => 'nao_conectada', 'em_dia' => 'em_dia'];
+    private const CODIGOS_CREDENCIAL = ['chave_invalida', 'chave_recusada', 'acesso_negado', 'token_expirado', 'credencial_expirada'];
+
+    public static function classificar(array $r): array
+    {
+        $c = [];
+        $codigos = array_column($r['contas'] ?? [], 'erro_codigo');
+        if (array_intersect($codigos, self::CODIGOS_CREDENCIAL) !== [] || in_array($r['erro_codigo'] ?? null, self::CODIGOS_CREDENCIAL, true)) $c[] = 'credencial_expirada';
+        switch ($r['estado']) {
+            case 'com_problema': $c[] = 'com_falha'; break;
+            case 'atrasado': $c[] = 'atrasada'; break;
+            case 'parcial': $c[] = 'parcial'; break;
+            case 'aguardando': $c[] = 'aguardando_conexao'; break;
+            case 'nao_integrado': $c[] = 'nao_integrada'; break;
+            case 'ok': $c[] = $r['ultimo_sucesso'] === null ? 'desconhecida' : 'em_dia'; break;
+            default: $c[] = 'desconhecida';   // desconhecido, sem_acesso e qualquer valor novo: sem prova, nunca em_dia
+        }
+        if ($r['cobertas'] !== null && $r['esperadas'] !== null && $r['cobertas'] < $r['esperadas'] && !in_array($r['estado'], ['aguardando', 'nao_integrado'], true)) $c[] = 'parcial';
+        if (($r['contas'] ?? []) !== [] && in_array('atrasado', array_column($r['contas'], 'estado'), true)) $c[] = 'atrasada';
+        if (in_array('em_dia', $c, true) && count($c) > 1) $c = array_values(array_diff($c, ['em_dia']));   // em_dia só sozinho
+        $c = array_values(array_unique($c));
+        usort($c, fn($a, $b) => array_search($a, self::PRECEDENCIA, true) <=> array_search($b, self::PRECEDENCIA, true));
+        return ['estado_principal' => $c[0], 'estados_detalhe' => array_slice($c, 1), 'categoria' => self::CATEGORIA[$c[0]],
+                'gravidade' => array_search($c[0], self::PRECEDENCIA, true) + 1];
+    }
+
+    /** Os 4 KPIs (exclusivos; somam o catálogo) e "pedem atenção", da MESMA classificação da tabela — o selo do menu lê daqui. */
+    public static function resumo(array $itens): array
+    {
+        $n = ['em_dia' => 0, 'com_falha' => 0, 'atencao' => 0, 'nao_conectada' => 0];
+        foreach ($itens as $i) $n[$i['categoria']]++;
+        return $n + ['total' => count($itens), 'pedem_atencao' => $n['com_falha'] + $n['atencao'], 'precedencia' => self::PRECEDENCIA,
+                     'regra' => 'pedem_atencao = com_falha + atencao; categorias exclusivas; desconhecida nunca é em_dia'];
     }
 }
