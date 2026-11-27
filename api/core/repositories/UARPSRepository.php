@@ -565,6 +565,78 @@ class UARPSRepository
         }
     }
 
+    // UARPS · saneamento, item A (AZUL, 27/11): escrita dentro da UNIDADE de gravação (UarpsEscrita). Só chamar com transação aberta.
+    // Lista fechada de entidades → tabela/coluna (nada vem do pedido). Trava TODAS as linhas vigentes do par (FOR UPDATE; sem linha =
+    // trava de intervalo no índice uk_*) e grava em todas: os pares repetidos (96 na auditoria) ficam iguais até a consolidação (item C).
+
+    private const ENTIDADES = [
+        'trigger' => ['tabela' => 'app_user_trigger_permissions', 'coluna' => 'trigger_id'],
+        'region'  => ['tabela' => 'app_user_region_permissions', 'coluna' => 'region_id'],
+    ];
+
+    private function entidade(string $entidade): array
+    {
+        if (!isset(self::ENTIDADES[$entidade])) { throw new \InvalidArgumentException('entidade'); }
+        if (!$this->pdo->inTransaction()) { throw new \LogicException('escrita de permissão fora da transação'); }
+        return self::ENTIDADES[$entidade];
+    }
+
+    /** @return list<array> linhas vigentes do par, mais recente primeiro (travadas) */
+    public function travarPar(string $entidade, int $userId, string $chave): array
+    {
+        ['tabela' => $t, 'coluna' => $c] = $this->entidade($entidade);
+        $st = $this->pdo->prepare("SELECT id, state, expires_at, reason, granted_by, granted_at FROM `$t`
+                                    WHERE user_id = ? AND `$c` = ? AND deleted_at IS NULL ORDER BY granted_at DESC, id DESC FOR UPDATE");
+        $st->execute([$userId, $chave]);
+        return $st->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Grava o estado em TODAS as linhas vigentes do par, ou cria a linha. Devolve as linhas afetadas. */
+    public function gravarPar(string $entidade, int $userId, string $chave, bool $existe, string $state, ?string $expiresAt, ?string $reason, int $grantedBy, string $ip): int
+    {
+        ['tabela' => $t, 'coluna' => $c] = $this->entidade($entidade);
+        if ($existe) {
+            $st = $this->pdo->prepare("UPDATE `$t` SET state = ?, expires_at = ?, reason = ?, granted_by = ?, granted_at = NOW(3), ip_user = ?
+                                        WHERE user_id = ? AND `$c` = ? AND deleted_at IS NULL");
+            $st->execute([$state, $expiresAt, $reason, $grantedBy, $ip, $userId, $chave]);
+            return $st->rowCount();
+        }
+        $st = $this->pdo->prepare("INSERT INTO `$t` (user_id, `$c`, state, expires_at, reason, granted_by, ip_user) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $st->execute([$userId, $chave, $state, $expiresAt, $reason, $grantedBy, $ip]);
+        return $st->rowCount();
+    }
+
+    /**
+     * Exclusão lógica de TODAS as linhas vigentes do par. Cada linha recebe um deleted_at DISTINTO (+1 ms por linha): o índice único
+     * uk_* é (user_id, chave, deleted_at), e duas linhas de um par repetido com o mesmo NOW(3) colidiriam (1062) — o mesmo defeito que
+     * faz o removeTrigger/clearUserTriggers antigos falharem nos 96 pares repetidos.
+     */
+    public function removerPar(string $entidade, int $userId, string $chave, string $ip): int
+    {
+        ['tabela' => $t, 'coluna' => $c] = $this->entidade($entidade);
+        $ids = $this->pdo->prepare("SELECT id FROM `$t` WHERE user_id = ? AND `$c` = ? AND deleted_at IS NULL ORDER BY id FOR UPDATE");
+        $ids->execute([$userId, $chave]);
+        $n = 0;
+        $up = $this->pdo->prepare("UPDATE `$t` SET deleted_at = DATE_ADD(NOW(3), INTERVAL ? MICROSECOND), ip_user = ? WHERE id = ? AND deleted_at IS NULL");
+        foreach ($ids->fetchAll(PDO::FETCH_COLUMN) as $k => $id) {
+            $up->execute([$k * 1000, $ip, (int) $id]);
+            $n += $up->rowCount();
+        }
+        return $n;
+    }
+
+    /** Chaves vigentes de um usuário (travadas), com a linha mais recente de cada chave. @return array<string, array> */
+    public function travarTodas(string $entidade, int $userId): array
+    {
+        ['tabela' => $t, 'coluna' => $c] = $this->entidade($entidade);
+        $st = $this->pdo->prepare("SELECT `$c` AS chave, id, state, expires_at, reason FROM `$t` WHERE user_id = ? AND deleted_at IS NULL
+                                    ORDER BY `$c`, granted_at DESC, id DESC FOR UPDATE");
+        $st->execute([$userId]);
+        $porChave = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) { $porChave[(string) $r['chave']] ??= $r; }
+        return $porChave;
+    }
+
     // ═══════════════════════════════════════════════════════════════════════════
     // STATISTICS
     // ═══════════════════════════════════════════════════════════════════════════

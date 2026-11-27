@@ -18,7 +18,8 @@ require_once __DIR__ . '/../_helpers/GuardaDono.php';   // UARPS-DONO (P0 17/11/
 require_once __DIR__ . '/../core/UARPSGate.php';
 require_once __DIR__ . '/services/UarpsService.php';
 
-use Permissions\Services\UarpsService;
+// UARPS saneamento A (27/11): a classe do serviço é GLOBAL (services/UarpsService.php:17); o `use Permissions\Services\UarpsService`
+// antigo apontava para uma classe inexistente e derrubava o controlador no `new UarpsService` (erro fatal).
 
 $method = $_SERVER['REQUEST_METHOD'];
 $validator = InputValidator::fromGet();
@@ -34,9 +35,17 @@ function enforceUarpsAdmin(int $userId): void
     }
 }
 
-function getClientIp(): string
+// UARPS saneamento A (27/11): a getClientIp() local foi REMOVIDA — o AuthHelpers.php (carregado acima) já declara getClientIp() e a
+// segunda declaração era erro fatal "Cannot redeclare" ao carregar o controlador. O IP só vai para o evento de auditoria.
+
+/** Id de operação (idempotência): cabeçalho Idempotency-Key ou `operacao_id` no corpo. Ausente = 400 explícito. */
+function uarpsOperacaoId(array $input): string
 {
-    return $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $v = (string) ($_SERVER['HTTP_IDEMPOTENCY_KEY'] ?? ($input['operacao_id'] ?? ''));
+    if ($v === '') {
+        ApiResponse::error('OPERACAO_ID_OBRIGATORIO', 400, ['message' => 'Toda alteração de permissão exige um id de operação (cabeçalho Idempotency-Key).']);
+    }
+    return $v;
 }
 
 try {
@@ -143,34 +152,27 @@ try {
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
 
         switch ($action) {
+            // UARPS saneamento A (27/11): toda escrita = regra + evento na MESMA transação (UarpsEscrita); erro = HTTP explícito.
             case 'set-trigger':
-                $result = $service->setTrigger($input, $userId, $ip);
-                handleServiceResult($result, 'Trigger permission updated');
+                ApiResponse::success($service->setTrigger($input, $userId, $ip, uarpsOperacaoId($input)), ['message' => 'Permissão de gatilho gravada']);
                 break;
 
             case 'set-region':
-                $result = $service->setRegion($input, $userId, $ip);
-                handleServiceResult($result, 'Region permission updated');
+                ApiResponse::success($service->setRegion($input, $userId, $ip, uarpsOperacaoId($input)), ['message' => 'Permissão de região gravada']);
                 break;
 
             case 'bulk-set-triggers':
-                $result = $service->bulkSetTriggers($input, $userId, $ip);
-                handleServiceResult($result);
+                ApiResponse::success($service->bulkSetTriggers($input, $userId, $ip, uarpsOperacaoId($input)));
                 break;
 
             case 'bulk-set-regions':
-                $result = $service->bulkSetRegions($input, $userId, $ip);
-                handleServiceResult($result);
+                ApiResponse::success($service->bulkSetRegions($input, $userId, $ip, uarpsOperacaoId($input)));
                 break;
 
             case 'reset-user':
                 $targetUserId = (int)($input['user_id'] ?? 0);
-                $reason = $input['reason'] ?? 'Reset to defaults';
-                if (!$targetUserId) {
-                    ApiResponse::error('USER_ID_REQUIRED', 400, ['message' => 'user_id obrigatório']);
-                }
-                $result = $service->resetUser($targetUserId, $userId, $ip, $reason);
-                ApiResponse::success(['triggers_reset' => $result['triggers_reset'], 'regions_reset' => $result['regions_reset']]);
+                $result = $service->resetUser($targetUserId, $userId, $ip, isset($input['reason']) ? (string) $input['reason'] : null, uarpsOperacaoId($input));
+                ApiResponse::success($result);
                 break;
 
             default:
@@ -196,8 +198,7 @@ try {
                 if (!$targetUserId || !$triggerId) {
                     ApiResponse::error('USER_ID_AND_TRIGGER_ID_REQUIRED', 400, ['message' => 'user_id e trigger_id obrigatórios']);
                 }
-                $service->removeTrigger($targetUserId, $triggerId, $userId, $ip);
-                ApiResponse::success(null, ['message' => 'Trigger permission removed']);
+                ApiResponse::success($service->removeTrigger($targetUserId, $triggerId, $userId, $ip, uarpsOperacaoId(['operacao_id' => $_GET['operacao_id'] ?? '']), $_GET['reason'] ?? null));
                 break;
 
             case 'remove-region':
@@ -206,8 +207,7 @@ try {
                 if (!$targetUserId || !$regionId) {
                     ApiResponse::error('USER_ID_AND_REGION_ID_REQUIRED', 400, ['message' => 'user_id e region_id obrigatórios']);
                 }
-                $service->removeRegion($targetUserId, $regionId, $userId, $ip);
-                ApiResponse::success(null, ['message' => 'Region permission removed']);
+                ApiResponse::success($service->removeRegion($targetUserId, $regionId, $userId, $ip, uarpsOperacaoId(['operacao_id' => $_GET['operacao_id'] ?? '']), $_GET['reason'] ?? null));
                 break;
 
             default:
@@ -218,12 +218,15 @@ try {
 
     ApiResponse::error(ApiResponse::ERR_METHOD_NOT_ALLOWED, 405);
 
+} catch (UarpsEscritaErro $e) {
+    // UARPS saneamento A: falha de gravação/auditoria/idempotência = erro explícito (nunca sucesso com auditoria perdida)
+    ApiResponse::error($e->codigo, $e->http, ['message' => $e->getMessage()] + ($e->detalhes ? ['details' => $e->detalhes] : []));
 } catch (PDOException $e) {
-    error_log("[uarps.php] Database error: " . $e->getMessage());
+    error_log("[uarps.php] Database error: " . get_class($e));
     http_response_code(503);
     echo json_encode(['ok' => false, 'error' => 'DATABASE_ERROR', 'message' => 'Erro de conexão com banco de dados']);
 } catch (Exception $e) {
-    error_log("[uarps.php] Error: " . $e->getMessage());
+    error_log("[uarps.php] Error: " . get_class($e));
     http_response_code(500);
     echo json_encode(['ok' => false, 'error' => 'INTERNAL_ERROR', 'message' => 'Erro interno do servidor']);
 }

@@ -11,6 +11,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../core/repositories/UARPSRepository.php';
 require_once __DIR__ . '/../validators/UarpsValidator.php';
 require_once __DIR__ . '/../../core/UARPSGate.php';   // UARPS-INHERIT: mesma decisão do gate
+require_once __DIR__ . '/../../core/UarpsEscrita.php';   // UARPS saneamento A (27/11): regra + evento na MESMA transação
 
 use Permissions\Validators\UarpsValidator;
 
@@ -165,198 +166,170 @@ class UarpsService
         return ['logs' => $logs];
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    // SET TRIGGER
-    // ════════════════════════════════════════════════════════════════════════
+    // ═════════════════════════════════════════════════════════════
+    // ESCRITA — UARPS · saneamento, item A (AZUL, 27/11/2026)
+    // Toda escrita passa por UarpsEscrita::executar (regra + evento em app_uarps_audit_log na MESMA transação; falha = rollback e
+    // UarpsEscritaErro com HTTP explícito; idempotência por id de operação). Validação COMPLETA antes da 1ª gravação.
+    // Vencimento: campo `expires_at` AUSENTE preserva o valor atual; `null`/"" remove o prazo (operação explícita); data = novo prazo
+    // (só futuro). O lote nunca mexe no vencimento. Reset = um evento por regra removida (entity_type gatilho/região, dentro do ENUM).
+    // ═════════════════════════════════════════════════════════════
 
-    public function setTrigger(array $input, int $actorId, string $ip): array
+    public function setTrigger(array $input, int $actorId, string $ip, string $operacaoId): array
     {
-        $errors = UarpsValidator::validateSetTrigger($input);
-        if (!empty($errors)) {
-            return ['success' => false, 'error' => 'VALIDATION_ERROR', 'details' => $errors];
-        }
-
-        $data = UarpsValidator::sanitizeInput($input);
-        $targetUserId = $data['user_id'];
-        $triggerId = $data['trigger_id'];
-        $state = $data['state'];
-
-        $existing = $this->repository->getTriggerPermissionFull($targetUserId, $triggerId);
-        $oldState = $existing['state'] ?? null;
-
-        $this->repository->setTriggerPermission(
-            $targetUserId,
-            $triggerId,
-            $state,
-            $data['expires_at'],
-            $data['reason'],
-            $actorId,
-            $ip
-        );
-
-        $this->logAudit($actorId, 'set_trigger', 'trigger', $triggerId, $targetUserId, $oldState, $state, $data['reason'], $ip);
-
-        return [
-            'success' => true,
-            'trigger_id' => $triggerId,
-            'state' => $state
-        ];
+        return $this->setUma('trigger', $input, $actorId, $ip, $operacaoId);
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    // SET REGION
-    // ════════════════════════════════════════════════════════════════════════
-
-    public function setRegion(array $input, int $actorId, string $ip): array
+    public function setRegion(array $input, int $actorId, string $ip, string $operacaoId): array
     {
-        $errors = UarpsValidator::validateSetRegion($input);
-        if (!empty($errors)) {
-            return ['success' => false, 'error' => 'VALIDATION_ERROR', 'details' => $errors];
-        }
-
-        $data = UarpsValidator::sanitizeInput($input);
-        $targetUserId = $data['user_id'];
-        $regionId = $data['region_id'];
-        $state = $data['state'];
-
-        $existing = $this->repository->getRegionPermissionFull($targetUserId, $regionId);
-        $oldState = $existing['state'] ?? null;
-
-        $this->repository->setRegionPermission(
-            $targetUserId,
-            $regionId,
-            $state,
-            $data['expires_at'],
-            $data['reason'],
-            $actorId,
-            $ip
-        );
-
-        $this->logAudit($actorId, 'set_region', 'region', $regionId, $targetUserId, $oldState, $state, $data['reason'], $ip);
-
-        return [
-            'success' => true,
-            'region_id' => $regionId,
-            'state' => $state
-        ];
+        return $this->setUma('region', $input, $actorId, $ip, $operacaoId);
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    // BULK SET TRIGGERS
-    // ════════════════════════════════════════════════════════════════════════
+    public function bulkSetTriggers(array $input, int $actorId, string $ip, string $operacaoId): array
+    {
+        return $this->setLote('trigger', $input, $actorId, $ip, $operacaoId);
+    }
 
-    public function bulkSetTriggers(array $input, int $actorId, string $ip): array
+    public function bulkSetRegions(array $input, int $actorId, string $ip, string $operacaoId): array
+    {
+        return $this->setLote('region', $input, $actorId, $ip, $operacaoId);
+    }
+
+    public function removeTrigger(int $targetUserId, string $triggerId, int $actorId, string $ip, string $operacaoId, ?string $reason = null): array
+    {
+        return $this->remover('trigger', $targetUserId, $triggerId, $actorId, $ip, $operacaoId, $reason);
+    }
+
+    public function removeRegion(int $targetUserId, string $regionId, int $actorId, string $ip, string $operacaoId, ?string $reason = null): array
+    {
+        return $this->remover('region', $targetUserId, $regionId, $actorId, $ip, $operacaoId, $reason);
+    }
+
+    public function resetUser(int $targetUserId, int $actorId, string $ip, ?string $reason, string $operacaoId): array
+    {
+        if ($targetUserId <= 0) { throw new \UarpsEscritaErro('VALIDATION_ERROR', 400, 'user_id obrigatório.', ['user_id' => 'obrigatório']); }
+        $motivo = self::motivo($reason) ?? 'Reset para o padrão do perfil';
+        $escrita = new \UarpsEscrita($this->pdo);
+        return $escrita->executar($operacaoId, 'reset_user', $actorId, $targetUserId, ['motivo' => $motivo], function (\UarpsEscrita $e) use ($targetUserId, $actorId, $ip, $motivo, $operacaoId): array {
+            $removidas = ['trigger' => 0, 'region' => 0];
+            foreach (['trigger', 'region'] as $ent) {
+                foreach ($this->repository->travarTodas($ent, $targetUserId) as $chave => $linha) {
+                    $this->repository->removerPar($ent, $targetUserId, (string) $chave, $ip);
+                    $e->evento($operacaoId, 'reset_user', $ent, (string) $chave, $targetUserId, $actorId, self::foto($linha), null, $motivo, 'reset', $ip);
+                    $removidas[$ent]++;
+                }
+            }
+            return ['triggers_reset' => $removidas['trigger'], 'regions_reset' => $removidas['region']];
+        });
+    }
+
+    private function setUma(string $ent, array $input, int $actorId, string $ip, string $operacaoId): array
+    {
+        $errors = $ent === 'trigger' ? UarpsValidator::validateSetTrigger($input) : UarpsValidator::validateSetRegion($input);
+        if (!empty($errors)) { throw new \UarpsEscritaErro('VALIDATION_ERROR', 400, 'Dados inválidos.', $errors); }
+        $targetUserId = (int) $input['user_id'];
+        $chave = trim((string) ($input[$ent === 'trigger' ? 'trigger_id' : 'region_id'] ?? ''));
+        $state = (string) $input['state'];
+        $motivo = self::motivo($input['reason'] ?? null);
+        $temPrazo = array_key_exists('expires_at', $input);
+        $prazo = $temPrazo ? self::prazo($input['expires_at']) : null;   // valida ANTES de abrir a transação
+        $acao = $ent === 'trigger' ? 'set_trigger' : 'set_region';
+        $pedido = ['chave' => $chave, 'state' => $state, 'motivo' => $motivo] + ($temPrazo ? ['expires_at' => $prazo] : []);
+        $escrita = new \UarpsEscrita($this->pdo);
+        return $escrita->executar($operacaoId, $acao, $actorId, $targetUserId, $pedido, function (\UarpsEscrita $e) use ($ent, $targetUserId, $chave, $state, $motivo, $temPrazo, $prazo, $actorId, $ip, $acao, $operacaoId): array {
+            $linhas = $this->repository->travarPar($ent, $targetUserId, $chave);
+            $antes = $linhas ? self::foto($linhas[0]) : null;
+            $depois = ['state' => $state, 'expires_at' => $temPrazo ? $prazo : ($antes['expires_at'] ?? null), 'reason' => $motivo];
+            $mudou = $antes === null || $antes['state'] !== $depois['state'] || $antes['expires_at'] !== $depois['expires_at'] || $antes['reason'] !== $depois['reason'];
+            if ($mudou) {
+                $this->repository->gravarPar($ent, $targetUserId, $chave, $antes !== null, $state, $depois['expires_at'], $motivo, $actorId, $ip);
+                $e->evento($operacaoId, $acao, $ent, $chave, $targetUserId, $actorId, $antes, $depois, $motivo, 'editor', $ip);
+            }
+            return [($ent === 'trigger' ? 'trigger_id' : 'region_id') => $chave, 'state' => $state, 'expires_at' => $depois['expires_at'], 'alterado' => $mudou];
+        });
+    }
+
+    private function setLote(string $ent, array $input, int $actorId, string $ip, string $operacaoId): array
     {
         $errors = UarpsValidator::validateBulkSet($input);
-        if (!empty($errors)) {
-            return ['success' => false, 'error' => 'VALIDATION_ERROR', 'details' => $errors];
+        if (!empty($errors)) { throw new \UarpsEscritaErro('VALIDATION_ERROR', 400, 'Dados inválidos.', $errors); }
+        $targetUserId = (int) $input['user_id'];
+        $itens = [];
+        $invalidos = [];
+        foreach ((array) $input['permissions'] as $chave => $state) {   // valida TODO o lote antes da 1ª gravação
+            $k = trim((string) $chave);
+            if ($k === '' || strlen($k) > 100 || !is_string($state) || !UarpsValidator::isValidState($state)) { $invalidos[] = $k; continue; }
+            $itens[$k] = $state;
         }
-
-        $targetUserId = (int)$input['user_id'];
-        $permissions = $input['permissions'];
-        $reason = $input['reason'] ?? 'Bulk update';
-
-        $updated = 0;
-        foreach ($permissions as $triggerId => $state) {
-            if (!UarpsValidator::isValidState($state)) continue;
-
-            $existing = $this->repository->getTriggerPermissionFull($targetUserId, (string)$triggerId);
-            $oldState = $existing['state'] ?? null;
-
-            $this->repository->setTriggerPermission($targetUserId, (string)$triggerId, $state, null, $reason, $actorId, $ip);
-            $this->logAudit($actorId, 'bulk_set_trigger', 'trigger', (string)$triggerId, $targetUserId, $oldState, $state, $reason, $ip);
-            $updated++;
+        if ($invalidos !== [] || $itens === []) {
+            throw new \UarpsEscritaErro('VALIDATION_ERROR', 400, $itens === [] && $invalidos === [] ? 'Lote vazio.' : 'Lote com itens inválidos: nada foi aplicado.', ['invalidos' => array_slice($invalidos, 0, 50)]);
         }
-
-        return ['success' => true, 'updated' => $updated];
+        ksort($itens);
+        $motivo = self::motivo($input['reason'] ?? null) ?? 'Alteração em lote';
+        $acao = $ent === 'trigger' ? 'bulk_set_trigger' : 'bulk_set_region';
+        $escrita = new \UarpsEscrita($this->pdo);
+        return $escrita->executar($operacaoId, $acao, $actorId, $targetUserId, ['itens' => $itens, 'motivo' => $motivo], function (\UarpsEscrita $e) use ($ent, $targetUserId, $itens, $motivo, $actorId, $ip, $acao, $operacaoId): array {
+            $alterados = [];
+            $inalterados = 0;
+            foreach ($itens as $chave => $state) {
+                $linhas = $this->repository->travarPar($ent, $targetUserId, $chave);
+                $antes = $linhas ? self::foto($linhas[0]) : null;
+                if ($antes !== null && $antes['state'] === $state) { $inalterados++; continue; }   // nada a gravar = nada a auditar
+                $depois = ['state' => $state, 'expires_at' => $antes['expires_at'] ?? null, 'reason' => $motivo];   // lote PRESERVA o vencimento
+                $this->repository->gravarPar($ent, $targetUserId, $chave, $antes !== null, $state, $depois['expires_at'], $motivo, $actorId, $ip);
+                $e->evento($operacaoId, $acao, $ent, $chave, $targetUserId, $actorId, $antes, $depois, $motivo, 'lote', $ip);
+                $alterados[] = $chave;
+            }
+            return ['updated' => count($alterados), 'unchanged' => $inalterados, 'requested' => count($itens), 'alterados' => $alterados];
+        });
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    // BULK SET REGIONS
-    // ════════════════════════════════════════════════════════════════════════
-
-    public function bulkSetRegions(array $input, int $actorId, string $ip): array
+    private function remover(string $ent, int $targetUserId, string $chave, int $actorId, string $ip, string $operacaoId, ?string $reason): array
     {
-        $errors = UarpsValidator::validateBulkSet($input);
-        if (!empty($errors)) {
-            return ['success' => false, 'error' => 'VALIDATION_ERROR', 'details' => $errors];
+        $chave = trim($chave);
+        if ($targetUserId <= 0 || $chave === '' || strlen($chave) > 100) {
+            throw new \UarpsEscritaErro('VALIDATION_ERROR', 400, 'user_id e a chave são obrigatórios.');
         }
+        $motivo = self::motivo($reason);
+        $acao = $ent === 'trigger' ? 'remove_trigger' : 'remove_region';
+        $escrita = new \UarpsEscrita($this->pdo);
+        return $escrita->executar($operacaoId, $acao, $actorId, $targetUserId, ['chave' => $chave, 'motivo' => $motivo], function (\UarpsEscrita $e) use ($ent, $targetUserId, $chave, $actorId, $ip, $motivo, $acao, $operacaoId): array {
+            $linhas = $this->repository->travarPar($ent, $targetUserId, $chave);
+            if ($linhas === []) { return ['removida' => false]; }   // não havia regra: nada a gravar
+            $this->repository->removerPar($ent, $targetUserId, $chave, $ip);
+            $e->evento($operacaoId, $acao, $ent, $chave, $targetUserId, $actorId, self::foto($linhas[0]), null, $motivo, 'remocao', $ip);
+            return ['removida' => true, 'linhas' => count($linhas)];
+        });
+    }
 
-        $targetUserId = (int)$input['user_id'];
-        $permissions = $input['permissions'];
-        $reason = $input['reason'] ?? 'Bulk update';
-
-        $updated = 0;
-        foreach ($permissions as $regionId => $state) {
-            if (!UarpsValidator::isValidState($state)) continue;
-
-            $existing = $this->repository->getRegionPermissionFull($targetUserId, (string)$regionId);
-            $oldState = $existing['state'] ?? null;
-
-            $this->repository->setRegionPermission($targetUserId, (string)$regionId, $state, null, $reason, $actorId, $ip);
-            $this->logAudit($actorId, 'bulk_set_region', 'region', (string)$regionId, $targetUserId, $oldState, $state, $reason, $ip);
-            $updated++;
+    /** Vencimento explícito: null/"" = sem prazo; data futura (AAAA-MM-DD, com hora opcional) = novo prazo. */
+    private static function prazo(mixed $v): ?string
+    {
+        if ($v === null || $v === '') { return null; }
+        if (!is_string($v) || preg_match('/^\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}(?::\d{2})?)?\z/', $v) !== 1) {
+            throw new \UarpsEscritaErro('VALIDATION_ERROR', 400, 'Vencimento inválido (use AAAA-MM-DD ou AAAA-MM-DD HH:MM).', ['expires_at' => 'formato']);
         }
-
-        return ['success' => true, 'updated' => $updated];
-    }
-
-    // ════════════════════════════════════════════════════════════════════════
-    // RESET USER
-    // ════════════════════════════════════════════════════════════════════════
-
-    public function resetUser(int $targetUserId, int $actorId, string $ip, ?string $reason = null): array
-    {
-        $triggersReset = $this->repository->clearUserTriggers($targetUserId, $ip);
-        $regionsReset = $this->repository->clearUserRegions($targetUserId, $ip);
-
-        $this->logAudit($actorId, 'reset_user', 'user', (string)$targetUserId, $targetUserId, null, null, $reason ?? 'Reset to defaults', $ip);
-
-        return [
-            'success' => true,
-            'triggers_reset' => $triggersReset,
-            'regions_reset' => $regionsReset
-        ];
-    }
-
-    // ════════════════════════════════════════════════════════════════════════
-    // REMOVE TRIGGER
-    // ════════════════════════════════════════════════════════════════════════
-
-    public function removeTrigger(int $targetUserId, string $triggerId, int $actorId, string $ip): array
-    {
-        $existing = $this->repository->getTriggerPermissionFull($targetUserId, $triggerId);
-        $this->repository->removeTrigger($targetUserId, $triggerId, $ip);
-
-        $this->logAudit($actorId, 'remove_trigger', 'trigger', $triggerId, $targetUserId, $existing['state'] ?? null, null, null, $ip);
-
-        return ['success' => true];
-    }
-
-    // ════════════════════════════════════════════════════════════════════════
-    // REMOVE REGION
-    // ════════════════════════════════════════════════════════════════════════
-
-    public function removeRegion(int $targetUserId, string $regionId, int $actorId, string $ip): array
-    {
-        $existing = $this->repository->getRegionPermissionFull($targetUserId, $regionId);
-        $this->repository->removeRegion($targetUserId, $regionId, $ip);
-
-        $this->logAudit($actorId, 'remove_region', 'region', $regionId, $targetUserId, $existing['state'] ?? null, null, null, $ip);
-
-        return ['success' => true];
-    }
-
-    // ════════════════════════════════════════════════════════════════════════
-    // AUDIT LOG (PRIVATE)
-    // ════════════════════════════════════════════════════════════════════════
-
-    private function logAudit(int $actorId, string $action, string $entityType, string $entityId, int $targetUserId, ?string $oldState, ?string $newState, ?string $reason, string $ip): void
-    {
-        try {
-            $this->repository->insertAuditLog($actorId, $action, $entityType, $entityId, $targetUserId, $oldState, $newState, $reason, $ip);
-        } catch (\Exception $e) {
-            error_log("UARPS audit log failed: " . $e->getMessage());
+        $d = \DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', strlen($v) === 10 ? $v . ' 23:59:59' : str_replace('T', ' ', strlen($v) === 16 ? $v . ':00' : $v));
+        if ($d === false || $d->format('Y-m-d') !== substr($v, 0, 10)) {
+            throw new \UarpsEscritaErro('VALIDATION_ERROR', 400, 'Vencimento inválido.', ['expires_at' => 'data']);
         }
+        if ($d <= new \DateTimeImmutable('now')) {
+            throw new \UarpsEscritaErro('VALIDATION_ERROR', 400, 'Vencimento no passado: para remover a regra use a remoção.', ['expires_at' => 'passado']);
+        }
+        return $d->format('Y-m-d H:i:s');
+    }
+
+    private static function motivo(mixed $v): ?string
+    {
+        if (!is_string($v)) { return null; }
+        $t = trim($v);
+        return $t === '' ? null : mb_substr($t, 0, 255);
+    }
+
+    /** Fotografia de uma regra para o evento: estado, vencimento e motivo (só esses — sem ip nem autor). */
+    private static function foto(array $linha): array
+    {
+        // DATETIME(3) volta como "…:59.000": normalizado para segundos, senão o mesmo prazo pareceria mudança (evento à toa)
+        $prazo = $linha['expires_at'] === null ? null : substr((string) $linha['expires_at'], 0, 19);
+        return ['state' => (string) $linha['state'], 'expires_at' => $prazo, 'reason' => $linha['reason'] === null ? null : (string) $linha['reason']];
     }
 }
