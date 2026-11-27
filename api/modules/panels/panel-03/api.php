@@ -70,12 +70,11 @@ try {
     RedisHelper::close();
     $isTimeout = stripos($e->getMessage(), 'timeout') !== false || stripos($e->getMessage(), 'max_execution_time') !== false;
     
+    // MIG-001 (INTEGRACAO, 26/11 noite, VINHO; achado do AZUL): o timeout devolvia 200 com ZEROS (total, sucessos, erros, taxa) e ainda guardava
+    // isso 30 s no cache — falso zero. Agora: 503 com a fonte e o motivo, nada em cache (a tela mostra "indisponível", como os outros painéis).
     if ($isTimeout) {
-        $fallback = ApiResponse::buildSuccess([
-            'hourly' => [], 'period' => ['hours' => $hours, 'total_executions' => 0, 'total_success' => 0, 'total_errors' => 0, 'overall_success_rate' => 0],
-            'timestamp' => date('Y-m-d H:i:s'), '_fallback' => true, '_reason' => 'query_timeout'
-        ], ['version' => '2.7.0-P06-ENTERPRISE', 'fallback' => true]);
-        RedisHelper::cacheAndReturn($CACHE_KEY, $fallback, 30);
+        error_log('[panel-03] INTEGRACAO: tempo esgotado');
+        ApiResponse::error(ApiResponse::ERR_DATABASE_ERROR, 503, ['fonte' => 'integracao', 'estado' => 'indisponivel', 'motivo' => 'tempo_esgotado']);
     } else {
         ApiResponse::error(ApiResponse::ERR_INTERNAL_ERROR, 500);
     }
