@@ -43,7 +43,11 @@ final class AsaasCobrancas
     private function cobertura(): array
     {
         $sem = array_values(array_filter($this->retrato['sem_leitura'], fn($c) => $this->filtro === null || $c['conta'] === $this->filtro));
-        return ['completo' => $sem === [], 'empresas_sem_leitura' => array_map(fn($c) => ['empresa' => $this->empresa($c['conta']), 'motivo' => $c['motivo']], $sem)];
+        // 27/11: empresa lida mas na PAUSA programada do cron → aviso "última sincronização HH:MM · pausa noturna" (os números continuam)
+        $pz = array_values(array_filter($this->retrato['contas'], fn($c) => ($this->filtro === null || $c['conta'] === $this->filtro) && str_starts_with((string) ($c['aviso'] ?? ''), 'pausa_noturna:')));
+        return ['completo' => $sem === [], 'empresas_sem_leitura' => array_map(fn($c) => ['empresa' => $this->empresa($c['conta']), 'motivo' => $c['motivo']], $sem),
+                'pausa_noturna' => $pz === [] ? null : ['ultima_sincronizacao' => max(array_map(fn($c) => substr((string) $c['aviso'], 14), $pz)),
+                                                        'texto' => 'última sincronização ' . max(array_map(fn($c) => substr((string) $c['aviso'], 14), $pz)) . ' · pausa noturna']];
     }
 
     /** Itens normalizados (filtro de empresa aplicado), cada um com centavos e dias calculados. */

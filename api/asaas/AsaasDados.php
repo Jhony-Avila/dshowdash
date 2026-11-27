@@ -357,6 +357,87 @@ final class AsaasSincronizador
     }
 }
 
+/**
+ * 27/11 (decisão do arquiteto, prioridade alta): a "janela" de uma empresa do Asaas segue o PRÓPRIO agendamento. Antes: fixa em 180 min,
+ * e o cron pausa das 02 às 05 h (37 0,1,6-23) → das 04:37 às ~06:40 TODAS as empresas saíam da janela e as Vencidas sumiam, toda noite.
+ * Regra: em dia = a última sincronização boa não perdeu as 3 últimas rodadas PREVISTAS (com 10 min de folga para a rodada terminar).
+ * Fora da pausa isso é ~180 min, como antes; dentro dela a rodada de 01:37 continua valendo. A agenda é lida de /etc/cron.d/dshow-asaas
+ * (minuto e horas da linha do asaas-sincronizar); arquivo ausente ou ilegível = toda hora no minuto 37 (o comportamento antigo, ~180 min).
+ */
+final class AsaasAgenda
+{
+    public const ARQUIVO = '/etc/cron.d/dshow-asaas';
+    public const RODADAS = 3;
+    public const FOLGA_MIN = 10;
+    private static ?self $padrao = null;
+
+    /** @param list<int> $horas */
+    public function __construct(public readonly int $minuto, public readonly array $horas, public readonly bool $lidaDoCron)
+    {
+        if ($minuto < 0 || $minuto > 59 || $horas === [] || array_filter($horas, fn($h) => !is_int($h) || $h < 0 || $h > 23) !== []) throw new InvalidArgumentException('agenda');
+    }
+
+    public static function padrao(): self { return self::$padrao ??= self::doArquivo(self::ARQUIVO); }
+    /** SÓ para teste */
+    public static function definirPadrao(?self $a): void { self::$padrao = $a; }
+
+    public static function doArquivo(string $arq): self
+    {
+        $txt = is_file($arq) && is_readable($arq) ? (string) @file_get_contents($arq) : '';
+        foreach (preg_split('/\R/', $txt) as $l) {
+            $l = trim($l); if ($l === '' || $l[0] === '#' || !str_contains($l, 'asaas-sincronizar')) continue;
+            $a = self::daLinha($l); if ($a !== null) return $a;
+        }
+        return new self(37, range(0, 23), false);
+    }
+
+    /** "M H * * * usuário comando": M um número; H lista com intervalos (0,1,6-23) ou '*'. Outra forma = null (cai no padrão). */
+    public static function daLinha(string $l): ?self
+    {
+        $c = preg_split('/\s+/', trim($l));
+        if (count($c) < 6 || preg_match('/^\d{1,2}\z/', $c[0]) !== 1 || $c[2] !== '*' || $c[3] !== '*' || $c[4] !== '*') return null;
+        $h = [];
+        if ($c[1] === '*') $h = range(0, 23);
+        else foreach (explode(',', $c[1]) as $p) {
+            if (preg_match('/^(\d{1,2})(?:-(\d{1,2}))?\z/', $p, $m) !== 1) return null;
+            $ini = (int) $m[1]; $fim = isset($m[2]) ? (int) $m[2] : $ini; if ($ini > $fim || $fim > 23) return null;
+            $h = array_merge($h, range($ini, $fim));
+        }
+        try { return new self((int) $c[0], array_values(array_unique($h)), true); } catch (InvalidArgumentException) { return null; }
+    }
+
+    /** As rodadas previstas mais recentes (até $n) com início ≤ $limite, no fuso do servidor (Brasília). */
+    public function anteriores(DateTimeImmutable $limite, int $n): array
+    {
+        $out = []; $t = $limite->setTime((int) $limite->format('G'), $this->minuto);
+        for ($i = 0; $i < 72 && count($out) < $n; $i++, $t = $t->modify('-1 hour'))
+            if ($t <= $limite && in_array((int) $t->format('G'), $this->horas, true)) $out[] = $t;
+        return $out;
+    }
+
+    public function proxima(DateTimeImmutable $agora): ?DateTimeImmutable
+    {
+        $t = $agora->setTime((int) $agora->format('G'), $this->minuto);
+        for ($i = 0; $i < 48; $i++, $t = $t->modify('+1 hour')) if ($t > $agora && in_array((int) $t->format('G'), $this->horas, true)) return $t;
+        return null;
+    }
+
+    public function emDia(DateTimeImmutable $ok, DateTimeImmutable $agora): bool
+    {
+        $r = $this->anteriores($agora->modify('-' . self::FOLGA_MIN . ' minutes'), self::RODADAS);
+        if (count($r) < self::RODADAS) return true;
+        return $ok->getTimestamp() >= end($r)->getTimestamp();
+    }
+
+    /** Pausa programada: a hora corrente não tem rodada prevista, ou a última prevista foi há mais de 1 h. */
+    public function emPausa(DateTimeImmutable $agora): bool
+    {
+        if (!in_array((int) $agora->format('G'), $this->horas, true)) return true;   // a hora corrente não tem rodada prevista
+        $a = $this->anteriores($agora, 1)[0] ?? null;                                // ou a última prevista foi há mais de 1 h (ex.: 06:36)
+        return $a !== null && $agora->getTimestamp() - $a->getTimestamp() > 3660;
+    }
+}
+
 final class AsaasResumo
 {
     public const LIMITE_ATRASO_MIN = 180;
@@ -409,9 +490,12 @@ final class AsaasResumo
             return [['motivo' => $c !== null && $c['estado'] === 'erro' ? 'erro:' . $c['erro_codigo'] : 'nunca_sincronizada'] + $base, null];
         }
         $ok = new DateTimeImmutable((string) $c['ultima_sync_ok'], $this->fuso);
-        if ($agora->getTimestamp() - $ok->getTimestamp() > self::LIMITE_ATRASO_MIN * 60) {
+        $ag = AsaasAgenda::padrao();
+        if (!$ag->emDia($ok, $agora->setTimezone($this->fuso))) {   // 27/11: janela pela agenda (3 rodadas previstas), não 180 min fixos
             return [['motivo' => 'desatualizada', 'atualizado_em' => $ok->format(DATE_ATOM), 'aviso' => $c['estado'] === 'erro' ? 'erro:' . $c['erro_codigo'] : null] + $base, null];
         }
+        // pausa programada do cron: os dados continuam visíveis, com o aviso "última sincronização HH:MM · pausa noturna"
+        if ($ag->emPausa($agora->setTimezone($this->fuso))) $base['aviso'] = 'pausa_noturna:' . $ok->format('H:i');
         return [$base, ['c' => $c, 'ok' => $ok, 'ger' => (int) $c['geracao_ativa']]];
     }
 
@@ -473,7 +557,7 @@ final class AsaasResumo
             foreach ($rotulos as $r) {
                 [$base, $pt] = $this->ponteiro($r, $agora);
                 if ($pt === null) { $sem[] = ['conta' => $r, 'nome' => $base['nome'], 'motivo' => $base['motivo']]; continue; }
-                $contas[] = ['conta' => $r, 'nome' => $base['nome'], 'atualizado_em' => $pt['ok']->format(DATE_ATOM)];
+                $contas[] = ['conta' => $r, 'nome' => $base['nome'], 'atualizado_em' => $pt['ok']->format(DATE_ATOM), 'aviso' => $base['aviso']];
                 $q = $this->pdo->prepare("SELECT c.`payment_id`, c.`cliente_id`, c.`status`, c.`billing_type`, c.`valor`, c.`juros_multa`, c.`vencimento`,
                         c.`vencimento_original`, c.`data_criacao`, c.`invoice_url`, c.`invoice_number`, k.`nome` AS cliente_nome
                        FROM `{$this->p}asaas_cobrancas` c LEFT JOIN `{$this->p}asaas_clientes` k ON k.`conta` = c.`conta` AND k.`cliente_id` = c.`cliente_id`
@@ -501,7 +585,7 @@ final class AsaasResumo
             foreach ($rotulos as $r) {
                 [$base, $pt] = $this->ponteiro($r, $agora);
                 if ($pt === null) { $sem[] = ['conta' => $r, 'nome' => $base['nome'], 'motivo' => $base['motivo']]; continue; }
-                $contas[] = ['conta' => $r, 'nome' => $base['nome'], 'atualizado_em' => $pt['ok']->format(DATE_ATOM)];
+                $contas[] = ['conta' => $r, 'nome' => $base['nome'], 'atualizado_em' => $pt['ok']->format(DATE_ATOM), 'aviso' => $base['aviso']];
                 if ($filtro === null || $filtro === $r) $pares[] = [$r, (int) $pt['ger']];
             }
             if ($pares === []) return ['contas' => $contas, 'sem_leitura' => $sem, 'itens' => [], 'total' => 0];

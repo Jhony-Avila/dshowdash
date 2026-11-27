@@ -81,9 +81,10 @@ final class GeralV2Asaas
             return ['motivo' => $c !== null && $c['estado'] === 'erro' ? 'erro:' . $c['erro_codigo'] : 'nunca_sincronizada'] + $base;
         }
         $ok = new DateTimeImmutable((string) $c['ultima_sync_ok'], $this->fuso);
-        if ($agora->getTimestamp() - $ok->getTimestamp() > AsaasResumo::LIMITE_ATRASO_MIN * 60) {
+        if (!AsaasAgenda::padrao()->emDia($ok, $agora->setTimezone($this->fuso))) {   // 27/11: janela pela agenda do cron (3 rodadas previstas)
             return ['estado' => 'desatualizado', 'motivo' => 'desatualizada', 'atualizado_em' => $ok->format(DATE_ATOM)] + $base;
         }
+        $pausa = AsaasAgenda::padrao()->emPausa($agora->setTimezone($this->fuso)) ? 'pausa_noturna:' . $ok->format('H:i') : null;
         $in = implode(',', array_fill(0, count(self::RECEBIDO), '?'));
         $q = $this->pdo->prepare("SELECT COALESCE(SUM(CASE WHEN `status` IN ($in) AND `data_pagamento` = ? THEN `valor` END),0) recebido_hoje,
                COALESCE(SUM(CASE WHEN `status`='PENDING' AND `vencimento` BETWEEN ? AND ? THEN `valor` END),0) a_receber_7d,
@@ -92,7 +93,7 @@ final class GeralV2Asaas
         $q->execute([...self::RECEBIDO, $hoje, $hoje, $fim7, $r, (int) $c['geracao_ativa']]);
         $v = $q->fetch(PDO::FETCH_ASSOC);
         $dec = static fn($x) => AsaasValor::deCentavos(AsaasValor::centavos((string) $x));
-        return ['estado' => 'ok', 'motivo' => $c['estado'] === 'erro' ? 'ultima_tentativa_falhou:' . $c['erro_codigo'] : null, 'atualizado_em' => $ok->format(DATE_ATOM),
+        return ['estado' => 'ok', 'motivo' => $c['estado'] === 'erro' ? 'ultima_tentativa_falhou:' . $c['erro_codigo'] : $pausa, 'atualizado_em' => $ok->format(DATE_ATOM),
                 'valores' => ['recebido_hoje' => $dec($v['recebido_hoje']), 'a_receber_7d' => $dec($v['a_receber_7d']),
                               'vencidas' => $dec($v['vencidas']), 'vencidas_qtd' => (int) $v['vencidas_qtd']]] + $base;
     }

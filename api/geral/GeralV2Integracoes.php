@@ -90,7 +90,7 @@ final class GeralV2Integracoes
         $contas = []; $boas = 0; $tent = null;
         foreach ($rows as $r) {
             $fresca = $r['estado'] === 'ok' && $r['ultima_sync_ok'] !== null
-                && $this->agora->getTimestamp() - (new DateTimeImmutable((string) $r['ultima_sync_ok'], $fuso))->getTimestamp() <= AsaasResumo::LIMITE_ATRASO_MIN * 60;
+                && AsaasAgenda::padrao()->emDia(new DateTimeImmutable((string) $r['ultima_sync_ok'], $fuso), $this->agora->setTimezone($fuso));   // 27/11: janela pela agenda
             if ($fresca) $boas++;
             if ($r['ultima_tentativa'] !== null && ($tent === null || (string) $r['ultima_tentativa'] > $tent)) $tent = (string) $r['ultima_tentativa'];
             $contas[] = ['conta' => $r['conta'], 'rotulo' => AsaasCobrancas::rotulo((string) $r['conta'], $r['nome'] ?? null),
@@ -157,7 +157,7 @@ final class GeralV2Integracoes
             if ($r['ultima_sync_ok'] === null) { $velha = true; continue; }
             $t = new DateTimeImmutable((string) $r['ultima_sync_ok'], $fuso);
             if ($ult === null || $t > $ult) $ult = $t;
-            if ($this->agora->getTimestamp() - $t->getTimestamp() > AsaasResumo::LIMITE_ATRASO_MIN * 60) $velha = true;
+            if (!AsaasAgenda::padrao()->emDia($t, $this->agora->setTimezone($fuso))) $velha = true;   // 27/11: janela pela agenda
         }
         $estado = $ruins !== [] ? 'com_problema' : ($velha ? 'atrasado' : 'ok');
         $codigos = implode(' ', $ruins);
