@@ -168,6 +168,10 @@ html[data-theme="light"] [data-bl-root] {
   margin: 0 0 10px;
 }
 
+/* LIB-06 (27/11): a animação do Skeleton dos Primitivos mora aqui (antes só no CSS do Bling; fora dele o osso ficava parado) */
+@keyframes bl-brilho { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+@media (prefers-reduced-motion: reduce) { [aria-hidden][style*="bl-brilho"] { animation: none !important; } }
+
 .bl-so-leitor {
   position: absolute; width: 1px; height: 1px;
   padding: 0; margin: -1px; overflow: hidden;

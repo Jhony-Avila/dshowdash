@@ -11,6 +11,7 @@ import { ErroV2, fmtQuando, lerIntegracoes, lerIntegracoesV2, type Integracao, t
 const IntegracoesCentral = lazy(() => import('./IntegracoesCentral'));
 import { Problema, useBloco } from './comuns';
 import { DSWorkspaceTop } from '@shared/des/DSWorkspaceTop';
+import { BlocoCarregando, EstadoErro, Skeleton } from '@shared/components/Primitivos';
 
 const ESTADO: Record<Integracao['estado'], [string, string]> = {
   ok: ['Em dia', 'ok'], atrasado: ['Atrasada', 'aviso'], com_problema: ['Com problema', 'erro'],
@@ -21,10 +22,20 @@ const ORDEM: Integracao['estado'][] = ['com_problema', 'atrasado', 'sem_acesso',
 /** pagina = rota própria #/panel-integracoes (26/11, Fase 1): página inteira com o DSWorkspaceTop; sem a trilha nem o título da vista antiga. */
 export function Integracoes({ aoVoltar, pagina }: { aoVoltar: () => void; pagina?: boolean }) {
   const b = useBloco<RespostaIntegracoes>((s) => (pagina ? lerIntegracoesV2(s) : lerIntegracoes(s)), [pagina]);
+  // INT-UX-001 §11 (LIB-06, Primitivos): carregando = osso com as medidas dos KPIs e da tabela; erro SEM dados = "Não foi possível consultar…" + Tentar novamente
+  const osso = <div className="gv2-lista ic des-escopo" data-gv2-integracoes="pagina" data-ic-osso>
+    <div className="ic-kpis">{[0, 1, 2, 3].map((k) => <Skeleton key={k} altura={56} raio={10} />)}</div>
+    <BlocoCarregando linhas={12} rotulo="Consultando as integrações" /></div>;
+  if (pagina && b.carregando && !b.dados) return osso;
+  if (pagina && b.erro && !b.dados && !(b.erro instanceof ErroV2 && b.erro.semAcesso)) return (
+    <div className="gv2-lista des-escopo" data-gv2-integracoes="pagina" data-ic-erro-sem-dados>
+      <EstadoErro titulo="Não foi possível consultar as integrações." descricao="Nenhum estado é mostrado sem consulta: nada é assumido como em dia."
+        erro={b.erro.message} classeBotao="des-btn" aoTentarNovamente={b.atualizando ? undefined : b.recarregar} />
+    </div>);
   if (pagina && b.dados && (b.dados as { versao?: number }).versao === 2) return (
     <div className="gv2-lista" data-gv2-integracoes="pagina">
-      <Suspense fallback={<p className="gv2-fraco" aria-busy>Abrindo a Central de Integrações…</p>}>
-        <IntegracoesCentral dados={b.dados as IntegracoesV2} aoVoltar={aoVoltar} aoAtualizar={b.recarregar} atualizando={b.atualizando} />
+      <Suspense fallback={osso}>
+        <IntegracoesCentral dados={b.dados as IntegracoesV2} aoAtualizar={b.recarregar} atualizando={b.atualizando} erroAtualizar={!!b.erro} />
       </Suspense>
     </div>);
   const lista = [...((b.dados?.integracoes ?? []) as Integracao[])].filter((x) => x.id !== 'outlook')   // a DSHOW não usa mais o Outlook (27/11)
@@ -35,8 +46,7 @@ export function Integracoes({ aoVoltar, pagina }: { aoVoltar: () => void; pagina
     <div className="gv2-lista" data-gv2-integracoes={pagina ? 'pagina' : 'vista'}>
       {pagina && (
         <div className="des-escopo">
-          <DSWorkspaceTop titulo="Integrações" icone={<Plug size={18} aria-hidden />} dados={{ 'data-gv2-integ-topo': '1' }}
-            trilha={<button type="button" className="gv2-link" onClick={aoVoltar}><ArrowLeft size={13} aria-hidden /> Geral</button>}
+          <DSWorkspaceTop titulo="Integrações" tituloOculto icone={<Plug size={18} aria-hidden />} dados={{ 'data-gv2-integ-topo': '1' }}
             controles={<><span className="des-wt__mola" /><span className="gv2-fraco" data-gv2-integ-resumo>{b.dados ? `${lista.length} conectores · ${pendentes ? `${pendentes} pedem atenção` : 'nenhum pede atenção'} · conferido ${fmtQuando(b.dados.gerado_em)}` : b.carregando ? 'Carregando…' : '—'}</span></>} />
         </div>
       )}

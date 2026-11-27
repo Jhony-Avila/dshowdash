@@ -161,6 +161,12 @@ export function hojeExtenso(): string {
   const s = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric', timeZone: FUSO });
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
+/** INT-UX-001 §7: "Hoje, 21:37" · "Ontem, 18:10" · "24/11, 09:15" (Brasília) */
+export function fmtDiaHora(iso: string): string {
+  const dia = (x: Date) => x.toLocaleDateString('pt-BR', { timeZone: FUSO });
+  const d = new Date(iso); const ontem = new Date(Date.now() - 864e5);
+  return dia(d) === dia(new Date()) ? `Hoje, ${fmtHora(iso)}` : dia(d) === dia(ontem) ? `Ontem, ${fmtHora(iso)}` : `${fmtDiaMes(iso)}, ${fmtHora(iso)}`;
+}
 /** "às 13:28" hoje; "21/11 às 17:40" em outro dia (Brasília) */
 export function fmtQuando(iso: string): string {
   const d = new Date(iso);
@@ -221,7 +227,12 @@ export interface IntegracaoV2 {
   id: string; nome: string; recurso: string | null; estado: EstadoIntegracaoV2;
   ultima_tentativa: string | null; ultimo_sucesso: string | null; cobertas: number | null; esperadas: number | null;
   erro: string | null; proximo_passo: string | null; acao?: { rotulo: string; url: string } | null; contas?: ContaIntegracao[] | null;
+  // INT-UX-001 (P124, VINHO, aditivo): a classificação vem do SERVIDOR; a mesma regra alimenta tabela, KPIs e o selo do menu
+  estado_principal?: EstadoPrincipalInt; estados_detalhe?: EstadoPrincipalInt[]; categoria?: CategoriaInt; gravidade?: number; dependencia?: string | null;
 }
-export interface IntegracoesV2 { versao: 2; gerado_em: string; integracoes: IntegracaoV2[] }
+export type EstadoPrincipalInt = 'credencial_expirada' | 'com_falha' | 'atrasada' | 'parcial' | 'desconhecida' | 'aguardando_conexao' | 'nao_integrada' | 'em_dia';
+export type CategoriaInt = 'em_dia' | 'com_falha' | 'atencao' | 'nao_conectada';
+export interface ResumoIntegracoes { em_dia: number; com_falha: number; atencao: number; nao_conectada: number; total: number; pedem_atencao: number }
+export interface IntegracoesV2 { versao: 2; gerado_em: string; integracoes: IntegracaoV2[]; resumo?: ResumoIntegracoes }
 export type RespostaIntegracoes = IntegracoesV2 | { versao?: undefined; gerado_em: string; integracoes: Integracao[] };
 export function lerIntegracoesV2(s?: AbortSignal) { return ler<RespostaIntegracoes>('/integracoes.php?v=2', s); }

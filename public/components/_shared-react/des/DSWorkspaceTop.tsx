@@ -7,6 +7,8 @@ import './ds-layout.css';
 export interface DSWorkspaceTopProps {
   titulo: string; icone?: ReactNode; trilha?: ReactNode; nav?: { rotulo: string; atual?: boolean; onClick?: () => void }[];
   controles?: ReactNode; dados?: Record<`data-${string}`, string | undefined>;
+  /** INT-UX-001 §10 (27/11): o shell já mostra o título do destino → o h1 fica só para leitor de tela (sem título duplicado na tela) */
+  tituloOculto?: boolean;
 }
 /** `top` do sticky = quanto da faixa fixa do shell (cabeçalho + ticker, a conta da P51) cobre o CONTÊINER QUE ROLA.
  *  27/11 (capturas do Panorama DES): o sticky conta a partir do ancestral que rola, não da janela. No Dash esse ancestral é o miolo do painel,
@@ -26,19 +28,19 @@ function useTopoSticky(ref: RefObject<HTMLElement | null>): number {
   }, [ref]);
   return t;
 }
-export function DSWorkspaceTop({ titulo, icone, trilha, nav, controles, dados }: DSWorkspaceTopProps) {
+export function DSWorkspaceTop({ titulo, icone, trilha, nav, controles, dados, tituloOculto }: DSWorkspaceTopProps) {
   const ref = useRef<HTMLElement | null>(null); const topo = useTopoSticky(ref);
   return (
     <header ref={ref} className="des-wt" style={{ top: topo }} data-des-wt {...dados}>
-      <div className="des-wt__local">
-        <h1 className="des-wt__titulo">{icone}{titulo}</h1>
+      {tituloOculto && !trilha && !(nav && nav.length) ? <h1 className="des-sr">{titulo}</h1> : <div className="des-wt__local">
+        {tituloOculto ? <h1 className="des-sr">{titulo}</h1> : <h1 className="des-wt__titulo">{icone}{titulo}</h1>}
         {trilha && <span className="des-wt__trilha">{trilha}</span>}
         {nav && nav.length > 0 && (
           <nav className="des-wt__nav" aria-label={`Seções de ${titulo}`}>
             {nav.map((n) => <button key={n.rotulo} type="button" aria-current={n.atual ? 'page' : undefined} onClick={n.onClick}>{n.rotulo}</button>)}
           </nav>
         )}
-      </div>
+      </div>}
       {controles && <div className="des-wt__controles" data-titulo={titulo}>{controles}</div>}
     </header>
   );

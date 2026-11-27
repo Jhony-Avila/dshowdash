@@ -19,9 +19,9 @@ export interface InfoSituacao {
 }
 
 const CORES: Record<string, { fg: string; bg: string }> = {
-  sucesso: { fg: 'var(--bl-sucesso)', bg: 'var(--bl-sucesso-bg)' },
-  aviso:   { fg: 'var(--bl-aviso)',   bg: 'var(--bl-aviso-bg)' },
-  erro:    { fg: 'var(--bl-erro)',    bg: 'var(--bl-erro-bg)' },
+  sucesso: { fg: 'var(--bl-sucesso, var(--des-ok-txt, #166534))', bg: 'var(--bl-sucesso-bg, var(--des-ok, #f0fdf4))' },
+  aviso:   { fg: 'var(--bl-aviso, var(--des-aviso-txt, #92400e))',   bg: 'var(--bl-aviso-bg, var(--des-aviso, #fffbeb))' },
+  erro:    { fg: 'var(--bl-erro, var(--des-erro-txt, #b91c1c))',    bg: 'var(--bl-erro-bg, var(--des-erro, #fef2f2))' },
   info:    { fg: 'var(--bl-info)',    bg: 'var(--bl-info-bg)' },
   neutro:  { fg: 'var(--bl-neutro)',  bg: 'var(--bl-neutro-bg)' },
   verde:   { fg: 'var(--bl-verde)',   bg: 'var(--bl-verde-suave)' },
@@ -34,7 +34,7 @@ const CORES: Record<string, { fg: string; bg: string }> = {
  * recebe o texto completo.
  */
 export function Badge({ info, titulo }: { info: InfoSituacao | null | undefined; titulo?: string }) {
-  if (!info) return <span style={{ color: 'var(--bl-texto-3)' }}>—</span>;
+  if (!info) return <span style={{ color: 'var(--bl-texto-3, var(--des-dim, #6b7280))' }}>—</span>;
   const c = CORES[info.cor] ?? CORES.neutro;
   return (
     <span
@@ -63,7 +63,7 @@ export function Skeleton({ altura = 14, largura = '100%', raio = 6 }:
       aria-hidden
       style={{
         display: 'block', height: altura, width: largura, borderRadius: raio,
-        background: 'linear-gradient(90deg, var(--bl-superficie-2) 25%, var(--bl-borda) 37%, var(--bl-superficie-2) 63%)',
+        background: 'linear-gradient(90deg, var(--bl-superficie-2, var(--des-sup2, #f3f4f6)) 25%, var(--bl-borda, var(--des-borda, #e5e7eb)) 37%, var(--bl-superficie-2, var(--des-sup2, #f3f4f6)) 63%)',
         backgroundSize: '400% 100%',
         animation: 'bl-brilho 1.4s ease infinite',
       }}
@@ -88,11 +88,11 @@ export function EstadoVazio({ titulo, descricao, acao, filtroAtivo }: {
   titulo: string; descricao?: string; acao?: React.ReactNode; filtroAtivo?: boolean;
 }) {
   return (
-    <div style={{ padding: '44px 24px', textAlign: 'center', color: 'var(--bl-texto-2)' }}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--bl-texto)', marginBottom: 6 }}>{titulo}</div>
+    <div style={{ padding: '44px 24px', textAlign: 'center', color: 'var(--bl-texto-2, var(--des-dim, #4b5563))' }}>
+      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--bl-texto, var(--des-texto, #1f2937))', marginBottom: 6 }}>{titulo}</div>
       {descricao && <div style={{ fontSize: 12.5, maxWidth: 460, margin: '0 auto 14px' }}>{descricao}</div>}
       {filtroAtivo && (
-        <div style={{ fontSize: 12, color: 'var(--bl-aviso)', marginBottom: 14 }}>
+        <div style={{ fontSize: 12, color: 'var(--bl-aviso, var(--des-aviso-txt, #92400e))', marginBottom: 14 }}>
           Há filtros aplicados. Pode haver dados fora do recorte atual.
         </div>
       )}
@@ -105,24 +105,27 @@ export function EstadoVazio({ titulo, descricao, acao, filtroAtivo }: {
  * Estado de erro (§59). O correlation ID fica visível e copiável de propósito:
  * é o que liga a queixa do usuário à linha de log do servidor.
  */
-export function EstadoErro({ erro, correlationId, quando, aoTentarNovamente }: {
+export function EstadoErro({ erro, correlationId, quando, aoTentarNovamente, titulo = 'Não foi possível carregar estes dados',
+  descricao = 'Tente novamente. Se continuar, informe o código abaixo ao suporte.', classeBotao = 'bl-botao bl-botao--primario' }: {
   erro: string; correlationId?: string | null; quando?: string; aoTentarNovamente?: () => void;
+  /** LIB-06 (27/11): texto da tela (ex.: INT-UX-001 "Não foi possível consultar as integrações.") — padrões = os de antes */
+  titulo?: string; descricao?: string; classeBotao?: string;
 }) {
   const [aberto, setAberto] = React.useState(false);
   return (
     <div
       role="alert"
       style={{
-        padding: '22px', border: '1px solid var(--bl-erro)', background: 'var(--bl-erro-bg)',
-        borderRadius: 'var(--bl-raio)', maxWidth: 560, margin: '24px auto', textAlign: 'center',
+        padding: '22px', border: '1px solid var(--bl-erro, var(--des-erro-txt, #b91c1c))', background: 'var(--bl-erro-bg, var(--des-erro, #fef2f2))',
+        borderRadius: 'var(--bl-raio, var(--des-raio, 10px))', maxWidth: 560, margin: '24px auto', textAlign: 'center',
       }}
     >
-      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Não foi possível carregar estes dados</div>
-      <div style={{ fontSize: 12.5, color: 'var(--bl-texto-2)', marginBottom: 14 }}>
-        Tente novamente. Se continuar, informe o código abaixo ao suporte.
+      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>{titulo}</div>
+      <div style={{ fontSize: 12.5, color: 'var(--bl-texto-2, var(--des-dim, #4b5563))', marginBottom: 14 }}>
+        {descricao}
       </div>
       {aoTentarNovamente && (
-        <button type="button" className="bl-botao bl-botao--primario" onClick={aoTentarNovamente}>
+        <button type="button" className={classeBotao} onClick={aoTentarNovamente}>
           Tentar novamente
         </button>
       )}
@@ -132,7 +135,7 @@ export function EstadoErro({ erro, correlationId, quando, aoTentarNovamente }: {
           onClick={() => setAberto(v => !v)}
           aria-expanded={aberto}
           style={{
-            background: 'none', border: 'none', color: 'var(--bl-texto-2)',
+            background: 'none', border: 'none', color: 'var(--bl-texto-2, var(--des-dim, #4b5563))',
             font: 'inherit', fontSize: 11.5, cursor: 'pointer', textDecoration: 'underline',
           }}
         >
@@ -142,8 +145,8 @@ export function EstadoErro({ erro, correlationId, quando, aoTentarNovamente }: {
       {aberto && (
         <div style={{
           marginTop: 10, padding: 10, textAlign: 'left', fontSize: 11.5,
-          fontFamily: 'var(--bl-fonte-mono)', background: 'var(--bl-superficie)',
-          border: '1px solid var(--bl-borda)', borderRadius: 'var(--bl-raio-sm)',
+          fontFamily: 'var(--bl-fonte-mono, ui-monospace, monospace)', background: 'var(--bl-superficie, var(--des-sup, #ffffff))',
+          border: '1px solid var(--bl-borda, var(--des-borda, #e5e7eb))', borderRadius: 'var(--bl-raio-sm, 6px)',
           wordBreak: 'break-word',
         }}>
           <div>{erro}</div>
@@ -168,32 +171,34 @@ export function TarjaSimulado({ visivel }: { visivel: boolean }) {
       style={{
         display: 'flex', alignItems: 'center', gap: 8,
         padding: '6px 14px', fontSize: 12,
-        color: 'var(--bl-aviso)', background: 'var(--bl-aviso-bg)',
-        borderBottom: '1px solid var(--bl-aviso)',
+        color: 'var(--bl-aviso, var(--des-aviso-txt, #92400e))', background: 'var(--bl-aviso-bg, var(--des-aviso, #fffbeb))',
+        borderBottom: '1px solid var(--bl-aviso, var(--des-aviso-txt, #92400e))',
       }}
     >
-      <span aria-hidden style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--bl-aviso)' }} />
+      <span aria-hidden style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--bl-aviso, var(--des-aviso-txt, #92400e))' }} />
       <strong style={{ fontWeight: 600 }}>Ambiente de demonstração</strong>
-      <span style={{ color: 'var(--bl-texto-2)' }}>— os dados apresentados são simulados.</span>
+      <span style={{ color: 'var(--bl-texto-2, var(--des-dim, #4b5563))' }}>— os dados apresentados são simulados.</span>
     </div>
   );
 }
 
 /** Aviso de dado desatualizado (§59). */
-export function AvisoDesatualizado({ ultimaAtualizacao, motivo, aoAtualizar }: {
+export function AvisoDesatualizado({ ultimaAtualizacao, motivo, aoAtualizar, texto, classeBotao = 'bl-botao' }: {
   ultimaAtualizacao: string; motivo?: string; aoAtualizar?: () => void;
+  /** LIB-06 (27/11): frase completa no lugar de "Dados de X." (ex.: "Não foi possível atualizar os estados. Exibindo a última consulta disponível.") */
+  texto?: string; classeBotao?: string;
 }) {
   return (
-    <div style={{
+    <div role="status" style={{
       display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
-      padding: '7px 12px', fontSize: 12, borderRadius: 'var(--bl-raio-sm)',
-      color: 'var(--bl-aviso)', background: 'var(--bl-aviso-bg)',
-      border: '1px solid var(--bl-aviso)', margin: '0 0 12px',
+      padding: '7px 12px', fontSize: 12, borderRadius: 'var(--bl-raio-sm, 6px)',
+      color: 'var(--bl-aviso, var(--des-aviso-txt, #92400e))', background: 'var(--bl-aviso-bg, var(--des-aviso, #fffbeb))',
+      border: '1px solid var(--bl-aviso, var(--des-aviso-txt, #92400e))', margin: '0 0 12px',
     }}>
-      <span>Dados de {ultimaAtualizacao}.</span>
-      {motivo && <span style={{ color: 'var(--bl-texto-2)' }}>{motivo}</span>}
+      <span>{texto ?? `Dados de ${ultimaAtualizacao}.`}</span>
+      {motivo && <span style={{ color: 'var(--bl-texto-2, var(--des-dim, #4b5563))' }}>{motivo}</span>}
       {aoAtualizar && (
-        <button type="button" className="bl-botao" onClick={aoAtualizar} style={{ height: 24, fontSize: 11 }}>
+        <button type="button" className={classeBotao} onClick={aoAtualizar} style={{ height: 24, fontSize: 11 }}>
           Atualizar
         </button>
       )}
@@ -205,9 +210,9 @@ export function AvisoDesatualizado({ ultimaAtualizacao, motivo, aoAtualizar }: {
 
 /** Barra de 0–100 usada em score de qualidade e atingimento de meta. */
 export function Medidor({ valor, rotulo }: { valor: number | null | undefined; rotulo?: string }) {
-  if (valor === null || valor === undefined) return <span style={{ color: 'var(--bl-texto-3)' }}>—</span>;
+  if (valor === null || valor === undefined) return <span style={{ color: 'var(--bl-texto-3, var(--des-dim, #6b7280))' }}>—</span>;
   const v = Math.max(0, Math.min(100, valor));
-  const cor = v >= 80 ? 'var(--bl-sucesso)' : v >= 60 ? 'var(--bl-aviso)' : 'var(--bl-erro)';
+  const cor = v >= 80 ? 'var(--bl-sucesso, var(--des-ok-txt, #166534))' : v >= 60 ? 'var(--bl-aviso, var(--des-aviso-txt, #92400e))' : 'var(--bl-erro, var(--des-erro-txt, #b91c1c))';
   return (
     <span
       style={{ display: 'inline-flex', alignItems: 'center', gap: 7, width: '100%' }}
@@ -220,11 +225,11 @@ export function Medidor({ valor, rotulo }: { valor: number | null | undefined; r
     >
       <span style={{
         flex: 1, height: 5, minWidth: 34, borderRadius: 999,
-        background: 'var(--bl-superficie-2)', overflow: 'hidden',
+        background: 'var(--bl-superficie-2, var(--des-sup2, #f3f4f6))', overflow: 'hidden',
       }}>
         <span style={{ display: 'block', height: '100%', width: `${v}%`, background: cor }} />
       </span>
-      <span style={{ fontSize: 11, fontVariantNumeric: 'tabular-nums', color: 'var(--bl-texto-2)', minWidth: 26, textAlign: 'right' }}>
+      <span style={{ fontSize: 11, fontVariantNumeric: 'tabular-nums', color: 'var(--bl-texto-2, var(--des-dim, #4b5563))', minWidth: 26, textAlign: 'right' }}>
         {Math.round(v)}
       </span>
     </span>
@@ -250,7 +255,7 @@ export function Abas({ abas, ativa, aoTrocar }: {
   };
 
   return (
-    <div role="tablist" className="bl-rola-x" style={{ display: 'flex', gap: 2, borderBottom: '1px solid var(--bl-borda)' }}>
+    <div role="tablist" className="bl-rola-x" style={{ display: 'flex', gap: 2, borderBottom: '1px solid var(--bl-borda, var(--des-borda, #e5e7eb))' }}>
       {abas.map((a, i) => {
         const sel = a.id === ativa;
         return (
@@ -266,7 +271,7 @@ export function Abas({ abas, ativa, aoTrocar }: {
             style={{
               padding: '8px 13px', font: 'inherit', fontSize: 12.5,
               fontWeight: sel ? 600 : 500,
-              color: sel ? 'var(--bl-texto)' : 'var(--bl-texto-2)',
+              color: sel ? 'var(--bl-texto, var(--des-texto, #1f2937))' : 'var(--bl-texto-2, var(--des-dim, #4b5563))',
               background: 'none', border: 'none', cursor: 'pointer',
               borderBottom: `2px solid ${sel ? 'var(--bl-verde)' : 'transparent'}`,
               marginBottom: -1, whiteSpace: 'nowrap',
@@ -276,7 +281,7 @@ export function Abas({ abas, ativa, aoTrocar }: {
             {a.contador !== null && a.contador !== undefined && (
               <span style={{
                 marginLeft: 6, fontSize: 11, padding: '1px 6px', borderRadius: 999,
-                background: 'var(--bl-superficie-2)', color: 'var(--bl-texto-2)',
+                background: 'var(--bl-superficie-2, var(--des-sup2, #f3f4f6))', color: 'var(--bl-texto-2, var(--des-dim, #4b5563))',
               }}>{a.contador}</span>
             )}
           </button>
@@ -327,18 +332,18 @@ export function Drawer({ aberto, titulo, subtitulo, aoFechar, largura = 620, chi
           position: 'fixed', top: 0, right: 0, bottom: 0,
           width: `min(${largura}px, 96vw)`, zIndex: 4001,
           background: 'var(--bl-overlay)',
-          borderLeft: '1px solid var(--bl-borda)',
+          borderLeft: '1px solid var(--bl-borda, var(--des-borda, #e5e7eb))',
           boxShadow: '-8px 0 32px rgba(0,0,0,.34)',
           display: 'flex', flexDirection: 'column', outline: 'none',
         }}
       >
         <header style={{
           display: 'flex', alignItems: 'flex-start', gap: 12,
-          padding: '14px 18px', borderBottom: '1px solid var(--bl-borda)', flex: '0 0 auto',
+          padding: '14px 18px', borderBottom: '1px solid var(--bl-borda, var(--des-borda, #e5e7eb))', flex: '0 0 auto',
         }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 14, fontWeight: 600 }}>{titulo}</div>
-            {subtitulo && <div style={{ fontSize: 12, color: 'var(--bl-texto-2)', marginTop: 2 }}>{subtitulo}</div>}
+            {subtitulo && <div style={{ fontSize: 12, color: 'var(--bl-texto-2, var(--des-dim, #4b5563))', marginTop: 2 }}>{subtitulo}</div>}
           </div>
           <button type="button" className="bl-botao bl-botao--icone" onClick={aoFechar} aria-label="Fechar">✕</button>
         </header>
@@ -358,10 +363,10 @@ export interface EtapaLinha {
 
 export function LinhaDoTempo({ etapas }: { etapas: EtapaLinha[] }) {
   const cor = (e: EtapaLinha['estado']) =>
-    e === 'concluida' ? 'var(--bl-sucesso)'
+    e === 'concluida' ? 'var(--bl-sucesso, var(--des-ok-txt, #166534))'
     : e === 'atual'   ? 'var(--bl-verde)'
-    : e === 'falha'   ? 'var(--bl-erro)'
-    : 'var(--bl-borda-forte)';
+    : e === 'falha'   ? 'var(--bl-erro, var(--des-erro-txt, #b91c1c))'
+    : 'var(--bl-borda-forte, var(--des-borda, #d1d5db))';
 
   return (
     <ol style={{ listStyle: 'none', margin: 0, padding: 0 }}>
@@ -374,18 +379,18 @@ export function LinhaDoTempo({ etapas }: { etapas: EtapaLinha[] }) {
               border: `2px solid ${cor(e.estado)}`,
             }} />
             {i < etapas.length - 1 && (
-              <span style={{ flex: 1, width: 2, background: 'var(--bl-borda)', marginTop: 2 }} />
+              <span style={{ flex: 1, width: 2, background: 'var(--bl-borda, var(--des-borda, #e5e7eb))', marginTop: 2 }} />
             )}
           </div>
           <div style={{ paddingBottom: 14, minWidth: 0 }}>
             <div style={{
               fontSize: 12.5, fontWeight: e.estado === 'atual' ? 600 : 500,
-              color: e.estado === 'pendente' ? 'var(--bl-texto-3)' : 'var(--bl-texto)',
+              color: e.estado === 'pendente' ? 'var(--bl-texto-3, var(--des-dim, #6b7280))' : 'var(--bl-texto, var(--des-texto, #1f2937))',
             }}>
               {e.rotulo}
             </div>
-            {e.quando && <div style={{ fontSize: 11.5, color: 'var(--bl-texto-2)' }}>{e.quando}</div>}
-            {e.detalhe && <div style={{ fontSize: 11.5, color: 'var(--bl-texto-3)' }}>{e.detalhe}</div>}
+            {e.quando && <div style={{ fontSize: 11.5, color: 'var(--bl-texto-2, var(--des-dim, #4b5563))' }}>{e.quando}</div>}
+            {e.detalhe && <div style={{ fontSize: 11.5, color: 'var(--bl-texto-3, var(--des-dim, #6b7280))' }}>{e.detalhe}</div>}
           </div>
         </li>
       ))}
