@@ -18,3 +18,7 @@ CorsPolicy::setupApiEndpoint([
     'methods' => ['GET', 'POST', 'OPTIONS'],
     'no_cache' => true
 ]);
+
+// SEC-002 (27/11): PORTÃO DE ACESSO antes do cache e de qualquer consulta (401 sem sessão · 403 sem permissão de sistema · interno = CLI/loopback)
+require_once __DIR__ . '/_acesso.php';
+MonitoramentoAcesso::exigir();
