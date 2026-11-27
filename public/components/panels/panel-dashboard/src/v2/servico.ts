@@ -180,9 +180,14 @@ export interface EmpresaCv { conta: string; rotulo: string }
 export interface SemLeituraCv { empresa: EmpresaCv; motivo: string | null }
 export interface SomaCv { valor: string | null; cobrancas: number | null }
 export type FaixaCv = '1-30' | '31-90' | '91-180' | '180+';
+export interface PorEmpresaCv { empresa: EmpresaCv; lida: boolean; valor: string | null; cobrancas: number | null; clientes: number | null; negativadas: SomaCv | null; motivo?: string | null }
 export interface ResumoCv {
   gerado_em: string; empresa: EmpresaCv | null; completo: boolean; empresas_sem_leitura: SemLeituraCv[];
-  total: { valor: string | null; cobrancas: number | null; clientes: number | null } | null;
+  total: { valor: string | null; cobrancas: number | null; clientes: number | null;
+    /** CB-UX-001 D2 (contrato VINHO 6e7ebd6): negativação pedida (DUNNING_REQUESTED) — SUBCONJUNTO do total, nunca somada; ausente = indisponível */
+    negativadas?: SomaCv | null } | null;
+  /** CB-UX-001 D3: quebra por empresa (o filtro de empresa vale para ela); `lida: false` = sem leitura → tudo null + motivo, nunca 0 */
+  por_empresa?: PorEmpresaCv[] | null;
   por_vencimento: { mes_atual: SomaCv | null; ultimos_30_dias: SomaCv | null; ultimos_3_meses: SomaCv | null } | null;
   faixas: { faixa: FaixaCv; valor: string | null; cobrancas: number | null }[] | null;
   maior: { id: string; empresa: EmpresaCv; cliente_nome: string | null; valor: string | null; dias_atraso: number | null } | null;
@@ -191,6 +196,8 @@ export interface ResumoCv {
 }
 export interface ItemCv {
   id: string; empresa: EmpresaCv; cliente_nome: string | null; vencimento: string | null;
+  /** CB-UX-001 D1: referência OPACA do cliente (agrupa sem revelar o código cus_, que segue só no detalhe) */
+  cliente_ref?: string | null;
   valor_original: string | null; valor_atualizado: string | null; juros_multa: string | null; dias_atraso: number | null;
   forma: { codigo: string | null; rotulo: string | null } | null;
   situacao: { status_asaas: string | null; negativacao: boolean | null; protesto: null; cobranca_externa: null } | null;

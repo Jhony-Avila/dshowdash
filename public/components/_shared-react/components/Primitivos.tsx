@@ -6,6 +6,7 @@
 // impede uma tela mostrar "carregando..." e a vizinha mostrar spinner.
 
 import React from 'react';
+import { DSSidePanel } from '../des/DSSidePanel';
 
 /* ─────────────────────────── Badge ─────────────────────────── */
 
@@ -294,63 +295,16 @@ export function Abas({ abas, ativa, aoTrocar }: {
 /* ─────────────────────────── Drawer ─────────────────────────── */
 
 /**
- * Painel lateral. Usa --bl-overlay (OPACO) de propósito: superfície translúcida
- * em position:fixed deixa o conteúdo de trás aparecer — foi um bug real no
- * módulo DataTables e não vale a pena repetir.
+ * Painel lateral. DES · LIB-03 (27/11, VERDE): EVOLUÍDO para o DSSidePanel (_shared-react/des/DSSidePanel.tsx) — uma só infraestrutura.
+ * A API deste Drawer não mudou (aberto, titulo, subtitulo, aoFechar, largura=620, children): ele delega em modo `modal`, com superfície
+ * OPACA (lição do DataTables), foco contido, Esc, retorno do foco e começo abaixo da faixa fixa do shell. Telas novas usam o DSSidePanel
+ * direto (rodapé, estado, modo não modal, carregando/erro/indisponível).
  */
 export function Drawer({ aberto, titulo, subtitulo, aoFechar, largura = 620, children }: {
   aberto: boolean; titulo: string; subtitulo?: string;
   aoFechar: () => void; largura?: number; children: React.ReactNode;
 }) {
-  const ref = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    if (!aberto) return;
-    const antes = document.activeElement as HTMLElement | null;
-    ref.current?.focus();
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') aoFechar(); };
-    document.addEventListener('keydown', onKey);
-    return () => { document.removeEventListener('keydown', onKey); antes?.focus?.(); };
-  }, [aberto, aoFechar]);
-
-  if (!aberto) return null;
-
-  return (
-    <>
-      <div
-        onClick={aoFechar}
-        aria-hidden
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 4000 }}
-      />
-      <div
-        ref={ref}
-        role="dialog"
-        aria-modal="true"
-        aria-label={titulo}
-        tabIndex={-1}
-        style={{
-          position: 'fixed', top: 0, right: 0, bottom: 0,
-          width: `min(${largura}px, 96vw)`, zIndex: 4001,
-          background: 'var(--bl-overlay)',
-          borderLeft: '1px solid var(--bl-borda, var(--des-borda, #e5e7eb))',
-          boxShadow: '-8px 0 32px rgba(0,0,0,.34)',
-          display: 'flex', flexDirection: 'column', outline: 'none',
-        }}
-      >
-        <header style={{
-          display: 'flex', alignItems: 'flex-start', gap: 12,
-          padding: '14px 18px', borderBottom: '1px solid var(--bl-borda, var(--des-borda, #e5e7eb))', flex: '0 0 auto',
-        }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 600 }}>{titulo}</div>
-            {subtitulo && <div style={{ fontSize: 12, color: 'var(--bl-texto-2, var(--des-dim, #4b5563))', marginTop: 2 }}>{subtitulo}</div>}
-          </div>
-          <button type="button" className="bl-botao bl-botao--icone" onClick={aoFechar} aria-label="Fechar">✕</button>
-        </header>
-        <div style={{ flex: 1, overflow: 'auto', padding: 18, minHeight: 0 }}>{children}</div>
-      </div>
-    </>
-  );
+  return <DSSidePanel aberto={aberto} titulo={titulo} subtitulo={subtitulo} aoFechar={aoFechar} largura={largura} modo="modal">{children}</DSSidePanel>;
 }
 
 /* ─────────────────────────── Timeline ─────────────────────────── */

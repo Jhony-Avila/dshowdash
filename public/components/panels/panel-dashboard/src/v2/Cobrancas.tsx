@@ -4,7 +4,7 @@
 // só a tabela rola (AG Grid, tema DSHOW da P50: zebra, hover ≠ seleção, cabeçalho fixo). Clique na linha → painel lateral de ~480 px que
 // não desmonta a tabela (filtro, ordenação e rolagem preservados). Desconhecido = "—", nunca 0. Carregada sob demanda (AG Grid em chunk próprio).
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Download, ExternalLink, X } from 'lucide-react';
+import { ArrowLeft, Download, ExternalLink } from 'lucide-react';
 import { DSKpiCardV2 } from '@shared/des/DSKpiCardV2';
 import { CurrencyDollarCircle, Receipt, Wallet02 } from '@shared/des/icones-pro';
 import { criarGrade, exportarCsv, type ColDef, type GridApi, type ICellRendererParams } from '@shared/ag-grid/grade';
@@ -15,9 +15,10 @@ import '@shared/styles/tokens.css';
 ModuleRegistry.registerModules([ClientSideRowModelApiModule]);
 import {
   ErroV2, LIMITE_CV, dinheiro, lerAsaas, fmtData, fmtHora, fmtMoeda2, fmtMoedaCurta, fmtN, fmtQuando, lerDetalheCv, lerListaCv, lerResumoCv,
-  type DetalheCv, type EmpresaCv, type FaixaCv, type ItemCv, type ResumoCv,
+  type DetalheCv, type EmpresaCv, type FaixaCv, type ItemCv, type PorEmpresaCv, type ResumoCv,
 } from './servico';
 import { Problema, useBloco } from './comuns';
+import { DSSidePanel } from '@shared/des/DSSidePanel';
 import './cobrancas.css';
 
 const FAIXAS: { id: FaixaCv; rotulo: string; curto: string; de: number; ate: number }[] = [
@@ -35,7 +36,7 @@ const inteiro = (v: number | null) => (v === null ? null : Math.trunc(v));
 const curta = (v: number | null) => (v === null ? '—' : fmtMoedaCurta(v).replace(/^R\$\s?/, ''));
 const negativacao = (x: ItemCv) => (x.situacao?.negativacao === true ? 'Pedida' : x.situacao?.negativacao === false ? 'Não' : '—');
 const ORDEM_NULO = (a: number | null, b: number | null) => (a === b ? 0 : a === null ? -1 : b === null ? 1 : a - b);
-const MOTIVO: Record<string, string> = { sem_conexao: 'sem conexão', desatualizado: 'leitura desatualizada', sem_leitura: 'sem leitura' };
+const MOTIVO: Record<string, string> = { sem_conexao: 'sem conexão', desatualizado: 'leitura desatualizada', sem_leitura: 'sem leitura', nunca_sincronizada: 'nunca sincronizada' };
 const textoMotivo = (m: string | null) => (m === null ? 'sem leitura' : MOTIVO[m] ?? m);
 
 /** Faixa da tela que fica fora da rolagem do shell: tudo acima do topo da tela (shell + trilhas). A tela ocupa o resto da janela. */
@@ -105,68 +106,94 @@ function Grade({ itens, aoAbrir, aoTotais, apiRef, selecionada }: {
     apiRef.current = api;
     return () => { apiRef.current = null; api.destroy(); };
   }, [apiRef]);
-  useEffect(() => { const api = apiRef.current; if (!api) return; api.setGridOption('rowData', itens); totais.current(somarApi(api));
-    const tem = itens.some((x) => x.cliente_nome !== null); if (temNomeRef.current === tem) return; temNomeRef.current = tem;   // só quando muda: não desfaz a ordenação
-    const L = larguras(tem);
-    api.setGridOption('columnDefs', (api.getColumnDefs() ?? []).map((c) => { const id = (c as ColDef<ItemCv>).colId ?? ''; const sem: ColDef<ItemCv> = { ...(c as ColDef<ItemCv>) }; delete sem.sort; return L[id] ? { ...sem, ...L[id] } : sem; }));   // sort ausente = mantém o atual
+  useEffect(() => { const api = apiRef.current; if (!api) return;
+    // CB-UX-AC17 (CLS, 27/11): as larguras (com ou sem nomes) são aplicadas ANTES das linhas — antes, as linhas entravam e as colunas
+    // mudavam de largura depois, deslocando todas as células (medido: 0,1994 de CLS em 2200 claro quando a troca caía na janela de leitura)
+    const tem = itens.some((x) => x.cliente_nome !== null);
+    if (temNomeRef.current !== tem) { temNomeRef.current = tem;   // só quando muda: não desfaz a ordenação
+      const L = larguras(tem);
+      api.setGridOption('columnDefs', (api.getColumnDefs() ?? []).map((c) => { const id = (c as ColDef<ItemCv>).colId ?? ''; const sem: ColDef<ItemCv> = { ...(c as ColDef<ItemCv>) }; delete sem.sort; return L[id] ? { ...sem, ...L[id] } : sem; }));   // sort ausente = mantém o atual
+    }
+    api.setGridOption('rowData', itens); totais.current(somarApi(api));
   }, [itens, apiRef]);
   useEffect(() => { const api = apiRef.current; if (!api) return; if (!selecionada) api.deselectAll(); else api.getRowNode(selecionada)?.setSelected(true, true); }, [selecionada, apiRef]);
   return <div ref={el} className="cv-grade" data-cv-grade role="region" aria-label="Cobranças vencidas" />;
 }
 
+/** CB-UX-001 D3 (contrato VINHO 6e7ebd6): distribuição POR EMPRESA, compacta. Valor alinhado à direita; participação % só com cobertura completa
+ *  (todas lidas + resumo completo); sem leitura = "—" + motivo (nunca 0). Clicar FILTRA a tela por aquela empresa (explícito: aria-pressed; o mesmo
+ *  seletor de empresa do topo); com o filtro, a quebra é a da empresa filtrada (não mistura total global com filtrado). Ausente = não aparece. */
+function PorEmpresa({ itens, total, completo, selecionada, aoSelecionar }: { itens: PorEmpresaCv[] | null; total: number | null; completo: boolean;
+  selecionada: string | null; aoSelecionar: (conta: string | null) => void }) {
+  if (!itens || itens.length === 0) return null;
+  const cobertura = completo && itens.every((e) => e.lida) && total !== null && total > 0;
+  return (
+    <div className="cv-emps" role="group" aria-label="Distribuição por empresa (clique filtra a tela)" data-cv-por-empresa>
+      {itens.map((e) => { const v = e.lida ? dinheiro(e.valor) : null; const pct = cobertura && v !== null ? (v / (total as number)) * 100 : null;
+        const ativo = selecionada === e.empresa.conta;
+        return (
+          <button key={e.empresa.conta} type="button" className={`cv-emp-chip${e.lida ? '' : ' cv-emp-chip--sem'}`} aria-pressed={ativo} data-cv-emp={e.empresa.conta}
+            onClick={() => aoSelecionar(ativo ? null : e.empresa.conta)}
+            title={e.lida ? `${e.empresa.rotulo}: ${fmtMoeda2(v)} · ${plural(e.cobrancas, 'cobrança', 'cobranças')} · ${plural(e.clientes, 'cliente', 'clientes')}${e.negativadas ? ` · em negativação ${fmtMoeda2(dinheiro(e.negativadas.valor))}` : ''}`
+              : `${e.empresa.rotulo}: sem leitura (${textoMotivo(e.motivo ?? null)}) — fora das somas`}>
+            <span className="cv-emp-nome">{e.empresa.rotulo}</span>
+            <span className="cv-emp-v cv-num">{e.lida ? curta(v) : '—'}</span>
+            <span className="cv-emp-q">{e.lida ? `${fmtN(e.cobrancas ?? 0)} cobr. · ${fmtN(e.clientes ?? 0)} cli.` : textoMotivo(e.motivo ?? null)}</span>
+            {pct !== null && <span className="cv-emp-pct">{pct > 0 && pct < 0.1 ? '<0,1' : pct.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%</span>}
+          </button>); })}
+      {!cobertura && <span className="cv-dim cv-emps-nota" data-cv-emps-sem-pct>participação: — (cobertura incompleta)</span>}
+    </div>
+  );
+}
+
+// CB-UX-001 · LIB-03 (VERDE, 27/11): o painel do detalhe é o DSSidePanel compartilhado (modo NÃO modal: a grade continua utilizável —
+// filtro, ordenação, seleção e rolagem preservados; Esc fecha; o foco volta à linha de origem). Os dados e a ação continuam aqui.
 function Detalhe({ id, aoFechar, aoAbrir }: { id: string; aoFechar: () => void; aoAbrir: (id: string) => void }) {
   const b = useBloco((s) => lerDetalheCv(id, s), [id]);
   const d: DetalheCv | null = b.dados;
-  const titulo = useRef<HTMLHeadingElement>(null);
-  useEffect(() => { titulo.current?.focus(); }, [id]);
-  useEffect(() => { const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') aoFechar(); }; window.addEventListener('keydown', esc); return () => window.removeEventListener('keydown', esc); }, [aoFechar]);
   const orig = d ? dinheiro(d.valor_original) : null, atu = d ? dinheiro(d.valor_atualizado) : null, jm = d ? dinheiro(d.juros_multa) : null;
   const f = faixaDe(d?.dias_atraso ?? null);
-  // começa logo abaixo da faixa fixa do shell (ticker/cabeçalho), sem mexer no shell
-  const [topo] = useState(() => Math.max(0, ...[...document.querySelectorAll('.dsd-shell__region--header, .dsd-shell__region--ticker')]
-    .map((e) => { const q = e.getBoundingClientRect(); return getComputedStyle(e).position === 'fixed' && q.height > 0 ? q.bottom : 0; })));
   return (
-    <aside style={{ top: topo }} className="cv-detalhe" role="dialog" aria-modal="false" aria-labelledby="cv-detalhe-tit" data-cv-detalhe={id}>
-      <header className="cv-det-cab">
-        <h2 id="cv-detalhe-tit" ref={titulo} tabIndex={-1} className="cv-det-tit">{d ? d.cliente_nome ?? 'Cliente —' : 'Cobrança vencida'}</h2>
-        <button type="button" className="cv-fechar" onClick={aoFechar} aria-label="Fechar o detalhe"><X size={16} aria-hidden /></button>
-      </header>
-      {b.carregando && !d ? <div className="cv-det-corpo" aria-busy><span className="des-osso" style={{ width: '60%', height: 18 }} /><span className="des-osso" style={{ width: '40%', height: 14 }} /></div>
-        : !d ? <div className="cv-det-corpo"><Problema motivo={b.erro instanceof ErroV2 && b.erro.http === 404 ? 'Esta cobrança não está mais entre as vencidas lidas.' : 'Não foi possível ler o detalhe agora.'} quando={null} onTentar={b.recarregar} tentando={b.atualizando} /></div>
-        : (
-          <div className="cv-det-corpo">
-            <p className="cv-det-sub">{d.empresa?.rotulo ?? '—'} · cliente <code>{d.cliente_codigo ?? '—'}</code> · cobrança <code>{d.id}</code></p>
-            <div className="cv-det-valores">
-              <div><span className="cv-det-rot">Valor original</span><strong className="cv-det-num">{fmtMoeda2(orig)}</strong></div>
-              <div><span className="cv-det-rot">Atualizado (juros e multa)</span><strong className="cv-det-num">{fmtMoeda2(atu)}</strong>
-                <span className="cv-det-nota">{atu === null ? 'o Asaas não informou juros/multa' : `+ ${fmtMoeda2(jm)}`}</span></div>
-            </div>
-            <dl className="cv-det-dl">
-              <dt>Vencimento</dt><dd>{d.vencimento ? fmtData(d.vencimento) : '—'}{d.vencimento_original && d.vencimento_original !== d.vencimento ? ` (original ${fmtData(d.vencimento_original)})` : ''}</dd>
-              <dt>Atraso</dt><dd><span className={`cv-atraso${f ? ` cv-atraso--${FAIXAS.indexOf(f) + 1}` : ''}`}>{d.dias_atraso === null ? '—' : `${fmtN(d.dias_atraso)} dias`}</span>{f ? ` · ${f.rotulo}` : ''}</dd>
-              <dt>Forma</dt><dd>{d.forma?.rotulo ?? '—'}</dd>
-              <dt>Negativação</dt><dd>{negativacao(d)}</dd>
-              <dt>Fatura</dt><dd>{d.numero_fatura ?? '—'}</dd>
-              <dt>Criada em</dt><dd>{d.criada_em ? fmtData(d.criada_em) : '—'}</dd>
-              <dt>Descrição</dt><dd>{d.descricao ?? <span className="cv-dim">— · não gravada no Dash (pode conter dado do cliente)</span>}</dd>
-            </dl>
-            {d.link_fatura ? <a className="des-btn cv-det-link" href={d.link_fatura} target="_blank" rel="noopener noreferrer">Abrir no Asaas (fatura/boleto) <ExternalLink size={13} aria-hidden /></a>
-              : <p className="cv-dim">Link da fatura: — (o Asaas não informou)</p>}
-            <h3 className="cv-det-h3">Histórico</h3>
-            {d.eventos && d.eventos.length ? <ul className="cv-det-lista">{d.eventos.map((e, k) => <li key={k}><span>{fmtQuando(e.data)}</span><span>{e.evento}</span></li>)}</ul>
-              : <p className="cv-dim">— · o Asaas não fornece histórico por cobrança</p>}
-            <h3 className="cv-det-h3">Outras vencidas deste cliente</h3>
-            {d.outras_do_cliente === null ? <p className="cv-dim">—</p> : d.outras_do_cliente.itens.length === 0 ? <p className="cv-dim">Nenhuma outra vencida.</p> : (
-              <>
-                <p className="cv-det-soma" data-cv-outras>{plural(d.outras_do_cliente.cobrancas, 'cobrança', 'cobranças')} · {fmtMoeda2(dinheiro(d.outras_do_cliente.valor))}</p>
-                <ul className="cv-det-lista">{d.outras_do_cliente.itens.map((o) => (
-                  <li key={o.id}><button type="button" className="des-link" onClick={() => aoAbrir(o.id)}>{o.vencimento ? fmtData(o.vencimento) : '—'}</button>
-                    <span>{o.dias_atraso === null ? '—' : `${fmtN(o.dias_atraso)} dias`}</span><span className="cv-num">{fmtMoeda2(dinheiro(o.valor_original))}</span></li>))}</ul>
-              </>
-            )}
-          </div>
+    <DSSidePanel key={id} aberto modo="nao-modal" largura={520} aoFechar={aoFechar} rotuloFechar="Fechar o detalhe"
+      titulo={d ? d.cliente_nome ?? 'Cliente —' : 'Cobrança vencida'}
+      subtitulo={d ? <>{d.empresa?.rotulo ?? '—'} · cliente <code>{d.cliente_codigo ?? '—'}</code> · cobrança <code>{d.id}</code></> : undefined}
+      estado={d?.situacao?.negativacao === true ? 'Negativação pedida' : undefined}
+      carregando={b.carregando && !d}
+      erro={!b.carregando && !d ? <Problema motivo={b.erro instanceof ErroV2 && b.erro.http === 404 ? 'Esta cobrança não está mais entre as vencidas lidas.' : 'Não foi possível ler o detalhe agora.'} quando={null} onTentar={b.recarregar} tentando={b.atualizando} /> : undefined}
+      rodape={d?.link_fatura ? <a className="des-btn cv-det-link" href={d.link_fatura} target="_blank" rel="noopener noreferrer">Abrir no Asaas (fatura/boleto) <ExternalLink size={13} aria-hidden /></a> : undefined}
+      dados={{ 'data-cv-detalhe': id }}>
+      {d && (
+        <>
+        <div className="cv-det-valores">
+          <div><span className="cv-det-rot">Valor original</span><strong className="cv-det-num">{fmtMoeda2(orig)}</strong></div>
+          <div><span className="cv-det-rot">Atualizado (juros e multa)</span><strong className="cv-det-num">{fmtMoeda2(atu)}</strong>
+            <span className="cv-det-nota">{atu === null ? 'o Asaas não informou juros/multa' : `+ ${fmtMoeda2(jm)}`}</span></div>
+        </div>
+        <dl className="cv-det-dl">
+          <dt>Vencimento</dt><dd>{d.vencimento ? fmtData(d.vencimento) : '—'}{d.vencimento_original && d.vencimento_original !== d.vencimento ? ` (original ${fmtData(d.vencimento_original)})` : ''}</dd>
+          <dt>Atraso</dt><dd><span className={`cv-atraso${f ? ` cv-atraso--${FAIXAS.indexOf(f) + 1}` : ''}`}>{d.dias_atraso === null ? '—' : `${fmtN(d.dias_atraso)} dias`}</span>{f ? ` · ${f.rotulo}` : ''}</dd>
+          <dt>Forma</dt><dd>{d.forma?.rotulo ?? '—'}</dd>
+          <dt>Negativação</dt><dd>{negativacao(d)}</dd>
+          <dt>Fatura</dt><dd>{d.numero_fatura ?? '—'}</dd>
+          <dt>Criada em</dt><dd>{d.criada_em ? fmtData(d.criada_em) : '—'}</dd>
+          <dt>Descrição</dt><dd>{d.descricao ?? <span className="cv-dim">— · não gravada no Dash (pode conter dado do cliente)</span>}</dd>
+        </dl>
+        {!d.link_fatura && <p className="cv-dim">Link da fatura: — (o Asaas não informou)</p>}
+        <h3 className="cv-det-h3">Histórico</h3>
+        {d.eventos && d.eventos.length ? <ul className="cv-det-lista">{d.eventos.map((e, k) => <li key={k}><span>{fmtQuando(e.data)}</span><span>{e.evento}</span></li>)}</ul>
+          : <p className="cv-dim">— · o Asaas não fornece histórico por cobrança</p>}
+        <h3 className="cv-det-h3">Outras vencidas deste cliente</h3>
+        {d.outras_do_cliente === null ? <p className="cv-dim">—</p> : d.outras_do_cliente.itens.length === 0 ? <p className="cv-dim">Nenhuma outra vencida.</p> : (
+          <>
+            <p className="cv-det-soma" data-cv-outras>{plural(d.outras_do_cliente.cobrancas, 'cobrança', 'cobranças')} · {fmtMoeda2(dinheiro(d.outras_do_cliente.valor))}</p>
+            <ul className="cv-det-lista">{d.outras_do_cliente.itens.map((o) => (
+              <li key={o.id}><button type="button" className="des-link" onClick={() => aoAbrir(o.id)}>{o.vencimento ? fmtData(o.vencimento) : '—'}</button>
+                <span>{o.dias_atraso === null ? '—' : `${fmtN(o.dias_atraso)} dias`}</span><span className="cv-num">{fmtMoeda2(dinheiro(o.valor_original))}</span></li>))}</ul>
+          </>
         )}
-    </aside>
+        </>
+      )}
+    </DSSidePanel>
   );
 }
 
@@ -252,6 +279,12 @@ export default function CobrancasVencidas({ aoVoltar }: { aoVoltar: () => void }
             estado={kpi.estado === 'ok' && !mx ? 'vazio' : kpi.estado} selo={null} motivo={kpi.estado === 'ok' && !mx ? 'Nenhuma vencida' : kpi.motivo}
             sub={mx ? <button type="button" className="des-link cv-maior" onClick={() => setAberta(mx.id)} data-cv-maior title={`${mx.cliente_nome ?? 'Cliente —'} · ${mx.empresa?.rotulo ?? '—'} · ${fmtMoeda2(dinheiro(mx.valor))}`}>{mx.dias_atraso === null ? '—' : `${fmtN(mx.dias_atraso)} dias`} · {mx.cliente_nome ?? 'cliente —'}</button> : undefined}
             dados={{ 'data-cv-kpi': 'maior' }} />
+          {/* CB-UX-001 D2/AC08: negativação = SUBCONJUNTO do total (nunca somada); servidor sem o campo = indisponível, nunca 0 */}
+          <DSKpiCardV2 {...kpi} rotulo="Em negativação" icone={<Receipt size={14} />}
+            {...(r?.total && r.total.negativadas !== undefined ? soma(r.total.negativadas) : { valor: null, sub: undefined, dica: undefined })}
+            motivo={kpi.estado === 'ok' && (!r?.total || r.total.negativadas === undefined || r.total.negativadas === null) ? 'Indisponível nesta leitura' : kpi.motivo}
+            dica={r?.total?.negativadas ? `Parte do total vencido (já incluída nele): ${fmtMoeda2(dinheiro(r.total.negativadas.valor))}` : 'A leitura atual não informa a negativação'}
+            dados={{ 'data-cv-kpi': 'negativacao' }} />
           <div className="cv-faixas" role="group" aria-labelledby="cv-faixas-rot" data-cv-faixas>
             <span id="cv-faixas-rot" className="des-sr">Faixas de atraso: clique filtra a tabela</span>
             <div className="cv-faixas-barra">
@@ -266,6 +299,8 @@ export default function CobrancasVencidas({ aoVoltar }: { aoVoltar: () => void }
           </div>
           </div>
         </div>
+        <PorEmpresa itens={r?.por_empresa ?? null} total={r?.total ? dinheiro(r.total.valor) : null} completo={!!r?.completo} selecionada={empresa}
+          aoSelecionar={(c) => { setEmpresa(c); setAberta(null); }} />
       </div>
       <div className="cv-corpo" data-bl-root>
         {lista.carregando && !lista.dados ? <div className="cv-carregando" aria-busy>Lendo as cobranças…</div>

@@ -13,7 +13,7 @@
 [data-geral-react-root] .cv-total strong { font-weight: 600; }
 [data-geral-react-root] .cv-csv { height: 28px; }
 /* faixa KPI: 5 big numbers + as faixas de atraso (6ª célula, mais larga), 56 px */
-[data-geral-react-root] .cv-kpis { display: grid; grid-template-columns: minmax(0, 1.2fr) repeat(3, minmax(0, .9fr)) minmax(0, 1.15fr) minmax(0, 2.4fr); gap: 8px; }
+[data-geral-react-root] .cv-kpis { display: grid; grid-template-columns: minmax(0, 1.1fr) repeat(3, minmax(0, .82fr)) minmax(0, 1.05fr) minmax(0, .82fr) minmax(0, 2.55fr); gap: 8px; }   /* CB-UX-001 D2: + coluna "Em negativação" (a faixa continua em UMA linha de 56 px) */
 [data-geral-react-root] .cv-maior { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; text-align: left; }
 [data-geral-react-root] .cv-faixas { display: flex; flex-direction: column; justify-content: center; gap: 0; height: 56px; box-sizing: border-box; padding: 4px;
   border: 1px solid var(--des-borda); border-radius: 10px; background: var(--des-sup); min-width: 0; }
@@ -49,15 +49,7 @@
 [data-geral-react-root] .cv-atraso--2 { --cv-f-txt: var(--cv-f2); --cv-f-fundo: color-mix(in srgb, var(--des-aviso) 18%, transparent); }
 [data-geral-react-root] .cv-atraso--3 { --cv-f-txt: var(--cv-f3); --cv-f-fundo: color-mix(in srgb, var(--des-erro) 14%, transparent); }
 [data-geral-react-root] .cv-atraso--4 { --cv-f-txt: var(--cv-f4); --cv-f-fundo: color-mix(in srgb, var(--des-erro) 24%, transparent); }
-/* painel lateral (~480 px), não modal: a tabela continua montada atrás (filtro, ordem e rolagem preservados) */
-[data-geral-react-root] .cv-detalhe { position: fixed; z-index: 40; top: var(--cv-det-topo, 100px); right: 0; bottom: 0; width: min(480px, 100vw); box-sizing: border-box;
-  display: flex; flex-direction: column; background: var(--des-sup); border-left: 1px solid var(--des-borda); box-shadow: -16px 0 32px -20px rgba(0, 0, 0, .45); }
-[data-geral-react-root] .cv-det-cab { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--des-borda); }
-[data-geral-react-root] .cv-det-tit { margin: 0; flex: 1 1 auto; font-size: 16px; font-weight: 600; line-height: 22px; min-width: 0; overflow-wrap: anywhere; }
-[data-geral-react-root] .cv-det-tit:focus { outline: none; }
-[data-geral-react-root] .cv-det-tit:focus-visible { outline: 2px solid var(--des-link); outline-offset: 2px; }
-[data-geral-react-root] .cv-fechar { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 1px solid var(--des-borda); border-radius: 8px; background: transparent; color: var(--des-texto); cursor: pointer; }
-[data-geral-react-root] .cv-fechar:focus-visible { outline: 2px solid var(--des-link); outline-offset: 2px; }
+/* painel lateral: estrutura e interação no DSSidePanel compartilhado (CB-UX-001 · LIB-03, 27/11); aqui só o conteúdo do detalhe */
 [data-geral-react-root] .cv-det-corpo { flex: 1 1 auto; overflow: auto; padding: 14px 16px 20px; display: flex; flex-direction: column; gap: 12px; font-size: 13px; }
 [data-geral-react-root] .cv-det-sub { margin: 0; color: var(--des-dim); font-size: 12px; overflow-wrap: anywhere; }
 [data-geral-react-root] .cv-det-sub code { font-size: 12px; }
@@ -79,3 +71,15 @@
 @media (max-width: 600px) { [data-geral-react-root] .cv-kpis .des2-kpi--compacto { height: auto; min-height: 56px; padding-block: 6px; }
   [data-geral-react-root] .cv-kpis .des2-kpi__sub { white-space: normal; overflow: visible; text-overflow: clip; } }
 @media (max-width: 600px) { [data-geral-react-root] .cv-kpis { grid-template-columns: 1fr 1fr; } [data-geral-react-root] .cv-faixas { grid-column: span 2; } [data-geral-react-root] .cv-dir { margin-left: 0; } }
+
+/* CB-UX-001 D3 · distribuição por empresa (VERDE, 27/11): uma linha compacta de chips; valor à direita; % só com cobertura completa */
+[data-geral-react-root] .cv-emps { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
+[data-geral-react-root] .cv-emp-chip { display: inline-grid; grid-auto-flow: column; align-items: baseline; gap: 8px; padding: 4px 10px; min-height: 30px; border: 1px solid var(--des-borda);
+  border-radius: 8px; background: var(--des-sup); color: var(--des-texto); font: inherit; font-size: 12px; cursor: pointer; }
+[data-geral-react-root] .cv-emp-chip[aria-pressed="true"] { border-color: var(--des-link); box-shadow: inset 0 0 0 1px var(--des-link); }
+[data-geral-react-root] .cv-emp-chip:focus-visible { outline: 2px solid var(--des-link); outline-offset: 2px; }
+[data-geral-react-root] .cv-emp-chip--sem { border-style: dashed; color: var(--des-dim); }
+[data-geral-react-root] .cv-emp-nome { font-weight: 500; }
+[data-geral-react-root] .cv-emp-v { font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+[data-geral-react-root] .cv-emp-q, [data-geral-react-root] .cv-emp-pct { color: var(--des-dim); }
+[data-geral-react-root] .cv-emps-nota { font-size: 12px; }
