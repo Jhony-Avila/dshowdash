@@ -126,6 +126,7 @@
 [data-geral-react-root] .gv2-fonte--problema .gv2-ponto { background: var(--ger-bad); }
 [data-geral-react-root] .gv2-fonte--problema span:last-child { color: var(--ger-bad); }
 [data-geral-react-root] .gv2-fontes-det { margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--ger-borda); display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 8px 22px; font-size: 12px; }
+[data-geral-react-root] .gv2-fontes-conc { margin: 10px 0 0; font-size: 12px; }
 [data-geral-react-root] .gv2-fontes-det dt { font-weight: 500; }
 [data-geral-react-root] .gv2-fontes-det dd { margin: 0; color: var(--ger-texto-dim); }
 [data-geral-react-root] .gv2-gira90 { transform: rotate(90deg); }

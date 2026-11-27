@@ -5,13 +5,13 @@
 // (não mudam com o período), no máximo 3, por gravidade e depois antiguidade; pedidos, ganhos e funil são conceitos SEPARADOS
 // (nunca somados); sem "Comparação: período anterior"; texto mínimo de 12 px; falha nunca vira zero; estado sempre escrito.
 import { Suspense, lazy, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { AlertTriangle, ArrowRight, CalendarDays, CheckCircle2, ExternalLink, PlugZap } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, ArrowRight, CalendarDays, CheckCircle2, ExternalLink, PlugZap } from 'lucide-react';
 import {
   ErroV2, dinheiro, fmtData, fmtDiaMes, fmtHora, fmtMoeda2, fmtN, fmtQuando, hojeExtenso, numDe,
   lerAsaas, lerPainel, type Painel,
   type Agenda, type EstadoBloco, type Fonte, type IdPrioridade, type PedidosBling, type PeriodoV2, type Prioridade, type Prioridades, type Resumo,
 } from './servico';
-import { Integracoes } from './Integracoes';
+import { Conciliacao } from './Conciliacao';
 import type { FormatoKpi } from '@shared/des/DSKpiCard';
 import { DSKpiCardV2 as DSKpiCard, type DominioKpi } from '@shared/des/DSKpiCardV2';   // v2, variação A (escolha do Jhony, 26/11)
 import { BarChartSquare02, Package as IcPacote, TrendUp01, Wallet02 } from '@shared/des/icones-pro';
@@ -50,7 +50,7 @@ function Osso({ l, a = 12 }: { l: string; a?: number }) { return <span className
 // ════════════════════════════════════════════════════════════════════
 export function GeralV2() {
   const [periodo, setPeriodo] = useState<PeriodoV2>(() => { try { const p = localStorage.getItem(K_PERIODO); return p === 'ontem' || p === 'mes' ? p : '7d'; } catch { return '7d'; } });
-  const [vista, setVista] = useState<{ tipo: 'geral' } | { tipo: 'integracoes' } | { tipo: 'vencidas_asaas' } | { tipo: 'lista'; id: IdPrioridade; quantidade: number | null }>({ tipo: 'geral' });
+  const [vista, setVista] = useState<{ tipo: 'geral' } | { tipo: 'conciliacao' } | { tipo: 'vencidas_asaas' } | { tipo: 'lista'; id: IdPrioridade; quantidade: number | null }>({ tipo: 'geral' });
   const trocarPeriodo = (p: PeriodoV2) => { setPeriodo(p); try { localStorage.setItem(K_PERIODO, p); } catch { /* sem storage */ } };
 
   // uma leitura só (painel.php): cada bloco é uma VISTA dela, com o mesmo erro, o mesmo "Tentar de novo" e o mesmo instante
@@ -68,10 +68,6 @@ export function GeralV2() {
   const resumo = trocando ? ({ ...resumo0, dados: null, erro: null, carregando: true } as typeof resumo0) : resumo0;
   const prioridades = vistaDe('prioridades'), agenda = vistaDe('agenda'), fontes = vistaDe('fontes');
   const topo = useRef<HTMLDivElement>(null);
-  // a rota é lida ao montar E a cada troca de hash: navegar da Geral para #/panel-integracoes não remonta o painel (é o mesmo bundle)
-  const ehIntegracoes = () => typeof window !== 'undefined' && window.location.hash.startsWith('#/panel-integracoes');
-  const [rotaIntegracoes, setRotaIntegracoes] = useState(ehIntegracoes);
-  useEffect(() => { const f = () => setRotaIntegracoes(ehIntegracoes()); window.addEventListener('hashchange', f); return () => window.removeEventListener('hashchange', f); }, []);
   // 26/11 (ROXO, auditoria UX/UI F3 item 6 · DSStickyHeader): quando o cabeçalho (título + períodos) sai da tela ao rolar, ele fica PRESO logo
   // abaixo da faixa fixa do shell, compacto (≤ 48 px: título menor, sem subtítulo) — os períodos nunca saem de alcance. position: fixed com a
   // largura do miolo (não depende de nenhum ancestral sem overflow, nem mexe no shell); um espaçador da mesma altura evita o pulo.
@@ -100,9 +96,18 @@ export function GeralV2() {
   const fl: FontesLidas = fontes.carregando && !fontes.dados ? 'carregando' : fontes.dados ?? null;
   const efs = indicadoresEfetivos(resumo, prioridades, agenda, fl);
 
-  // 26/11 (Fase 1): Integrações tem rota própria (#/panel-integracoes, item do menu); o shell monta este mesmo bundle e a página inteira abre aqui
-  if (rotaIntegracoes) return <div ref={topo} className="gv2" data-gv2-vista="integracoes-pagina"><Integracoes pagina aoVoltar={() => navegar('#/panel-dashboard')} />   {/* '#/' cru o roteador resolve para outro painel; o id do painel é direto */}</div>;
-  if (vista.tipo === 'integracoes') return <div ref={topo} className="gv2" data-gv2-vista="integracoes"><Integracoes aoVoltar={() => setVista({ tipo: 'geral' })} /></div>;
+  // 27/11 (P89j, validado pelo Jhony): Integrações é um PAINEL PRÓPRIO (panel-integracoes, raiz React separada) — a Geral não lê mais a rota.
+  // A Conciliação Asaas × Precifica volta a ser uma vista da Geral (link no bloco de fontes), fora de Integrações.
+  if (vista.tipo === 'conciliacao') return (
+    <div ref={topo} className="gv2" data-gv2-vista="conciliacao">
+      <div className="gv2-lista">
+        <nav className="gv2-trilha" aria-label="Você está em">
+          <button type="button" className="gv2-link" onClick={() => setVista({ tipo: 'geral' })}><ArrowLeft size={13} aria-hidden /> Geral</button>
+          <span aria-hidden>›</span><span>Conciliação Asaas × Precifica</span>
+        </nav>
+        <Conciliacao />
+      </div>
+    </div>);
   if (vista.tipo === 'vencidas_asaas') return <div ref={topo} className="gv2" data-gv2-vista="vencidas-asaas"><Suspense fallback={<p className="gv2-fraco" aria-busy>Abrindo as cobranças vencidas…</p>}><CobrancasVencidas aoVoltar={() => setVista({ tipo: 'geral' })} /></Suspense></div>;
   if (vista.tipo === 'lista') {
     return <div ref={topo} className="gv2" data-gv2-vista="lista"><ListaPrioridade id={vista.id} quantidadeGeral={vista.quantidade} aoVoltar={() => setVista({ tipo: 'geral' })} /></div>;
@@ -128,7 +133,7 @@ export function GeralV2() {
         <BlocoPedidosGrafico b={resumo} fl={fl} />
         <BlocoAgenda b={agenda} fl={fl} />
       </div>
-      <BlocoFontes b={fontes} efs={efs} extra={fonteAsaas(asaas)} aoIntegracoes={() => navegar('#/panel-integracoes')} />
+      <BlocoFontes b={fontes} efs={efs} extra={fonteAsaas(asaas)} aoIntegracoes={() => navegar('#/panel-integracoes')} aoConciliacao={() => setVista({ tipo: 'conciliacao' })} />
     </div>
   );
 }
@@ -507,7 +512,7 @@ function textoFonte(f: Fonte, ef: ReturnType<typeof fonteEfetiva>): string {
   const partes = ef.partes.length ? ` (${ef.partes.join(', ')})` : '';
   return `${ef.rotulo}${partes}${ef.estado === 'desatualizada' && f.ultimo_sucesso ? ` · último sucesso ${fmtQuando(f.ultimo_sucesso)}` : ''}`;
 }
-function BlocoFontes({ b, efs, aoIntegracoes, extra }: { b: ReturnType<typeof useBloco<Fonte[]>>; efs: { id: IdIndicador; e: Efetivo }[]; aoIntegracoes?: () => void; extra?: Fonte | null }) {
+function BlocoFontes({ b, efs, aoIntegracoes, aoConciliacao, extra }: { b: ReturnType<typeof useBloco<Fonte[]>>; efs: { id: IdIndicador; e: Efetivo }[]; aoIntegracoes?: () => void; aoConciliacao?: () => void; extra?: Fonte | null }) {
   const [aberto, setAberto] = useState(false); const car = b.carregando && !b.dados;
   // a linha do Asaas vem da leitura do cartão (o painel.php não a traz); se um dia o serviço mandar, vale a do serviço
   const lista = b.dados ? (extra && !b.dados.some((f) => f.fonte === extra.fonte) ? [...b.dados, extra] : b.dados) : null;
@@ -524,7 +529,7 @@ function BlocoFontes({ b, efs, aoIntegracoes, extra }: { b: ReturnType<typeof us
             ); })}
           </ul>
         )}
-        {aoIntegracoes && <button type="button" className="gv2-link gv2-dir" onClick={aoIntegracoes}>Integrações <ArrowRight size={13} aria-hidden /></button>}
+        {aoIntegracoes && <button type="button" className="gv2-link gv2-dir" onClick={aoIntegracoes} data-gv2-link-integracoes>Integrações <ArrowRight size={13} aria-hidden /></button>}
         {b.dados && <button type="button" className={`gv2-link${aoIntegracoes ? '' : ' gv2-dir'}`} aria-expanded={aberto} onClick={() => setAberto((v) => !v)}>{aberto ? 'Fechar detalhes' : 'Detalhes'} <ArrowRight size={13} aria-hidden className={aberto ? 'gv2-gira90' : undefined} /></button>}
       </div>
       {aberto && b.dados && (
@@ -533,6 +538,10 @@ function BlocoFontes({ b, efs, aoIntegracoes, extra }: { b: ReturnType<typeof us
             <div key={f.fonte}><dt>{NOME_FONTE[f.fonte]}</dt><dd>{textoFonte(f, fonteEfetiva(f, efs))}{f.motivo ? ` — ${f.motivo}` : ''}</dd></div>
           ))}
         </dl>
+      )}
+      {/* a Conciliação fica nos detalhes das fontes: na linha de cima um 3º link quebrava a linha (QI 27/11: +21 px na Geral) */}
+      {aberto && b.dados && aoConciliacao && (
+        <p className="gv2-fontes-conc"><button type="button" className="gv2-link" onClick={aoConciliacao} data-gv2-link-conciliacao>Conciliação Asaas × Precifica <ArrowRight size={13} aria-hidden /></button></p>
       )}
     </section>
   );

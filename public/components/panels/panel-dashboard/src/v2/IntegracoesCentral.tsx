@@ -18,7 +18,10 @@ export const ESTADO_V2: Record<EstadoIntegracaoV2, [string, 'ok' | 'aviso' | 'er
   aguardando: ['Aguardando conexão', 'neutro'], sem_acesso: ['Sem acesso', 'neutro'], nao_integrado: ['Não integrada', 'neutro'], desconhecido: ['Desconhecido', 'neutro'],
 };
 const ORDEM: EstadoIntegracaoV2[] = ['com_problema', 'atrasado', 'parcial', 'desconhecido', 'sem_acesso', 'aguardando', 'nao_integrado', 'ok'];
-const ATENCAO = new Set<EstadoIntegracaoV2>(['com_problema', 'atrasado', 'parcial']);
+// "Pedem atenção" (Jhony, 27/11): erro, atraso/parcial (inclui token expirando, que o serviço reporta como atrasado/com_problema), aguardando conexão e desconhecido
+const ATENCAO = new Set<EstadoIntegracaoV2>(['com_problema', 'atrasado', 'parcial', 'aguardando', 'desconhecido']);
+/** a DSHOW não usa mais o Outlook (Jhony, 27/11): fora da lista mesmo que o serviço ainda o mande */
+export const FORA_DA_LISTA = new Set(['outlook']);
 /** a URL da ação vem do serviço: só https: ou caminho/rota relativa do Dash (nunca javascript:, data: …) — defesa sugerida pelo VERDE (P88) */
 export const urlSegura = (u: string | null | undefined): string | null => {
   if (!u) return null; const t = u.trim();
@@ -71,7 +74,7 @@ function Detalhe({ x, aoFechar }: { x: IntegracaoV2; aoFechar: () => void }) {
 
 export default function IntegracoesCentral({ dados, aoVoltar, aoAtualizar, atualizando }: { dados: IntegracoesV2; aoVoltar: () => void; aoAtualizar: () => void; atualizando: boolean }) {
   const [busca, setBusca] = useState(''); const [atencao, setAtencao] = useState(false); const [aberta, setAberta] = useState<string | null>(null);
-  const todas = dados.integracoes;
+  const todas = dados.integracoes.filter((x) => !FORA_DA_LISTA.has(x.id));
   const conta = (f: (x: IntegracaoV2) => boolean) => todas.filter(f).length;
   const nAtencao = conta((x) => ATENCAO.has(x.estado));
   const linhas = useMemo(() => {

@@ -11,7 +11,6 @@ import { ErroV2, fmtQuando, lerIntegracoes, lerIntegracoesV2, type Integracao, t
 const IntegracoesCentral = lazy(() => import('./IntegracoesCentral'));
 import { Problema, useBloco } from './comuns';
 import { DSWorkspaceTop } from '@shared/des/DSWorkspaceTop';
-import { Conciliacao } from './Conciliacao';
 
 const ESTADO: Record<Integracao['estado'], [string, string]> = {
   ok: ['Em dia', 'ok'], atrasado: ['Atrasada', 'aviso'], com_problema: ['Com problema', 'erro'],
@@ -27,9 +26,9 @@ export function Integracoes({ aoVoltar, pagina }: { aoVoltar: () => void; pagina
       <Suspense fallback={<p className="gv2-fraco" aria-busy>Abrindo a Central de Integrações…</p>}>
         <IntegracoesCentral dados={b.dados as IntegracoesV2} aoVoltar={aoVoltar} aoAtualizar={b.recarregar} atualizando={b.atualizando} />
       </Suspense>
-      <Conciliacao />
     </div>);
-  const lista = [...((b.dados?.integracoes ?? []) as Integracao[])].sort((x, y) => ORDEM.indexOf(x.estado) - ORDEM.indexOf(y.estado));
+  const lista = [...((b.dados?.integracoes ?? []) as Integracao[])].filter((x) => x.id !== 'outlook')   // a DSHOW não usa mais o Outlook (27/11)
+.sort((x, y) => ORDEM.indexOf(x.estado) - ORDEM.indexOf(y.estado));
   const semAcesso = b.erro instanceof ErroV2 && b.erro.semAcesso;
   const pendentes = lista.filter((x) => x.estado === 'com_problema' || x.estado === 'atrasado').length;
   return (
@@ -75,7 +74,6 @@ export function Integracoes({ aoVoltar, pagina }: { aoVoltar: () => void; pagina
           </ul>
         )}
       </section>
-      <Conciliacao />
     </div>
   );
 }
