@@ -26,8 +26,14 @@ if (!SessionGate::validate()) {
 // ERP NOVO (26/11, mesma regra do painel 01): origem decidida DEPOIS do login e ANTES do cache e da consulta; na origem nova só quem tem a
 // permissão financeira POR PESSOA (override de financeiro_asaas_leitura; 403 senão) e o cache é separado ('panel:05n:'). Legado = como antes.
 $ERP_ORIGEM = erp_ponto_origem('painel05');
-if ($ERP_ORIGEM === 'novo' && !erp_novo_autorizado(AuthHelpers::getCurrentUserId())) { ApiResponse::error(ApiResponse::ERR_NOT_AUTHORIZED, 403); exit; }
-$CACHE_PREFIX = $ERP_ORIGEM === 'novo' ? 'panel:05n:' : 'panel:05:';
+// Decisão do arquiteto (26/11 23:0x): dado FINANCEIRO (receita, ticket, LTV, inadimplência, saldo) só com a permissão POR PESSOA — override de
+// financeiro_asaas_leitura, fail-closed, independente do UARPS e da flag global (a checagem do F03/P70) — nas DUAS origens. Sem ela o painel
+// abre, cada valor financeiro vem null e o envelope traz meta.financeiro {permitido:false, motivo}; cartões só financeiros não consultam nada.
+$FIN = erp_novo_autorizado(AuthHelpers::getCurrentUserId());
+$CACHE_PREFIX = ($ERP_ORIGEM === 'novo' ? 'panel:05n:' : 'panel:05:') . ($FIN ? 'f1:' : 'f0:');   // cache separado por permissão
+const P05_SEM_FIN = 'Sem permissão para dados financeiros.';
+$P05_META = ['version' => '7.7.0-ERPV2-ENTERPRISE'] + ($FIN ? [] : ['financeiro' => ['permitido' => false, 'motivo' => P05_SEM_FIN]]);
+function p05_fin(): bool { return ($GLOBALS['FIN'] ?? false) === true; }
 
 $validator = InputValidator::fromGet();
 $allowed_actions = ['default', 'kpis', 'list', 'charts', 'top', 'vendedores', 'insights', 'export', 'compare', 'funil', 'metrics', 'search', 'churn', 'ranking', 'heatmap'];
@@ -53,29 +59,29 @@ try {
 }
 
 try {
-    if ($clienteId) { $result = getCliente360($pdo, $clienteId); if (!$result['ok']) { ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404); } else { echo ApiResponse::buildSuccess($result['data'], ['version' => '7.7.0-ERPV2-ENTERPRISE']); } RedisHelper::close(); exit; }
+    if ($clienteId) { $result = getCliente360($pdo, $clienteId); if (!$result['ok']) { ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404); } else { echo ApiResponse::buildSuccess($result['data'], $P05_META); } RedisHelper::close(); exit; }
     switch ($action) {
         case 'kpis': $response = getKPIs($pdo); break;
-        case 'list': $response = getClientesList($pdo, $validator); echo ApiResponse::buildSuccess($response['data'], ['version' => '7.7.0-ERPV2-ENTERPRISE']); RedisHelper::close(); exit;
+        case 'list': $response = getClientesList($pdo, $validator); echo ApiResponse::buildSuccess($response['data'], $P05_META); RedisHelper::close(); exit;
         case 'charts': $response = getCharts($pdo); break;
-        case 'top': $response = getTopClientes($pdo, $validator, $CACHE_TTL); echo ApiResponse::buildSuccess($response['data'], ['version' => '7.7.0-ERPV2-ENTERPRISE']); RedisHelper::close(); exit;
+        case 'top': $response = getTopClientes($pdo, $validator, $CACHE_TTL); echo ApiResponse::buildSuccess($response['data'], $P05_META); RedisHelper::close(); exit;
         case 'vendedores': $response = getVendedores($pdo); break;
         case 'insights': $response = getInsights($pdo); break;
         case 'export': exportCSV($pdo, $validator); exit;
-        case 'compare': $response = getComparativo($pdo, $validator); echo ApiResponse::buildSuccess($response['data'], ['version' => '7.7.0-ERPV2-ENTERPRISE']); RedisHelper::close(); exit;
+        case 'compare': $response = getComparativo($pdo, $validator); echo ApiResponse::buildSuccess($response['data'], $P05_META); RedisHelper::close(); exit;
         case 'funil': $response = getFunil($pdo); break;
         case 'metrics': $response = getMetricsAvancadas($pdo); break;
         case 'search': $response = searchClientes($pdo, $validator); echo ApiResponse::buildSuccess($response['data'], ['query' => $response['query'] ?? '', 'version' => '7.7.0-ERPV2-ENTERPRISE']); RedisHelper::close(); exit;
         case 'churn': $response = getChurnRisk($pdo); break;
-        case 'ranking': $response = getRanking($pdo, $validator, $CACHE_TTL); echo ApiResponse::buildSuccess($response['data'], ['version' => '7.7.0-ERPV2-ENTERPRISE']); RedisHelper::close(); exit;
+        case 'ranking': $response = getRanking($pdo, $validator, $CACHE_TTL); echo ApiResponse::buildSuccess($response['data'], $P05_META); RedisHelper::close(); exit;
         case 'heatmap': $response = getHeatmap($pdo); break;
         default: $response = ['ok' => true, 'data' => ['kpis' => getKPIs($pdo)['data'], 'clientes' => getClientesList($pdo, $validator)['data'], 'insights' => getInsights($pdo)['data']]];
     }
     if (in_array($action, $cacheableActions, true)) {
-        $output = ApiResponse::buildSuccess($response['data'] ?? $response, ['version' => '7.7.0-ERPV2-ENTERPRISE']);
+        $output = ApiResponse::buildSuccess($response['data'] ?? $response, $P05_META);
         RedisHelper::cacheAndReturn("{$CACHE_PREFIX}{$action}", $output, $CACHE_TTL);
     } else {
-        echo ApiResponse::buildSuccess($response['data'] ?? $response, ['version' => '7.7.0-ERPV2-ENTERPRISE']);
+        echo ApiResponse::buildSuccess($response['data'] ?? $response, $P05_META);
         RedisHelper::close();
     }
 } catch (Throwable $e) {
@@ -90,10 +96,16 @@ function getKPIs($pdo) {
     $d = $pdo->query("SELECT (SELECT COUNT(*) FROM " . ERP_V_ORGANIZACAO . " Organizacao WHERE Flag_Ativo = -1) as clientes_ativos, (SELECT COUNT(*) FROM " . ERP_V_ORGANIZACAO . " Organizacao WHERE Flag_Ativo = 0 OR Flag_Ativo IS NULL) as clientes_inativos, (SELECT COUNT(*) FROM " . ERP_V_PESSOA . " Pessoa WHERE Ativo = -1) as contatos_ativos, (SELECT COALESCE(SUM(Valor_Final), 0) FROM " . ERP_V_ORCAMENTO . " Orcamento WHERE Id_Status IN (3, 5, 6)) as receita_total, (SELECT COUNT(*) FROM " . ERP_V_ORCAMENTO . " Orcamento WHERE Id_Status IN (3, 5, 6)) as orcamentos_ganhos, (SELECT COUNT(*) FROM " . ERP_V_ORCAMENTO . " Orcamento WHERE Id_Status = 4) as orcamentos_perdidos, (SELECT COUNT(*) FROM " . ERP_V_ORCAMENTO . " Orcamento) as orcamentos_total, (SELECT COUNT(DISTINCT Municipio_Endereco) FROM " . ERP_V_ORGANIZACAO . " Organizacao WHERE Municipio_Endereco IS NOT NULL) as cidades, (SELECT COUNT(DISTINCT Uf_Endereco) FROM " . ERP_V_ORGANIZACAO . " Organizacao WHERE Uf_Endereco IS NOT NULL) as estados, (SELECT COALESCE(SUM(Valor), 0) FROM " . ERP_V_CONTAS_A_RECEBER . " Contas_A_Receber WHERE Id_Situacao = 1) as a_receber_aberto, (SELECT COUNT(*) FROM " . ERP_V_CONTAS_A_RECEBER . " Contas_A_Receber WHERE Vencimento < CURDATE() AND Id_Situacao = 1) as titulos_vencidos")->fetch();
     $d['taxa_conversao'] = $d['orcamentos_total'] > 0 ? round(($d['orcamentos_ganhos'] / $d['orcamentos_total']) * 100, 1) : 0;
     $d['ticket_medio'] = $d['orcamentos_ganhos'] > 0 ? round($d['receita_total'] / $d['orcamentos_ganhos'], 2) : 0;
+    if (!p05_fin()) { $d['receita_total'] = null; $d['ticket_medio'] = null; }
     return ['ok' => true, 'data' => $d];
 }
 
 function getCharts($pdo) {
+    $r = getChartsDados($pdo);
+    if (!p05_fin()) { foreach (['receita_mensal', 'por_tipo'] as $k) { foreach ($r['data'][$k] as &$x) { $x['receita'] = null; } unset($x); } }
+    return $r;
+}
+function getChartsDados($pdo) {
     return ['ok' => true, 'data' => [
         'receita_mensal' => $pdo->query("SELECT DATE_FORMAT(Data_Criacao, '%Y-%m') as mes, DATE_FORMAT(Data_Criacao, '%b/%y') as mes_label, COUNT(*) as qtd, COALESCE(SUM(Valor_Final), 0) as receita FROM " . ERP_V_ORCAMENTO . " Orcamento WHERE Id_Status IN (3, 5, 6) AND Data_Criacao >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH) GROUP BY DATE_FORMAT(Data_Criacao, '%Y-%m'), DATE_FORMAT(Data_Criacao, '%b/%y') ORDER BY mes")->fetchAll(),
         'por_tipo' => $pdo->query("SELECT COALESCE(Tipo_Negocio, 'Outros') as tipo, COUNT(*) as qtd, COALESCE(SUM(Valor_Final), 0) as receita FROM " . ERP_V_ORCAMENTO . " Orcamento WHERE Id_Status IN (3, 5, 6) GROUP BY Tipo_Negocio ORDER BY receita DESC LIMIT 5")->fetchAll(),
@@ -103,6 +115,7 @@ function getCharts($pdo) {
 }
 
 function getTopClientes($pdo, InputValidator $v, $ttl) {
+    if (!p05_fin()) { return ['ok' => true, 'data' => []]; }   // ordenado por receita = dado financeiro: nada consultado (meta.financeiro explica)
     $lim = $v->int('limit', 10, ['min' => 5, 'max' => 20]);
     $ck = ($GLOBALS['CACHE_PREFIX'] ?? 'panel:05:') . "top:{$lim}";
     $cached = RedisHelper::tryGetCache($ck);
@@ -116,20 +129,21 @@ function getTopClientes($pdo, InputValidator $v, $ttl) {
 
 function getVendedores($pdo) {
     $v = $pdo->query("SELECT o.Nome_Vendedor as vendedor, COUNT(*) as total_orcs, SUM(CASE WHEN o.Id_Status IN (3, 5, 6) THEN 1 ELSE 0 END) as ganhos, SUM(CASE WHEN o.Id_Status = 4 THEN 1 ELSE 0 END) as perdidos, COALESCE(SUM(CASE WHEN o.Id_Status IN (3, 5, 6) THEN o.Valor_Final ELSE 0 END), 0) as receita, COUNT(DISTINCT o.Id_Organizacao) as clientes FROM " . ERP_V_ORCAMENTO . " o WHERE o.Nome_Vendedor IS NOT NULL AND o.Nome_Vendedor != '' AND o.Data_Criacao >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH) GROUP BY o.Nome_Vendedor ORDER BY receita DESC LIMIT 15")->fetchAll();
-    foreach ($v as &$x) { $x['taxa_conversao'] = $x['total_orcs'] > 0 ? round(($x['ganhos'] / $x['total_orcs']) * 100, 1) : 0; $x['ticket_medio'] = $x['ganhos'] > 0 ? round($x['receita'] / $x['ganhos'], 2) : 0; }
+    foreach ($v as &$x) { $x['taxa_conversao'] = $x['total_orcs'] > 0 ? round(($x['ganhos'] / $x['total_orcs']) * 100, 1) : 0; $x['ticket_medio'] = $x['ganhos'] > 0 ? round($x['receita'] / $x['ganhos'], 2) : 0; if (!p05_fin()) { $x['receita'] = null; $x['ticket_medio'] = null; } }
     return ['ok' => true, 'data' => $v];
 }
 
 function getInsights($pdo) {
     $ins = [];
-    $inad = $pdo->query("SELECT COUNT(DISTINCT o.Id_Organizacao) as q, COALESCE(SUM(car.Valor), 0) as v FROM " . ERP_V_ORGANIZACAO . " o INNER JOIN " . ERP_V_CONTAS_A_RECEBER . " car ON car.Id_Organizacao = o.Id_Organizacao WHERE car.Vencimento < CURDATE() AND car.Id_Situacao = 1")->fetch();
+    if (!p05_fin()) { $ins[] = ['tipo' => 'info', 'nivel' => 'info', 'icone' => 'lock', 'titulo' => 'Inadimplencia', 'valor' => null, 'descricao' => P05_SEM_FIN, 'detalhe' => null, 'sem_permissao' => true]; $inad = ['q' => 0]; }
+    else $inad = $pdo->query("SELECT COUNT(DISTINCT o.Id_Organizacao) as q, COALESCE(SUM(car.Valor), 0) as v FROM " . ERP_V_ORGANIZACAO . " o INNER JOIN " . ERP_V_CONTAS_A_RECEBER . " car ON car.Id_Organizacao = o.Id_Organizacao WHERE car.Vencimento < CURDATE() AND car.Id_Situacao = 1")->fetch();
     if ($inad['q'] > 0) $ins[] = ['tipo' => 'alert', 'nivel' => 'danger', 'icone' => 'alert-triangle', 'titulo' => 'Inadimplencia', 'valor' => $inad['q'], 'descricao' => 'clientes com titulos vencidos', 'detalhe' => 'R$ ' . number_format($inad['v'], 2, ',', '.')];
     $sc = $pdo->query("SELECT COUNT(*) as q FROM " . ERP_V_ORGANIZACAO . " Organizacao WHERE Flag_Ativo = -1 AND (Ultimo_Contato IS NULL OR Ultimo_Contato < DATE_SUB(CURDATE(), INTERVAL 90 DAY))")->fetch()['q'];
     if ($sc > 0) $ins[] = ['tipo' => 'warning', 'nivel' => 'warning', 'icone' => 'clock', 'titulo' => 'Sem Contato', 'valor' => $sc, 'descricao' => 'clientes sem contato ha 90+ dias', 'detalhe' => 'Risco de churn'];
     $nv = $pdo->query("SELECT COUNT(*) as q FROM " . ERP_V_ORGANIZACAO . " Organizacao WHERE Data_Criacao >= DATE_FORMAT(CURDATE(), '%Y-%m-01')")->fetch()['q'];
     if ($nv > 0) $ins[] = ['tipo' => 'success', 'nivel' => 'success', 'icone' => 'user-plus', 'titulo' => 'Novos Clientes', 'valor' => $nv, 'descricao' => 'cadastrados este mes', 'detalhe' => 'Crescimento da base'];
     $pp = $pdo->query("SELECT COUNT(*) as q, COALESCE(SUM(Valor_Final), 0) as v FROM " . ERP_V_ORCAMENTO . " Orcamento WHERE Id_Status NOT IN (3, 4, 5, 6) AND Data_Criacao >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)")->fetch();
-    if ($pp['q'] > 0) $ins[] = ['tipo' => 'info', 'nivel' => 'info', 'icone' => 'trending-up', 'titulo' => 'Pipeline', 'valor' => $pp['q'], 'descricao' => 'orcamentos em andamento', 'detalhe' => 'R$ ' . number_format($pp['v'], 2, ',', '.')];
+    if ($pp['q'] > 0) $ins[] = ['tipo' => 'info', 'nivel' => 'info', 'icone' => 'trending-up', 'titulo' => 'Pipeline', 'valor' => $pp['q'], 'descricao' => 'orcamentos em andamento', 'detalhe' => p05_fin() ? 'R$ ' . number_format($pp['v'], 2, ',', '.') : null];
     return ['ok' => true, 'data' => $ins];
 }
 
@@ -145,12 +159,13 @@ function getFunil($pdo) {
 
 function getMetricsAvancadas($pdo) {
     $tm = $pdo->query("SELECT AVG(DATEDIFF(Data_Ganho, Data_Criacao)) as v FROM " . ERP_V_ORCAMENTO . " Orcamento WHERE Id_Status IN (3, 5, 6) AND Data_Ganho IS NOT NULL AND Data_Criacao >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)")->fetch()['v'];
-    $ltv = $pdo->query("SELECT AVG(t) as v FROM (SELECT SUM(orc.Valor_Final) as t FROM " . ERP_V_ORGANIZACAO . " o INNER JOIN " . ERP_V_ORCAMENTO . " orc ON orc.Id_Organizacao = o.Id_Organizacao AND orc.Id_Status IN (3, 5, 6) WHERE o.Flag_Ativo = -1 GROUP BY o.Id_Organizacao HAVING t > 0) as x")->fetch()['v'];
+    $ltv = !p05_fin() ? null : $pdo->query("SELECT AVG(t) as v FROM (SELECT SUM(orc.Valor_Final) as t FROM " . ERP_V_ORGANIZACAO . " o INNER JOIN " . ERP_V_ORCAMENTO . " orc ON orc.Id_Organizacao = o.Id_Organizacao AND orc.Id_Status IN (3, 5, 6) WHERE o.Flag_Ativo = -1 GROUP BY o.Id_Organizacao HAVING t > 0) as x")->fetch()['v'];
     $ret = $pdo->query("SELECT COUNT(DISTINCT CASE WHEN q > 1 THEN Id_Organizacao END) as r, COUNT(DISTINCT Id_Organizacao) as t FROM (SELECT Id_Organizacao, COUNT(*) as q FROM " . ERP_V_ORCAMENTO . " Orcamento WHERE Id_Status IN (3, 5, 6) GROUP BY Id_Organizacao) as x")->fetch();
-    return ['ok' => true, 'data' => ['tempo_medio_conversao' => round($tm ?? 0), 'ltv_medio' => round($ltv ?? 0, 2), 'taxa_retencao' => $ret['t'] > 0 ? round(($ret['r'] / $ret['t']) * 100, 1) : 0, 'clientes_retidos' => (int)$ret['r'], 'clientes_total' => (int)$ret['t']]];
+    return ['ok' => true, 'data' => ['tempo_medio_conversao' => round($tm ?? 0), 'ltv_medio' => p05_fin() ? round($ltv ?? 0, 2) : null, 'taxa_retencao' => $ret['t'] > 0 ? round(($ret['r'] / $ret['t']) * 100, 1) : 0, 'clientes_retidos' => (int)$ret['r'], 'clientes_total' => (int)$ret['t']]];
 }
 
 function getChurnRisk($pdo) {
+    if (!p05_fin()) { return ['ok' => true, 'data' => ['clientes' => [], 'stats' => ['total' => null], 'sem_permissao' => true, 'motivo' => P05_SEM_FIN]]; }   // usa títulos vencidos e receita
     $stmt = $pdo->query("SELECT o.Id_Organizacao as id, o.Nome_Empresa as nome, o.Municipio_Endereco as cidade, o.Uf_Endereco as uf, o.Ultimo_Contato, o.Receita_Gerada as receita, DATEDIFF(CURDATE(), o.Ultimo_Contato) as dias_sem_contato, (SELECT COUNT(*) FROM " . ERP_V_CONTAS_A_RECEBER . " car WHERE car.Id_Organizacao = o.Id_Organizacao AND car.Vencimento < CURDATE() AND car.Id_Situacao = 1) as titulos_vencidos FROM " . ERP_V_ORGANIZACAO . " o WHERE o.Flag_Ativo = -1 AND (o.Ultimo_Contato IS NULL OR o.Ultimo_Contato < DATE_SUB(CURDATE(), INTERVAL 60 DAY)) ORDER BY dias_sem_contato DESC LIMIT 15");
     $resultado = [];
     foreach ($stmt->fetchAll() as $c) {
@@ -165,7 +180,7 @@ function getChurnRisk($pdo) {
 function getHeatmap($pdo) {
     $data = $pdo->query("SELECT COALESCE(o.Uf_Endereco, 'N/D') as uf, COUNT(DISTINCT o.Id_Organizacao) as clientes, COALESCE(SUM(orc.Valor_Final), 0) as receita FROM " . ERP_V_ORGANIZACAO . " o LEFT JOIN " . ERP_V_ORCAMENTO . " orc ON orc.Id_Organizacao = o.Id_Organizacao AND orc.Id_Status IN (3, 5, 6) WHERE o.Flag_Ativo = -1 GROUP BY o.Uf_Endereco ORDER BY receita DESC")->fetchAll();
     $maxR = max(array_column($data, 'receita') ?: [1]);
-    foreach ($data as &$d) { $d['intensidade_receita'] = $maxR > 0 ? round(($d['receita'] / $maxR) * 100) : 0; }
+    foreach ($data as &$d) { $d['intensidade_receita'] = $maxR > 0 ? round(($d['receita'] / $maxR) * 100) : 0; if (!p05_fin()) { $d['receita'] = null; $d['intensidade_receita'] = null; } }
     return ['ok' => true, 'data' => $data];
 }
 
@@ -173,6 +188,7 @@ function getRanking($pdo, InputValidator $v, $ttl) {
     $tipo = $v->enum('tipo', 'receita', ['receita', 'quantidade', 'ticket']);
     $periodo = $v->enum('periodo', '12m', ['1m', '3m', '6m', '12m']);
     $limit = $v->int('limit', 10, ['min' => 5, 'max' => 20]);
+    if (!p05_fin() && $tipo !== 'quantidade') { return ['ok' => true, 'data' => ['items' => [], 'tipo' => $tipo, 'periodo' => $periodo, 'sem_permissao' => true, 'motivo' => P05_SEM_FIN]]; }
     $ck = ($GLOBALS['CACHE_PREFIX'] ?? 'panel:05:') . "r2:ranking:{$tipo}:{$periodo}:{$limit}";
     $cached = RedisHelper::tryGetCache($ck);
     if ($cached !== null) { header('X-Cache: HIT'); return json_decode($cached, true); }
@@ -195,7 +211,7 @@ function searchClientes($pdo, InputValidator $v) {
     $limit = $v->int('limit', 8, ['min' => 3, 'max' => 10]);
     if (strlen($q) < 2) return ['ok' => true, 'data' => [], 'query' => $q];
     $search = '%' . $q . '%';
-    $stmt = $pdo->prepare("SELECT o.Id_Organizacao as id, o.Nome_Empresa as nome, o.Municipio_Endereco as cidade, o.Uf_Endereco as uf, COALESCE(o.Receita_Gerada, 0) as receita FROM " . ERP_V_ORGANIZACAO . " o WHERE o.Nome_Empresa LIKE :s1 OR o.Razao_Social LIKE :s2 ORDER BY o.Receita_Gerada DESC LIMIT :lim");
+    $stmt = $pdo->prepare("SELECT o.Id_Organizacao as id, o.Nome_Empresa as nome, o.Municipio_Endereco as cidade, o.Uf_Endereco as uf, " . (p05_fin() ? 'COALESCE(o.Receita_Gerada, 0)' : 'NULL') . " as receita FROM " . ERP_V_ORGANIZACAO . " o WHERE o.Nome_Empresa LIKE :s1 OR o.Razao_Social LIKE :s2 ORDER BY " . (p05_fin() ? 'o.Receita_Gerada DESC' : 'o.Nome_Empresa, o.Id_Organizacao') . " LIMIT :lim");
     $stmt->bindValue(':s1', $search); $stmt->bindValue(':s2', $search); $stmt->bindValue(':lim', $limit, PDO::PARAM_INT); $stmt->execute();
     return ['ok' => true, 'data' => $stmt->fetchAll(), 'query' => $q];
 }
@@ -239,13 +255,13 @@ function getClientesList($pdo, InputValidator $v) {
     $tc = $pdo->prepare("SELECT COUNT(*) FROM " . ERP_V_ORGANIZACAO . " o WHERE {$wc}"); $tc->execute($b); $total = $tc->fetchColumn();
     $stmt = $pdo->prepare("SELECT o.Id_Organizacao, o.Nome_Empresa, o.Razao_Social, o.Flag_Ativo, o.Municipio_Endereco, o.Uf_Endereco, o.Receita_Gerada, o.Qtd_Orcs_Ganhos FROM " . ERP_V_ORGANIZACAO . " o WHERE {$wc} ORDER BY o.Nome_Empresa, o.Id_Organizacao LIMIT :lm OFFSET :of");
     foreach ($b as $k => $val) $stmt->bindValue($k, $val); $stmt->bindValue(':lm', $pp, PDO::PARAM_INT); $stmt->bindValue(':of', $of, PDO::PARAM_INT); $stmt->execute();
-    $cl = $stmt->fetchAll(); foreach ($cl as &$c) { $c['status'] = $c['Flag_Ativo'] == -1 ? 'ativo' : 'inativo'; }
+    $cl = $stmt->fetchAll(); foreach ($cl as &$c) { $c['status'] = $c['Flag_Ativo'] == -1 ? 'ativo' : 'inativo'; if (!p05_fin()) { $c['Receita_Gerada'] = null; } }
     return ['ok' => true, 'data' => ['items' => $cl, 'pagination' => ['page' => $pg, 'per_page' => $pp, 'total' => (int)$total, 'total_pages' => ceil($total / $pp)]]];
 }
 
 function exportCSV($pdo, InputValidator $v) {
     [$wc, $params] = filtroClientes($v);
-    $stmt = $pdo->prepare("SELECT o.Nome_Empresa, o.Razao_Social, CASE WHEN o.Flag_Ativo = -1 THEN 'Ativo' ELSE 'Inativo' END AS Status, o.Municipio_Endereco AS Cidade, o.Uf_Endereco AS UF, o.Receita_Gerada FROM " . ERP_V_ORGANIZACAO . " o WHERE {$wc} ORDER BY o.Nome_Empresa, o.Id_Organizacao LIMIT 5001");
+    $stmt = $pdo->prepare("SELECT o.Nome_Empresa, o.Razao_Social, CASE WHEN o.Flag_Ativo = -1 THEN 'Ativo' ELSE 'Inativo' END AS Status, o.Municipio_Endereco AS Cidade, o.Uf_Endereco AS UF" . (p05_fin() ? ', o.Receita_Gerada' : '') . " FROM " . ERP_V_ORGANIZACAO . " o WHERE {$wc} ORDER BY o.Nome_Empresa, o.Id_Organizacao LIMIT 5001");
     $stmt->execute($params);
     if (count($dados = $stmt->fetchAll(PDO::FETCH_ASSOC)) > 5000) { ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 422, ['motivo' => 'refine_os_filtros']); return; }
     header('Content-Type: text/csv; charset=utf-8'); header('Content-Disposition: attachment; filename="clientes_' . date('Y-m-d_His') . '.csv"');
@@ -263,5 +279,6 @@ function getCliente360($pdo, $id) {
     $os = $tot->fetch(PDO::FETCH_ASSOC);
     $os['total'] = (int)$os['total'];
     $os['ganhos'] = (int)$os['ganhos'];
+    if (!p05_fin()) { $cliente['Receita_Gerada'] = null; foreach ($orcamentos as &$o) { $o['Valor_Final'] = null; } unset($o); $os['valor_total'] = null; }
     return ['ok' => true, 'data' => ['cliente' => $cliente, 'orcamentos' => ['items' => $orcamentos, 'stats' => $os]]];
 }

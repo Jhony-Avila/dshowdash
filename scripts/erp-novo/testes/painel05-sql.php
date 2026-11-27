@@ -7,6 +7,9 @@ declare(strict_types=1);
 $db = getenv('KOALA_TESTE_DB');
 if (!$db || !preg_match('/^esq_[a-z0-9_]+$/', $db)) { echo "[PULADO] painel05-sql: KOALA_TESTE_DB não definido\n"; exit(0); }
 $raiz = realpath(__DIR__ . '/../../..');
+if (!defined('P05_SEM_FIN')) { define('P05_SEM_FIN', 'Sem permissão para dados financeiros.'); }
+if (!function_exists('p05_fin')) { function p05_fin(): bool { return ($GLOBALS['FIN'] ?? false) === true; } }
+$GLOBALS['FIN'] = true;
 require $raiz . '/api/core/helpers/InputValidator.php';
 require $raiz . '/api/modules/panels/_erp-compat-novo.php';
 if (!class_exists('RedisHelper')) { final class RedisHelper { public static function tryGetCache(string $k) { return null; } public static function setCache(string $k, $v, $t = 0) { return true; } } }
@@ -68,9 +71,40 @@ ob_start(); exportCSV($pdo, $v(['uf' => 'SP'])); $csv = ob_get_clean();
 $linhas = array_values(array_filter(explode("\n", trim(preg_replace('/^\xEF\xBB\xBF/', '', $csv)))));
 $ok(count($linhas) - 1 === count($lista['items']), 'exportação = mesma seleção da lista (mesmos filtros) · CSV ' . (count($linhas) - 1) . ' × lista ' . count($lista['items']));
 $ok(!str_contains($csv, '0000000000000'), 'exportação sem documento (decisão conservadora do CP-002 até definir os campos)');
+// Decisão do arquiteto (23:0x): SEM a permissão financeira por pessoa — o painel abre, todo valor financeiro vem null e os cartões só
+// financeiros NÃO consultam nada financeiro (espião: nenhuma consulta às contas a receber nem receita do top/ranking/churn/LTV)
+$GLOBALS['FIN'] = false;
+$espiao = new class($pdo) { public array $sqls = []; public function __construct(private PDO $p) {} public function query(string $q, ...$a) { $this->sqls[] = $q; return $this->p->query($q, ...$a); } public function prepare(string $q, array $o = []) { $this->sqls[] = $q; return $this->p->prepare($q, $o); } };
+$kn = getKPIs($espiao)['data'];
+$ok($kn['receita_total'] === null && $kn['ticket_medio'] === null && (int)$kn['orcamentos_ganhos'] > 0, 'sem permissão: KPIs sem receita e sem ticket (contagens ficam)');
+$cn = getCharts($espiao)['data'];
+$ok(array_filter(array_merge($cn['receita_mensal'], $cn['por_tipo']), static fn ($x) => $x['receita'] !== null) === [], 'sem permissão: gráficos sem receita');
+$espiao->sqls = [];
+$ok(getTopClientes($espiao, $v([]), 0)['data'] === [], 'sem permissão: top por receita vazio');
+$rn = getRanking($espiao, $v(['tipo' => 'receita']), 0)['data']; $rt = getRanking($espiao, $v(['tipo' => 'ticket']), 0)['data'];
+$ok(($rn['sem_permissao'] ?? false) && ($rt['sem_permissao'] ?? false), 'sem permissão: ranking por valor e por ticket = sem_permissao');
+$chn = getChurnRisk($espiao)['data'];
+$ok(($chn['sem_permissao'] ?? false) === true, 'sem permissão: risco de churn (usa títulos vencidos) = sem_permissao');
+$ok($espiao->sqls === [], 'sem permissão: top, ranking financeiro e churn NÃO fizeram nenhuma consulta · fizeram ' . count($espiao->sqls));
+$rq = getRanking($pdo, $v(['tipo' => 'quantidade']), 0)['data'];
+$ok(!isset($rq['sem_permissao']) && count($rq['items']) > 0, 'sem permissão: ranking por QUANTIDADE continua (não é dinheiro)');
+$espiao->sqls = []; $in = getInsights($espiao)['data'];
+$ok(!array_filter($espiao->sqls, static fn ($q) => stripos($q, 'fin_accounts_receivable') !== false), 'sem permissão: inadimplência não consulta as contas a receber');
+$inad = array_values(array_filter($in, static fn ($x) => $x['titulo'] === 'Inadimplencia'))[0] ?? null;
+$ok(($inad['sem_permissao'] ?? false) && $inad['valor'] === null && $inad['descricao'] === 'Sem permissão para dados financeiros.', 'sem permissão: cartão de inadimplência com "Sem permissão para dados financeiros."');
+$espiao->sqls = []; $mn = getMetricsAvancadas($espiao)['data'];
+$ok($mn['ltv_medio'] === null && count($espiao->sqls) === 2, 'sem permissão: LTV null e a consulta do LTV não roda (2 consultas em vez de 3)');
+$ln = getClientesList($pdo, $v(['per_page' => '100']))['data']['items'];
+$ok(array_filter($ln, static fn ($x) => $x['Receita_Gerada'] !== null) === [], 'sem permissão: lista sem receita gerada');
+$dn = getCliente360($pdo, 4)['data'];
+$ok($dn['cliente']['Receita_Gerada'] === null && $dn['orcamentos']['stats']['valor_total'] === null && array_filter($dn['orcamentos']['items'], static fn ($x) => $x['Valor_Final'] !== null) === [] && (int)$dn['orcamentos']['stats']['total'] === 61,
+    'sem permissão: detalhe sem receita, sem valores dos orçamentos e sem valor total (contagens ficam)');
+ob_start(); exportCSV($pdo, $v([])); $csvn = ob_get_clean();
+$ok(!str_contains(strtok(preg_replace('/^\xEF\xBB\xBF/', '', $csvn), "\n"), 'Receita'), 'sem permissão: exportação sem a coluna de receita');
+$GLOBALS['FIN'] = true;
 // mapa: sem divisão por zero (tudo zero)
 $pdo->exec("UPDATE qte_quote SET total_value = 0");
 $run('painel05 heatmap com receita zero (sem divisão por zero)', fn () => getHeatmap($pdo));
 foreach ($T as $t) { $pdo->exec("DROP TABLE IF EXISTS $t"); }
 if ($f) { echo "[ERRO] painel05-sql:\n - " . implode("\n - ", $f) . "\n"; exit(1); }
-echo "[OK]   painel05-sql: $n verificações (as 15 ações pela camada nova + CP-002: rankings com líderes diferentes, data de ganho, detalhe integral, lista = exportação, sem divisão por zero)\n";
+echo "[OK]   painel05-sql: $n verificações (as 15 ações pela camada nova + CP-002: rankings com líderes diferentes, data de ganho, detalhe integral, lista = exportação, sem divisão por zero; SEM a permissão financeira: valores null, \"Sem permissão para dados financeiros.\" e cartões só financeiros sem consulta)\n";

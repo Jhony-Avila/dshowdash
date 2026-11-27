@@ -12,6 +12,9 @@ require_once $raiz . '/api/core/helpers/InputValidator.php';
 if (!erp_novo_configurado()) { fwrite(STDERR, "[ERRO] credencial do ERP novo ausente (DB_ERP_NOVO_CNF/HOST/NAME)\n"); exit(2); }
 require $raiz . '/api/modules/panels/_erp-compat-novo.php';
 if (!class_exists('RedisHelper')) { final class RedisHelper { public static function tryGetCache(string $k) { return null; } public static function setCache(string $k, $v, $t = 0) { return true; } } }
+// a reconciliação compara VALORES: roda como operador (CLI, root) com a visão financeira completa; a permissão por pessoa é provada nos testes
+if (!defined('P05_SEM_FIN')) { define('P05_SEM_FIN', 'Sem permissão para dados financeiros.'); }
+function p05_fin(): bool { return true; }
 $fonte = (string)file_get_contents($raiz . '/api/modules/panels/panel-05/api.php');
 $i0 = strpos($fonte, 'function getKPIs('); $i1 = strpos($fonte, 'function exportCSV(');
 if ($i0 === false || $i1 === false) { fwrite(STDERR, "[ERRO] funções da API do painel 05 não encontradas\n"); exit(2); }

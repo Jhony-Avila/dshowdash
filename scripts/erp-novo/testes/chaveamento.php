@@ -57,6 +57,11 @@ if ($ordem16 !== $o16 || in_array(PHP_INT_MAX, $ordem16, true)) { $falhas[] = 'p
 if (preg_match("/['\"]panel:16:(kpis|list)/", $p16)) { $falhas[] = "painel 16: chave de cache antiga 'panel:16:kpis|list' (o formato mudou: CP-003)"; }
 if (substr_count($p16, "'estado' => 'indisponivel'") < 2) { $falhas[] = 'painel 16 sem 503 indisponível na conexão e na consulta'; }
 if (preg_match('/CONTA_BANCARIA|Nome_Titular|\bAgencia\b|\bPix\b/', (string)preg_replace('#//[^\n]*#', '', $p16))) { $falhas[] = 'painel 16 ainda lê conta bancária/PIX (CP-003: oculto até bank_account_id)'; }
+// 5d. decisão do arquiteto (23:0x): 05 e 16 abrem para todo logado; o FINANCEIRO é que exige a permissão por pessoa → cache separado por permissão
+foreach (['05' => $p5, '16' => $p16] as $nn => $src) {
+    if (!str_contains($src, "(\$FIN ? 'f1:' : 'f0:')")) { $falhas[] = "painel $nn: cache sem separar por permissão financeira (f1/f0)"; }
+    if (str_contains($src, 'ERR_NOT_AUTHORIZED, 403')) { $falhas[] = "painel $nn: ainda nega o painel inteiro (o critério é por cartão)"; }
+}
 // 6. anexo: a chave do S3 não sai como url na camada nova
 $c = (string)file_get_contents("$raiz/api/modules/panels/_erp-compat-novo.php");
 if (str_contains($c, 's3_key AS Url')) { $falhas[] = 'camada nova ainda expõe s3_key como Url'; }
