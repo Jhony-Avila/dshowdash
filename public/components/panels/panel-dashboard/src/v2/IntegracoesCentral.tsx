@@ -19,6 +19,12 @@ export const ESTADO_V2: Record<EstadoIntegracaoV2, [string, 'ok' | 'aviso' | 'er
 };
 const ORDEM: EstadoIntegracaoV2[] = ['com_problema', 'atrasado', 'parcial', 'desconhecido', 'sem_acesso', 'aguardando', 'nao_integrado', 'ok'];
 const ATENCAO = new Set<EstadoIntegracaoV2>(['com_problema', 'atrasado', 'parcial']);
+/** a URL da ação vem do serviço: só https: ou caminho/rota relativa do Dash (nunca javascript:, data: …) — defesa sugerida pelo VERDE (P88) */
+export const urlSegura = (u: string | null | undefined): string | null => {
+  if (!u) return null; const t = u.trim();
+  if (/^(\/(?!\/)|#\/?|\?)/.test(t)) return t;                      // relativa do próprio Dash ("/api/…", "#/panel-…", "?…"); "//host" não
+  try { return new URL(t).protocol === 'https:' ? t : null; } catch { return null; }
+};
 const quando = (iso: string | null) => (iso ? fmtQuando(iso) : '—');
 /** código do erro da conta → texto curto (o serviço manda só o código; "erro:…"/"ultima_tentativa_falhou:…" como no cartão do Asaas) */
 const textoErro = (c: string | null) => (c === null ? null : c.startsWith('ultima_tentativa_falhou') ? 'a última tentativa falhou' : c.startsWith('erro') ? 'a sincronização falhou' : c.replace(/[_:]+/g, ' ').trim());
@@ -50,7 +56,7 @@ function Detalhe({ x, aoFechar }: { x: IntegracaoV2; aoFechar: () => void }) {
           <dt>Última tentativa</dt><dd>{x.ultima_tentativa ? fmtQuando(x.ultima_tentativa) : <span className="ic-dim">— · a origem não informa</span>}</dd>
           <dt>Cobertura</dt><dd>{cobertura(x)}{x.cobertas !== null && x.esperadas !== null && x.cobertas < x.esperadas ? ' · leitura parcial' : ''}</dd>
         </dl>
-        {x.acao && <a className="des-btn ic-det-acao" href={x.acao.url}>{x.acao.rotulo} <ExternalLink size={13} aria-hidden /></a>}
+        {x.acao && urlSegura(x.acao.url) && <a className="des-btn ic-det-acao" href={urlSegura(x.acao.url)!}>{x.acao.rotulo} <ExternalLink size={13} aria-hidden /></a>}
         {x.contas && x.contas.length > 0 && (
           <>
             <h3 className="ic-det-h3">Contas ({fmtN(x.contas.length)})</h3>
