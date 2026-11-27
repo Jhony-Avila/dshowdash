@@ -188,6 +188,40 @@ final class GeralV2
         return $r;
     }
 
+    /**
+     * 26/11 INT-001 (Central de Integrações, v2): a ÚLTIMA TENTATIVA de sincronização (inclui as que falharam), separada do último sucesso.
+     * null quando a origem não comprova (tabela ausente, sem execução, erro de leitura). Nunca inventa horário.
+     * @return array{tentativa:?string, cobertas:?int, esperadas:?int}
+     */
+    public function detalheFonte(string $id): array
+    {
+        $nada = ['tentativa' => null, 'cobertas' => null, 'esperadas' => null];
+        try {
+            if ($id === 'pipedrive' && $this->pipe !== null) {
+                $t = $this->pipe->query("SELECT MAX(started_at) FROM `{$this->p}pipe_sync_runs` WHERE entity IN ('deals','activities')")->fetchColumn();
+                return ['tentativa' => $t ? (new DateTimeImmutable((string) $t, $this->br))->format(DATE_ATOM) : null] + $nada;   // NOW() da sessão (−03:00)
+            }
+            if ($id === 'bling' && $this->bling !== null) {
+                $t = $this->bling->query("SELECT s.ultima_execucao_em FROM `{$this->p}bling_accounts` a JOIN `{$this->p}bling_sync_state` s ON s.account_id = a.id AND s.recurso = 'pedidos'
+                                          WHERE a.is_ativo = 1 ORDER BY a.is_padrao DESC, a.id LIMIT 1")->fetchColumn();
+                return ['tentativa' => $t ? (new DateTimeImmutable((string) $t, $this->utc))->setTimezone($this->br)->format(DATE_ATOM) : null] + $nada;
+            }
+            if ($id === 'google_calendar' && $this->gcal !== null) {
+                $st = $this->gcal->prepare("SELECT COUNT(*) AS n, COALESCE(SUM(s.last_sync_at IS NOT NULL AND s.status IN ('ok','stale') AND a.connection_status = 'connected'
+                                                 AND s.last_sync_at >= ?), 0) AS ok, MAX(s.last_sync_at) AS t
+                                              FROM `{$this->p}gcal_accounts` a JOIN `{$this->p}gcal_calendars` c ON c.account_id = a.id AND c.deleted = 0
+                                              LEFT JOIN `{$this->p}gcal_sync_state` s ON s.account_id = a.id AND s.calendar_id = c.calendar_id
+                                             WHERE a.user_id = ? AND a.is_active = 1");
+                $st->execute([$this->agora->setTimezone($this->utc)->modify('-' . self::VELHA_MIN['google_calendar'] . ' minutes')->format('Y-m-d H:i:s'), $this->usuario]);
+                $r = $st->fetch(PDO::FETCH_ASSOC);
+                $n = (int) ($r['n'] ?? 0);
+                return ['tentativa' => !empty($r['t']) ? (new DateTimeImmutable((string) $r['t'], $this->utc))->setTimezone($this->br)->format(DATE_ATOM) : null,
+                        'cobertas' => $n > 0 ? (int) $r['ok'] : null, 'esperadas' => $n > 0 ? $n : null];
+            }
+        } catch (Throwable $e) { error_log('[geral-v2] detalhe ' . $id . ': ' . get_class($e)); }
+        return $nada;
+    }
+
     /** centavos inteiros → "1234.56" (sem float) */
     private static function deCentavos(int $c): string
     {

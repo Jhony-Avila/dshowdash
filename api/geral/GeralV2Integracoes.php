@@ -13,6 +13,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/GeralV2.php';
 require_once __DIR__ . '/../asaas/AsaasDados.php';
 require_once __DIR__ . '/../rdstation/RdStation.php';
+require_once __DIR__ . '/../asaas/AsaasCobrancas.php';
 
 final class GeralV2Integracoes
 {
@@ -33,6 +34,87 @@ final class GeralV2Integracoes
             ['id' => 'meta', 'nome' => 'Meta (Facebook/Instagram Ads)', 'estado' => 'nao_integrado', 'ultima_sincronizacao' => null,
              'erro' => null, 'proximo_passo' => 'Não há integração com a Meta no Dash: decidir se e quando integrar.'],
         ]];
+    }
+
+    /** INT-001: recurso (texto nosso) por integração */
+    private const RECURSO = ['pipedrive' => 'Negócios e atividades', 'bling' => 'Pedidos de venda', 'google' => 'Agenda (calendários)', 'asaas' => 'Cobranças e recebimentos',
+        'precifica' => 'Recebimentos (financeiro)', 'rdstation' => 'Marketing (funil e conversões)', 'meta' => 'Anúncios (Facebook/Instagram)',
+        'google_analytics' => 'Tráfego do site', 'google_ads' => 'Anúncios do Google', 'outlook' => 'E-mail e agenda (Microsoft)'];
+
+    /**
+     * 26/11 INT-001 · Central de Integrações (contrato v2, ADITIVO: o v1 acima continua para a Geral). Por integração: estado (os do v1 + parcial e
+     * desconhecido), ultima_tentativa (inclui falha) SEPARADA de ultimo_sucesso, cobertas/esperadas (Asaas: empresas; Google: calendários; demais null),
+     * recurso, erro + proximo_passo (texto nosso), acao (só RD) e, no Asaas, as contas. null = a origem não comprova; nunca "ok" sem prova.
+     */
+    public function listaV2(): array
+    {
+        $v1 = array_column($this->lista()['integracoes'], null, 'id');
+        $out = [];
+        foreach (['pipedrive' => 'pipedrive', 'bling' => 'bling', 'google' => 'google_calendar'] as $id => $fonte) {
+            $x = $v1[$id]; $f = $this->g->fonte($fonte); $d = $this->g->detalheFonte($fonte);
+            $estado = $f['estado'] === 'parcial' && $x['estado'] === 'com_problema' ? 'parcial' : $x['estado'];   // v1 junta parcial em com_problema; a v2 separa
+            $out[] = $this->v2($x, $estado, $d['tentativa'], $x['ultima_sincronizacao'], $d['cobertas'], $d['esperadas']);
+        }
+        $out[] = $this->asaasV2($v1['asaas']);
+        $out[] = $this->precificaV2($v1['precifica']);
+        $rd = $v1['rdstation']; $t = null;
+        try { $e = ($this->rd ?? RdSegredos::padrao())->estado(); $t = is_string($e['ultima_tentativa'] ?? null) ? (new DateTimeImmutable($e['ultima_tentativa']))->format(DATE_ATOM) : null; }
+        catch (Throwable $e) { error_log('[geral-v2] integracoes v2 rd: ' . get_class($e)); }
+        $out[] = $this->v2($rd, $rd['estado'], $t, $rd['ultima_sincronizacao'], null, null);
+        $out[] = $this->v2($v1['meta'], 'nao_integrado', null, null, null, null);
+        foreach (['google_analytics' => 'Google Analytics', 'google_ads' => 'Google Ads', 'outlook' => 'Outlook'] as $id => $nome)
+            $out[] = $this->v2(['id' => $id, 'nome' => $nome, 'erro' => 'O Dash ainda não lê o estado desta integração: sem prova, o estado é desconhecido.',
+                                'proximo_passo' => 'Ligar a leitura do estado desta integração (degrau seguinte da Central).'], 'desconhecido', null, null, null, null);
+        return ['versao' => 2, 'gerado_em' => $this->agora->format(DATE_ATOM), 'integracoes' => $out];
+    }
+
+    private function v2(array $x, string $estado, ?string $tentativa, ?string $sucesso, ?int $cobertas, ?int $esperadas, ?array $contas = null): array
+    {
+        $r = ['id' => $x['id'], 'nome' => $x['nome'], 'recurso' => self::RECURSO[$x['id']] ?? null, 'estado' => $estado,
+              'ultima_tentativa' => $tentativa, 'ultimo_sucesso' => $sucesso, 'cobertas' => $cobertas, 'esperadas' => $esperadas,
+              'erro' => $x['erro'] ?? null, 'proximo_passo' => $x['proximo_passo'] ?? null, 'acao' => $x['acao'] ?? null];
+        if ($contas !== null) $r['contas'] = $contas;
+        return $r;
+    }
+
+    private function asaasV2(array $x): array
+    {
+        if ($this->dash === null) return $this->v2($x, $x['estado'], null, null, null, null);
+        try {
+            $rows = $this->dash->query("SELECT `conta`, `nome`, `estado`, `erro_codigo`, `ultima_sync_ok`, `ultima_tentativa` FROM `{$this->p}asaas_contas` ORDER BY `conta`")->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {
+            error_log('[geral-v2] integracoes v2 asaas: ' . get_class($e));
+            return $this->v2($x, $x['estado'], null, null, null, null);
+        }
+        $fuso = new DateTimeZone('America/Sao_Paulo'); $iso = fn($v) => $v !== null ? (new DateTimeImmutable((string) $v, $fuso))->format(DATE_ATOM) : null;
+        $contas = []; $boas = 0; $tent = null;
+        foreach ($rows as $r) {
+            $fresca = $r['estado'] === 'ok' && $r['ultima_sync_ok'] !== null
+                && $this->agora->getTimestamp() - (new DateTimeImmutable((string) $r['ultima_sync_ok'], $fuso))->getTimestamp() <= AsaasResumo::LIMITE_ATRASO_MIN * 60;
+            if ($fresca) $boas++;
+            if ($r['ultima_tentativa'] !== null && ($tent === null || (string) $r['ultima_tentativa'] > $tent)) $tent = (string) $r['ultima_tentativa'];
+            $contas[] = ['conta' => $r['conta'], 'rotulo' => AsaasCobrancas::rotulo((string) $r['conta'], $r['nome'] ?? null),
+                         'estado' => $fresca ? 'ok' : ($r['estado'] === 'ok' ? 'atrasado' : 'com_problema'),
+                         'erro_codigo' => $r['estado'] === 'ok' ? null : (preg_match('/^[a-z_]{1,40}\z/', (string) ($r['erro_codigo'] ?? $r['estado'])) === 1 ? (string) ($r['erro_codigo'] ?? $r['estado']) : 'desconhecido'),
+                         'ultima_tentativa' => $iso($r['ultima_tentativa']), 'ultimo_sucesso' => $iso($r['ultima_sync_ok'])];
+        }
+        $n = count($rows);
+        $estado = $x['estado'] === 'atrasado' && $boas > 0 ? 'parcial' : $x['estado'];   // parte das empresas em dia, parte atrasada
+        return $this->v2($x, $estado, $iso($tent), $x['ultima_sincronizacao'], $n > 0 ? $boas : null, $n > 0 ? $n : null, $contas);
+    }
+
+    private function precificaV2(array $x): array
+    {
+        $tent = null; $suc = null;
+        if ($this->dash !== null && preg_match('/^[A-Za-z0-9_]{1,64}\z/', $this->finSchema) === 1) {
+            try {
+                $t = "`{$this->finSchema}`.`{$this->p}fin_pcf_snapshot`";
+                $tent = $this->dash->query("SELECT MAX(`gerado_em`) FROM $t")->fetchColumn() ?: null;
+                $suc = $this->dash->query("SELECT MAX(`gerado_em`) FROM $t WHERE `estado` IN ('ok','parcial')")->fetchColumn() ?: null;
+            } catch (Throwable $e) { /* sem GRANT: o v1 já diz sem_acesso; horários ficam null */ }
+        }
+        $iso = fn($v) => $v !== null ? (new DateTimeImmutable((string) $v, new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('America/Sao_Paulo'))->format(DATE_ATOM) : null;
+        return $this->v2($x, $x['estado'], $iso($tent), $iso($suc), null, null);
     }
 
     private function deFonte(string $id, string $nome, string $fonte): array
