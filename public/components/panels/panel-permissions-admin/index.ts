@@ -7,7 +7,7 @@
 // IMPORTS:
 //   createPanelPorts from /core/runtime/ports-profiles.js
 //   PANEL_EVENTS, LIFECYCLE_EVENTS, PERMISSIONS_EVENTS, UARPS_EVENTS from /core/r...
-//   Store from ./state/store.js
+//   Store from ./state/index.js (a fachada; state/store.js é um esboço sem init/reset/saveToCache)
 //   Renderer from ./ui/renderer.js
 //   Controller from ./core/controller.js
 //   Telemetry from ./telemetry/tracker.js
@@ -43,7 +43,7 @@ import { PANEL_EVENTS } from '/core/runtime/events/catalog/panels.events.js';
 import { LIFECYCLE_EVENTS } from '/core/runtime/events/catalog/lifecycle.events.js';
 import { PERMISSIONS_EVENTS } from '/core/runtime/events/catalog/permissions.events.js';
 import { UARPS_EVENTS } from '/core/runtime/events/catalog/uarps.events.js';
-import { Store } from './state/store.js';
+import { Store } from './state/index.js';   // UARPS degrau B (27/11): era './state/store.js' (classe-esboço) → 'Store.init is not a function' e a tela vazia em "pronto"
 import { Renderer } from './ui/renderer.js';
 import { Controller } from './core/controller.js';
 import { Telemetry } from './telemetry/tracker.js';
@@ -79,6 +79,18 @@ const _renderAuthBlocked = (container: HTMLElement) => {
   container.innerHTML = '<div class="panel-auth-blocked" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:200px;color:#64748b;text-align:center;padding:2rem;"><div style="margin-bottom:1rem;"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><h3 style="margin:0 0 0.5rem;color:#334155;">Acesso Restrito</h3><p style="margin:0;font-size:0.875rem;">Faça login para visualizar este conteúdo</p></div>';
 };
 
+// UARPS degrau B (27/11): falha de montagem ou de leitura = ERRO VISÍVEL no contêiner (antes: tela vazia com o shell em "pronto")
+const _renderErro = (container: HTMLElement, msg: string) => {
+  container.innerHTML = '';
+  const box = document.createElement('div'); box.className = 'panel-erro-carga'; box.setAttribute('role', 'alert'); box.setAttribute('data-uarps-admin-erro', '');
+  box.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:200px;padding:2rem;text-align:center;color:var(--text-primary,#1e293b)';
+  const t = document.createElement('h3'); t.style.margin = '0'; t.textContent = 'Não foi possível carregar o editor de permissões';
+  const p = document.createElement('p'); p.style.cssText = 'margin:0;font-size:.875rem;color:var(--text-secondary,#475569)'; p.textContent = msg;   // textContent: nada do servidor vira HTML
+  const b = document.createElement('button'); b.type = 'button'; b.textContent = 'Tentar novamente'; b.className = 'uarps-btn';
+  b.addEventListener('click', () => { void mount(container, {}); });
+  box.append(t, p, b); container.appendChild(box);
+};
+
 const _emit = (event: string, data: Record<string, unknown> = {}) => { try { const eventBus = _getPort('eventBus'); eventBus?.emit?.(event, data); } catch (e) {} };
 
 const _loadStyles = () => new Promise((resolve) => {
@@ -104,19 +116,34 @@ const _setupEventListeners = () => {
 
 export const mount = (container: HTMLElement, options: Record<string, unknown> = {}) => {
   _initPorts();
-  if (_mounted) return Promise.resolve({ success: true, cached: true });
   if (!container) return Promise.resolve({ success: false, error: 'Container required' });
+  // cache de montagem POR CONTÊINER (27/11): no mesmo contêiner ainda vivo devolve o que já está lá; num contêiner NOVO desmonta e monta de novo
+  // (antes: sucesso por cache e a área nova ficava vazia)
+  if (_mounted && container === _container && container.isConnected && container.childElementCount > 0) return Promise.resolve({ success: true, cached: true });
+  if (_mounted) return unmount().then(() => mount(container, options));
   if (!_isAuthenticated()) { Telemetry.track(LIFECYCLE_EVENTS.MOUNT_FAILED, { reason: 'auth-blocked', panelId: PANEL_ID }); _renderAuthBlocked(container); return Promise.resolve({ success: false, error: 'AUTH_REQUIRED' }); }
   if (!_checkAccess()) { Telemetry.track(LIFECYCLE_EVENTS.MOUNT_FAILED, { reason: 'access-denied', panelId: PANEL_ID }); container.innerHTML = '<div class="panel-access-denied" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:200px;color:#f87171;text-align:center;padding:2rem;"><div style="font-size:3rem;margin-bottom:1rem;">⛔</div><h3 style="margin:0 0 0.5rem;color:#ef4444;">Acesso Negado</h3><p style="margin:0;font-size:0.875rem;">Você não tem permissão para acessar este painel</p></div>'; return Promise.resolve({ success: false, error: 'ACCESS_DENIED' }); }
   _container = container; const startTime = performance.now();
 
   // @ts-expect-error TS migration - TS2339
   return _loadStyles().then(() => { Store.init(true); _controller = Controller.create({ store: Store }); _controller.init(); _renderer = Renderer.create({ container: _container, store: Store, controller: _controller }); return _renderer.render(); }).then(() => _controller.loadInitialData()).then(() => {
+    // "pronto" só com os dados (27/11): o carregador grava o erro no Store em vez de rejeitar
+    const erro = (Store as unknown as { getError?: () => string | null }).getError?.();
+    if (erro) throw new Error(erro);
     _setupEventListeners(); _mounted = true; const duration = Math.round(performance.now() - startTime);
     _emit(PANEL_EVENTS.MOUNTED, { panelId: PANEL_ID, version: VERSION, duration, timestamp: Date.now(), source: MODULE_ID });
     return { success: true, duration };
-  }).catch((error) => { Telemetry.track(LIFECYCLE_EVENTS.MOUNT_FAILED, { panelId: PANEL_ID, error: error.message }); _emit(PANEL_EVENTS.ERROR, { panelId: PANEL_ID, version: VERSION, error: error.message, timestamp: Date.now(), source: MODULE_ID }); return { success: false, error: error.message }; });
+  }).catch((error) => { Telemetry.track(LIFECYCLE_EVENTS.MOUNT_FAILED, { panelId: PANEL_ID, error: error.message });
+    try { _renderer?.destroy?.(); } catch (e) {} _renderer = null; try { _controller?.destroy?.(); } catch (e) {} _controller = null; _mounted = false;
+    if (_container) _renderErro(_container, _textoErro(String(error.message))); _emit(PANEL_EVENTS.ERROR, { panelId: PANEL_ID, version: VERSION, error: error.message, timestamp: Date.now(), source: MODULE_ID }); return { success: false, error: error.message }; });
 };
+
+const _ERROS: Record<string, string> = {
+  NIVEL_INSUFICIENTE: 'Sua conta não tem o nível exigido para administrar permissões.', UARPS_DENIED: 'Sua conta não tem a permissão de administrar permissões.',
+  INTERNAL_ERROR: 'O servidor falhou ao responder. Tente de novo; se persistir, avise a equipe de dev.', RESPOSTA_FORA_DO_CONTRATO: 'O servidor respondeu num formato inesperado.',
+  FALHA_DE_REDE: 'Sem resposta do servidor. Verifique a conexão e tente de novo.', ERRO_NO_CLIENTE: 'Falha interna da tela ao montar o pedido. Avise a equipe de dev.',
+};
+const _textoErro = (codigo: string) => _ERROS[codigo] || (codigo.startsWith('HTTP_') ? `O servidor respondeu com erro (${codigo.slice(5)}).` : 'Falha ao carregar os dados.');
 
 export const unmount = () => {
   if (!_mounted) return Promise.resolve({ success: true }

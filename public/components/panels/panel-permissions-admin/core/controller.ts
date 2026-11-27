@@ -34,6 +34,7 @@ import { initPorts, injectPorts, getPorts as isPortsInitialized, emit, showToast
 import { UARPS_EVENTS } from '/core/runtime/events/catalog/uarps.events.js';
 import { loadInitialData, selectUser, refresh, syncInventoryFromDOM } from './data-loader.js';
 import { toggleTrigger, toggleRegion } from './toggle-operations.js';
+import { abrirAlteracao } from '../ui/alteracao-painel.js';
 import { toggleBulkMode, toggleBulkItem, selectAllInArea, clearBulk, bulkGrant, bulkRevoke, grantAllTriggers, revokeAllTriggers } from './bulk-operations.js';
 
 export const VERSION = '9.3.0-P2-ENTERPRISE';
@@ -98,7 +99,12 @@ Controller.prototype.redo = function() {
   return result;
 };
 
-Controller.prototype.toggleTrigger = function(triggerId: string) { return toggleTrigger(this._store as Parameters<typeof toggleTrigger>[0], triggerId); };
+// E2 (VERDE 27/11): clicar num gatilho ABRE o diálogo de alteração (escolha + motivo + prévia do servidor + confirmação); nada é gravado no clique.
+Controller.prototype.toggleTrigger = function(triggerId: string) {
+  const st = this._store as any; const userId = st?.getSelectedUserId?.(); if (!userId || !triggerId) return Promise.resolve(null);
+  const t = (st?.getTriggers?.() || []).find((x: any) => String(x?.id) === String(triggerId));
+  return abrirAlteracao(st, { userId, triggerId, label: t?.label as string | undefined });
+};
 Controller.prototype.toggleRegion = function(regionId: string) { return toggleRegion(this._store as Parameters<typeof toggleRegion>[0], regionId); };
 
 Controller.prototype.toggleBulkMode = function() { return toggleBulkMode(this._store); };

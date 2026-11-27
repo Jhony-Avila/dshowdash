@@ -92,9 +92,17 @@ export function renderMatrix(elements: Record<string, HTMLElement | null>, store
     elements.matrix.innerHTML = T.matrixEmpty ? T.matrixEmpty() : '<div class="uarps-matrix__empty">Selecione um usuário</div>';
     return;
   }
-  const regions = state.regions || [];
-
-  elements.matrix.innerHTML = T.regionMatrix ? T.regionMatrix(triggers, regions, user) : '';
+  const regions = (state.regions as unknown[]) || [];
+  // E3 (27/11): antes chamava regionMatrix(INVENTÁRIO de gatilhos, inventário de regiões) — nunca mostrava as regras da pessoa.
+  // Agora: gatilhos e regiões com o estado EFETIVO relido do servidor (vigente · negada · expirada · herda); nada deduzido.
+  const perms = ((store.getSelectedUserPermissions as () => any)?.() || {}) as any;
+  if (perms.leitura?.erro) {
+    elements.matrix.innerHTML = `<div class="uarps-matrix__empty" data-uarps-leitura-erro="">Não foi possível ler as permissões desta pessoa (${String(perms.leitura.erro).replace(/[<>&"]/g, '')}). Nada é mostrado como permitido ou negado.</div>`;
+    return;
+  }
+  const info = T.estadoCelula ? (tipo: 'triggers' | 'regions', id: string) => T.estadoCelula(perms, tipo, id) : undefined;
+  elements.matrix.innerHTML = T.triggerMatrix(triggers, perms.triggers || [], { info: info ? (id: string) => info('triggers', id) : undefined })
+    + `<h3 class="uarps-matrix__secao">Regiões</h3>` + T.regionMatrix(regions, perms.regions || [], info ? (id: string) => info('regions', id) : undefined);
 }
 
 export function renderStats(elements: Record<string, HTMLElement | null>, store: Record<string, unknown>) {

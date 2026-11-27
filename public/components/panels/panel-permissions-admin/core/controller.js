@@ -2,7 +2,8 @@ import { Telemetry } from "../telemetry/tracker.js";
 import { initPorts, injectPorts, getPorts as isPortsInitialized, emit, showToast } from "./ports.js";
 import { UARPS_EVENTS } from "/core/runtime/events/catalog/uarps.events.js";
 import { loadInitialData, selectUser, refresh, syncInventoryFromDOM } from "./data-loader.js";
-import { toggleTrigger, toggleRegion } from "./toggle-operations.js";
+import { toggleRegion } from "./toggle-operations.js";
+import { abrirAlteracao } from "../ui/alteracao-painel.js";
 import { toggleBulkMode, toggleBulkItem, selectAllInArea, clearBulk, bulkGrant, bulkRevoke, grantAllTriggers, revokeAllTriggers } from "./bulk-operations.js";
 const VERSION = "9.3.0-P2-ENTERPRISE";
 const MODULE_ID = "uarps-admin-controller";
@@ -78,7 +79,11 @@ Controller.prototype.redo = function() {
   return result;
 };
 Controller.prototype.toggleTrigger = function(triggerId) {
-  return toggleTrigger(this._store, triggerId);
+  const st = this._store;
+  const userId = st?.getSelectedUserId?.();
+  if (!userId || !triggerId) return Promise.resolve(null);
+  const t = (st?.getTriggers?.() || []).find((x) => String(x?.id) === String(triggerId));
+  return abrirAlteracao(st, { userId, triggerId, label: t?.label });
 };
 Controller.prototype.toggleRegion = function(regionId) {
   return toggleRegion(this._store, regionId);

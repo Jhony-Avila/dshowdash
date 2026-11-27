@@ -30,6 +30,7 @@ import * as Users from './templates-users.js';
 import * as Regions from './templates-regions.js';
 import * as Stats from './templates-stats.js';
 import * as Compare from './templates-compare.js';
+import * as Matrix from './templates-matrix.js';   // E3 (27/11): matriz de gatilhos da pessoa (antes não era usada)
 
 export const VERSION = '9.3.0-P2-ENTERPRISE';
 export const MODULE_ID = 'uarps-admin-templates';
@@ -49,6 +50,9 @@ export const { userCard, userFocus, userFocusEmpty } = Users;
 // === RE-EXPORTS REGIONS ===
 export const { regionMatrix, matrixEmpty } = Regions;
 
+// === RE-EXPORTS MATRIX ===
+export const { triggerMatrix, estadoCelula } = Matrix;
+
 // === RE-EXPORTS STATS ===
 export const { stats, statsExpanded, activityTimeline, coverageBar, lastEditBadge, modalPreview } = Stats;
 
@@ -65,6 +69,8 @@ export const Templates = {
   userCard, userFocus, userFocusEmpty,
   // Regions
   regionMatrix, matrixEmpty,
+  // Matrix
+  triggerMatrix, estadoCelula,
   // Stats
   stats, statsExpanded, activityTimeline, coverageBar, lastEditBadge, modalPreview,
   // Compare

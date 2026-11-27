@@ -190,11 +190,17 @@ export function setView(view: string) {
   notify('view');
 }
 
-export function setUserPermissions(userId: string | number, permissions: { triggers?: string[]; regions?: string[] }) {
+export function setUserPermissions(userId: string | number, permissions: { triggers?: string[]; regions?: string[]; [k: string]: unknown }) {
+  // E3 (27/11): além das concessões VIGENTES, guarda o que o servidor devolveu sobre negações, expiradas e prazos (a tela mostra, não deduz)
   _state.userPermissions.set(String(userId), {
     triggers: permissions.triggers || [],
-    regions: permissions.regions || []
-  });
+    regions: permissions.regions || [],
+    negados: permissions.negados || { triggers: [], regions: [] },
+    expirados: permissions.expirados || { triggers: [], regions: [] },
+    detalhes: permissions.detalhes || { triggers: {}, regions: {} },
+    contagem: permissions.contagem || null,
+    leitura: (permissions as any).leitura || null
+  } as any);
   notify('permissions');
 }
 

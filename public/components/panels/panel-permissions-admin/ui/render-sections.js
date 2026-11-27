@@ -66,7 +66,13 @@ function renderMatrix(elements, store) {
     return;
   }
   const regions = state.regions || [];
-  elements.matrix.innerHTML = T.regionMatrix ? T.regionMatrix(triggers, regions, user) : "";
+  const perms = store.getSelectedUserPermissions?.() || {};
+  if (perms.leitura?.erro) {
+    elements.matrix.innerHTML = `<div class="uarps-matrix__empty" data-uarps-leitura-erro="">N\xE3o foi poss\xEDvel ler as permiss\xF5es desta pessoa (${String(perms.leitura.erro).replace(/[<>&"]/g, "")}). Nada \xE9 mostrado como permitido ou negado.</div>`;
+    return;
+  }
+  const info = T.estadoCelula ? (tipo, id) => T.estadoCelula(perms, tipo, id) : void 0;
+  elements.matrix.innerHTML = T.triggerMatrix(triggers, perms.triggers || [], { info: info ? (id) => info("triggers", id) : void 0 }) + `<h3 class="uarps-matrix__secao">Regi\xF5es</h3>` + T.regionMatrix(regions, perms.regions || [], info ? (id) => info("regions", id) : void 0);
 }
 function renderStats(elements, store) {
   if (!elements || !elements.stats) return;

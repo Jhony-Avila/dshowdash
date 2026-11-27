@@ -85,6 +85,7 @@ export function loadInitialData(store: DataLoaderStore) {
     return Promise.all([Api.getUsers(), Api.getInventory()]).then(results => {
       const usersRes = results[0];
       const inventoryRes = results[1];
+      if (!usersRes.success) throw new Error(usersRes.error || 'FALHA_AO_LER_USUARIOS');   // 27/11: antes ignorava e a tela ficava "pronta" e vazia
       if (usersRes.success && usersRes.data) {
         store.setUsers(usersRes.data);
         if (usersRes.data.length > 0) { return selectUser(store, usersRes.data[0].id).then(() => inventoryRes); }
@@ -118,7 +119,9 @@ export function selectUser(store: DataLoaderStore, userId: string | number) {
 
 export function loadUserPermissions(store: DataLoaderStore, userId: string | number) {
   return Api.getUserPermissions(userId).then(res => {
-    if (res.success && res.data) { store.setUserPermissions(userId, { triggers: res.data.triggers || [], regions: res.data.regions || [] }); }
+    // E3 (27/11): guarda a projeção inteira do servidor (vigentes, negadas, expiradas, prazos); falha de leitura é AVISADA, nunca vira "sem permissões"
+    if (res.success && res.data) { store.setUserPermissions(userId, res.data); }
+    else { store.setUserPermissions(userId, { triggers: [], regions: [], leitura: { erro: res.error || 'FALHA_AO_LER' } } as any); showToast('error', 'Permissões da pessoa indisponíveis', String(res.error || 'FALHA_AO_LER')); }
   }).catch(error => { Telemetry.track(LIFECYCLE_EVENTS.DATA_ERROR, { phase: 'permissions:load', userId, error: error.message }); });
 }
 

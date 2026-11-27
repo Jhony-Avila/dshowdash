@@ -32,6 +32,7 @@ import { PERMISSIONS_EVENTS } from '/core/runtime/events/catalog/permissions.eve
 import { Api } from '../api/client.js';
 import { Telemetry } from '../telemetry/tracker.js';
 import { emit, showToast } from './ports.js';
+import { alterarTrigger, mensagemDoResultado } from './alteracao-servidor.js';
 
 export const VERSION = '9.3.0-P2-ENTERPRISE';
 export const MODULE_ID = 'uarps-admin-controller:toggle-operations';
@@ -44,31 +45,20 @@ interface ToggleStore {
 }
 
 export function toggleTrigger(store: ToggleStore, triggerId: string) {
+  // E2 (VERDE 27/11): SEM otimismo — a tela não inverte o item antes do servidor; grava, RELÊ do servidor e mostra a origem que ele devolver.
   const userId = store.getSelectedUserId();
   if (!userId || !triggerId) return Promise.resolve();
-
   const perms = store.getUserPermissions(userId);
   const hasPermission = perms.triggers.indexOf(triggerId) !== -1;
-  const action = hasPermission ? 'revoke' : 'grant';
-  
-  Telemetry.track(PERMISSIONS_EVENTS.CHANGED, { action: 'trigger:toggle:start', userId, triggerId, toggleAction: action });
-  
-  store.toggleTriggerPermission(userId, triggerId);
-  
-  return Api.setTriggerPermission(userId, triggerId, !hasPermission).then(res => {
-    if (!res.success) {
-      store.toggleTriggerPermission(userId, triggerId);
-      throw new Error(res.error || 'Falha ao atualizar permissão');
-    }
-    
-    Telemetry.track(PERMISSIONS_EVENTS.CHANGED, { action: 'trigger:toggle:success', userId, triggerId, toggleAction: action });
-    emit(PERMISSIONS_EVENTS.CHANGED, { userId, type: 'trigger', triggerId, granted: !hasPermission }, MODULE_ID);
-  }).catch(error => {
-    Telemetry.track(PERMISSIONS_EVENTS.CHANGED, { action: 'trigger:toggle:error', userId, triggerId, error: error.message });
-    showToast('error', 'Erro', error.message);
+  const acao = hasPermission ? 'negar' : 'permitir';
+  Telemetry.track(PERMISSIONS_EVENTS.CHANGED, { action: 'trigger:alterar:start', userId, triggerId, acao });
+  return alterarTrigger(store as any, { userId, triggerId, acao }).then((r) => {
+    Telemetry.track(PERMISSIONS_EVENTS.CHANGED, { action: 'trigger:alterar:' + r.etapa, userId, triggerId, acao, operacaoId: r.operacaoId, ok: r.ok });
+    if (r.gravado) emit(PERMISSIONS_EVENTS.CHANGED, { userId, type: 'trigger', triggerId, acao, releitura: r.releitura, operacaoId: r.operacaoId }, MODULE_ID);
+    showToast(r.ok ? 'success' : (r.etapa === 'reler' || r.etapa === 'pendente') ? 'warning' : 'error', r.ok ? 'Permissão gravada' : r.etapa === 'reler' ? 'Gravado sem releitura' : r.etapa === 'pendente' ? 'Confirmação pendente' : 'Não gravado', mensagemDoResultado(r));
+    return r;
   });
 }
-
 export function toggleRegion(store: ToggleStore, regionId: string) {
   const userId = store.getSelectedUserId();
   if (!userId || !regionId) return Promise.resolve();

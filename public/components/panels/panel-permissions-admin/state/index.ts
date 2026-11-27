@@ -70,7 +70,7 @@ export function reset() {
 export function setUsers(users: Record<string, unknown>[]) { Core.setUsers(users); Cache.saveToCache(); }
 export function setTriggers(triggers: Record<string, unknown>[]) { Core.setTriggers(triggers); Cache.saveToCache(); }
 export function setRegions(regions: Record<string, unknown>[]) { Core.setRegions(regions); Cache.saveToCache(); }
-export function setUserPermissions(userId: string | number, permissions: { triggers?: string[]; regions?: string[] }) { Core.setUserPermissions(userId, permissions); Cache.saveToCache(); }
+export function setUserPermissions(userId: string | number, permissions: { triggers?: string[]; regions?: string[]; [k: string]: unknown }) { Core.setUserPermissions(userId, permissions); Cache.saveToCache(); }
 
 // === RE-EXPORTS CORE ===
 export const getState = Core.getState;

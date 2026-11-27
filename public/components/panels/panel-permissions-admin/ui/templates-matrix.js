@@ -1,4 +1,5 @@
 import { Lucide, getAreaLucideIcon, serverIconImg } from "../config/icons-system.js";
+import { concedente, atributosConcedente } from "./concedente.js";
 const VERSION = "9.3.0-P2-ENTERPRISE";
 const MODULE_ID = "uarps-templates-matrix";
 const COLLAPSE_KEY = "uarps-collapsed-areas";
@@ -102,7 +103,7 @@ function triggerMatrix(triggers, grantedTriggers, options) {
     html += "</div>";
     html += `<div class="uarps-matrix__group-items" ${isCollapsed ? 'style="display:none"' : ""}>`;
     for (let t = 0; t < items.length; t++) {
-      html += triggerCell(items[t], grantedTriggers.indexOf(items[t].id) > -1, showCheckbox, area);
+      html += triggerCell(items[t], grantedTriggers.indexOf(items[t].id) > -1, showCheckbox, area, typeof options.info === "function" ? options.info(items[t].id) : void 0);
     }
     html += "</div>";
     html += "</div>";
@@ -110,12 +111,25 @@ function triggerMatrix(triggers, grantedTriggers, options) {
   html += "</div>";
   return html;
 }
-function triggerCell(trigger, isGranted, showCheckbox, area) {
+const _esc = (v) => String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+function estadoCelula(perms, tipo, id) {
+  const d = perms?.detalhes?.[tipo]?.[id];
+  const prazo = d?.expires_at ? ` at\xE9 ${String(d.expires_at).slice(0, 23)}` : "";
+  if (!d) return { estado: "herda", texto: "Sem regra pessoal (herda)" };
+  const k = concedente(d);
+  const c = k.texto;
+  const x = { perdeuAlcada: k.estado === "sem_alcada", concedente: k.id, attrs: atributosConcedente(k) };
+  if (d.estado_efetivo === "expirada") return { estado: "expirada", texto: `Expirada em ${String(d.expires_at || "").slice(0, 23)} (n\xE3o decide mais)` + c, ...x };
+  if (d.estado_efetivo === "allow") return { estado: "allow", texto: "Permitido por regra pessoal" + prazo + c, ...x };
+  if (d.estado_efetivo === "deny") return { estado: "deny", texto: "Negado por regra pessoal" + prazo + c, ...x };
+  return { estado: "herda", texto: "Estado desconhecido" };
+}
+function triggerCell(trigger, isGranted, showCheckbox, area, info2) {
   if (showCheckbox === void 0) showCheckbox = false;
   if (!area) area = trigger.area || "";
-  const stateClass = isGranted ? "granted" : "denied";
-  const tooltip = `${trigger.label || trigger.id}&#10;ID: ${trigger.id}&#10;Status: ${isGranted ? "Liberado" : "Bloqueado"}`;
-  let html = `<div class="uarps-cell uarps-cell--${stateClass}" `;
+  const stateClass = info2 ? { allow: "granted", deny: "denied", expirada: "expired", herda: "inherited" }[info2.estado] : isGranted ? "granted" : "denied";
+  const tooltip = `${_esc(trigger.label || trigger.id)}&#10;ID: ${_esc(trigger.id)}&#10;Status: ${info2 ? _esc(info2.texto) : isGranted ? "Liberado" : "Bloqueado"}`;
+  let html = `<div class="uarps-cell uarps-cell--${stateClass}" ${info2 ? `data-uarps-estado="${info2.estado}" ` : ""}${info2?.attrs || ""}`;
   html += `data-trigger-id="${trigger.id}" `;
   html += `data-area="${area}" `;
   html += `title="${tooltip}" `;
@@ -130,6 +144,7 @@ function triggerCell(trigger, isGranted, showCheckbox, area) {
   html += isGranted ? Lucide.checkCircle : Lucide.lock;
   html += "</div>";
   html += `<span class="uarps-cell__label">${trigger.label || trigger.id}</span>`;
+  if (info2) html += `<span class="uarps-cell__estado" data-uarps-estado-texto="">${_esc(info2.texto)}</span>`;
   html += `<span class="uarps-cell__id">${trigger.id}</span>`;
   html += '<div class="uarps-cell__glow"></div>';
   html += "</div>";
@@ -148,12 +163,13 @@ function info() {
 function healthCheck() {
   return { status: "HEALTHY", moduleId: MODULE_ID, version: VERSION, checks: { triggerMatrixReady: typeof triggerMatrix === "function", triggerCellReady: typeof triggerCell === "function" } };
 }
-var templates_matrix_default = { triggerMatrix, triggerCell, matrixToolbar, matrixLegend, isAreaCollapsed, toggleAreaCollapse, collapseAllAreas, expandAllAreas, VERSION, MODULE_ID, info, healthCheck };
+var templates_matrix_default = { estadoCelula, triggerMatrix, triggerCell, matrixToolbar, matrixLegend, isAreaCollapsed, toggleAreaCollapse, collapseAllAreas, expandAllAreas, VERSION, MODULE_ID, info, healthCheck };
 export {
   MODULE_ID,
   VERSION,
   collapseAllAreas,
   templates_matrix_default as default,
+  estadoCelula,
   expandAllAreas,
   healthCheck,
   info,

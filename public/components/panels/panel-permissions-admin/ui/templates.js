@@ -5,6 +5,7 @@ import * as Users from "./templates-users.js";
 import * as Regions from "./templates-regions.js";
 import * as Stats from "./templates-stats.js";
 import * as Compare from "./templates-compare.js";
+import * as Matrix from "./templates-matrix.js";
 const VERSION = "9.3.0-P2-ENTERPRISE";
 const MODULE_ID = "uarps-admin-templates";
 const { getInitials, getLevelClass, groupByArea, formatArea, formatTimeAgo, calculatePercentage } = Helpers;
@@ -12,6 +13,7 @@ const { skeletonUserGrid, skeletonUserFocus, skeletonMatrix } = Skeletons;
 const { layout } = Layout;
 const { userCard, userFocus, userFocusEmpty } = Users;
 const { regionMatrix, matrixEmpty } = Regions;
+const { triggerMatrix, estadoCelula } = Matrix;
 const { stats, statsExpanded, activityTimeline, coverageBar, lastEditBadge, modalPreview } = Stats;
 const { compareLegend, compareUsers, compareStats, triggerMatrixCompare, keyboardNavHint } = Compare;
 const Templates = {
@@ -28,6 +30,9 @@ const Templates = {
   // Regions
   regionMatrix,
   matrixEmpty,
+  // Matrix
+  triggerMatrix,
+  estadoCelula,
   // Stats
   stats,
   statsExpanded,
@@ -57,6 +62,7 @@ export {
   compareUsers,
   coverageBar,
   templates_default as default,
+  estadoCelula,
   formatArea,
   formatTimeAgo,
   getInitials,
@@ -73,6 +79,7 @@ export {
   skeletonUserGrid,
   stats,
   statsExpanded,
+  triggerMatrix,
   triggerMatrixCompare,
   userCard,
   userFocus,

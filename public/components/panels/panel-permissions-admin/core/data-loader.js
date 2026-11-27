@@ -34,6 +34,7 @@ function loadInitialData(store) {
     return Promise.all([Api.getUsers(), Api.getInventory()]).then((results) => {
       const usersRes = results[0];
       const inventoryRes = results[1];
+      if (!usersRes.success) throw new Error(usersRes.error || "FALHA_AO_LER_USUARIOS");
       if (usersRes.success && usersRes.data) {
         store.setUsers(usersRes.data);
         if (usersRes.data.length > 0) {
@@ -72,7 +73,10 @@ function selectUser(store, userId) {
 function loadUserPermissions(store, userId) {
   return Api.getUserPermissions(userId).then((res) => {
     if (res.success && res.data) {
-      store.setUserPermissions(userId, { triggers: res.data.triggers || [], regions: res.data.regions || [] });
+      store.setUserPermissions(userId, res.data);
+    } else {
+      store.setUserPermissions(userId, { triggers: [], regions: [], leitura: { erro: res.error || "FALHA_AO_LER" } });
+      showToast("error", "Permiss\xF5es da pessoa indispon\xEDveis", String(res.error || "FALHA_AO_LER"));
     }
   }).catch((error) => {
     Telemetry.track(LIFECYCLE_EVENTS.DATA_ERROR, { phase: "permissions:load", userId, error: error.message });

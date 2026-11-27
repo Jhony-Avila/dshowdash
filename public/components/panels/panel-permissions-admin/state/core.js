@@ -146,7 +146,12 @@ function setView(view) {
 function setUserPermissions(userId, permissions) {
   _state.userPermissions.set(String(userId), {
     triggers: permissions.triggers || [],
-    regions: permissions.regions || []
+    regions: permissions.regions || [],
+    negados: permissions.negados || { triggers: [], regions: [] },
+    expirados: permissions.expirados || { triggers: [], regions: [] },
+    detalhes: permissions.detalhes || { triggers: {}, regions: {} },
+    contagem: permissions.contagem || null,
+    leitura: permissions.leitura || null
   });
   notify("permissions");
 }

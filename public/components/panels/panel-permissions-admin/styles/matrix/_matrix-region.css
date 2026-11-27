@@ -58,3 +58,7 @@
 }
 
 .uarps-region--granted:hover .uarps-region__glow { opacity: 1; }
+
+/* E3 (VERDE, 27/11): região com regra vencida = tracejada (o texto do estado está no data-tooltip, vindo do servidor) */
+.uarps-region--expired { opacity: 0.85; border-style: dashed; }
+.uarps-region--inherited { opacity: 0.9; }

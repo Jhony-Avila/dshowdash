@@ -28,21 +28,23 @@ import { Icons } from './icons.js';
 export const VERSION = '9.3.0-P2-ENTERPRISE';
 export const MODULE_ID = 'uarps-templates-regions';
 
-export function regionMatrix(regions: Record<string, unknown>[], grantedRegions: string[] = []) {
+export function regionMatrix(regions: Record<string, unknown>[], grantedRegions: string[] = [], info?: (id: string) => { estado: string; texto: string; perdeuAlcada?: boolean; concedente?: string | null; attrs?: string }) {
   if (!regions.length) return `<div class="uarps-matrix__empty">${Icons.inbox} Nenhuma região</div>`;
   
   let html = '<div class="uarps-matrix__regions">';
   html += regions.map((r: Record<string, unknown>) => {
     const isGranted = grantedRegions.includes(r.id as string);
-    const stateClass = isGranted ? 'granted' : 'denied';
+    const e = info ? info(r.id as string) : null;   // E3 (27/11): estado efetivo do servidor (vigente · negada · expirada · herda)
+    const stateClass = e ? ({ allow: 'granted', deny: 'denied', expirada: 'expired', herda: 'inherited' } as Record<string, string>)[e.estado] : (isGranted ? 'granted' : 'denied');
     const icon = isGranted ? Icons.eye : Icons.eyeOff;
-    const tooltip = `${r.label || r.id}\nID: ${r.id}\nStatus: ${isGranted ? 'Visível' : 'Oculta'}`;
+    const tooltip = String(`${r.label || r.id}\nID: ${r.id}\nStatus: ${e ? e.texto : (isGranted ? 'Visível' : 'Oculta')}`).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as Record<string, string>)[c]);
     return `
-<div class="uarps-region uarps-region--${stateClass} uarps-tooltip--bottom" data-region-id="${r.id}" data-tooltip="${tooltip}" role="button" tabindex="0">
+<div class="uarps-region uarps-region--${stateClass} uarps-tooltip--bottom" data-region-id="${r.id}" ${e ? `data-uarps-estado="${e.estado}" ` : ''}${e?.attrs || ''}data-tooltip="${tooltip}" role="button" tabindex="0">
   <div class="uarps-region__indicator">${icon}</div>
   <div class="uarps-region__content">
     <span class="uarps-region__label">${r.label || r.id}</span>
-    <span class="uarps-region__id">${r.id}</span>
+    <span class="uarps-region__id">${r.id}</span>${e ? `
+    <span class="uarps-region__estado" data-uarps-estado-texto="">${String(e.texto).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as Record<string, string>)[c])}</span>` : ''}
   </div>
   <div class="uarps-region__glow"></div>
 </div>`;

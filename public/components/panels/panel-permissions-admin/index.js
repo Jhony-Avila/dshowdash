@@ -3,7 +3,7 @@ import { PANEL_EVENTS } from "/core/runtime/events/catalog/panels.events.js";
 import { LIFECYCLE_EVENTS } from "/core/runtime/events/catalog/lifecycle.events.js";
 import { PERMISSIONS_EVENTS } from "/core/runtime/events/catalog/permissions.events.js";
 import { UARPS_EVENTS } from "/core/runtime/events/catalog/uarps.events.js";
-import { Store } from "./state/store.js";
+import { Store } from "./state/index.js";
 import { Renderer } from "./ui/renderer.js";
 import { Controller } from "./core/controller.js";
 import { Telemetry } from "./telemetry/tracker.js";
@@ -37,6 +37,29 @@ const _checkAccess = () => {
 };
 const _renderAuthBlocked = (container) => {
   container.innerHTML = '<div class="panel-auth-blocked" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:200px;color:#64748b;text-align:center;padding:2rem;"><div style="margin-bottom:1rem;"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><h3 style="margin:0 0 0.5rem;color:#334155;">Acesso Restrito</h3><p style="margin:0;font-size:0.875rem;">Fa\xE7a login para visualizar este conte\xFAdo</p></div>';
+};
+const _renderErro = (container, msg) => {
+  container.innerHTML = "";
+  const box = document.createElement("div");
+  box.className = "panel-erro-carga";
+  box.setAttribute("role", "alert");
+  box.setAttribute("data-uarps-admin-erro", "");
+  box.style.cssText = "display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:200px;padding:2rem;text-align:center;color:var(--text-primary,#1e293b)";
+  const t = document.createElement("h3");
+  t.style.margin = "0";
+  t.textContent = "N\xE3o foi poss\xEDvel carregar o editor de permiss\xF5es";
+  const p = document.createElement("p");
+  p.style.cssText = "margin:0;font-size:.875rem;color:var(--text-secondary,#475569)";
+  p.textContent = msg;
+  const b = document.createElement("button");
+  b.type = "button";
+  b.textContent = "Tentar novamente";
+  b.className = "uarps-btn";
+  b.addEventListener("click", () => {
+    void mount(container, {});
+  });
+  box.append(t, p, b);
+  container.appendChild(box);
 };
 const _emit = (event, data = {}) => {
   try {
@@ -80,8 +103,9 @@ const _setupEventListeners = () => {
 };
 const mount = (container, options = {}) => {
   _initPorts();
-  if (_mounted) return Promise.resolve({ success: true, cached: true });
   if (!container) return Promise.resolve({ success: false, error: "Container required" });
+  if (_mounted && container === _container && container.isConnected && container.childElementCount > 0) return Promise.resolve({ success: true, cached: true });
+  if (_mounted) return unmount().then(() => mount(container, options));
   if (!_isAuthenticated()) {
     Telemetry.track(LIFECYCLE_EVENTS.MOUNT_FAILED, { reason: "auth-blocked", panelId: PANEL_ID });
     _renderAuthBlocked(container);
@@ -101,6 +125,8 @@ const mount = (container, options = {}) => {
     _renderer = Renderer.create({ container: _container, store: Store, controller: _controller });
     return _renderer.render();
   }).then(() => _controller.loadInitialData()).then(() => {
+    const erro = Store.getError?.();
+    if (erro) throw new Error(erro);
     _setupEventListeners();
     _mounted = true;
     const duration = Math.round(performance.now() - startTime);
@@ -108,10 +134,31 @@ const mount = (container, options = {}) => {
     return { success: true, duration };
   }).catch((error) => {
     Telemetry.track(LIFECYCLE_EVENTS.MOUNT_FAILED, { panelId: PANEL_ID, error: error.message });
+    try {
+      _renderer?.destroy?.();
+    } catch (e) {
+    }
+    _renderer = null;
+    try {
+      _controller?.destroy?.();
+    } catch (e) {
+    }
+    _controller = null;
+    _mounted = false;
+    if (_container) _renderErro(_container, _textoErro(String(error.message)));
     _emit(PANEL_EVENTS.ERROR, { panelId: PANEL_ID, version: VERSION, error: error.message, timestamp: Date.now(), source: MODULE_ID });
     return { success: false, error: error.message };
   });
 };
+const _ERROS = {
+  NIVEL_INSUFICIENTE: "Sua conta n\xE3o tem o n\xEDvel exigido para administrar permiss\xF5es.",
+  UARPS_DENIED: "Sua conta n\xE3o tem a permiss\xE3o de administrar permiss\xF5es.",
+  INTERNAL_ERROR: "O servidor falhou ao responder. Tente de novo; se persistir, avise a equipe de dev.",
+  RESPOSTA_FORA_DO_CONTRATO: "O servidor respondeu num formato inesperado.",
+  FALHA_DE_REDE: "Sem resposta do servidor. Verifique a conex\xE3o e tente de novo.",
+  ERRO_NO_CLIENTE: "Falha interna da tela ao montar o pedido. Avise a equipe de dev."
+};
+const _textoErro = (codigo) => _ERROS[codigo] || (codigo.startsWith("HTTP_") ? `O servidor respondeu com erro (${codigo.slice(5)}).` : "Falha ao carregar os dados.");
 const unmount = () => {
   if (!_mounted) return Promise.resolve(
     { success: true }
