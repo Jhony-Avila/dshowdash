@@ -173,9 +173,12 @@ final class GeralV2
                         $porDia[] = $x !== null ? ['dia' => $k, 'valor' => $centsTxt($x['cents'], $x['nulos']), 'quantidade' => (int) $x['baixas']]
                                   : ($k <= $diaSnap ? ['dia' => $k, 'valor' => '0.00', 'quantidade' => 0] : ['dia' => $k, 'valor' => null, 'quantidade' => null]);
                     }
-                    $velho = $this->idadeMin($em) > self::PRECIFICA_VELHA_MIN;
+                    // 27/11 (proposta do AZUL; decisão do Jhony): o coletor do app PAUSA de propósito das 02h às 05h (reconciliação noturna do ERP).
+                    // A idade conta só o tempo FORA da pausa; dentro dela, a leitura de antes da pausa não é "velha": motivo pausa_noturna.
+                    $velho = $this->idadePrecificaMin($em) > self::PRECIFICA_VELHA_MIN;
+                    $pausa = !$velho && $this->idadeMin($em) > self::PRECIFICA_VELHA_MIN && $this->naPausaPrecifica($this->agora);
                     $estado = $nulos > 0 ? 'parcial' : ($velho ? 'desatualizado' : ($linhas === 0 ? 'zero_confirmado' : 'ok'));
-                    $r = ['estado' => $estado, 'motivo' => $nulos > 0 ? 'valor_desconhecido' : ($velho ? 'snapshot_antigo' : null),
+                    $r = ['estado' => $estado, 'motivo' => $nulos > 0 ? 'valor_desconhecido' : ($velho ? 'snapshot_antigo' : ($pausa ? 'pausa_noturna' : null)),
                           'valor' => $valor, 'quantidade' => (int) $a['baixas'], 'snapshot_em' => $em->setTimezone($this->br)->format(DATE_ATOM),
                           'por_empresa' => $porEmp, 'sem_cnpj' => (int) $a['sem_cnpj'], 'por_dia' => $porDia];
                 }
@@ -898,6 +901,27 @@ final class GeralV2
     private function idadeMin(DateTimeImmutable $t): int
     {
         return intdiv($this->agora->getTimestamp() - $t->getTimestamp(), 60);
+    }
+
+    /** Pausa noturna do coletor do Precifica (app: fin-precifica, ciclo() devolve 'pulado' com 2 ≤ hora < 5 em Brasília). */
+    public const PRECIFICA_PAUSA = [2, 5];
+
+    private function naPausaPrecifica(DateTimeImmutable $t): bool
+    {
+        $h = (int) $t->setTimezone($this->br)->format('G');
+        return $h >= self::PRECIFICA_PAUSA[0] && $h < self::PRECIFICA_PAUSA[1];
+    }
+
+    /** Minutos entre a leitura e agora SEM o tempo dentro das pausas noturnas (cada noite entre as duas datas). */
+    private function idadePrecificaMin(DateTimeImmutable $t): int
+    {
+        $ini = $t->setTimezone($this->br); $fim = $this->agora; $seg = $fim->getTimestamp() - $ini->getTimestamp();
+        for ($d = $ini->setTime(0, 0)->modify('-1 day'); $d <= $fim; $d = $d->modify('+1 day')) {
+            $pi = $d->setTime(self::PRECIFICA_PAUSA[0], 0); $pf = $d->setTime(self::PRECIFICA_PAUSA[1], 0);
+            $sobra = min($fim->getTimestamp(), $pf->getTimestamp()) - max($ini->getTimestamp(), $pi->getTimestamp());
+            if ($sobra > 0) $seg -= $sobra;
+        }
+        return intdiv(max(0, $seg), 60);
     }
 
     /** DECIMAL do MySQL → texto com 2 casas. SUM de nada é NULL: com 0 linhas somadas o valor é "0.00" (número de verdade), senão null. */

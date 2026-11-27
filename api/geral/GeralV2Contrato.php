@@ -104,6 +104,7 @@ final class GeralV2Contrato
 
     private const MOTIVO_RECEBIDO = [
         'sem_permissao' => 'Você não tem permissão para ver dados financeiros.',
+        'pausa_noturna' => 'Pausa noturna do ERP (02h–05h): valor da última leitura antes da pausa.',
         'sem_acesso' => 'Sem acesso de leitura aos recebimentos do Precifica.',
         'leitura_falhou' => 'Não foi possível ler os recebimentos do Precifica agora.',
         'sem_snapshot' => 'O Precifica ainda não tem uma leitura completa de recebimentos.',
