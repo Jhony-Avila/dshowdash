@@ -4,6 +4,10 @@
 
 declare(strict_types=1);
 
+// SEC-002 lote S1 (27/11): portão de sessão antes de tudo — 401 sem sessão; interno = CLI/loopback.
+require_once __DIR__ . '/core/AcessoSessao.php';
+AcessoSessao::exigir();
+
 require_once __DIR__ . '/core/CorsPolicy.php';
 
 CorsPolicy::setupApiEndpoint(['methods' => ['GET', 'OPTIONS'], 'no_cache' => true]);

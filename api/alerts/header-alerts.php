@@ -1,4 +1,8 @@
 <?php
+// SEC-002 lote S1 (27/11): portão de sessão antes de tudo — 401 sem sessão; interno = CLI/loopback.
+require_once __DIR__ . '/../core/AcessoSessao.php';
+AcessoSessao::exigir();
+
 // Header Alerts API Enterprise
 // @version 2.3.0-P06-ENTERPRISE
 // @changelog v2.3.0-P06: Migrado para ApiResponse

@@ -1,4 +1,8 @@
 <?php
+// SEC-002 lote S1 (27/11): portão de sessão antes de tudo — 401 sem sessão; interno = CLI/loopback.
+require_once __DIR__ . '/../core/AcessoSessao.php';
+AcessoSessao::exigir();
+
 // Health Cards Panel
 // @version 4.2.0-P06-ENTERPRISE
 

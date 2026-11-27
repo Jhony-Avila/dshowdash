@@ -1,4 +1,8 @@
 <?php
+// SEC-002 lote S1 (27/11): portão de sessão antes de tudo — 401 sem sessão; interno = CLI/loopback.
+require_once __DIR__ . '/../core/AcessoSessao.php';
+AcessoSessao::exigir();
+
 // Metrics Server
 // @version 4.2.2-FIX
 // @changelog v4.2.2-FIX - Adicionado logging explícito no catch

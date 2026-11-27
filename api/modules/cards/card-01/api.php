@@ -5,6 +5,9 @@
 // @changelog v4.4.0: Migrado para RedisHelper centralizado
 
 require_once __DIR__ . '/../_init.php';
+// SEC-002 lote S2 (27/11): portão de sessão antes do cache e do banco — 401 sem sessão; interno = CLI/loopback.
+require_once __DIR__ . '/../../../core/AcessoSessao.php';
+AcessoSessao::exigir();
 
 $CACHE_KEY = 'card:01:metrics:' . date('Y-m-d-H');
 $CACHE_TTL = RedisConfig::TTL_MODULES;

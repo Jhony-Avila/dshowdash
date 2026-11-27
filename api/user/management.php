@@ -1,4 +1,8 @@
 <?php
+// SEC-002 lote S1 (27/11): portão de sessão antes de tudo (+ permissão de sistema: contagem de contas) — 401 sem sessão, 403 sem permissão; interno = CLI/loopback.
+require_once __DIR__ . '/../core/AcessoSessao.php';
+AcessoSessao::exigir(true);
+
 // User Management Status - v2.2.0-ENTERPRISE
 // v2.1.0: Migrado para RedisHelper centralizado
 // P2.1 FIX: Removido rand(), dados reais do banco

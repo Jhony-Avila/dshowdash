@@ -1,4 +1,8 @@
 <?php
+// SEC-002 lote S1 (27/11): portão de sessão antes de tudo — 401 sem sessão; interno = CLI/loopback.
+require_once __DIR__ . '/../core/AcessoSessao.php';
+AcessoSessao::exigir();
+
 // Server Status API
 // @version 2.3.0-P06-ENTERPRISE
 
