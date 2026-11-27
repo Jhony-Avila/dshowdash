@@ -3,7 +3,7 @@
 // FASE DE LEITURA: nada é gravado e nada é comprado; não existe botão de aplicar. "Gerar prévia" só lê as fontes de novo.
 // Contrato espacial (Jhony 13:44): um bloco de topo único (título + ações, faixa ≤ 56 px, filtros) e UMA região de rolagem (as linhas da grade).
 import React from 'react';
-import { criarGrade, type GridApi, type ColDef, type ICellRendererParams } from '@shared/ag-grid/grade';
+import { criarGrade, temaDshow, type GridApi, type ColDef, type ICellRendererParams } from '@shared/ag-grid/grade';
 import { lerPrevia, gerarPrevia, type Resultado } from '../lib/api';
 import { ROTULO_CLASSE, ROTULO_DOADORA, ROTULO_FONTE, ROTULO_ORIGEM, type Classe, type Fontes, type Linha, type Lote, type Previa } from '../lib/tipos';
 
@@ -175,6 +175,10 @@ export function RevisaoCadastral() {
         tooltipValueGetter: (p) => { const l = linha(p); return l && l.classificacao === 'sugestao' && new Set(l.grafias.map((g) => g.origem)).size > 1 ? 'As fontes concordam (só caixa/espaços variam)' : null; } },
     ];
     api.current = criarGrade<LinhaGrade>(caixa.current, {
+      // Com getRowHeight (linha de detalhe), o AG Grid ESTIMA a altura das linhas ainda não desenhadas pela altura padrão do TEMA (~30 px), não
+      // pelo rowHeight (ag-grid-community: _getConfiguredRowHeight com allowEstimate). A estimativa errada fazia a 1ª rolagem até o fim parar ~120 px
+      // antes (26/11 noite). O tema desta grade passa a dizer 32 px: estimativa = altura real das linhas comuns.
+      theme: temaDshow.withParams({ rowHeight: 32 }),
       columnDefs: colunas, rowData: [], getRowId: (p) => p.data.id, rowHeight: 32, headerHeight: 34, suppressCellFocus: false,
       isFullWidthRow: (p) => !!p.rowNode.data?.__detalhe,
       fullWidthCellRenderer: (p: ICellRendererParams<LinhaGrade>) => (p.data && p.data.__detalhe ? detalhe(p.data.pai) : document.createElement('div')),
