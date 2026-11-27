@@ -48,8 +48,17 @@ if ($ordem5 !== $o5 || in_array(PHP_INT_MAX, $ordem5, true)) { $falhas[] = 'pain
 if (preg_match("/['\"]panel:05:/", (string)preg_replace('/\$CACHE_PREFIX = .*;|\?\? \'panel:05:\'/', '', $p5))) { $falhas[] = "painel 05: chave de cache 'panel:05:' fixa sobrou"; }
 if (substr_count($p5, "'estado' => 'indisponivel'") < 2) { $falhas[] = 'painel 05 sem 503 indisponível na conexão e na consulta'; }
 if (str_contains($p5, "\$cacheableActions = ['default',")) { $falhas[] = "painel 05: a ação 'default' (lista com filtros) não pode ter cache só por ação (CP-002)"; }
+// 5c. painel 16 (Fornecedor 360): mesma ordem e travas; CP-003: sem dados bancários/PIX em lugar nenhum do painel
+$p16 = (string)file_get_contents("$raiz/api/modules/panels/panel-16/api.php");
+$pos16 = static fn (string $s): int => ($i = strpos($p16, $s)) === false ? PHP_INT_MAX : $i;
+$ordem16 = [$pos16('AuthHelpers::requireAuth();'), $pos16("\$ERP_ORIGEM = erp_ponto_origem('painel16');"), $pos16('erp_novo_autorizado(AuthHelpers::getCurrentUserId())'), $pos16('RedisHelper::serveIfCached'), $pos16("\$pdo = erp_ponto_pdo('painel16');")];
+$o16 = $ordem16; sort($o16);
+if ($ordem16 !== $o16 || in_array(PHP_INT_MAX, $ordem16, true)) { $falhas[] = 'painel 16 fora da ordem login → origem → autorização → cache → conexão'; }
+if (preg_match("/['\"]panel:16:(kpis|list)/", $p16)) { $falhas[] = "painel 16: chave de cache antiga 'panel:16:kpis|list' (o formato mudou: CP-003)"; }
+if (substr_count($p16, "'estado' => 'indisponivel'") < 2) { $falhas[] = 'painel 16 sem 503 indisponível na conexão e na consulta'; }
+if (preg_match('/CONTA_BANCARIA|Nome_Titular|\bAgencia\b|\bPix\b/', (string)preg_replace('#//[^\n]*#', '', $p16))) { $falhas[] = 'painel 16 ainda lê conta bancária/PIX (CP-003: oculto até bank_account_id)'; }
 // 6. anexo: a chave do S3 não sai como url na camada nova
 $c = (string)file_get_contents("$raiz/api/modules/panels/_erp-compat-novo.php");
 if (str_contains($c, 's3_key AS Url')) { $falhas[] = 'camada nova ainda expõe s3_key como Url'; }
 if ($falhas) { echo "[ERRO] chaveamento:\n - " . implode("\n - ", $falhas) . "\n"; exit(1); }
-echo "[OK]   chaveamento: painéis 01 e 05 (ordem, cache por origem, 503; 05 sem cache da página inicial); painel 01 legado sem flag; autorização por pessoa fail-closed (8 casos: só user_override libera; global/rollout negam); ordem login→origem→autorização→cache→conexão; cache por origem; 503 indisponível; anexo sem chave do S3\n";
+echo "[OK]   chaveamento: painéis 01, 05 e 16 (ordem, cache por origem, 503; 05 sem cache da página inicial; 16 sem banco/PIX); painel 01 legado sem flag; autorização por pessoa fail-closed (8 casos: só user_override libera; global/rollout negam); ordem login→origem→autorização→cache→conexão; cache por origem; 503 indisponível; anexo sem chave do S3\n";
