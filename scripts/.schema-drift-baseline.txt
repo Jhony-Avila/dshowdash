@@ -17,7 +17,6 @@ api/permissions/index.php:app_user_permissions
 api/permissions/migration-seed.php:roles
 api/saved-views/index.php:app_saved_views
 api/security-events/index.php:app_security_events
-api/status/financial.php:requisicoes
 api/users/security.php:app_user_security
 api/admin/panels/screenshot.php:panel_registry:route
 api/modules/footer/api.php:footer_items:uarps_trigger_id

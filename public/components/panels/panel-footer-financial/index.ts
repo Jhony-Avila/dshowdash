@@ -66,6 +66,15 @@ const _isAuthenticated = () => {
 };
 const _isDocumentVisible = () => typeof document !== 'undefined' && !document.hidden;
 const CONFIG = { id: 'footer-financial', area: 'footer', label: 'Financial', emoji: '💰', apiEndpoint: '/api/status/financial.php', refreshInterval: 300000 };
+/** Contagem do rodapé financeiro, ou null = "Indisponível". Dado disponível = HTTP 2xx + envelope ok + status online + inteiro ≥ 0 (contrato do MIG-001-R1). */
+export function lerContagemFinanceira(httpOk: boolean, corpo: unknown): number | null {
+  if (!httpOk || !corpo || typeof corpo !== 'object') return null;
+  const e = corpo as { ok?: unknown; success?: unknown; data?: { status?: unknown; month_transactions?: unknown } | null };
+  if ((e.ok ?? e.success) !== true || !e.data || e.data.status !== 'online') return null;
+  const v = e.data.month_transactions;
+  return typeof v === 'number' && Number.isSafeInteger(v) && v >= 0 ? v : null;
+}
+
 export class FooterFinancialComponent {
   [key: string]: any;
   constructor(options: Record<string, unknown> = {}) { _initPorts(); this.container = options.container || null; this.config = { ...CONFIG, ...(options.config as Record<string, unknown>) }; this.eventBus = options.eventBus || _getPort('eventBus'); this.store = new StateStore({ mounted: false, loading: false, error: null, data: null, transactions: 0, status: 'unknown' }); this.lifecycle = new LifecycleManager(this); this.circuitBreaker = new CircuitBreaker({ threshold: 3, timeout: 30000 }); this.logger = new Logger({ prefix: `[${MODULE_ID}]` }); this.tracker = new Tracker({ moduleId: MODULE_ID }); this._mounted = false; this._initialized = false; this._element = null; this._abortController = null; this._refreshTimer = null; this._metrics = { mountCount: 0, errorCount: 0, fetchCount: 0, lastFetchAt: null }; }
@@ -73,11 +82,37 @@ export class FooterFinancialComponent {
   init(ctx: Record<string, unknown> | null) { if (this._initialized) return this; this._ctx = ctx || {}; this._initialized = true; return this; }
   mount(container: HTMLElement | null) { if (this._mounted) return Promise.resolve(this); this.container = container || this.container; if (!this.container) return Promise.resolve(this); if (!_isAuthenticated()) { this.container.innerHTML = '<div style="padding:0.5rem;text-align:center;color:#F59E0B;font-size:10px;">🔒</div>'; return Promise.resolve(this); } this._abortController = new AbortController(); return this.lifecycle.mount().then(() => { this.render(); this._mounted = true; this.store.setState({ mounted: true }); this._metrics.mountCount++; this._fetchData(); this._startRefresh(); this.eventBus?.emit?.(COMPONENT_EVENTS.MOUNTED, { componentId: CONFIG.id, moduleId: MODULE_ID, timestamp: Date.now() }); return this; }).catch((_e: unknown) => { this._metrics.errorCount++; return this; }); }
   unmount() { if (!this._mounted) return Promise.resolve(this); this._abortController?.abort(); this._stopRefresh(); return this.lifecycle.unmount().then(() => { if (this.container) this.container.innerHTML = ''; this._mounted = false; this._element = null; this.store.setState({ mounted: false }); return this; }); }
-  async _fetchData() { if (!this._canRefresh()) return; this.store.setState({ loading: true }); this._metrics.fetchCount++; this._metrics.lastFetchAt = Date.now(); try { const r = await fetch(this.config.apiEndpoint, { signal: this._abortController?.signal, credentials: 'include' }); if (!r.ok) throw new Error(`HTTP ${r.status}`); const j = await r.json(); if ((j.ok ?? j.success) && j.data) { this.store.setState({ loading: false, error: null, data: j.data, transactions: j.data.month_transactions || 0, status: j.data.status || 'unknown' }); this._updateDisplay(); } } catch (e) { if ((e as Error).name !== 'AbortError') { this._metrics.errorCount++; this.store.setState({ loading: false, error: (e as Error).message }); } } }
+  // MIG-001-R1 (ROXO, 27/11; backend do VINHO 0fb4d0aa): só a resposta MAIS RECENTE vale (número de sequência por pedido); erro, 503
+  // (LEGACY_SOURCE_UNAVAILABLE), envelope sem ok, status ≠ online ou contagem que não seja inteiro ≥ 0 → "Indisponível", sem a contagem anterior.
+  async _fetchData() {
+    if (!this._canRefresh()) return;
+    const seq = (this._seq = (this._seq || 0) + 1);
+    this.store.setState({ loading: true }); this._metrics.fetchCount++; this._metrics.lastFetchAt = Date.now();
+    let contagem: number | null = null;
+    try {
+      const r = await fetch(this.config.apiEndpoint, { signal: this._abortController?.signal, credentials: 'include' });
+      let corpo: unknown = null; try { corpo = await r.json(); } catch (_) { corpo = null; }
+      contagem = lerContagemFinanceira(r.ok, corpo);
+    } catch (e) {
+      if ((e as Error).name === 'AbortError') return;
+      contagem = null;
+    }
+    if (seq !== this._seq) { this._metrics.discardedCount = (this._metrics.discardedCount || 0) + 1; return; }   // chegou fora de ordem: descarta
+    if (contagem === null) { this._metrics.errorCount++; this.store.setState({ loading: false, error: 'Indicador indisponível', data: null, transactions: null, status: 'unknown' }); }
+    else this.store.setState({ loading: false, error: null, transactions: contagem, status: 'online' });
+    this._updateDisplay();
+  }
   _startRefresh() { this._stopRefresh(); this._refreshTimer = setInterval(() => { if (this._canRefresh()) this._fetchData(); }, this.config.refreshInterval); }
   _stopRefresh() { if (this._refreshTimer) { clearInterval(this._refreshTimer); this._refreshTimer = null; } }
   render() { this._element = document.createElement('div'); this._element.className = `enterprise-component ${CONFIG.id}`; this._element.setAttribute('data-module-id', MODULE_ID); this._element.innerHTML = `<div class="panel-enterprise panel-${CONFIG.id}" title="Financial"><span class="footer-icon">${CONFIG.emoji}</span><span class="footer-value" data-metric="transactions">--</span></div>`; this.container.innerHTML = ''; this.container.appendChild(this._element); }
-  _updateDisplay() { if (!this._element) return; const s = this.store.getState(); const v = this._element.querySelector('.footer-value'); if (v) { v.textContent = s.transactions > 0 ? s.transactions : '✓'; v.classList.remove('status-ok', 'status-error'); if (s.status === 'online') v.classList.add('status-ok'); else v.classList.add('status-error'); } }
+  _updateDisplay() {
+    if (!this._element) return;
+    const s = this.store.getState(); const v = this._element.querySelector('.footer-value'); if (!v) return;
+    const conhecido = s.status === 'online' && Number.isSafeInteger(s.transactions) && s.transactions >= 0;
+    v.textContent = conhecido ? String(s.transactions) : 'Indisponível';   // 0 confirmado aparece como 0 (antes: "✓")
+    v.classList.remove('status-ok', 'status-error'); v.classList.add(conhecido ? 'status-ok' : 'status-error');
+    this._element.querySelector('.panel-enterprise')?.setAttribute('title', conhecido ? `Financial · ${s.transactions} no mês` : 'Financial · indicador indisponível');
+  }
   healthCheck() { const ps = Ports.snapshot(); const checks = { initialized: this._initialized, mounted: this._mounted, hasContainer: !!this.container, portsInitialized: ps._initialized, hasData: !!this.store.getState().data, isAuthenticated: _isAuthenticated(), abortControllerActive: !!this._abortController && !this._abortController.signal.aborted }; const passed = Object.values(checks).filter(Boolean).length; const maxScore = Object.keys(checks).length; return { status: passed === maxScore ? 'HEALTHY' : 'DEGRADED', score: passed, maxScore, version: VERSION, moduleId: MODULE_ID, p22Compliant: true }; }
   info() { return { moduleId: MODULE_ID, version: VERSION, mounted: this._mounted, isAuthenticated: _isAuthenticated(), isDocumentVisible: _isDocumentVisible(), p22Compliant: true, metrics: this._metrics, state: this.store.getState() }; }
   getState() { return this.store.getState(); } getMetrics() { return { ...this._metrics }; } refresh() { if (this._canRefresh()) return this._fetchData(); return Promise.resolve(); }

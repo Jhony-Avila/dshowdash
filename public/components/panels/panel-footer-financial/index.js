@@ -32,6 +32,13 @@ const _isAuthenticated = () => {
 };
 const _isDocumentVisible = () => typeof document !== "undefined" && !document.hidden;
 const CONFIG = { id: "footer-financial", area: "footer", label: "Financial", emoji: "\u{1F4B0}", apiEndpoint: "/api/status/financial.php", refreshInterval: 3e5 };
+function lerContagemFinanceira(httpOk, corpo) {
+  if (!httpOk || !corpo || typeof corpo !== "object") return null;
+  const e = corpo;
+  if ((e.ok ?? e.success) !== true || !e.data || e.data.status !== "online") return null;
+  const v = e.data.month_transactions;
+  return typeof v === "number" && Number.isSafeInteger(v) && v >= 0 ? v : null;
+}
 class FooterFinancialComponent {
   constructor(options = {}) {
     _initPorts();
@@ -97,25 +104,37 @@ class FooterFinancialComponent {
       return this;
     });
   }
+  // MIG-001-R1 (ROXO, 27/11; backend do VINHO 0fb4d0aa): só a resposta MAIS RECENTE vale (número de sequência por pedido); erro, 503
+  // (LEGACY_SOURCE_UNAVAILABLE), envelope sem ok, status ≠ online ou contagem que não seja inteiro ≥ 0 → "Indisponível", sem a contagem anterior.
   async _fetchData() {
     if (!this._canRefresh()) return;
+    const seq = this._seq = (this._seq || 0) + 1;
     this.store.setState({ loading: true });
     this._metrics.fetchCount++;
     this._metrics.lastFetchAt = Date.now();
+    let contagem = null;
     try {
       const r = await fetch(this.config.apiEndpoint, { signal: this._abortController?.signal, credentials: "include" });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const j = await r.json();
-      if ((j.ok ?? j.success) && j.data) {
-        this.store.setState({ loading: false, error: null, data: j.data, transactions: j.data.month_transactions || 0, status: j.data.status || "unknown" });
-        this._updateDisplay();
+      let corpo = null;
+      try {
+        corpo = await r.json();
+      } catch (_) {
+        corpo = null;
       }
+      contagem = lerContagemFinanceira(r.ok, corpo);
     } catch (e) {
-      if (e.name !== "AbortError") {
-        this._metrics.errorCount++;
-        this.store.setState({ loading: false, error: e.message });
-      }
+      if (e.name === "AbortError") return;
+      contagem = null;
     }
+    if (seq !== this._seq) {
+      this._metrics.discardedCount = (this._metrics.discardedCount || 0) + 1;
+      return;
+    }
+    if (contagem === null) {
+      this._metrics.errorCount++;
+      this.store.setState({ loading: false, error: "Indicador indispon\xEDvel", data: null, transactions: null, status: "unknown" });
+    } else this.store.setState({ loading: false, error: null, transactions: contagem, status: "online" });
+    this._updateDisplay();
   }
   _startRefresh() {
     this._stopRefresh();
@@ -141,12 +160,12 @@ class FooterFinancialComponent {
     if (!this._element) return;
     const s = this.store.getState();
     const v = this._element.querySelector(".footer-value");
-    if (v) {
-      v.textContent = s.transactions > 0 ? s.transactions : "\u2713";
-      v.classList.remove("status-ok", "status-error");
-      if (s.status === "online") v.classList.add("status-ok");
-      else v.classList.add("status-error");
-    }
+    if (!v) return;
+    const conhecido = s.status === "online" && Number.isSafeInteger(s.transactions) && s.transactions >= 0;
+    v.textContent = conhecido ? String(s.transactions) : "Indispon\xEDvel";
+    v.classList.remove("status-ok", "status-error");
+    v.classList.add(conhecido ? "status-ok" : "status-error");
+    this._element.querySelector(".panel-enterprise")?.setAttribute("title", conhecido ? `Financial \xB7 ${s.transactions} no m\xEAs` : "Financial \xB7 indicador indispon\xEDvel");
   }
   healthCheck() {
     const ps = Ports.snapshot();
@@ -198,6 +217,7 @@ export {
   getVersion,
   healthCheck,
   injectPorts,
+  lerContagemFinanceira,
   mount,
   unmount
 };
