@@ -110,7 +110,7 @@ function getCharts($pdo) {
 function getChartsDados($pdo) {
     return ['ok' => true, 'data' => [
         'receita_mensal' => $pdo->query("SELECT DATE_FORMAT(Data_Criacao, '%Y-%m') as mes, DATE_FORMAT(Data_Criacao, '%b/%y') as mes_label, COUNT(*) as qtd, COALESCE(SUM(Valor_Final), 0) as receita FROM " . ERP_V_ORCAMENTO . " Orcamento WHERE Id_Status IN (3, 5, 6) AND Data_Criacao >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH) GROUP BY DATE_FORMAT(Data_Criacao, '%Y-%m'), DATE_FORMAT(Data_Criacao, '%b/%y') ORDER BY mes")->fetchAll(),
-        'por_tipo' => $pdo->query("SELECT COALESCE(Tipo_Negocio, 'Outros') as tipo, COUNT(*) as qtd, COALESCE(SUM(Valor_Final), 0) as receita FROM " . ERP_V_ORCAMENTO . " Orcamento WHERE Id_Status IN (3, 5, 6) GROUP BY Tipo_Negocio ORDER BY receita DESC LIMIT 5")->fetchAll(),
+        'por_tipo' => $pdo->query("SELECT COALESCE(Tipo_Negocio, 'Outros') as tipo, COUNT(*) as qtd, " . (p05_fin() ? 'COALESCE(SUM(Valor_Final), 0)' : 'NULL') . " as receita FROM " . ERP_V_ORCAMENTO . " Orcamento WHERE Id_Status IN (3, 5, 6) GROUP BY Tipo_Negocio ORDER BY " . (p05_fin() ? 'receita DESC' : 'qtd DESC, tipo') . " LIMIT 5")->fetchAll(),
         'por_uf' => $pdo->query("SELECT COALESCE(o.Uf_Endereco, 'N/D') as uf, COUNT(DISTINCT o.Id_Organizacao) as clientes FROM " . ERP_V_ORGANIZACAO . " o WHERE o.Flag_Ativo = -1 GROUP BY o.Uf_Endereco ORDER BY clientes DESC LIMIT 10")->fetchAll(),
         'novos_clientes' => $pdo->query("SELECT DATE_FORMAT(Data_Criacao, '%Y-%m') as mes, DATE_FORMAT(Data_Criacao, '%b/%y') as mes_label, COUNT(*) as qtd FROM " . ERP_V_ORGANIZACAO . " Organizacao WHERE Data_Criacao >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH) GROUP BY DATE_FORMAT(Data_Criacao, '%Y-%m'), DATE_FORMAT(Data_Criacao, '%b/%y') ORDER BY mes")->fetchAll()
     ]];
@@ -129,8 +129,10 @@ function getTopClientes($pdo, InputValidator $v, $ttl) {
     return $result;
 }
 
+// 27/11 (VINHO, UARPS v4 CL2): sem a permissão financeira, a receita nem é somada e NÃO decide membros nem ordem (top 5 por tipo,
+// 15 vendedores, UFs do mapa): a seleção passa a ser por quantidade, com desempate estável. Com a permissão, tudo como antes.
 function getVendedores($pdo) {
-    $v = $pdo->query("SELECT o.Nome_Vendedor as vendedor, COUNT(*) as total_orcs, SUM(CASE WHEN o.Id_Status IN (3, 5, 6) THEN 1 ELSE 0 END) as ganhos, SUM(CASE WHEN o.Id_Status = 4 THEN 1 ELSE 0 END) as perdidos, COALESCE(SUM(CASE WHEN o.Id_Status IN (3, 5, 6) THEN o.Valor_Final ELSE 0 END), 0) as receita, COUNT(DISTINCT o.Id_Organizacao) as clientes FROM " . ERP_V_ORCAMENTO . " o WHERE o.Nome_Vendedor IS NOT NULL AND o.Nome_Vendedor != '' AND o.Data_Criacao >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH) GROUP BY o.Nome_Vendedor ORDER BY receita DESC LIMIT 15")->fetchAll();
+    $v = $pdo->query("SELECT o.Nome_Vendedor as vendedor, COUNT(*) as total_orcs, SUM(CASE WHEN o.Id_Status IN (3, 5, 6) THEN 1 ELSE 0 END) as ganhos, SUM(CASE WHEN o.Id_Status = 4 THEN 1 ELSE 0 END) as perdidos, " . (p05_fin() ? 'COALESCE(SUM(CASE WHEN o.Id_Status IN (3, 5, 6) THEN o.Valor_Final ELSE 0 END), 0)' : 'NULL') . " as receita, COUNT(DISTINCT o.Id_Organizacao) as clientes FROM " . ERP_V_ORCAMENTO . " o WHERE o.Nome_Vendedor IS NOT NULL AND o.Nome_Vendedor != '' AND o.Data_Criacao >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH) GROUP BY o.Nome_Vendedor ORDER BY " . (p05_fin() ? 'receita DESC' : 'ganhos DESC, total_orcs DESC, vendedor') . " LIMIT 15")->fetchAll();
     foreach ($v as &$x) { $x['taxa_conversao'] = $x['total_orcs'] > 0 ? round(($x['ganhos'] / $x['total_orcs']) * 100, 1) : 0; $x['ticket_medio'] = $x['ganhos'] > 0 ? round($x['receita'] / $x['ganhos'], 2) : 0; if (!p05_fin()) { $x['receita'] = null; $x['ticket_medio'] = null; } }
     return ['ok' => true, 'data' => $v];
 }
@@ -180,7 +182,7 @@ function getChurnRisk($pdo) {
 }
 
 function getHeatmap($pdo) {
-    $data = $pdo->query("SELECT COALESCE(o.Uf_Endereco, 'N/D') as uf, COUNT(DISTINCT o.Id_Organizacao) as clientes, COALESCE(SUM(orc.Valor_Final), 0) as receita FROM " . ERP_V_ORGANIZACAO . " o LEFT JOIN " . ERP_V_ORCAMENTO . " orc ON orc.Id_Organizacao = o.Id_Organizacao AND orc.Id_Status IN (3, 5, 6) WHERE o.Flag_Ativo = -1 GROUP BY o.Uf_Endereco ORDER BY receita DESC")->fetchAll();
+    $data = $pdo->query("SELECT COALESCE(o.Uf_Endereco, 'N/D') as uf, COUNT(DISTINCT o.Id_Organizacao) as clientes, " . (p05_fin() ? 'COALESCE(SUM(orc.Valor_Final), 0)' : 'NULL') . " as receita FROM " . ERP_V_ORGANIZACAO . " o LEFT JOIN " . ERP_V_ORCAMENTO . " orc ON orc.Id_Organizacao = o.Id_Organizacao AND orc.Id_Status IN (3, 5, 6) WHERE o.Flag_Ativo = -1 GROUP BY o.Uf_Endereco ORDER BY " . (p05_fin() ? 'receita DESC' : 'clientes DESC, uf') . "")->fetchAll();
     $maxR = max(array_column($data, 'receita') ?: [1]);
     foreach ($data as &$d) { $d['intensidade_receita'] = $maxR > 0 ? round(($d['receita'] / $maxR) * 100) : 0; if (!p05_fin()) { $d['receita'] = null; $d['intensidade_receita'] = null; } }
     return ['ok' => true, 'data' => $data];
