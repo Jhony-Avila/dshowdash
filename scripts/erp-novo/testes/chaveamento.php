@@ -39,8 +39,17 @@ if ($ordem !== $ord || in_array(PHP_INT_MAX, $ordem, true)) { $falhas[] = 'paine
 $semDef = preg_replace('/\$CACHE_PREFIX = .*;/', '', $p);
 if (preg_match("/['\"]panel:01:/", (string)$semDef)) { $falhas[] = "chave de cache 'panel:01:' fixa sobrou (precisa do prefixo por origem)"; }
 if (substr_count($p, "'estado' => 'indisponivel'") < 2) { $falhas[] = 'origem nova sem 503 indisponível na conexão e na consulta'; }
+// 5b. painel 05 (Cliente 360, financeiro: contas a receber): a MESMA ordem e as mesmas travas do painel 01
+$p5 = (string)file_get_contents("$raiz/api/modules/panels/panel-05/api.php");
+$pos5 = static fn (string $s): int => ($i = strpos($p5, $s)) === false ? PHP_INT_MAX : $i;
+$ordem5 = [$pos5('SessionGate::validate()'), $pos5("\$ERP_ORIGEM = erp_ponto_origem('painel05');"), $pos5('erp_novo_autorizado(AuthHelpers::getCurrentUserId())'), $pos5('RedisHelper::serveIfCached'), $pos5("\$pdo = erp_ponto_pdo('painel05');")];
+$o5 = $ordem5; sort($o5);
+if ($ordem5 !== $o5 || in_array(PHP_INT_MAX, $ordem5, true)) { $falhas[] = 'painel 05 fora da ordem login → origem → autorização → cache → conexão'; }
+if (preg_match("/['\"]panel:05:/", (string)preg_replace('/\$CACHE_PREFIX = .*;|\?\? \'panel:05:\'/', '', $p5))) { $falhas[] = "painel 05: chave de cache 'panel:05:' fixa sobrou"; }
+if (substr_count($p5, "'estado' => 'indisponivel'") < 2) { $falhas[] = 'painel 05 sem 503 indisponível na conexão e na consulta'; }
+if (str_contains($p5, "\$cacheableActions = ['default',")) { $falhas[] = "painel 05: a ação 'default' (lista com filtros) não pode ter cache só por ação (CP-002)"; }
 // 6. anexo: a chave do S3 não sai como url na camada nova
 $c = (string)file_get_contents("$raiz/api/modules/panels/_erp-compat-novo.php");
 if (str_contains($c, 's3_key AS Url')) { $falhas[] = 'camada nova ainda expõe s3_key como Url'; }
 if ($falhas) { echo "[ERRO] chaveamento:\n - " . implode("\n - ", $falhas) . "\n"; exit(1); }
-echo "[OK]   chaveamento: painel 01 legado sem flag; autorização por pessoa fail-closed (8 casos: só user_override libera; global/rollout negam); ordem login→origem→autorização→cache→conexão; cache por origem; 503 indisponível; anexo sem chave do S3\n";
+echo "[OK]   chaveamento: painéis 01 e 05 (ordem, cache por origem, 503; 05 sem cache da página inicial); painel 01 legado sem flag; autorização por pessoa fail-closed (8 casos: só user_override libera; global/rollout negam); ordem login→origem→autorização→cache→conexão; cache por origem; 503 indisponível; anexo sem chave do S3\n";
