@@ -11,6 +11,7 @@ if (!defined('P05_SEM_FIN')) { define('P05_SEM_FIN', 'Sem permissão para dados 
 if (!function_exists('p05_fin')) { function p05_fin(): bool { return ($GLOBALS['FIN'] ?? false) === true; } }
 $GLOBALS['FIN'] = true;
 require $raiz . '/api/core/helpers/InputValidator.php';
+if (is_file($raiz . '/api/_helpers/CsvSeguro.php')) { require_once $raiz . '/api/_helpers/CsvSeguro.php'; }   // o exportCSV (eval) usa o CsvSeguro
 require $raiz . '/api/modules/panels/_erp-compat-novo.php';
 if (!class_exists('RedisHelper')) { final class RedisHelper { public static function tryGetCache(string $k) { return null; } public static function setCache(string $k, $v, $t = 0) { return true; } } }
 if (!class_exists('ApiResponse')) { final class ApiResponse { public const ERR_VALIDATION_ERROR = 'VALIDATION_ERROR'; public static array $ultimo = []; public static function error(string $c, int $h = 400, ?array $m = null): void { self::$ultimo = [$c, $h, $m]; } } }

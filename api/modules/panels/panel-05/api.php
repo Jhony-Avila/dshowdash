@@ -277,7 +277,8 @@ function exportCSV($pdo, InputValidator $v) {
     if (count($dados = $stmt->fetchAll(PDO::FETCH_ASSOC)) > 5000) { ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 422, ['motivo' => 'refine_os_filtros']); return; }
     header('Content-Type: text/csv; charset=utf-8'); header('Content-Disposition: attachment; filename="clientes_' . date('Y-m-d_His') . '.csv"');
     $out = fopen('php://output', 'w'); fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF)); $d = $dados;
-    if (count($d) > 0) { fputcsv($out, array_keys($d[0]), ';'); foreach ($d as $r) fputcsv($out, $r, ';'); } fclose($out);
+    if (!class_exists('CsvSeguro')) { require_once __DIR__ . '/../../../_helpers/CsvSeguro.php'; }   // CSV/Excel Injection: nomes de cliente vêm do ERP
+    if (count($d) > 0) { fputcsv($out, CsvSeguro::linha(array_keys($d[0])), ';'); foreach ($d as $r) fputcsv($out, CsvSeguro::linha($r), ';'); } fclose($out);
 }
 
 function getCliente360($pdo, $id) {

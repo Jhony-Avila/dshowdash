@@ -273,12 +273,13 @@ function handleExportUsers(): void {
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename="users-export.csv"');
         $out = fopen('php://output', 'w');
-        fputcsv($out, ['id', 'username', 'nome', 'email', 'status', 'user_level', 'funcao', 'departamento', 'last_login', 'created_at']);
+        require_once __DIR__ . '/../../_helpers/CsvSeguro.php';   // CSV/Excel Injection: nome/função/departamento são texto livre
+        fputcsv($out, CsvSeguro::linha(['id', 'username', 'nome', 'email', 'status', 'user_level', 'funcao', 'departamento', 'last_login', 'created_at']));
         foreach ($rows as $r) {
-            fputcsv($out, [
+            fputcsv($out, CsvSeguro::linha([
                 $r['id'], $r['username'], $r['name'], $r['email'], $r['status'],
                 $r['user_level'], $r['funcao'], $r['departamento'], $r['last_login'], $r['created_at'],
-            ]);
+            ]));
         }
         fclose($out);
         exit;

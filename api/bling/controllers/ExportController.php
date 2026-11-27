@@ -81,20 +81,21 @@ final class ExportController
         // BOM: sem ele o Excel em pt-BR abre os acentos quebrados.
         fwrite($out, "\xEF\xBB\xBF");
 
+        require_once __DIR__ . '/../../_helpers/CsvSeguro.php';   // CSV/Excel Injection
         foreach ($dados['contexto'] as $linha) {
-            fputcsv($out, [$linha], ';', '"', '\\');
+            fputcsv($out, CsvSeguro::linha([$linha]), ';', '"', '\\');
         }
         if ($dados['contexto']) {
             fwrite($out, "\n");
         }
 
-        fputcsv($out, array_column($dados['colunas'], 'rotulo'), ';', '"', '\\');
+        fputcsv($out, CsvSeguro::linha(array_column($dados['colunas'], 'rotulo')), ';', '"', '\\');
         foreach ($dados['linhas'] as $l) {
             $celulas = [];
             foreach ($dados['colunas'] as $c) {
                 $celulas[] = self::formatarCsv($l[$c['id']] ?? null, $c['tipo']);
             }
-            fputcsv($out, $celulas, ';', '"', '\\');
+            fputcsv($out, CsvSeguro::linha($celulas), ';', '"', '\\');
         }
 
         if ($dados['totais']) {
@@ -104,7 +105,7 @@ final class ExportController
                     : (isset($dados['totais'][$c['id']])
                         ? self::formatarCsv($dados['totais'][$c['id']], $c['tipo']) : '');
             }
-            fputcsv($out, $celulas, ';', '"', '\\');
+            fputcsv($out, CsvSeguro::linha($celulas), ';', '"', '\\');
         }
 
         fclose($out);
