@@ -283,6 +283,8 @@ tools-golden/
 !/api/modules/panels/
 /api/modules/panels/*
 !/api/modules/panels/_erp-compat.php
+!/api/modules/panels/_erp-compat-novo.php
+!/api/modules/panels/_erp-ponto.php
 !/api/modules/panels/_init.php
 !/api/modules/panels/panel-01/
 !/api/modules/panels/panel-01/**
@@ -1791,6 +1793,9 @@ tools-golden/
 !/scripts/validate_preloader_syntax.sh
 !/scripts/weather/
 !/scripts/weather/**
+# scripts/erp-novo/ — ERP novo (ds_prod): testes e comparação da camada nova dos painéis (rebase do patch 0002 de 30/10, AZUL 26/11)
+!/scripts/erp-novo/
+!/scripts/erp-novo/**
 !/sql/
 !/sql/**
 !/tools/
