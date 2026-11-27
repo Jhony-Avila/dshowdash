@@ -31,11 +31,13 @@ if ($redisTest['ok']) {
     if ($status === 'HEALTHY') $status = 'DEGRADED';
 }
 
+require_once __DIR__ . '/../core/DiscoSaude.php';
 $diskFree = disk_free_space('/');
 $diskTotal = disk_total_space('/');
-$diskUsedPercent = round((1 - ($diskFree / $diskTotal)) * 100, 1);
-$checks['disk'] = ['status' => $diskUsedPercent < 90 ? 'OK' : ($diskUsedPercent < 95 ? 'WARNING' : 'CRITICAL'), 'used_percent' => $diskUsedPercent];
-if ($diskUsedPercent >= 95) $status = 'UNHEALTHY';
+[$diskUsedPercent, $nivel] = DiscoSaude::medir($diskTotal, $diskFree);
+$checks['disk'] = ['status' => $nivel === 'online' ? 'OK' : strtoupper($nivel), 'used_percent' => $diskUsedPercent];
+if ($nivel === 'critical') $status = 'UNHEALTHY';
+elseif ($nivel !== 'online' && $status === 'HEALTHY') $status = 'DEGRADED';
 
 header('Content-Type: application/json');
 echo ApiResponse::buildSuccess(['status' => $status, 'checks' => $checks], ['version' => '3.3.0-P06-ENTERPRISE']);

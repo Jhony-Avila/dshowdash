@@ -38,8 +38,10 @@ if ($memInfo) {
     $memTotal = isset($total[1]) ? (int)$total[1] : 0;
     $memAvailable = isset($available[1]) ? (int)$available[1] : 0;
 }
+require_once __DIR__ . '/../core/DiscoSaude.php';
 $diskFree = disk_free_space('/');
 $diskTotal = disk_total_space('/');
+[$diskPct, $diskHealth] = DiscoSaude::medir($diskTotal, $diskFree);
 $uptime = @file_get_contents('/proc/uptime');
 $uptimeSeconds = $uptime ? (int)explode(' ', $uptime)[0] : 0;
 $responseTime = round((microtime(true) - $startTime) * 1000, 2);
@@ -51,7 +53,7 @@ echo json_encode([
         'status' => 'online', 'uptime_seconds' => $uptimeSeconds, 'uptime_formatted' => gmdate('H:i:s', $uptimeSeconds),
         'cpu' => ['load_1m' => $cpuLoad[0] ?? 0, 'load_5m' => $cpuLoad[1] ?? 0, 'load_15m' => $cpuLoad[2] ?? 0, 'cores' => $cpuCores],
         'memory' => ['total_mb' => round($memTotal / 1024, 0), 'available_mb' => round($memAvailable / 1024, 0), 'used_percent' => $memTotal > 0 ? round((1 - ($memAvailable / $memTotal)) * 100, 1) : 0],
-        'disk' => ['total_gb' => round($diskTotal / 1073741824, 2), 'free_gb' => round($diskFree / 1073741824, 2), 'used_percent' => round((1 - ($diskFree / $diskTotal)) * 100, 1)],
+        'disk' => ['status' => $diskHealth, 'total_gb' => $diskPct === null ? null : round($diskTotal / 1073741824, 2), 'free_gb' => $diskPct === null ? null : round($diskFree / 1073741824, 2), 'used_percent' => $diskPct],
         'php_version' => PHP_VERSION, 'response_time_ms' => $responseTime
     ],
     'meta' => ['version' => '3.2.0-P06-ENTERPRISE', 'timestamp' => date('c')]

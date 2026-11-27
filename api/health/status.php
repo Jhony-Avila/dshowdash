@@ -65,13 +65,13 @@ try {
     }
     $checks['database'] = ['status' => $db_status, 'latency_ms' => $db_latency];
 
+    require_once __DIR__ . '/../core/DiscoSaude.php';
     $disk_free = disk_free_space('/');
     $disk_total = disk_total_space('/');
-    $disk_used_pct = round((1 - ($disk_free / $disk_total)) * 100, 2);
-    $disk_status = 'healthy';
-    if ($disk_used_pct > 90) { $disk_status = 'critical'; $status = 'unhealthy'; }
-    elseif ($disk_used_pct > 80) { $disk_status = 'warning'; if ($status === 'healthy') $status = 'degraded'; }
-    $checks['disk'] = ['status' => $disk_status, 'used_percent' => $disk_used_pct, 'free_gb' => round($disk_free / (1024 ** 3), 2)];
+    [$disk_used_pct, $nivel] = DiscoSaude::medir($disk_total, $disk_free);
+    if ($nivel === 'critical') $status = 'unhealthy';
+    elseif ($nivel !== 'online' && $status === 'healthy') $status = 'degraded';
+    $checks['disk'] = ['status' => $nivel === 'online' ? 'healthy' : $nivel, 'used_percent' => $disk_used_pct, 'free_gb' => $disk_used_pct === null ? null : round($disk_free / (1024 ** 3), 2)];
 
     $memory_used = memory_get_usage(true);
     $memory_peak = memory_get_peak_usage(true);

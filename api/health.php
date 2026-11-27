@@ -157,14 +157,20 @@ foreach (['INTEGRACAO', 'DSHOW_PROD'] as $rdb) {
 // 4. Disk Space
 $diskFree = disk_free_space('/');
 $diskTotal = disk_total_space('/');
-$diskUsedPercent = round((1 - ($diskFree / $diskTotal)) * 100, 1);
+require_once __DIR__ . '/core/DiscoSaude.php';
+// RT-001 (VERMELHO, 26/11): rótulo pelos limiares únicos do Dash (aviso ≥ 85%, crítico ≥ 92%, comparados antes do arredondamento).
+// O 503 UNHEALTHY continua só a partir de 95% (limite duro): o crítico de 92% é ALERTA, não derruba o health nem trava os portões.
+[$diskPct, $diskNivel] = DiscoSaude::medir($diskTotal, $diskFree);
+$diskUsedPercent = $diskPct === null ? null : round((1 - ($diskFree / $diskTotal)) * 100, 1);   // medição indisponível = null (não inventa 100)
 $health['checks']['disk'] = [
-    'status' => $diskUsedPercent < 90 ? 'OK' : ($diskUsedPercent < 95 ? 'WARNING' : 'CRITICAL'),
+    'status' => ['online' => 'OK', 'warning' => 'WARNING', 'critical' => 'CRITICAL'][$diskNivel] ?? 'UNKNOWN',
+    'limiares' => ['aviso' => 85, 'critico' => 92, 'indisponivel_503' => 95],
     'used_percent' => $diskUsedPercent,
     'free_gb' => round($diskFree / 1073741824, 2),
     'total_gb' => round($diskTotal / 1073741824, 2)
 ];
-if ($diskUsedPercent >= 95) $health['status'] = 'UNHEALTHY';
+if ($diskUsedPercent === null) { $health['status'] = 'UNHEALTHY'; $health['checks']['disk']['motivo'] = 'disco_desconhecido'; }   // falha fechada, com motivo (revisão do VERDE 23:1x)
+elseif ($diskUsedPercent >= 95) $health['status'] = 'UNHEALTHY';
 
 // 5. Memory
 $memInfo = @file_get_contents('/proc/meminfo');

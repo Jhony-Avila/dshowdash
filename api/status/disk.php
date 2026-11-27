@@ -14,14 +14,15 @@ if (RedisHelper::serveIfCached($CACHE_KEY)) { exit; }
 
 try {
     $total = disk_total_space('/');
+    require_once __DIR__ . '/../core/DiscoSaude.php';
     $free = disk_free_space('/');
     $used = $total - $free;
-    $usage = round(($used / $total) * 100, 1);
+    [$usage, $nivel] = DiscoSaude::medir($total, $free);
+    if ($usage === null) throw new RuntimeException('medicao_indisponivel');
 
     $data = [
-        'status' => $usage < 80 ? 'online' : ($usage < 95 ? 'warning' : 'critical'),
+        'status' => $nivel,
         'configured' => true,
-        'uptime' => '99.9%',
         'usage' => $usage . '%',
         'total' => round($total / 1024 / 1024 / 1024) . 'GB',
         'used' => round($used / 1024 / 1024 / 1024) . 'GB',
