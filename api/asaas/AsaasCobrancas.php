@@ -116,6 +116,14 @@ final class AsaasCobrancas
              + ['itens' => array_map(fn($i) => $this->item($i), array_slice($it, ($pagina - 1) * $porPagina, $porPagina))];
     }
 
+    /** PERF-001: a lista a partir de um retrato JÁ PAGINADO no banco (AsaasResumo::vencidasPagina): mesmo formato do lista(), sem ordenar em memória. */
+    public function listaPaginada(int $pagina, int $porPagina): array
+    {
+        if ($pagina < 1 || $porPagina < 1 || $porPagina > 200 || !isset($this->retrato['total'])) throw new InvalidArgumentException('lista');
+        return ['total' => (int) $this->retrato['total'], 'pagina' => $pagina, 'por_pagina' => $porPagina] + $this->cobertura()
+             + ['itens' => array_map(fn($i) => $this->item($i), $this->itens())];
+    }
+
     /** @return ?array null = não é uma vencida lida (a rota devolve 404) */
     public function detalhe(string $id): ?array
     {

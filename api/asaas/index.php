@@ -36,10 +36,15 @@ $deps = new AsaasPortaoDeps(
         $txt = static fn(string $k): ?string => is_string($get[$k] ?? null) && $get[$k] !== '' ? $get[$k] : null;
         $int = static function (string $k, int $padrao) use ($txt): int { $v = $txt($k); if ($v === null) return $padrao; if (preg_match('/^[1-9][0-9]{0,3}\z/', $v) !== 1) throw new InvalidArgumentException($k); return (int) $v; };
         $agora = new DateTimeImmutable('now');
+        // PERF-001: a lista é paginada NO BANCO (só a página sai do MySQL); resumo e detalhe seguem com o retrato inteiro (precisam de todos os itens)
+        if ($rota === 'vencidas_lista') {
+            $pag = $int('pagina', 1); $pp = $int('por_pagina', 50);
+            $rt = (new AsaasResumo($db()))->vencidasPagina(AsaasChaves::padrao()->rotulos(), $agora, $txt('empresa'), $txt('ordem') ?? 'dias', $txt('dir') ?? 'desc', $pag, $pp);
+            return (new AsaasCobrancas($rt, $agora, $txt('empresa')))->listaPaginada($pag, $pp);
+        }
         $c = new AsaasCobrancas((new AsaasResumo($db()))->vencidasDetalhadas(AsaasChaves::padrao()->rotulos(), $agora), $agora, $txt('empresa'));
         return match ($rota) {
             'vencidas_resumo' => $c->resumo(),
-            'vencidas_lista' => $c->lista($txt('ordem') ?? 'dias', $txt('dir') ?? 'desc', $int('pagina', 1), $int('por_pagina', 50)),
             'vencida' => $c->detalhe($txt('id') ?? throw new InvalidArgumentException('id')),
         };
     },

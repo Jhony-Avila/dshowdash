@@ -485,6 +485,39 @@ final class AsaasResumo
         });
     }
 
+    /**
+     * PERF-001 (26/11 noite): a LISTA das vencidas paginada NO BANCO (ORDER BY + LIMIT numa consulta só, para todas as contas lidas), no mesmo
+     * retrato consistente; o total vem do mesmo retrato. Mesma ordem do AsaasCobrancas::lista (chave + payment_id em ordem de bytes, como o strcmp):
+     * dias = DATEDIFF(hoje, vencimento) com vencimento nulo = -1; valor; vencimento com nulo no fim ('9999-12-31'). Antes: todas as vencidas em memória.
+     * @return array{contas:list<array>, sem_leitura:list<array>, itens:list<array>, total:int}
+     */
+    public function vencidasPagina(array $rotulos, DateTimeImmutable $agora, ?string $filtro, string $ordem, string $dir, int $pagina, int $porPagina): array
+    {
+        if (!in_array($ordem, ['dias', 'valor', 'vencimento'], true) || !in_array($dir, ['asc', 'desc'], true) || $pagina < 1 || $porPagina < 1 || $porPagina > 200)
+            throw new InvalidArgumentException('lista');
+        $agora = $agora->setTimezone($this->fuso); $hoje = $agora->format('Y-m-d');
+        return $this->noRetrato(function () use ($rotulos, $agora, $hoje, $filtro, $ordem, $dir, $pagina, $porPagina): array {
+            $contas = []; $sem = []; $pares = [];
+            foreach ($rotulos as $r) {
+                [$base, $pt] = $this->ponteiro($r, $agora);
+                if ($pt === null) { $sem[] = ['conta' => $r, 'nome' => $base['nome'], 'motivo' => $base['motivo']]; continue; }
+                $contas[] = ['conta' => $r, 'nome' => $base['nome'], 'atualizado_em' => $pt['ok']->format(DATE_ATOM)];
+                if ($filtro === null || $filtro === $r) $pares[] = [$r, (int) $pt['ger']];
+            }
+            if ($pares === []) return ['contas' => $contas, 'sem_leitura' => $sem, 'itens' => [], 'total' => 0];
+            $onde = '(' . implode(' OR ', array_fill(0, count($pares), '(c.`conta` = ? AND c.`geracao` = ?)')) . ") AND c.`presente` = 1 AND c.`deletada` = 0 AND c.`status` IN ('OVERDUE','DUNNING_REQUESTED')";
+            $args = array_merge(...array_map(fn($x) => [$x[0], $x[1]], $pares));
+            $n = $this->pdo->prepare("SELECT COUNT(*) FROM `{$this->p}asaas_cobrancas` c WHERE $onde"); $n->execute($args);
+            $chave = match ($ordem) { 'dias' => 'COALESCE(DATEDIFF(?, c.`vencimento`), -1)', 'valor' => 'c.`valor`', 'vencimento' => "COALESCE(c.`vencimento`, '9999-12-31')" };
+            $q = $this->pdo->prepare("SELECT c.`conta`, c.`payment_id`, c.`cliente_id`, c.`status`, c.`billing_type`, c.`valor`, c.`juros_multa`, c.`vencimento`,
+                    c.`vencimento_original`, c.`data_criacao`, c.`invoice_url`, c.`invoice_number`, k.`nome` AS cliente_nome
+                   FROM `{$this->p}asaas_cobrancas` c LEFT JOIN `{$this->p}asaas_clientes` k ON k.`conta` = c.`conta` AND k.`cliente_id` = c.`cliente_id`
+                  WHERE $onde ORDER BY $chave " . strtoupper($dir) . ", CAST(c.`payment_id` AS BINARY) ASC LIMIT " . (int) $porPagina . ' OFFSET ' . (int) (($pagina - 1) * $porPagina));
+            $q->execute($ordem === 'dias' ? array_merge($args, [$hoje]) : $args);
+            return ['contas' => $contas, 'sem_leitura' => $sem, 'itens' => $q->fetchAll(PDO::FETCH_ASSOC), 'total' => (int) $n->fetchColumn()];
+        });
+    }
+
     private function conta(string $r, DateTimeImmutable $agora): array
     {
         [$base, $pt] = $this->ponteiro($r, $agora);
