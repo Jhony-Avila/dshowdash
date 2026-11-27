@@ -24,7 +24,8 @@ const PANEL_ID_PATHS = Object.freeze({
   // Painéis nomeados - datadriven (from API manifest)
   "panel-dashboard": "/components/panels/panel-dashboard/index.js",
   "panel-integracoes": "/components/panels/panel-integracoes/index.js",
-  // 27/11 (P89j): painel PRÓPRIO (adaptador e raiz React separados da Geral)
+  "panel-gmail": "/components/panels/panel-gmail/index.js",
+  // 27/11: o Gmail substitui o Outlook no menu (integração em preparação)   // 27/11 (P89j): painel PRÓPRIO (adaptador e raiz React separados da Geral)
   "panel-cards": "/components/panels/panel-cards/index.js",
   "panel-datahub": "/components/panels/panel-datahub/index.js",
   "panel-files": "/components/panels/panel-files/index.js",

@@ -22,6 +22,8 @@ const ORDEM: EstadoIntegracaoV2[] = ['com_problema', 'atrasado', 'parcial', 'des
 const ATENCAO = new Set<EstadoIntegracaoV2>(['com_problema', 'atrasado', 'parcial', 'aguardando', 'desconhecido']);
 /** a DSHOW não usa mais o Outlook (Jhony, 27/11): fora da lista mesmo que o serviço ainda o mande */
 export const FORA_DA_LISTA = new Set(['outlook']);
+const GMAIL: IntegracaoV2 = { id: 'gmail', nome: 'Gmail', recurso: 'E-mail', estado: 'nao_integrado', ultima_tentativa: null, ultimo_sucesso: null,
+  cobertas: null, esperadas: null, erro: null, proximo_passo: 'Integração com o Gmail em preparação.', acao: null };
 /** a URL da ação vem do serviço: só https: ou caminho/rota relativa do Dash (nunca javascript:, data: …) — defesa sugerida pelo VERDE (P88) */
 export const urlSegura = (u: string | null | undefined): string | null => {
   if (!u) return null; const t = u.trim();
@@ -74,7 +76,9 @@ function Detalhe({ x, aoFechar }: { x: IntegracaoV2; aoFechar: () => void }) {
 
 export default function IntegracoesCentral({ dados, aoVoltar, aoAtualizar, atualizando }: { dados: IntegracoesV2; aoVoltar: () => void; aoAtualizar: () => void; atualizando: boolean }) {
   const [busca, setBusca] = useState(''); const [atencao, setAtencao] = useState(false); const [aberta, setAberta] = useState<string | null>(null);
-  const todas = dados.integracoes.filter((x) => !FORA_DA_LISTA.has(x.id));
+  // o Gmail entra no lugar do Outlook (Jhony, 27/11): enquanto o serviço não o listar, a linha é a do catálogo, "Não integrada" (fato, não leitura)
+  const todas = useMemo(() => { const l = dados.integracoes.filter((x) => !FORA_DA_LISTA.has(x.id));
+    return l.some((x) => x.id === 'gmail') ? l : [...l, GMAIL]; }, [dados.integracoes]);
   const conta = (f: (x: IntegracaoV2) => boolean) => todas.filter(f).length;
   const nAtencao = conta((x) => ATENCAO.has(x.estado));
   const linhas = useMemo(() => {
