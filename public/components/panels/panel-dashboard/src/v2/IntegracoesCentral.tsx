@@ -109,9 +109,21 @@ export default function IntegracoesCentral({ dados, aoAtualizar, atualizando, er
   const conta = (f: (x: IntegracaoV2) => boolean) => todas.filter(f).length;
   // revisão da VINHO (09:43, ponto 2): com o `resumo` do SERVIDOR, os KPIs e "Pedem atenção" são OS DELE (a mesma regra do selo do menu,
   // inclusive se um dia o servidor filtrar o catálogo por permissão); sem ele (serviço antigo), a contagem local pela mesma classe().
-  const rs = dados.resumo && typeof dados.resumo.total === 'number' ? dados.resumo : null;
-  const porCat = (c: CategoriaInt) => (rs && typeof rs[c] === 'number' ? rs[c] : conta((y) => classe(y).categoria === c));
-  const nAtencao = rs && typeof rs.pedem_atencao === 'number' ? rs.pedem_atencao : conta(pedeAtencao);
+  // parecer R27 (Manager Visual, 27/11): os KPIs NUNCA misturam fontes em silêncio. Contrato: soma das 4 = total autorizado; Pedem atenção =
+  // Com falha + Atenção; resumo e registros da MESMA consulta. fonte 'resumo' (confere com os registros) · 'registros' (sem resumo: serviço antigo)
+  // · 'parcial' (resumo sem algum campo: só os que vieram, os outros "—") · 'inconsistente' (resumo ≠ registros: nenhum número, aviso visível).
+  const CATS: CategoriaInt[] = ['em_dia', 'com_falha', 'atencao', 'nao_conectada'];
+  const local = Object.fromEntries(CATS.map((c) => [c, conta((y) => classe(y).categoria === c)])) as Record<CategoriaInt, number>;
+  const rs = (dados.resumo ?? null) as Partial<Record<CategoriaInt | 'total' | 'pedem_atencao', unknown>> | null;
+  const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+  const kpiFonte: 'resumo' | 'registros' | 'parcial' | 'inconsistente' = !rs ? 'registros'
+    : !CATS.every((c) => num(rs[c])) || !num(rs.total) || !num(rs.pedem_atencao) ? 'parcial'
+    : (CATS.reduce((a, c) => a + (rs[c] as number), 0) !== rs.total || rs.pedem_atencao !== (rs.com_falha as number) + (rs.atencao as number)
+       || rs.total !== todas.length || CATS.some((c) => rs[c] !== local[c])) ? 'inconsistente' : 'resumo';
+  const porCat = (c: CategoriaInt): number | null => (kpiFonte === 'registros' ? local[c] : kpiFonte === 'inconsistente' ? null : num(rs?.[c]) ? (rs![c] as number) : null);
+  const nAtencao: number | null = kpiFonte === 'registros' ? conta(pedeAtencao) : kpiFonte === 'inconsistente' ? null : num(rs?.pedem_atencao) ? (rs!.pedem_atencao as number) : null;
+  const estKpi = (v: number | null) => (kpiFonte === 'inconsistente' ? 'erro' as const : kpiFonte === 'parcial' ? (v === null ? 'vazio' as const : 'parcial' as const) : 'ok' as const);
+  const motKpi = kpiFonte === 'inconsistente' ? 'totais ≠ lista desta consulta' : kpiFonte === 'parcial' ? 'resumo incompleto do servidor' : undefined;
   const linhas = useMemo(() => {
     const q = busca.trim().toLocaleLowerCase('pt-BR');
     return todas.filter((x) => (!atencao || pedeAtencao(x)) && (!q || `${x.nome} ${x.recurso ?? ''}`.toLocaleLowerCase('pt-BR').includes(q)));
@@ -151,19 +163,22 @@ export default function IntegracoesCentral({ dados, aoAtualizar, atualizando, er
         controles={<>
           <label className="ic-busca"><Search size={14} aria-hidden /><span className="des-sr">Buscar integração</span>
             <input type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar integração" data-ic-busca /></label>
-          <button type="button" className="ic-filtro" aria-pressed={atencao} onClick={() => setAtencao(!atencao)} data-ic-atencao>Pedem atenção · {fmtN(nAtencao)}</button>
+          <button type="button" className="ic-filtro" aria-pressed={atencao} onClick={() => setAtencao(!atencao)} data-ic-atencao>Pedem atenção · {nAtencao === null ? '—' : fmtN(nAtencao)}</button>
           <span className="des-wt__mola" />
           <span className="ic-conferido" data-ic-conferido title={`Consulta de ${fmtHora(dados.gerado_em)}; não é o horário de sucesso das integrações`}>{consultados(dados.gerado_em)}</span>
           <button type="button" className="des-btn" onClick={aoAtualizar} disabled={atualizando}>{atualizando ? 'Atualizando…' : 'Atualizar'}</button>
         </>} />
       {erroAtualizar && <AvisoDesatualizado ultimaAtualizacao={fmtDiaHora(dados.gerado_em)} classeBotao="des-btn"
         texto={`Não foi possível atualizar os estados. Exibindo a última consulta disponível (${fmtDiaHora(dados.gerado_em)}).`} aoAtualizar={atualizando ? undefined : aoAtualizar} />}
+      {kpiFonte === 'inconsistente' && <AvisoDesatualizado ultimaAtualizacao={fmtDiaHora(dados.gerado_em)} classeBotao="des-btn" aoAtualizar={atualizando ? undefined : aoAtualizar}
+        texto="Os totais do servidor não conferem com a lista desta consulta. Os indicadores ficam indisponíveis; a lista abaixo é a da consulta." />}
+      {kpiFonte === 'parcial' && <AvisoDesatualizado ultimaAtualizacao={fmtDiaHora(dados.gerado_em)} texto="O servidor mandou o resumo incompleto: os indicadores sem valor aparecem como “—”." />}
       {/* INT-UX-001 §2: 4 categorias EXCLUSIVAS que somam o catálogo (AC01) */}
-      <div className="ic-kpis" data-ic-kpis data-ic-desatualizado={erroAtualizar ? '1' : undefined}>
-        <DSKpiCardV2 {...kpi} rotulo="Em dia" dominio="operacao" valor={porCat('em_dia')} dados={{ 'data-ic-kpi': 'em_dia' }} />
-        <DSKpiCardV2 {...kpi} rotulo="Com falha" valor={porCat('com_falha')} dados={{ 'data-ic-kpi': 'com_falha' }} />
-        <DSKpiCardV2 {...kpi} rotulo="Atenção" valor={porCat('atencao')} dados={{ 'data-ic-kpi': 'atencao' }} />
-        <DSKpiCardV2 {...kpi} rotulo="Não conectadas" valor={porCat('nao_conectada')} dados={{ 'data-ic-kpi': 'nao_conectada' }} />
+      <div className="ic-kpis" data-ic-kpis data-ic-desatualizado={erroAtualizar ? '1' : undefined} data-ic-kpi-fonte={kpiFonte}>
+        <DSKpiCardV2 {...kpi} rotulo="Em dia" dominio="operacao" valor={porCat('em_dia')} estado={estKpi(porCat('em_dia'))} motivo={motKpi} dados={{ 'data-ic-kpi': 'em_dia' }} />
+        <DSKpiCardV2 {...kpi} rotulo="Com falha" valor={porCat('com_falha')} estado={estKpi(porCat('com_falha'))} motivo={motKpi} dados={{ 'data-ic-kpi': 'com_falha' }} />
+        <DSKpiCardV2 {...kpi} rotulo="Atenção" valor={porCat('atencao')} estado={estKpi(porCat('atencao'))} motivo={motKpi} dados={{ 'data-ic-kpi': 'atencao' }} />
+        <DSKpiCardV2 {...kpi} rotulo="Não conectadas" valor={porCat('nao_conectada')} estado={estKpi(porCat('nao_conectada'))} motivo={motKpi} dados={{ 'data-ic-kpi': 'nao_conectada' }} />
       </div>
       <p className="ic-contagem" aria-live="polite" data-ic-contagem>{filtrando ? `${fmtN(linhas.length)} de ${fmtN(todas.length)} integrações` : `${fmtN(todas.length)} integrações`}</p>
       {linhas.length === 0 && (atencao && !busca.trim()
