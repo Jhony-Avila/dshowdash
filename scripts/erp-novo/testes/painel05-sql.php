@@ -77,6 +77,11 @@ $GLOBALS['FIN'] = false;
 $espiao = new class($pdo) { public array $sqls = []; public function __construct(private PDO $p) {} public function query(string $q, ...$a) { $this->sqls[] = $q; return $this->p->query($q, ...$a); } public function prepare(string $q, array $o = []) { $this->sqls[] = $q; return $this->p->prepare($q, $o); } };
 $kn = getKPIs($espiao)['data'];
 $ok($kn['receita_total'] === null && $kn['ticket_medio'] === null && (int)$kn['orcamentos_ganhos'] > 0, 'sem permissão: KPIs sem receita e sem ticket (contagens ficam)');
+// 27/11 (achado da conta 546 / F03): a_receber_aberto e titulos_vencidos também são financeiros — null e SEM consulta às contas a receber
+$ok(array_key_exists('a_receber_aberto', $kn) && $kn['a_receber_aberto'] === null && array_key_exists('titulos_vencidos', $kn) && $kn['titulos_vencidos'] === null, 'sem permissão: KPIs sem a receber em aberto e sem contagem de títulos vencidos (null)');
+$ok(!array_filter($espiao->sqls, static fn ($q) => stripos($q, 'fin_accounts_receivable') !== false), 'sem permissão: os KPIs NÃO consultam as contas a receber');
+$GLOBALS['FIN'] = true; $kf = getKPIs($pdo)['data']; $GLOBALS['FIN'] = false;
+$ok($kf['a_receber_aberto'] !== null && (float) $kf['a_receber_aberto'] > 0 && $kf['titulos_vencidos'] !== null, 'com a permissão: a receber em aberto e títulos vencidos preenchidos · ' . json_encode([$kf['a_receber_aberto'] ?? null, $kf['titulos_vencidos'] ?? null]));
 $cn = getCharts($espiao)['data'];
 $ok(array_filter(array_merge($cn['receita_mensal'], $cn['por_tipo']), static fn ($x) => $x['receita'] !== null) === [], 'sem permissão: gráficos sem receita');
 $espiao->sqls = [];
