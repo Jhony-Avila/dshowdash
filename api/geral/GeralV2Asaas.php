@@ -106,7 +106,7 @@ final class GeralV2Asaas
                 'valores' => ['recebido_hoje' => $dec($v['recebido_hoje']), 'a_receber_7d' => $dec($v['a_receber_7d']),
                               'vencidas' => $dec($v['vencidas']), 'vencidas_qtd' => (int) $v['vencidas_qtd'],
                               'negativacao' => $dec($v['negativacao']), 'negativacao_qtd' => (int) $v['negativacao_qtd'],
-                              'vencidas_total' => $dec(AsaasValor::centavos((string) $v['vencidas']) + AsaasValor::centavos((string) $v['negativacao'])),
+                              'vencidas_total' => AsaasValor::deCentavos(AsaasValor::centavos((string) $v['vencidas']) + AsaasValor::centavos((string) $v['negativacao'])),   // 27/11 13:xx: a soma JÁ está em centavos — o $dec (que espera reais) multiplicava por 100
                               'vencidas_total_qtd' => (int) $v['vencidas_qtd'] + (int) $v['negativacao_qtd']]] + $base;
     }
 }
