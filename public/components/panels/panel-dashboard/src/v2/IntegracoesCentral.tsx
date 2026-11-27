@@ -90,7 +90,8 @@ export default function IntegracoesCentral({ dados, aoVoltar, aoAtualizar, atual
     if (!el.current) return;
     const colunas: ColDef<IntegracaoV2>[] = [
       { colId: 'nome', headerName: 'Integração', flex: 1, minWidth: 170, field: 'nome' },
-      { colId: 'recurso', headerName: 'Recurso', flex: 1, minWidth: 170, valueGetter: (p) => p.data?.recurso ?? '—' },
+      // 27/11 (capturas do Panorama): a 390 o Estado ficava fora da tela, depois de Integração e Recurso → em tela estreita o Recurso sai
+      { colId: 'recurso', headerName: 'Recurso', flex: 1, minWidth: 170, hide: typeof window !== 'undefined' && window.matchMedia('(max-width: 600px)').matches, valueGetter: (p) => p.data?.recurso ?? '—' },
       { colId: 'estado', headerName: 'Estado', width: 170, sort: 'asc', cellRenderer: celEstado, valueGetter: (p) => ORDEM.indexOf(p.data?.estado ?? 'desconhecido'),
         valueFormatter: (p) => (p.data ? ESTADO_V2[p.data.estado]?.[0] ?? '—' : '—') },
       { colId: 'sucesso', headerName: 'Último sucesso', width: 170, valueGetter: (p) => p.data?.ultimo_sucesso ?? null, valueFormatter: (p) => quando(p.value ?? null),
