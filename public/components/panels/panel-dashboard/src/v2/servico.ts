@@ -204,3 +204,18 @@ export async function lerListaCv(empresa: string | null, s?: AbortSignal): Promi
   return { ...primeira, itens: itens.slice(0, LIMITE_CV) };
 }
 export function lerDetalheCv(id: string, s?: AbortSignal) { return ler<DetalheCv>(`/api/asaas/?r=vencida&id=${encodeURIComponent(id)}`, s, 20000); }
+
+// ── INT-001 · Central de Integrações (Fase 2), contrato v2 PROPOSTO ao VINHO (experience-system/INTEGRACOES/INT-001-PLANO.md) ──────
+// GET /integracoes.php?v=2 (mesmo portão: sessão + nível ≥ 80). Sem `versao: 2` na resposta = backend ainda no formato de hoje → a tela
+// mostra a lista atual (recuo seguro). Horários ISO com offset; null = a origem não comprova (nunca inventado).
+export type EstadoIntegracaoV2 = 'ok' | 'atrasado' | 'parcial' | 'com_problema' | 'aguardando' | 'sem_acesso' | 'nao_integrado' | 'desconhecido';
+// contas[] (só no Asaas, VINHO a05b08d1): rótulo curto da empresa + o código do erro (texto nosso na tela; nunca a mensagem crua do provedor)
+export interface ContaIntegracao { conta: string; rotulo: string | null; estado: EstadoIntegracaoV2; erro_codigo: string | null; ultima_tentativa: string | null; ultimo_sucesso: string | null }
+export interface IntegracaoV2 {
+  id: string; nome: string; recurso: string | null; estado: EstadoIntegracaoV2;
+  ultima_tentativa: string | null; ultimo_sucesso: string | null; cobertas: number | null; esperadas: number | null;
+  erro: string | null; proximo_passo: string | null; acao?: { rotulo: string; url: string } | null; contas?: ContaIntegracao[] | null;
+}
+export interface IntegracoesV2 { versao: 2; gerado_em: string; integracoes: IntegracaoV2[] }
+export type RespostaIntegracoes = IntegracoesV2 | { versao?: undefined; gerado_em: string; integracoes: Integracao[] };
+export function lerIntegracoesV2(s?: AbortSignal) { return ler<RespostaIntegracoes>('/integracoes.php?v=2', s); }

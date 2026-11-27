@@ -1,0 +1,36 @@
+/* integracoes-central.css — INT-001, Central de Integrações (ROXO/CIMA, 26/11). Tokens --des-* e --bl-*/--des-linha-* (tema da grade P50/P62/P63). */
+[data-geral-react-root] .ic { display: flex; flex-direction: column; gap: 8px; min-width: 0; font-family: var(--des-fonte, inherit); color: var(--des-texto); }
+[data-geral-react-root] .ic-busca { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 8px; border: 1px solid var(--des-borda); border-radius: 8px; background: var(--des-sup); color: var(--des-dim); }
+[data-geral-react-root] .ic-busca input { border: 0; background: transparent; color: var(--des-texto); font: inherit; font-size: 13px; width: 200px; outline: none; }
+[data-geral-react-root] .ic-busca:focus-within { outline: 2px solid var(--des-link); outline-offset: 1px; }
+[data-geral-react-root] .ic-filtro { height: 30px; padding: 0 10px; border: 1px solid var(--des-borda); border-radius: 999px; background: var(--des-sup); color: var(--des-texto); font: inherit; font-size: 13px; cursor: pointer; }
+[data-geral-react-root] .ic-filtro[aria-pressed="true"] { border-color: var(--des-aviso); box-shadow: inset 0 0 0 1px var(--des-aviso); font-weight: 600; }
+[data-geral-react-root] .ic-filtro:focus-visible { outline: 2px solid var(--des-link); outline-offset: 2px; }
+[data-geral-react-root] .ic-conferido, [data-geral-react-root] .ic-dim { font-size: 12px; color: var(--des-dim); }
+[data-geral-react-root] .ic-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+[data-geral-react-root] .ic-grade-caixa { min-width: 0; }
+[data-geral-react-root] .ic-grade .ag-row { cursor: pointer; }
+[data-geral-react-root] .ic-vazio { font-size: 13px; color: var(--des-dim); }
+[data-geral-react-root] .ic-pilula { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+[data-geral-react-root] .ic-pilula--ok { color: var(--des-ok-txt); background: color-mix(in srgb, var(--des-ok) 12%, transparent); }
+[data-geral-react-root] .ic-pilula--aviso { color: var(--des-aviso-txt); background: color-mix(in srgb, var(--des-aviso) 14%, transparent); }
+[data-geral-react-root] .ic-pilula--erro { color: var(--des-erro-txt); background: color-mix(in srgb, var(--des-erro) 14%, transparent); }
+[data-geral-react-root] .ic-pilula--neutro { color: var(--des-dim); background: color-mix(in srgb, var(--des-dim) 12%, transparent); }
+:root[data-theme="light"] [data-geral-react-root] .ic-pilula--ok { color: #166534; } :root[data-theme="light"] [data-geral-react-root] .ic-pilula--aviso { color: #92400e; } :root[data-theme="light"] [data-geral-react-root] .ic-pilula--erro { color: #b91c1c; }
+/* painel lateral (mesmo desenho do das Cobranças vencidas) */
+[data-geral-react-root] .ic-detalhe { position: fixed; z-index: 40; right: 0; bottom: 0; width: min(480px, 100vw); box-sizing: border-box; display: flex; flex-direction: column; background: var(--des-sup); border-left: 1px solid var(--des-borda); box-shadow: -16px 0 32px -20px rgba(0, 0, 0, .45); }
+[data-geral-react-root] .ic-det-cab { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--des-borda); }
+[data-geral-react-root] .ic-det-tit { margin: 0; flex: 1 1 auto; font-size: 16px; font-weight: 600; line-height: 22px; overflow-wrap: anywhere; }
+[data-geral-react-root] .ic-det-tit:focus { outline: none; } [data-geral-react-root] .ic-det-tit:focus-visible { outline: 2px solid var(--des-link); outline-offset: 2px; }
+[data-geral-react-root] .ic-fechar { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 1px solid var(--des-borda); border-radius: 8px; background: transparent; color: var(--des-texto); cursor: pointer; }
+[data-geral-react-root] .ic-fechar:focus-visible { outline: 2px solid var(--des-link); outline-offset: 2px; }
+[data-geral-react-root] .ic-det-corpo { flex: 1 1 auto; overflow: auto; padding: 14px 16px 20px; display: flex; flex-direction: column; gap: 12px; font-size: 13px; }
+[data-geral-react-root] .ic-det-sub { margin: 0; color: var(--des-dim); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+[data-geral-react-root] .ic-det-erro { margin: 0; color: var(--des-erro-txt); }
+[data-geral-react-root] .ic-det-passo { margin: 0; }
+[data-geral-react-root] .ic-det-dl { display: grid; grid-template-columns: 130px 1fr; gap: 6px 12px; margin: 0; } [data-geral-react-root] .ic-det-dl dt { color: var(--des-dim); font-size: 12px; } [data-geral-react-root] .ic-det-dl dd { margin: 0; }
+[data-geral-react-root] .ic-det-acao { align-self: flex-start; text-decoration: none; }
+[data-geral-react-root] .ic-det-h3 { margin: 6px 0 0; font-size: 13px; font-weight: 600; }
+[data-geral-react-root] .ic-det-lista { list-style: none; margin: 0; padding: 0; } [data-geral-react-root] .ic-det-lista li { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 6px 0; border-top: 1px solid var(--des-borda); }
+[data-geral-react-root] .ic-conta-erro { grid-column: 1 / -1; font-size: 12px; }
+@media (max-width: 600px) { [data-geral-react-root] .ic-kpis { grid-template-columns: 1fr 1fr; } [data-geral-react-root] .ic-busca input { width: 130px; } }
