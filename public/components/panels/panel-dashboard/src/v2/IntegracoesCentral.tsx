@@ -115,11 +115,18 @@ export default function IntegracoesCentral({ dados, aoAtualizar, atualizando, er
   const CATS: CategoriaInt[] = ['em_dia', 'com_falha', 'atencao', 'nao_conectada'];
   const local = Object.fromEntries(CATS.map((c) => [c, conta((y) => classe(y).categoria === c)])) as Record<CategoriaInt, number>;
   const rs = (dados.resumo ?? null) as Partial<Record<CategoriaInt | 'total' | 'pedem_atencao', unknown>> | null;
-  const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
-  const kpiFonte: 'resumo' | 'registros' | 'parcial' | 'inconsistente' = !rs ? 'registros'
-    : !CATS.every((c) => num(rs[c])) || !num(rs.total) || !num(rs.pedem_atencao) ? 'parcial'
-    : (CATS.reduce((a, c) => a + (rs[c] as number), 0) !== rs.total || rs.pedem_atencao !== (rs.com_falha as number) + (rs.atencao as number)
-       || rs.total !== todas.length || CATS.some((c) => rs[c] !== local[c])) ? 'inconsistente' : 'resumo';
+  // KPI-V3 (P1 do Manager Visual, 27/11): ordem de decisão AUSENTE → INCONSISTENTE → PARCIAL → RESUMO. Todo campo PRESENTE tem de ser inteiro
+  // não negativo e bater com os registros da mesma consulta (inclusive num resumo incompleto: contradição vence a incompletude).
+  const num = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v >= 0;
+  const presente = (k: string) => !!rs && rs[k as keyof typeof rs] !== undefined && rs[k as keyof typeof rs] !== null;
+  const CAMPOS_R = [...CATS, 'total', 'pedem_atencao'] as const;
+  const contradiz = !!rs && (
+    CAMPOS_R.some((k) => presente(k) && !num(rs[k]))                                                    // presente mas não inteiro ≥ 0
+    || CATS.some((c) => presente(c) && rs[c] !== local[c])                                                // categoria ≠ registros
+    || (presente('total') && rs.total !== todas.length)                                                   // total ≠ registros
+    || (CATS.every((c) => presente(c)) && presente('total') && CATS.reduce((a, c) => a + (rs[c] as number), 0) !== rs.total)
+    || (presente('pedem_atencao') && rs.pedem_atencao !== (presente('com_falha') && presente('atencao') ? (rs.com_falha as number) + (rs.atencao as number) : local.com_falha + local.atencao)));
+  const kpiFonte: 'resumo' | 'registros' | 'parcial' | 'inconsistente' = !rs ? 'registros' : contradiz ? 'inconsistente' : CAMPOS_R.some((k) => !presente(k)) ? 'parcial' : 'resumo';
   const porCat = (c: CategoriaInt): number | null => (kpiFonte === 'registros' ? local[c] : kpiFonte === 'inconsistente' ? null : num(rs?.[c]) ? (rs![c] as number) : null);
   const nAtencao: number | null = kpiFonte === 'registros' ? conta(pedeAtencao) : kpiFonte === 'inconsistente' ? null : num(rs?.pedem_atencao) ? (rs!.pedem_atencao as number) : null;
   const estKpi = (v: number | null) => (kpiFonte === 'inconsistente' ? 'erro' as const : kpiFonte === 'parcial' ? (v === null ? 'vazio' as const : 'parcial' as const) : 'ok' as const);
