@@ -100,10 +100,13 @@ class UARPSRepository
     {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT trigger_id, state, granted_at, expires_at, reason
-                FROM app_user_trigger_permissions
-                WHERE user_id = ? AND deleted_at IS NULL
-                ORDER BY trigger_id
+                SELECT t.trigger_id, t.state, t.granted_at, t.expires_at, t.reason, t.granted_by,
+                       (SELECT MAX(r.level) FROM app_user_roles ur JOIN app_roles r ON r.id = ur.role_id AND r.deleted_at IS NULL
+                         JOIN app_users u ON u.id = ur.user_id AND u.deleted_at IS NULL AND u.status = 'active'
+                         WHERE ur.user_id = t.granted_by AND ur.deleted_at IS NULL AND (ur.expires_at IS NULL OR ur.expires_at > NOW())) AS concedente_nivel_atual
+                FROM app_user_trigger_permissions t
+                WHERE t.user_id = ? AND t.deleted_at IS NULL
+                ORDER BY t.trigger_id
             ");
             $stmt->execute([$userId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -299,7 +302,7 @@ class UARPSRepository
     {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT region_id, state, granted_at, expires_at, reason
+                SELECT region_id, state, granted_at, expires_at, reason, granted_by
                 FROM app_user_region_permissions
                 WHERE user_id = ? AND deleted_at IS NULL
                 ORDER BY region_id
@@ -585,20 +588,36 @@ class UARPSRepository
     public function travarPar(string $entidade, int $userId, string $chave): array
     {
         ['tabela' => $t, 'coluna' => $c] = $this->entidade($entidade);
-        $st = $this->pdo->prepare("SELECT id, state, expires_at, reason, granted_by, granted_at FROM `$t`
+        $st = $this->pdo->prepare("SELECT id, user_id, state, expires_at, reason, granted_by, granted_at FROM `$t`
                                     WHERE user_id = ? AND `$c` = ? AND deleted_at IS NULL ORDER BY granted_at DESC, id DESC FOR UPDATE");
         $st->execute([$userId, $chave]);
         return $st->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /** Mesmo resultado do travarPar, SEM lock (leitura consistente): para a prévia só de leitura (nota da VINHO, 27/11 10:20). */
+    public function lerPar(string $entidade, int $userId, string $chave): array
+    {
+        ['tabela' => $t, 'coluna' => $c] = $this->entidade($entidade);
+        $st = $this->pdo->prepare("SELECT id, user_id, state, expires_at, reason, granted_by, granted_at FROM `$t`
+                                    WHERE user_id = ? AND `$c` = ? AND deleted_at IS NULL ORDER BY granted_at DESC, id DESC");
+        $st->execute([$userId, $chave]);
+        return $st->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     /** Grava o estado em TODAS as linhas vigentes do par, ou cria a linha. Devolve as linhas afetadas. */
-    public function gravarPar(string $entidade, int $userId, string $chave, bool $existe, string $state, ?string $expiresAt, ?string $reason, int $grantedBy, string $ip): int
+    public function gravarPar(string $entidade, int $userId, string $chave, bool $existe, string $state, ?string $expiresAt, ?string $reason, int $grantedBy, string $ip, bool $mexerPrazo = true): int
     {
         ['tabela' => $t, 'coluna' => $c] = $this->entidade($entidade);
         if ($existe) {
-            $st = $this->pdo->prepare("UPDATE `$t` SET state = ?, expires_at = ?, reason = ?, granted_by = ?, granted_at = NOW(3), ip_user = ?
-                                        WHERE user_id = ? AND `$c` = ? AND deleted_at IS NULL");
-            $st->execute([$state, $expiresAt, $reason, $grantedBy, $ip, $userId, $chave]);
+            // GPT Warps B6: editar NÃO altera o concedente nem a data da concessão (granted_by/granted_at ficam) — o evento registra quem editou.
+            // GPT Warps A2: prazo OMITIDO = a coluna nem é tocada (cada linha do par conserva o SEU instante completo, sem corte nem propagação)
+            if ($mexerPrazo) {
+                $st = $this->pdo->prepare("UPDATE `$t` SET state = ?, expires_at = ?, reason = ?, ip_user = ? WHERE user_id = ? AND `$c` = ? AND deleted_at IS NULL");
+                $st->execute([$state, $expiresAt, $reason, $ip, $userId, $chave]);
+            } else {
+                $st = $this->pdo->prepare("UPDATE `$t` SET state = ?, reason = ?, ip_user = ? WHERE user_id = ? AND `$c` = ? AND deleted_at IS NULL");
+                $st->execute([$state, $reason, $ip, $userId, $chave]);
+            }
             return $st->rowCount();
         }
         $st = $this->pdo->prepare("INSERT INTO `$t` (user_id, `$c`, state, expires_at, reason, granted_by, ip_user) VALUES (?, ?, ?, ?, ?, ?, ?)");
@@ -629,12 +648,24 @@ class UARPSRepository
     public function travarTodas(string $entidade, int $userId): array
     {
         ['tabela' => $t, 'coluna' => $c] = $this->entidade($entidade);
-        $st = $this->pdo->prepare("SELECT `$c` AS chave, id, state, expires_at, reason FROM `$t` WHERE user_id = ? AND deleted_at IS NULL
+        $st = $this->pdo->prepare("SELECT `$c` AS chave, id, user_id, state, expires_at, reason, granted_by, granted_at FROM `$t` WHERE user_id = ? AND deleted_at IS NULL
                                     ORDER BY `$c`, granted_at DESC, id DESC FOR UPDATE");
         $st->execute([$userId]);
         $porChave = [];
         foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) { $porChave[(string) $r['chave']] ??= $r; }
         return $porChave;
+    }
+
+    /** R26-C: TODAS as linhas vigentes do usuário, agrupadas por chave (sob lock) — para conferir congeladas em CADA linha que o reset atinge. */
+    public function travarTodasAgrupadas(string $entidade, int $userId): array
+    {
+        ['tabela' => $t, 'coluna' => $c] = $this->entidade($entidade);
+        $st = $this->pdo->prepare("SELECT `$c` AS chave, id, user_id, state, expires_at, reason, granted_by, granted_at FROM `$t` WHERE user_id = ? AND deleted_at IS NULL
+                                    ORDER BY `$c`, granted_at DESC, id DESC FOR UPDATE");
+        $st->execute([$userId]);
+        $g = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) { $g[(string) $r['chave']][] = $r; }
+        return $g;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

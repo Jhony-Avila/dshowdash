@@ -1,7 +1,7 @@
 <?php
 // UARPS · tabela de precedência do GPT Warps (entrega (a), precedencia.json, base P89j) executada em PHP contra o UARPSGate/UARPSPadrao
 // REAIS deste ramo (AZUL, 27/11). 30 casos de decisão + 12 de aplicação = 42.
-// MySQL LOCAL descartável (esq_uarpsp_<pid>; criado e, no fim, RENOMEADO para *_fim — nada é apagado pela regra desta janela) com o relógio
+// MySQL LOCAL descartável (esq_uarpsp_<pid>; criado e apagado no fim pela regra das 05:00) com o relógio
 // do banco FIXO no "agora" do JSON (SET TIMESTAMP): "agora" = igualdade exata (vencida), passado/futuro = ±1 min. Cada caso usa um usuário
 // próprio (o cache do Gate é por usuário). Falha de leitura de nível/regras = tabela renomeada só durante aquele caso.
 // Aplicação: cada caso num processo próprio (403 + exit não pode derrubar o teste), com shouldEnforce() ligado/desligado.
@@ -73,8 +73,7 @@ foreach ($J['aplicacao'] as $a) {
     $linhas[] = sprintf('%s aplicação %-14s check=%-5s enforced=%-5s → %s', $okA ? 'ok   ' : 'FALHA', $a['entrada'], var_export($a['check'], true), var_export($a['enforced'], true), $obt);
 }
 // nada de rm (regra da janela 27/11): o banco de teste é renomeado e o temporário vai para o backup
-$root->exec("CREATE DATABASE {$db}_fim");
-foreach ($root->query("SELECT table_name FROM information_schema.tables WHERE table_schema = '$db'")->fetchAll(PDO::FETCH_COLUMN) as $t) { $root->exec("RENAME TABLE $db.$t TO {$db}_fim.$t"); }
+$root->exec("DROP DATABASE IF EXISTS `$db`");   // regra das 05:00: banco descartável deste teste é apagado
 exec('mv ' . escapeshellarg($tmp) . ' ' . escapeshellarg('/backup/esquerda/' . date('Ymd-His') . '-teste-precedencia-tmp'));
 $saida = getenv('PRECEDENCIA_SAIDA');
 if ($saida) { file_put_contents($saida, "# Precedência do GPT Warps × UARPSGate real (" . date('Y-m-d H:i') . ")\n\n" . implode("\n", $linhas) . "\n\n" . ($falhas ? "FALHAS:\n- " . implode("\n- ", $falhas) : "42/42 ok") . "\n"); }

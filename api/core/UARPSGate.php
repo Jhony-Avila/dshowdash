@@ -56,18 +56,9 @@ class UARPSGate {
                 $allowed = true;
             } elseif ($state === 'deny') {
                 $allowed = false;
-            } elseif (UARPSPadrao::exigeExplicito($triggerId)) {
-                // DSHOW-032: gate:admin:* só com allow explícito; inherit/sem linha = negado (em qualquer nível)
-                $padrao = ['allowed' => false, 'nivel' => null, 'minimo' => null, 'regra' => 'gate-admin-explicito', 'modo' => 'aplicar'];
-                $allowed = false;
-                self::registrarPadraoNegaria($userId, $triggerId, $padrao);
             } else {
-                // UARPS-INHERIT: inherit/sem linha => padrão do perfil
-                $padrao = self::resolverPadrao($userId, $triggerId);
-                $allowed = $padrao['modo'] === 'aplicar' ? $padrao['allowed'] : true;
-                if (!$padrao['allowed']) {
-                    self::registrarPadraoNegaria($userId, $triggerId, $padrao);
-                }
+                // sem regra pessoal vigente: o MESMO decisor que a prévia do escritor usa (Warps R27-1)
+                ['allowed' => $allowed, 'padrao' => $padrao] = self::decisaoSemRegra($userId, $triggerId, true);
             }
             
             $result = [
@@ -126,6 +117,23 @@ class UARPSGate {
     }
     
     // Decide o inherit pelo padrão. Erro ao ler o nível => nega (em qualquer modo, registra).
+    /**
+     * Decisão quando NÃO há regra pessoal vigente (inherit / sem linha / vencida) — fonte ÚNICA para o checkTrigger e para a prévia do escritor:
+     * DSHOW-032: capacidade que exige concessão pessoal explícita (gate:admin:*) = negado em qualquer nível; senão, o padrão do perfil
+     * (em modo sombra a autoridade permite e o padrão é só registrado). $registrar = registra a "negaria" (a prévia não registra).
+     * @return array{allowed: bool, padrao: array}
+     */
+    public static function decisaoSemRegra(int $userId, string $triggerId, bool $registrar = true): array {
+        if (UARPSPadrao::exigeExplicito($triggerId)) {
+            $padrao = ['allowed' => false, 'nivel' => null, 'minimo' => null, 'regra' => 'gate-admin-explicito', 'modo' => 'aplicar'];
+            if ($registrar) { self::registrarPadraoNegaria($userId, $triggerId, $padrao); }
+            return ['allowed' => false, 'padrao' => $padrao];
+        }
+        $padrao = self::resolverPadrao($userId, $triggerId);
+        if ($registrar && !$padrao['allowed']) { self::registrarPadraoNegaria($userId, $triggerId, $padrao); }
+        return ['allowed' => $padrao['modo'] === 'aplicar' ? $padrao['allowed'] : true, 'padrao' => $padrao];
+    }
+
     public static function resolverPadrao(int $userId, string $triggerId): array {
         [$min, $regra] = UARPSPadrao::nivelMinimo($triggerId);
         $modo = UARPSPadrao::modo($triggerId);

@@ -103,6 +103,12 @@ try {
                 ApiResponse::success($service->getUserPermissions($targetUserId));
                 break;
 
+            case 'preview-trigger':
+                // VERDE E2 (3): prévia só de leitura (atual × futuro + bloqueio que a gravação teria); mesma guarda das leituras administrativas
+                enforceUarpsAdmin($userId);
+                ApiResponse::success($service->previewTrigger($validator->id('user_id', 0), $validator->string('trigger_id', '', ['maxLength' => 100]), $validator->string('state', '', ['maxLength' => 10]), $userId));
+                break;
+
             case 'user-matrix':
                 enforceUarpsAdmin($userId);
                 $targetUserId = $validator->id('user_id', 0);
@@ -190,6 +196,11 @@ try {
         $userId = (int)$user['id'];
         enforceUarpsAdmin($userId);
         requireCsrf();
+        // Nota 2 (arquiteto, 27/11): o MOTIVO vai no CORPO do DELETE, fora da URL (URL costuma ir para o access log). A URL continua aceita só
+        // por compatibilidade com o editor antigo, com aviso no log (sem o conteúdo do motivo).
+        $corpoDel = json_decode((string) file_get_contents('php://input'), true);
+        $motivoDel = is_array($corpoDel) && array_key_exists('reason', $corpoDel) ? (is_string($corpoDel['reason']) ? $corpoDel['reason'] : null) : null;
+        if ($motivoDel === null && isset($_GET['reason'])) { $motivoDel = (string) $_GET['reason']; error_log('[uarps.php] DELETE com motivo na URL (obsoleto): mande no corpo'); }
 
         switch ($action) {
             case 'remove-trigger':
@@ -198,7 +209,7 @@ try {
                 if (!$targetUserId || !$triggerId) {
                     ApiResponse::error('USER_ID_AND_TRIGGER_ID_REQUIRED', 400, ['message' => 'user_id e trigger_id obrigatórios']);
                 }
-                ApiResponse::success($service->removeTrigger($targetUserId, $triggerId, $userId, $ip, uarpsOperacaoId(['operacao_id' => $_GET['operacao_id'] ?? '']), $_GET['reason'] ?? null));
+                ApiResponse::success($service->removeTrigger($targetUserId, $triggerId, $userId, $ip, uarpsOperacaoId(['operacao_id' => $_GET['operacao_id'] ?? '']), $motivoDel));
                 break;
 
             case 'remove-region':
@@ -207,7 +218,7 @@ try {
                 if (!$targetUserId || !$regionId) {
                     ApiResponse::error('USER_ID_AND_REGION_ID_REQUIRED', 400, ['message' => 'user_id e region_id obrigatórios']);
                 }
-                ApiResponse::success($service->removeRegion($targetUserId, $regionId, $userId, $ip, uarpsOperacaoId(['operacao_id' => $_GET['operacao_id'] ?? '']), $_GET['reason'] ?? null));
+                ApiResponse::success($service->removeRegion($targetUserId, $regionId, $userId, $ip, uarpsOperacaoId(['operacao_id' => $_GET['operacao_id'] ?? '']), $motivoDel));
                 break;
 
             default:
