@@ -17,6 +17,8 @@ $days = $validator->int('days', 30, ['min' => 1, 'max' => 90]);
 $CACHE_KEY = "panel:19:success:{$days}";
 $CACHE_TTL = RedisConfig::TTL_UI;
 
+require_once __DIR__ . '/../../../obs/ObsConsumidor.php';
+if (ObsConsumidor::ligado()) ObsConsumidor::responder($CACHE_KEY, (int) $CACHE_TTL, '3.4.1-PATH-FIX', fn(ObsExecucoes $o) => $o->taxaDiariaLegado(new DateTimeImmutable('now'), $days));
 if (RedisHelper::serveIfCached($CACHE_KEY)) { exit; }
 
 require_once '/var/www/dshowdash/config/db_connection.php';

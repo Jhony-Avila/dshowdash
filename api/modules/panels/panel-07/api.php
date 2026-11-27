@@ -15,6 +15,8 @@ require_once '/var/www/dshowdash/config/db_connection.php';
 $CACHE_KEY = 'panel:07:running';
 $CACHE_TTL = RedisConfig::TTL_REALTIME;
 
+require_once __DIR__ . '/../../../obs/ObsConsumidor.php';
+if (ObsConsumidor::ligado()) ObsConsumidor::responder($CACHE_KEY, (int) $CACHE_TTL, '3.4.0-P06-ENTERPRISE', fn(ObsExecucoes $o) => $o->emExecucaoLegado(new DateTimeImmutable('now')));
 if (RedisHelper::serveIfCached($CACHE_KEY)) { exit; }
 
 try {

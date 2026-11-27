@@ -36,6 +36,11 @@ $period = $validator->enum('period', '7d', ['1d', '7d', '30d', '90d']);
 $CACHE_KEY = "dashboard:performance:{$period}";
 $CACHE_TTL = RedisConfig::TTL_METRICS;
 
+// MIG-001 lote 5 (27/11, VINHO): com a flag global obs_monitoramento, o data sai do REGISTRO CENTRAL (OBS-001) no MESMO formato
+// (cache próprio; registro fora = 503); sem a flag, o legado abaixo.
+require_once __DIR__ . '/../obs/ObsConsumidor.php';
+if (ObsConsumidor::ligado()) ObsConsumidor::responder($CACHE_KEY, (int) $CACHE_TTL, 'dashboard', fn(ObsExecucoes $o) => $o->desempenhoLegado(new DateTimeImmutable('now'), (int) $ALLOWED_PERIODS[$period], $period));
+
 if (RedisHelper::serveIfCached($CACHE_KEY)) { exit; }
 
 require_once '/var/www/dshowdash/config/db_connection.php';

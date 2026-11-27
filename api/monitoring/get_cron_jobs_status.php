@@ -8,6 +8,11 @@ require_once __DIR__ . '/../core/helpers/RedisHelper.php';
 $CACHE_KEY = 'monitoring:cron-jobs-status';
 $CACHE_TTL = RedisConfig::TTL_MODULES;
 
+// MIG-001 lote 3 (27/11, VINHO): com a flag global obs_monitoramento, a resposta sai do REGISTRO CENTRAL (OBS-001) no MESMO formato
+// (cache próprio; registro fora = 503; o que depende do catálogo — cron, tipo — fica vazio com total null); sem a flag, o legado abaixo.
+require_once __DIR__ . '/../obs/ObsConsumidor.php';
+if (ObsConsumidor::ligado()) ObsConsumidor::responder($CACHE_KEY, (int) $CACHE_TTL, '2.3.0-P06-ENTERPRISE', fn(ObsExecucoes $o) => ObsExecucoes::monitoringLegado('cron-jobs-status', $o->comoSyncJobs()));
+
 if (RedisHelper::serveIfCached($CACHE_KEY)) { exit; }
 
 require_once '/var/www/dshowdash/config/db_connection.php';

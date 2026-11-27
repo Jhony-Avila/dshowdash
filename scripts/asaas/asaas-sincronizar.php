@@ -10,6 +10,7 @@ declare(strict_types=1);
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 require_once __DIR__ . '/../../config/db_connection.php';
 require_once __DIR__ . '/../../api/asaas/AsaasDados.php';
+require_once __DIR__ . '/../../api/obs/ObsProdutor.php';   // OBS-001: registro central de execuções (fail-soft)
 
 $conta = null;
 foreach (array_slice($argv, 1) as $a) {
@@ -34,7 +35,19 @@ $sync = new AsaasSincronizador(
     static function (int $ms): void { usleep($ms * 1000); },
 );
 $agora = new DateTimeImmutable('now');
-$res = $conta !== null ? [$conta => $sync->sincronizar($conta, $agora)] : $sync->sincronizarTodas($agora);
+// OBS-001 degrau 2 (27/11): cada conta registra início e fim no registro central (job asaas.sincronizar, escopo = rótulo da conta, slot = minuto 37).
+// Fail-soft: se o registro não existir ou falhar, a sincronização roda igual e o log de sempre continua sendo a fonte.
+$obs = new ObsProdutor(static fn(): PDO => $pdo, 'asaas.sincronizar');
+$slot = ObsProdutor::slotHorario($agora, 37);
+$res = [];
+foreach ($conta !== null ? [$conta] : $rotulos as $r) {
+    $alca = $obs->comecar($r, $slot, new DateTimeImmutable('now'));
+    try { $res[$r] = $sync->sincronizar($r, $agora); }
+    catch (Throwable $x) { $obs->terminar($alca, 'falhou', null, 'interno', new DateTimeImmutable('now')); throw $x; }   // exceção: fecha o registro e segue como antes
+    $ok = $res[$r]['resultado'] === 'ok';
+    $obs->terminar($alca, $ok ? 'ok' : 'falhou', $ok ? (int) (($res[$r]['cobrancas'] ?? 0) + ($res[$r]['extrato'] ?? 0)) : null,
+                   ($res[$r]['erro'] ?? null) === 'erro_interno' ? 'interno' : 'fonte', new DateTimeImmutable('now'));
+}
 $falhou = false;
 foreach ($res as $r => $x) {
     $falhou = $falhou || $x['resultado'] !== 'ok';

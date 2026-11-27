@@ -16,9 +16,29 @@ $cache_search = $search ? md5($search) : 'none';
 $CACHE_KEY = "monitoring:jobs-status:{$cache_active}:{$cache_type}:{$cache_search}:{$limit}";
 $CACHE_TTL = RedisConfig::TTL_MODULES;
 
+require_once '/var/www/dshowdash/config/db_connection.php';
+
+// MIG-001 INTEGRACAO · piloto (27/11, VINHO): com a flag GLOBAL `obs_monitoramento` ligada, a lista sai do REGISTRO CENTRAL de execuções
+// (DSHOWDASH.obs_execucao, OBS-001) no MESMO formato, em vez do banco legado INTEGRACAO (que ninguém no repo alimenta). Flag ausente,
+// desligada ou ilegível = o caminho legado de sempre. Cache separado por fonte.
+require_once __DIR__ . '/../obs/ObsConsumidor.php';
+$fonteObs = ObsConsumidor::ligado();   // flag única, decisão 60 s no cache (revisão do VERDE); erro = legado
+if ($fonteObs) $CACHE_KEY = 'obs:' . $CACHE_KEY;
+
 if (RedisHelper::serveIfCached($CACHE_KEY)) { exit; }
 
-require_once '/var/www/dshowdash/config/db_connection.php';
+if ($fonteObs) {
+    try {
+        require_once __DIR__ . '/../obs/ObsExecucoes.php';
+        $data = ObsExecucoes::jobsStatusLegado((new ObsExecucoes(getConnection('DSHOWDASH')))->comoSyncJobs(), (string) $is_active, (string) $job_type, (string) $search, $limit);
+        RedisHelper::cacheAndReturn($CACHE_KEY, ApiResponse::buildSuccess($data, ['rows_affected' => count($data['jobs']), 'version' => '2.3.0-P06-ENTERPRISE', 'fonte' => 'registro_execucoes']), $CACHE_TTL);
+    } catch (Throwable $e) {
+        RedisHelper::close();
+        error_log('[monitoring] jobs-status (registro): ' . get_class($e));
+        ApiResponse::error(ApiResponse::ERR_DATABASE_ERROR, 503, ['fonte' => 'registro_execucoes', 'estado' => 'indisponivel']);
+    }
+    exit;
+}
 
 try {
     $conn = getConnection('INTEGRACAO');

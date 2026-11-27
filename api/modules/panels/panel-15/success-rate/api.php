@@ -12,6 +12,8 @@ AuthHelpers::requireAuth();
 $CACHE_KEY = 'panel:15:success-rate';
 $CACHE_TTL = RedisConfig::TTL_MODULES;
 
+require_once __DIR__ . '/../../../../obs/ObsConsumidor.php';
+if (ObsConsumidor::ligado()) ObsConsumidor::responder($CACHE_KEY, (int) $CACHE_TTL, '2.3.0-P06-ENTERPRISE', fn(ObsExecucoes $o) => $o->painel15MetricaLegado('success_rate'));
 if (RedisHelper::serveIfCached($CACHE_KEY)) { exit; }
 
 require_once '/var/www/dshowdash/config/db_connection.php';

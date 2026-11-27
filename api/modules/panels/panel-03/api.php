@@ -17,6 +17,8 @@ $hours = $validator->int('hours', 24, ['min' => 1, 'max' => MAX_HOURS_ALLOWED]);
 $CACHE_KEY = "panel:03:hours:{$hours}";
 $CACHE_TTL = RedisConfig::TTL_MODULES;
 
+require_once __DIR__ . '/../../../obs/ObsConsumidor.php';
+if (ObsConsumidor::ligado()) ObsConsumidor::responder($CACHE_KEY, (int) $CACHE_TTL, '2.7.0-P06-ENTERPRISE', fn(ObsExecucoes $o) => $o->horasLegado(new DateTimeImmutable('now'), $hours) + ['timestamp' => date('Y-m-d H:i:s')]);
 if (RedisHelper::serveIfCached($CACHE_KEY)) { exit; }
 
 set_time_limit(8);

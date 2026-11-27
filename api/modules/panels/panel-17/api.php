@@ -13,6 +13,8 @@ AuthHelpers::requireAuth();
 $CACHE_KEY = "panel:17:overview";
 $CACHE_TTL = RedisConfig::TTL_UI;
 
+require_once __DIR__ . '/../../../obs/ObsConsumidor.php';
+if (ObsConsumidor::ligado()) ObsConsumidor::responder($CACHE_KEY, (int) $CACHE_TTL, '3.3.0-P06-ENTERPRISE', fn(ObsExecucoes $o) => $o->painelVisaoGeralLegado() + ['timestamp' => date('Y-m-d H:i:s')]);
 if (RedisHelper::serveIfCached($CACHE_KEY)) { exit; }
 
 require_once '/var/www/dshowdash/config/db_connection.php';

@@ -11,6 +11,11 @@ AcessoSessao::exigir();
 $CACHE_KEY = 'card:08:avg-per-hour:' . date('Y-m-d-H');
 $CACHE_TTL = RedisConfig::TTL_MODULES;
 
+// MIG-001 lote 2 (27/11, VINHO): com a flag global obs_monitoramento, o número sai do REGISTRO CENTRAL (OBS-001) no MESMO formato
+// (cache próprio; registro fora = 503; sem base = null, nunca 0); sem a flag, o legado da INTEGRACAO abaixo, como sempre.
+require_once __DIR__ . '/../../../obs/ObsConsumidor.php';
+if (ObsConsumidor::ligado()) ObsConsumidor::responder($CACHE_KEY, (int) $CACHE_TTL, '4.4.0-P06-ENTERPRISE', fn(ObsExecucoes $o) => (fn($v) => ['value' => $v, 'average_per_hour' => $v, 'title' => 'Média por Hora'])($o->metricasCards(new DateTimeImmutable('now'))['por_hora_hoje']));
+
 if (RedisHelper::serveIfCached($CACHE_KEY)) { exit; }
 require_once '/var/www/dshowdash/config/db_connection.php';
 
@@ -23,6 +28,7 @@ try {
     $data = $stmt->fetch(PDO::FETCH_ASSOC);
     
     $output = ApiResponse::buildSuccess([
+        'value' => isset($data['avg_per_hour']) ? round((float) $data['avg_per_hour'], 1) : null,   // MIG-001 INTEGRACAO (27/11, VINHO): a tela lê `value` (formatters.js); a API não mandava → o card mostrava sempre 0/--. Agora `value` = o número real ou null.
         'average_per_hour' => round((float)($data['avg_per_hour'] ?? 0), 1),
         'title' => 'Média por Hora'
     ], ['version' => '4.4.0-P06-ENTERPRISE', 'cache' => 'miss']);

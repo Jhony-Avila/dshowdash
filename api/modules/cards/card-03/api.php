@@ -11,6 +11,11 @@ AcessoSessao::exigir();
 $CACHE_KEY = 'card:03:performance:' . date('Y-m-d-H');
 $CACHE_TTL = RedisConfig::TTL_MODULES;
 
+// MIG-001 lote 2 (27/11, VINHO): com a flag global obs_monitoramento, o número sai do REGISTRO CENTRAL (OBS-001) no MESMO formato
+// (cache próprio; registro fora = 503; sem base = null, nunca 0); sem a flag, o legado da INTEGRACAO abaixo, como sempre.
+require_once __DIR__ . '/../../../obs/ObsConsumidor.php';
+if (ObsConsumidor::ligado()) ObsConsumidor::responder($CACHE_KEY, (int) $CACHE_TTL, '4.4.0-P06-ENTERPRISE', fn(ObsExecucoes $o) => (fn($m) => $m['media_taxa'] === null ? ['score' => null, 'success_rate' => null, 'avg_time' => null, 'title' => 'Performance Score'] : (fn($r, $tm) => ['score' => min(100, max(0, round($r - ($tm > 60 ? ($tm - 60) * 0.5 : 0)))), 'success_rate' => $r, 'avg_time' => $tm === null ? null : round($tm, 2), 'title' => 'Performance Score'])(round($m['media_taxa'], 1), $m['media_tempo']))($o->metricasCards(new DateTimeImmutable('now'))));
+
 if (RedisHelper::serveIfCached($CACHE_KEY)) { exit; }
 require_once '/var/www/dshowdash/config/db_connection.php';
 

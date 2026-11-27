@@ -12,6 +12,8 @@ AcessoSessao::exigir();
 $CACHE_KEY = 'card:01:metrics:' . date('Y-m-d-H');
 $CACHE_TTL = RedisConfig::TTL_MODULES;
 
+require_once __DIR__ . '/../../../obs/ObsConsumidor.php';
+if (ObsConsumidor::ligado()) ObsConsumidor::responder($CACHE_KEY, (int) $CACHE_TTL, '4.5.0-P06-ENTERPRISE', fn(ObsExecucoes $o) => $o->card01Legado(new DateTimeImmutable('now')));
 if (RedisHelper::serveIfCached($CACHE_KEY)) { exit; }
 
 require_once '/var/www/dshowdash/config/db_connection.php';

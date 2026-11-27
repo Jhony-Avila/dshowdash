@@ -28,6 +28,11 @@ $CACHE_KEY = 'dashboard:status-jobs';
 $CACHE_TTL = 120;
 
 // Redis com auto-close
+// MIG-001 lote 5 (27/11, VINHO): com a flag global obs_monitoramento, o data sai do REGISTRO CENTRAL (OBS-001) no MESMO formato
+// (cache próprio; registro fora = 503); sem a flag, o legado abaixo.
+require_once __DIR__ . '/../obs/ObsConsumidor.php';
+if (ObsConsumidor::ligado()) ObsConsumidor::responder($CACHE_KEY, (int) $CACHE_TTL, 'dashboard', fn(ObsExecucoes $o) => ObsExecucoes::statusJobsLegado($o->comoSyncJobs()));
+
 if (RedisHelper::serveIfCached($CACHE_KEY)) {
     exit;
 }

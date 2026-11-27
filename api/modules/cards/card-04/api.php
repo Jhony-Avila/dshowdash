@@ -11,6 +11,11 @@ AcessoSessao::exigir();
 $CACHE_KEY = 'card:04:peak-hour:' . date('Y-m-d-H');
 $CACHE_TTL = RedisConfig::TTL_MODULES;
 
+// MIG-001 lote 2 (27/11, VINHO): com a flag global obs_monitoramento, o número sai do REGISTRO CENTRAL (OBS-001) no MESMO formato
+// (cache próprio; registro fora = 503; sem base = null, nunca 0); sem a flag, o legado da INTEGRACAO abaixo, como sempre.
+require_once __DIR__ . '/../../../obs/ObsConsumidor.php';
+if (ObsConsumidor::ligado()) ObsConsumidor::responder($CACHE_KEY, (int) $CACHE_TTL, '4.4.0-P06-ENTERPRISE', fn(ObsExecucoes $o) => (fn($p) => ['value' => $p ? sprintf('%02d:00', $p['hora']) : null, 'details' => ['peak_hour' => $p ? sprintf('%02d:00', $p['hora']) : null, 'executions' => $p ? $p['execucoes'] : null], 'peak_hour' => $p ? sprintf('%02d:00', $p['hora']) : null, 'executions' => $p ? $p['execucoes'] : null, 'title' => 'Pico do Dia'])($o->metricasCards(new DateTimeImmutable('now'))['pico']));
+
 if (RedisHelper::serveIfCached($CACHE_KEY)) { exit; }
 require_once '/var/www/dshowdash/config/db_connection.php';
 
@@ -28,6 +33,7 @@ try {
     $peakCount = $data ? (int)$data['total'] : 0;
     
     $output = ApiResponse::buildSuccess([
+        'value' => $data ? $peakHour : null, 'details' => ['peak_hour' => $data ? $peakHour : null, 'executions' => $data ? $peakCount : null],   // MIG-001 INTEGRACAO (27/11, VINHO): a tela lê `value` (formatters.js); a API não mandava → o card mostrava sempre 0/--. Agora `value` = o número real ou null.
         'peak_hour' => $peakHour,
         'executions' => $peakCount,
         'title' => 'Pico do Dia'

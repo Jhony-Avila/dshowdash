@@ -15,6 +15,8 @@ $days = $validator->int('days', 30, ['min' => 1, 'max' => 90]);
 $CACHE_KEY = "panel:18:days:{$days}";
 $CACHE_TTL = RedisConfig::TTL_UI;
 
+require_once __DIR__ . '/../../../obs/ObsConsumidor.php';
+if (ObsConsumidor::ligado()) ObsConsumidor::responder($CACHE_KEY, (int) $CACHE_TTL, '3.3.0-P06-ENTERPRISE', fn(ObsExecucoes $o) => $o->slaLegado(new DateTimeImmutable('now'), $days) + ['timestamp' => date('Y-m-d H:i:s')]);
 if (RedisHelper::serveIfCached($CACHE_KEY)) { exit; }
 
 require_once '/var/www/dshowdash/config/db_connection.php';

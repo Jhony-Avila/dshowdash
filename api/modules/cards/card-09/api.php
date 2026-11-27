@@ -11,6 +11,11 @@ AcessoSessao::exigir();
 $CACHE_KEY = 'card:09:total-executions:' . date('Y-m-d-H');
 $CACHE_TTL = RedisConfig::TTL_MODULES;
 
+// MIG-001 lote 1 (27/11, VINHO): com a flag global obs_monitoramento, o número sai do REGISTRO CENTRAL (OBS-001) no MESMO formato
+// (cache próprio; registro fora = 503, nunca zero); sem a flag, o legado da INTEGRACAO abaixo, como sempre.
+require_once __DIR__ . '/../../../obs/ObsConsumidor.php';
+if (ObsConsumidor::ligado()) ObsConsumidor::responder($CACHE_KEY, (int) $CACHE_TTL, '4.4.0-P06-ENTERPRISE', fn(ObsExecucoes $o) => (fn($d) => ['value' => $d['total'], 'total' => $d['total'], 'title' => 'Total de Execuções'])($o->contagensDoDia(new DateTimeImmutable('now'))));
+
 if (RedisHelper::serveIfCached($CACHE_KEY)) { exit; }
 require_once '/var/www/dshowdash/config/db_connection.php';
 
@@ -20,6 +25,7 @@ try {
     $data = $stmt->fetch(PDO::FETCH_ASSOC);
     
     $output = ApiResponse::buildSuccess([
+        'value' => isset($data['total']) ? (int) $data['total'] : null,   // MIG-001 INTEGRACAO (27/11, VINHO): a tela lê `value` (formatters.js); a API não mandava → o card mostrava sempre 0/--. Agora `value` = o número real ou null.
         'total' => (int)($data['total'] ?? 0),
         'title' => 'Total de Execuções'
     ], ['version' => '4.4.0-P06-ENTERPRISE', 'cache' => 'miss']);

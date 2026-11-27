@@ -33,6 +33,8 @@ $CACHE_KEY = "dashboard:filtered:{$entity}:{$group_by}:{$date_from}:{$date_to}";
 $CACHE_TTL = 180;
 
 // Redis com auto-close
+require_once __DIR__ . '/../obs/ObsConsumidor.php';
+if (ObsConsumidor::ligado()) ObsConsumidor::responder($CACHE_KEY, (int) $CACHE_TTL, 'P06-ENTERPRISE', fn(ObsExecucoes $o) => ['data' => ($d = $o->filtradoLegado($entity, $group_by, $date_from, $date_to)), 'filters' => ['entity' => $entity, 'date_from' => $date_from, 'date_to' => $date_to, 'group_by' => $group_by], 'total' => count($d)]);
 if (RedisHelper::serveIfCached($CACHE_KEY)) {
     exit;
 }

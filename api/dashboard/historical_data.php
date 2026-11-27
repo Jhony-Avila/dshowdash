@@ -36,6 +36,8 @@ $CACHE_KEY = "dashboard:history:{$cache_job}:{$cache_status}:{$date_from}:{$date
 $CACHE_TTL = 180;
 
 // FIX: Usando RedisHelper
+require_once __DIR__ . '/../obs/ObsConsumidor.php';
+if (ObsConsumidor::ligado()) ObsConsumidor::responder($CACHE_KEY, (int) $CACHE_TTL, 'P06-ENTERPRISE', fn(ObsExecucoes $o) => $o->historicoLegado($job_name, $status, $date_from, $date_to, $limit));
 if (RedisHelper::serveIfCached($CACHE_KEY)) {
     exit;
 }

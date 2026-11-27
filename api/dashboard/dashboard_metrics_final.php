@@ -26,6 +26,8 @@ $CACHE_KEY = 'dashboard:metrics:final';
 $CACHE_TTL = RedisConfig::TTL_METRICS;
 
 // Redis - verificar cache
+require_once __DIR__ . '/../obs/ObsConsumidor.php';
+if (ObsConsumidor::ligado()) ObsConsumidor::responder($CACHE_KEY, (int) $CACHE_TTL, 'P06-ENTERPRISE', fn(ObsExecucoes $o) => $o->metricasFinaisLegado(new DateTimeImmutable('now')) + ['timestamp' => date('Y-m-d H:i:s')]);
 if (RedisHelper::serveIfCached($CACHE_KEY)) { exit; }
 
 require_once '/var/www/dshowdash/config/db_connection.php';

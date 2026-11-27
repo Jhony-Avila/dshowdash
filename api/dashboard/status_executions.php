@@ -28,6 +28,11 @@ $CACHE_KEY = 'dashboard:status-executions';
 $CACHE_TTL = RedisConfig::TTL_MODULES;
 
 // Redis - verificar cache
+// MIG-001 lote 5 (27/11, VINHO): com a flag global obs_monitoramento, o data sai do REGISTRO CENTRAL (OBS-001) no MESMO formato
+// (cache próprio; registro fora = 503); sem a flag, o legado abaixo.
+require_once __DIR__ . '/../obs/ObsConsumidor.php';
+if (ObsConsumidor::ligado()) ObsConsumidor::responder($CACHE_KEY, (int) $CACHE_TTL, 'dashboard', fn(ObsExecucoes $o) => $o->statusExecucoesLegado(new DateTimeImmutable('now')));
+
 if (RedisHelper::serveIfCached($CACHE_KEY)) { exit; }
 require_once '/var/www/dshowdash/config/db_connection.php';
 
