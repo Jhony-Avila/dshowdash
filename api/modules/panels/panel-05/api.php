@@ -71,7 +71,7 @@ try {
         case 'top': $response = getTopClientes($pdo, $validator, $CACHE_TTL); echo ApiResponse::buildSuccess($response['data'], $P05_META); RedisHelper::close(); exit;
         case 'vendedores': $response = getVendedores($pdo); break;
         case 'insights': $response = getInsights($pdo); break;
-        case 'export': exportCSV($pdo, $validator); exit;
+        case 'export': $GLOBALS['P05_EXPORTAR'] = p05_pode_exportar(AuthHelpers::getCurrentUserId() ?: null); exportCSV($pdo, $validator); exit;   // EX1: decisão a CADA arquivo
         case 'compare': $response = getComparativo($pdo, $validator); echo ApiResponse::buildSuccess($response['data'], $P05_META); RedisHelper::close(); exit;
         case 'funil': $response = getFunil($pdo); break;
         case 'metrics': $response = getMetricsAvancadas($pdo); break;
@@ -269,6 +269,8 @@ function getClientesList($pdo, InputValidator $v) {
 }
 
 function exportCSV($pdo, InputValidator $v) {
+    // EX1 (VINHO 27/11): sem o direito próprio de exportar = NENHUM arquivo, nem consulta (inclusive com o financeiro). O despachante sempre define P05_EXPORTAR.
+    if (array_key_exists('P05_EXPORTAR', $GLOBALS) && $GLOBALS['P05_EXPORTAR'] !== true) { ApiResponse::error(ApiResponse::ERR_NOT_AUTHORIZED, 403, ['motivo' => 'sem_permissao_exportar']); return; }
     [$wc, $params] = filtroClientes($v);
     $stmt = $pdo->prepare("SELECT o.Nome_Empresa, o.Razao_Social, CASE WHEN o.Flag_Ativo = -1 THEN 'Ativo' ELSE 'Inativo' END AS Status, o.Municipio_Endereco AS Cidade, o.Uf_Endereco AS UF" . (p05_fin() ? ', o.Receita_Gerada' : '') . " FROM " . p05v('ORGANIZACAO') . " o WHERE {$wc} ORDER BY o.Nome_Empresa, o.Id_Organizacao LIMIT 5001");
     $stmt->execute($params);

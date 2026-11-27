@@ -79,3 +79,25 @@ function p05_escopo_cache(array $e): string
 {
     return $e['modo'] === 'todos' ? '' : 'e' . substr(hash('sha256', $e['motivo'] . '|' . implode(',', $e['ids'])), 0, 16) . ':';
 }
+
+/**
+ * EX1 (UARPS v4, VINHO 27/11): EXPORTAR exige o direito PRÓPRIO de exportação — a abertura do painel não basta; os VALORES seguem só com o financeiro
+ * (exportCSV já tira Receita_Gerada sem p05_fin()). Avaliado a CADA arquivo pedido (nada em cache): retirar o direito com a tela aberta = o próximo
+ * arquivo já obedece. Flag global `clientes_ex1_exportar` DESLIGADA = como hoje (abrir o painel basta); flag ilegível = trata como LIGADA (falha fechada).
+ * Capacidade UARPS (nome a ratificar): `clientes:exportar`.
+ */
+const P05_CAP_EXPORTAR = 'clientes:exportar';
+function p05_pode_exportar(?int $uid, ?Closure $flag = null, ?Closure $cap = null): bool
+{
+    $flag ??= static function (): bool {
+        try { require_once P05_API . '/feature-flags/resolver.php'; return (bool) ((new FeatureFlagResolver(getConnection('DSHOWDASH')))->resolve('clientes_ex1_exportar', null)['enabled'] ?? false); }
+        catch (Throwable $e) { error_log('[ex1] flag: ' . get_class($e)); return true; }
+    };
+    if (!$flag()) return true;
+    if ($uid === null || $uid <= 0) return false;
+    $cap ??= static function (int $u, string $t): bool {
+        try { require_once P05_API . '/core/UARPSGate.php'; return (UARPSGate::checkTrigger($u, $t)['allowed'] ?? false) === true; }
+        catch (Throwable $e) { error_log('[ex1] capacidade: ' . get_class($e)); return false; }
+    };
+    return $cap($uid, P05_CAP_EXPORTAR) === true;
+}
