@@ -107,8 +107,11 @@ export default function IntegracoesCentral({ dados, aoAtualizar, atualizando, er
   const todas = useMemo(() => { const l = dados.integracoes.filter((x) => !FORA_DA_LISTA.has(x.id));
     return l.some((x) => x.id === 'gmail') ? l : [...l, GMAIL]; }, [dados.integracoes]);
   const conta = (f: (x: IntegracaoV2) => boolean) => todas.filter(f).length;
-  const porCat = (c: CategoriaInt) => conta((y) => classe(y).categoria === c);
-  const nAtencao = conta(pedeAtencao);
+  // revisão da VINHO (09:43, ponto 2): com o `resumo` do SERVIDOR, os KPIs e "Pedem atenção" são OS DELE (a mesma regra do selo do menu,
+  // inclusive se um dia o servidor filtrar o catálogo por permissão); sem ele (serviço antigo), a contagem local pela mesma classe().
+  const rs = dados.resumo && typeof dados.resumo.total === 'number' ? dados.resumo : null;
+  const porCat = (c: CategoriaInt) => (rs && typeof rs[c] === 'number' ? rs[c] : conta((y) => classe(y).categoria === c));
+  const nAtencao = rs && typeof rs.pedem_atencao === 'number' ? rs.pedem_atencao : conta(pedeAtencao);
   const linhas = useMemo(() => {
     const q = busca.trim().toLocaleLowerCase('pt-BR');
     return todas.filter((x) => (!atencao || pedeAtencao(x)) && (!q || `${x.nome} ${x.recurso ?? ''}`.toLocaleLowerCase('pt-BR').includes(q)));
