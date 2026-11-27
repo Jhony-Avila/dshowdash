@@ -4,8 +4,11 @@
 //                                ultima_sincronizacao, erro (1 linha, texto nosso), proximo_passo }] }
 // A tela nunca mostra chave/token; só o que o contrato manda. Estados da tela: carregando (osso), sem acesso (403),
 // problema com "Tentar novamente", vazio ("nenhuma integração informada") e a lista.
+import { Suspense, lazy } from 'react';
 import { ArrowLeft, Plug } from 'lucide-react';
-import { ErroV2, fmtQuando, lerIntegracoes, type Integracao } from './servico';
+import { ErroV2, fmtQuando, lerIntegracoes, lerIntegracoesV2, type Integracao, type IntegracoesV2, type RespostaIntegracoes } from './servico';
+// INT-001 (Fase 2): a Central carrega sob demanda; só com o contrato v2 do serviço (senão, a lista de hoje)
+const IntegracoesCentral = lazy(() => import('./IntegracoesCentral'));
 import { Problema, useBloco } from './comuns';
 import { DSWorkspaceTop } from '@shared/des/DSWorkspaceTop';
 import { Conciliacao } from './Conciliacao';
@@ -18,8 +21,15 @@ const ORDEM: Integracao['estado'][] = ['com_problema', 'atrasado', 'sem_acesso',
 
 /** pagina = rota própria #/panel-integracoes (26/11, Fase 1): página inteira com o DSWorkspaceTop; sem a trilha nem o título da vista antiga. */
 export function Integracoes({ aoVoltar, pagina }: { aoVoltar: () => void; pagina?: boolean }) {
-  const b = useBloco((s) => lerIntegracoes(s), []);
-  const lista = [...(b.dados?.integracoes ?? [])].sort((x, y) => ORDEM.indexOf(x.estado) - ORDEM.indexOf(y.estado));
+  const b = useBloco<RespostaIntegracoes>((s) => (pagina ? lerIntegracoesV2(s) : lerIntegracoes(s)), [pagina]);
+  if (pagina && b.dados && (b.dados as { versao?: number }).versao === 2) return (
+    <div className="gv2-lista" data-gv2-integracoes="pagina">
+      <Suspense fallback={<p className="gv2-fraco" aria-busy>Abrindo a Central de Integrações…</p>}>
+        <IntegracoesCentral dados={b.dados as IntegracoesV2} aoVoltar={aoVoltar} aoAtualizar={b.recarregar} atualizando={b.atualizando} />
+      </Suspense>
+      <Conciliacao />
+    </div>);
+  const lista = [...((b.dados?.integracoes ?? []) as Integracao[])].sort((x, y) => ORDEM.indexOf(x.estado) - ORDEM.indexOf(y.estado));
   const semAcesso = b.erro instanceof ErroV2 && b.erro.semAcesso;
   const pendentes = lista.filter((x) => x.estado === 'com_problema' || x.estado === 'atrasado').length;
   return (

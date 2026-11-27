@@ -667,13 +667,20 @@ final class PipeAnalyticsRepository
      * Cada bloco diz o seu recorte: 'periodo' (janela global), 'agora' (fotografia) ou '72h'. Valor desconhecido (value NULL) nunca vira 0:
      * a soma é só dos conhecidos e `sem_valor` conta os desconhecidos (a tela mostra "parcial").
      */
-    public function visaoGeralBlocos(?string $periodo): array
+    /** PF-001: os 5 blocos que podem ser pedidos um a um (?bloco=). */
+    public const BLOCOS = ['valor_por_etapa', 'ciclo', 'top_produtos', 'uso_api', 'pede_atencao'];
+
+    public function visaoGeralBlocos(?string $periodo, ?string $bloco = null): array
     {
         [$de, $ate, $rotulo] = $this->janelaDoPeriodo($periodo);
         $ini = $de . ' 00:00:00'; $fim = date('Y-m-d', strtotime($ate . ' +1 day')) . ' 00:00:00';
         $agora = date('c');
+        // PF-001: com $bloco, só as consultas dele rodam e só a chave dele volta (mais leitura/periodo/gerado_em); sem $bloco, os 5 (como antes)
+        $quer = static fn(string $b): bool => $bloco === null || $bloco === $b;
+        $etapas = $cc = $produtos = $c = $h = $pa = null; $erros = 0; $e404 = null;
 
         // 1) Valor por etapa: abertos AGORA por etapa (fotografia) + os que ENTRARAM no período (add_time na janela) e seguem abertos
+        if ($quer('valor_por_etapa')) {
         $st = $this->pdo->prepare(
             "SELECT d.stage_id, s.name AS stage, s.order_nr, pl.pipedrive_id AS pipeline_id, pl.name AS pipeline,
                     COUNT(*) AS abertos, COALESCE(SUM(d.value),0) AS valor, SUM(d.value IS NULL) AS sem_valor,
@@ -693,11 +700,13 @@ final class PipeAnalyticsRepository
             'abertos' => (int)$r['abertos'], 'valor' => (float)$r['valor'], 'sem_valor' => (int)$r['sem_valor'],
             'abertos_periodo' => (int)$r['abertos_periodo'], 'valor_periodo' => (float)$r['valor_periodo'], 'sem_valor_periodo' => (int)$r['sem_valor_periodo'],
         ], $st->fetchAll(PDO::FETCH_ASSOC));
+        }
 
         // 2) Ciclo: a MESMA regra e janela do KPI "Ciclo médio" (ganhos na janela)
-        $cc = $this->conversionCycle(null, $de, $ate);
+        if ($quer('ciclo')) $cc = $this->conversionCycle(null, $de, $ate);
 
         // 3) Top produtos dos negócios GANHOS no período (itens de pipe_deal_products; cobertura = ganhos do período com produtos lançados)
+        if ($quer('top_produtos')) {
         $tp = $this->pdo->prepare(
             "SELECT dp.product_pd_id AS product_id, COALESCE(p.name, CONCAT('#', dp.product_pd_id)) AS name,
                     COUNT(DISTINCT dp.deal_pd_id) AS deals, COALESCE(SUM(dp.quantity),0) AS qty, COALESCE(SUM(dp.`sum`),0) AS valor, SUM(dp.`sum` IS NULL) AS sem_valor
@@ -715,32 +724,37 @@ final class PipeAnalyticsRepository
         );
         $cov->execute([$ini, $fim]);
         $c = $cov->fetch(PDO::FETCH_ASSOC) ?: [];
+        }
 
         // 4) Uso da API (72 h): erros com os 404/410 de registro apagado À PARTE (hora ainda não recalculada = null, nunca 0)
+        if ($quer('uso_api')) {
         $h = (new PipeMetricsRepository($this->pdo))->readHourly(72);
         $sep = $h !== [] && array_filter($h, static fn($x) => !is_numeric($x['api_errors_404'] ?? null)) === [];
         $erros = array_sum(array_column($h, 'api_errors'));
         $e404 = $sep ? array_sum(array_column($h, 'api_errors_404')) : null;
+        }
 
         // mesma regra dos KPIs (P14): nunca houve leitura de negócios → os blocos de negócio viram null ("—"), nunca 0
         $leitura = $this->leituraNegocios();
         if ($leitura['estado'] === 'indisponivel') {
-            $etapas = null; $cc['cycle'] = null; $produtos = null; $c = ['ganhos' => null, 'com_produtos' => null];
+            $etapas = null; if (is_array($cc)) $cc['cycle'] = null; $produtos = null; $c = ['ganhos' => null, 'com_produtos' => null];
         }
-        $pa = array_intersect_key($this->estadoAgora(), array_flip(['fechamento_vencido', 'atividades_atrasadas', 'sem_previsao']));
-        if ($leitura['estado'] === 'indisponivel') $pa = array_map(static fn() => null, $pa);
-        return [
-            'leitura' => $leitura,
-            'periodo' => ['id' => $periodo ?? 'd30', 'de' => $de, 'ate' => $ate, 'rotulo' => $rotulo],
-            'gerado_em' => $agora,
+        if ($quer('pede_atencao')) {
+            $pa = array_intersect_key($this->estadoAgora(), array_flip(['fechamento_vencido', 'atividades_atrasadas', 'sem_previsao']));
+            if ($leitura['estado'] === 'indisponivel') $pa = array_map(static fn() => null, $pa);
+        }
+        $h = $h ?? []; $c = $c ?? []; $pa = $pa ?? [];
+        $todos = [
             'valor_por_etapa' => ['recorte' => 'agora', 'recorte_periodo' => 'entraram no período e seguem abertos', 'fotografia_em' => $agora, 'etapas' => $etapas],
-            'ciclo' => ['recorte' => 'periodo', 'regra' => 'ganhos no período: dias entre criação e ganho (igual ao KPI Ciclo médio)', 'ciclo' => $cc['cycle']],
+            'ciclo' => ['recorte' => 'periodo', 'regra' => 'ganhos no período: dias entre criação e ganho (igual ao KPI Ciclo médio)', 'ciclo' => $cc['cycle'] ?? null],
             'top_produtos' => ['recorte' => 'periodo', 'regra' => 'itens de produto dos negócios GANHOS no período (só os que têm produtos lançados)',
-                'cobertura' => ['ganhos' => $c['ganhos'] !== null ? (int)$c['ganhos'] : null, 'com_produtos' => $c['com_produtos'] !== null ? (int)$c['com_produtos'] : null], 'itens' => $produtos],
+                'cobertura' => ['ganhos' => ($c['ganhos'] ?? null) !== null ? (int)$c['ganhos'] : null, 'com_produtos' => ($c['com_produtos'] ?? null) !== null ? (int)$c['com_produtos'] : null], 'itens' => $produtos],
             'uso_api' => ['recorte' => '72h', 'chamadas' => array_sum(array_column($h, 'api_calls')), 'erros' => $erros,
                 'erros_404_registro_apagado' => $e404, 'erros_outros' => $e404 !== null ? $erros - $e404 : null, 'por_hora' => $h],
             'pede_atencao' => ['recorte' => 'agora', 'fotografia_em' => $agora] + $pa,
         ];
+        $base = ['leitura' => $leitura, 'periodo' => ['id' => $periodo ?? 'd30', 'de' => $de, 'ate' => $ate, 'rotulo' => $rotulo], 'gerado_em' => $agora];
+        return $bloco === null ? $base + $todos : $base + [$bloco => $todos[$bloco]];
     }
 
     /**

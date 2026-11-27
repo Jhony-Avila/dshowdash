@@ -9,6 +9,10 @@ declare(strict_types=1);
  *  - confere a CONCESSÃO (produto, recurso, gestor) do principal ANTES de olhar o cache; IDs validados (Ads: 10 dígitos; gestor: 10 dígitos, só no Ads);
  *  - pagina até o fim (token repetido ou fora do formato = parcial); timeout/erro/resposta malformada NUNCA viram zero e nunca entram no cache;
  *  - custo em MICROS inteiros (texto), sem float; cache de 300 s com o principal, produto, recurso, gestor, período e versão na chave.
+ * Configuração (SEM segredo; fora do git em <Dash>/config/google/relatorios.json; exemplo em scripts/ads/google-relatorios.exemplo.json):
+ *  versao_ads (a mais recente suportada na doc oficial no dia do teste) + versao_conferida_em; modo_token "com_token" (PADRÃO: o transporte envia o
+ *  developer-token) ou "sem_token" (SÓ com piloto_confirmado = true: piloto de níveis de acesso gerenciados pela organização do Google Cloud, que
+ *  exige token aprovado + projeto na organização + inscrição aprovada pelo Google; doc oficial no-developer-token, conferida pelo arquiteto em 26/11).
  */
 final class GoogleRelatorios
 {
@@ -19,10 +23,44 @@ final class GoogleRelatorios
     private const PAGINAS = 100;
     private array $cache = [];
 
-    /** @param Closure $transporte fn(string $produto, string $caminho, string $escopo, array $cabecalhos, array $corpo): array{0:int,1:mixed} */
-    public function __construct(private readonly Closure $transporte, private readonly Closure $relogio, private readonly string $versaoAds)
+    private readonly string $versaoAds;
+    private readonly bool $comToken;
+
+    /**
+     * @param Closure $transporte fn(string $produto, string $caminho, string $escopo, array $cabecalhos, array $corpo, array $opcoes): array{0:int,1:mixed}
+     *        $opcoes = ['developer_token' => bool] diz ao transporte se ELE deve anexar o developer-token (o valor nunca passa por aqui)
+     * @param array $config ver self::config()
+     */
+    public function __construct(private readonly Closure $transporte, private readonly Closure $relogio, array $config)
     {
-        if (preg_match('/^v[1-9][0-9]*\z/', $versaoAds) !== 1) throw new InvalidArgumentException('versao_ads');
+        $c = self::validarConfig($config);
+        $this->versaoAds = $c['versao_ads']; $this->comToken = $c['modo_token'] === 'com_token';
+    }
+
+    /** Lê e valida o arquivo de configuração (sem segredo). Ausente ou inválido = exceção (o Ads não fica "pronto"). */
+    public static function config(string $arquivo): array
+    {
+        $j = is_file($arquivo) && !is_link($arquivo) ? json_decode((string) file_get_contents($arquivo), true) : null;
+        if (!is_array($j)) throw new InvalidArgumentException('config_ausente');
+        return self::validarConfig($j);
+    }
+
+    public static function validarConfig(array $c): array
+    {
+        if (preg_match('/^v[1-9][0-9]*\z/', (string) ($c['versao_ads'] ?? '')) !== 1) throw new InvalidArgumentException('versao_ads');
+        $modo = $c['modo_token'] ?? 'com_token';
+        if (!in_array($modo, ['com_token', 'sem_token'], true)) throw new InvalidArgumentException('modo_token');
+        if ($modo === 'sem_token' && ($c['piloto_confirmado'] ?? null) !== true) throw new InvalidArgumentException('sem_token_sem_piloto');   // só com o piloto confirmado
+        return ['versao_ads' => (string) $c['versao_ads'], 'versao_conferida_em' => $c['versao_conferida_em'] ?? null, 'modo_token' => $modo,
+                'piloto_confirmado' => ($c['piloto_confirmado'] ?? false) === true, 'token_presente' => ($c['token_presente'] ?? false) === true];
+    }
+
+    /** Prontidão do Ads pela configuração: com_token exige o token presente no servidor; sem_token exige o piloto confirmado (já validado). */
+    public static function prontoAds(array $config): array
+    {
+        try { $c = self::validarConfig($config); } catch (InvalidArgumentException $e) { return ['pronto' => false, 'motivo' => $e->getMessage()]; }
+        if ($c['modo_token'] === 'com_token' && !$c['token_presente']) return ['pronto' => false, 'motivo' => 'developer_token_ausente'];
+        return ['pronto' => true, 'motivo' => null, 'modo_token' => $c['modo_token'], 'versao_ads' => $c['versao_ads']];
     }
 
     /**
@@ -50,7 +88,7 @@ final class GoogleRelatorios
         }
         $linhas = []; $vistos = [];
         for ($i = 0; $i < self::PAGINAS; $i++) {
-            try { [$status, $dados] = ($this->transporte)($produto, $caminho, self::ESCOPO[$produto], $cab, $corpo); }
+            try { [$status, $dados] = ($this->transporte)($produto, $caminho, self::ESCOPO[$produto], $cab, $corpo, ['developer_token' => $produto === 'ads' && $this->comToken]); }
             catch (Throwable $e) { error_log('[google-relatorios] transporte: ' . get_class($e)); return ['estado' => 'indisponivel']; }
             if ($status !== 200) return ['estado' => self::ERRO[$status] ?? 'indisponivel'];
             if (!is_array($dados)) return ['estado' => 'parcial'];

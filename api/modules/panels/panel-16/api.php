@@ -19,8 +19,11 @@ SessionGate::start();
 AuthHelpers::requireAuth();
 // ERP NOVO (26/11, mesma regra dos painéis 01/05): origem DEPOIS do login e ANTES do cache e da consulta; permissão por pessoa na origem nova (403).
 $ERP_ORIGEM = erp_ponto_origem('painel16');
-if ($ERP_ORIGEM === 'novo' && !erp_novo_autorizado(AuthHelpers::getCurrentUserId())) { ApiResponse::error(ApiResponse::ERR_NOT_AUTHORIZED, 403); exit; }
-$CACHE_PREFIX = $ERP_ORIGEM === 'novo' ? 'panel:16n:' : 'panel:16:cp003:';   // o formato mudou (sem banco/PIX): nunca servir o cache antigo
+// Decisão do arquiteto (26/11 23:0x): o painel 16 abre para quem tem login; dado FINANCEIRO (total pago, média, saldo) só com a permissão POR PESSOA
+// (override de financeiro_asaas_leitura, fail-closed, a checagem do F03) — hoje ele já sai null para todos (CP-003: pago suspenso até a fonte de baixas);
+// quando voltar, volta SÓ para quem tiver a permissão. A resposta diz o motivo: suspenso × sem permissão.
+$FIN = erp_novo_autorizado(AuthHelpers::getCurrentUserId());
+$CACHE_PREFIX = ($ERP_ORIGEM === 'novo' ? 'panel:16n:' : 'panel:16:cp003:') . ($FIN ? 'f1:' : 'f0:');   // o formato mudou (sem banco/PIX): nunca servir o cache antigo
 
 $validator = InputValidator::fromGet();
 $action = $validator->enum('action', 'list', ['list', 'detail', 'kpis']);
@@ -79,6 +82,13 @@ try {
 }
 
 function getKPIs($pdo) {
+    $r = getKPIsDados($pdo);
+    $r['data']['financeiro'] = ($GLOBALS['FIN'] ?? false) === true
+        ? ['permitido' => true, 'motivo' => 'Total pago suspenso até a confirmação da fonte de baixas (CP-003).']
+        : ['permitido' => false, 'motivo' => 'Sem permissão para dados financeiros.'];
+    return $r;
+}
+function getKPIsDados($pdo) {
     $kpis = $pdo->query("SELECT COUNT(*) as total, SUM(CASE WHEN Ativo = -1 THEN 1 ELSE 0 END) as ativos, SUM(CASE WHEN Ativo != -1 OR Ativo IS NULL THEN 1 ELSE 0 END) as inativos, SUM(CASE WHEN Tipo = 'PJ' THEN 1 ELSE 0 END) as pj, SUM(CASE WHEN Tipo = 'PF' THEN 1 ELSE 0 END) as pf, SUM(COALESCE(Qtd_Requisicoes, 0)) as total_requisicoes, COUNT(DISTINCT Endereco_Uf) as total_ufs, SUM(CASE WHEN Status = 'Desatualizado' THEN 1 ELSE 0 END) as desatualizados FROM " . ERP_V_FORNECEDOR . " Fornecedor")->fetch(PDO::FETCH_ASSOC);
     $byStatus = $pdo->query("SELECT COALESCE(Status, 'Nao definido') as status, COUNT(*) as qtd FROM " . ERP_V_FORNECEDOR . " Fornecedor GROUP BY Status ORDER BY qtd DESC")->fetchAll(PDO::FETCH_ASSOC);
     $byUF = $pdo->query("SELECT COALESCE(Endereco_Uf, 'N/D') as uf, COUNT(*) as qtd FROM " . ERP_V_FORNECEDOR . " Fornecedor WHERE Endereco_Uf IS NOT NULL AND Endereco_Uf != '' GROUP BY Endereco_Uf ORDER BY qtd DESC LIMIT 10")->fetchAll(PDO::FETCH_ASSOC);
