@@ -506,9 +506,10 @@ html[data-theme="dark"] body [data-bl-root] {   /* (0,2,2) vence body.theme-ligh
    · Shell Layout v2 (flag as6.shell_layout_v2, ligada na produção): o DOCUMENTO rola por baixo do header + ticker fixos, que medem
      --lv2-top. Antes, o bloco grudava em top 0 da janela e ficava ESCONDIDO atrás deles (só a última linha aparecia: prints do Jhony).
    · Sem o v2, quem rola é o main#main, que já começa abaixo do header: --lv2-top não existe → 0.
-   · Com a barra do painel travada pelo módulo (shellSticky.ts marca data-barra-travada), soma a altura da barra (token --cm-header-height). */
-[data-bl-root].at-raiz { --at-topo-tela: var(--lv2-top, 0px); }
-[data-bl-root].at-raiz[data-barra-travada] { --at-topo-tela: calc(var(--lv2-top, 0px) + var(--cm-header-height, 32px)); }
+   · A barra do painel é travada pelo SHELL (UX01, marca data-shell-sticky) e o topo já vem somado em --modulo-topo (abaixo). */
+/* UX01 (P71): o shell dá onde o módulo gruda: --modulo-topo = --shell-topo (topo da área visível) + --shell-barra-h (a barra do painel, que o
+   shell trava pela marca data-shell-sticky). Reserva sem o contrato do shell: a conta antiga sem a barra. */
+[data-bl-root].at-raiz { --at-topo-tela: var(--modulo-topo, var(--lv2-top, 0px)); }
 /* O respiro entre a barra do painel e o módulo (padding do .dsd-container__content = --cm-spacing-lg) passa para DENTRO do bloco
    travado: na posição de descanso nada muda, e ao rolar o bloco não "sobe" esses 16 px antes de grudar (o topo de tudo fica parado). */
 [data-bl-root].at-raiz { margin-top: calc(-1 * var(--cm-spacing-lg, 16px)); }

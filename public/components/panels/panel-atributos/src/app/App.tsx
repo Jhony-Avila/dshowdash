@@ -13,7 +13,6 @@ import { Dicionario } from '../screens/Dicionario';
 import { Unidades } from '../screens/Unidades';
 import { Conferencia } from '../screens/Conferencia';
 import { Icone, ICONE_ABA } from '../ui/Icones';
-import { liberarSticky, restaurarShell } from '../lib/shellSticky';
 
 /** UX-1b: título de cada tela = nome da aba (mapa ÚNICO; as telas não desenham mais o próprio título). Na ficha: "Produtos".
  *  Sem frase de descrição embaixo do título (aprovação do Jhony e do Cima, 18/11). */
@@ -65,18 +64,14 @@ export function App({ rotaInicial }: { rotaInicial?: string } = {}) {
       if (!(t instanceof Element) || !t.contains(r)) return;   // rolagem de dentro do módulo (carrossel, tabela larga): não é a página
       window.removeEventListener('scroll', aoRolar, true);
       rolador.current = t; setRoladorEl(t);
-      const regiao = r.closest('main#main, [data-region="main"]');
-      liberarSticky(r, regiao && t !== regiao && t.contains(regiao) ? regiao : t);   // documento rolando (v2): libera até a região main   // lib/shellSticky.ts: só os intermediários; restaurado ao desmontar
     };
     window.addEventListener('scroll', aoRolar, true);
-    // Trava já na MONTAGEM (não só no 1º scroll): antes disso o .dsd-container__body ainda é contêiner de rolagem e o bloco, com
-    // top = topo da área visível, ficava deslocado dentro dele (medido: 100 px abaixo com o Shell Layout v2). Libera tudo até a região
-    // main do shell (com o v2 quem rola é o documento; sem ele, o próprio main#main). O 1º scroll só confirma quem rola (idempotente).
-    const regiaoMain = r.closest('main#main, [data-region="main"]');
-    if (regiaoMain) liberarSticky(r, regiaoMain);
+    // UX01 (contrato de rolagem do shell, P71): o módulo NÃO toca em ancestral. A raiz tem a marca data-shell-sticky e o CSS do shell
+    // (09-contrato-rolagem.css, :has) libera os intermediários e trava a barra do painel enquanto a raiz existir; ao sair, nada a desfazer.
+    // Aqui só se descobre QUEM rola (para o "voltar ao topo") e se mede a altura do bloco fixo.
     const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => { if (fixo.current) r.style.setProperty('--at-topo-fixo', `${fixo.current.offsetHeight}px`); });
     if (ro && fixo.current) ro.observe(fixo.current);
-    return () => { window.removeEventListener('scroll', aoRolar, true); ro?.disconnect(); restaurarShell(); };
+    return () => { window.removeEventListener('scroll', aoRolar, true); ro?.disconnect(); };
   }, []);
   const topo = () => { const t = rolador.current; if (t) t.scrollTo({ top: 0 }); };
   const raiz = React.useRef<HTMLDivElement>(null);
@@ -131,7 +126,7 @@ export function App({ rotaInicial }: { rotaInicial?: string } = {}) {
 
   return (
     <Contexto.Provider value={nav}>
-      <div data-bl-root className="at-raiz" ref={raiz}>
+      <div data-bl-root data-shell-sticky className="at-raiz" ref={raiz}>
         <div className="at-fixo" ref={fixo}>
           <header className="at-cabecalho at-cabecalho--uma-linha">
             <div className="at-cabecalho__titulo">
