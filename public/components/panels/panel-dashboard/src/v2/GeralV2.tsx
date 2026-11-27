@@ -54,7 +54,11 @@ export function GeralV2() {
   const trocarPeriodo = (p: PeriodoV2) => { setPeriodo(p); try { localStorage.setItem(K_PERIODO, p); } catch { /* sem storage */ } };
 
   // uma leitura só (painel.php): cada bloco é uma VISTA dela, com o mesmo erro, o mesmo "Tentar de novo" e o mesmo instante
-  const painel = useBloco((s) => lerPainel(periodo, s), [periodo]);
+  // LIB-05 §7 (P1 do Manager Visual, 27/11): a resposta só é aceita se for do período SOLICITADO — outro período = falha (a leitura anterior fica,
+  // identificada). Fora de ordem: o seq do useBloco já descarta. Sem refatorar o useBloco: a conferência mora no carregar.
+  const painel = useBloco((s) => lerPainel(periodo, s).then((x) => {
+    if (x?.resumo?.periodo?.id !== periodo) throw new ErroV2(0, `PERIODO_INCOMPATIVEL: pedido ${periodo}, veio ${x?.resumo?.periodo?.id ?? '—'}`);
+    return x; }), [periodo]);
   // 26/11 (CIMA): cartão do Asaas = leitura própria (asaas.php, atrás da flag + financeiro_asaas_leitura); 404 = o cartão não existe
   const asaas = useBloco((s) => lerAsaas(s), [], { reconsultarAoVoltar: true, reconsultarEm: (d) => d.proxima_sincronizacao });
   const vistaDe = <K extends 'resumo' | 'prioridades' | 'agenda' | 'fontes'>(k: K) =>
@@ -63,9 +67,18 @@ export function GeralV2() {
   // Parecer R3 item 2 (25/11): na TROCA de período, enquanto o período novo não chega, o resultado e o gráfico NÃO mostram os números
   // do período anterior como se fossem atuais: ficam em "Carregando o período…". Prioridades, agenda e fontes não dependem do período
   // e seguem na tela (aprovado). Se a troca falhar, vale o comportamento aprovado: última leitura válida + "a atualização falhou".
-  const trocando = painel.atualizando && !!painel.dados && painel.dados.resumo?.periodo?.id !== periodo;
+  // LIB-05 §7: período SOLICITADO (a aba) × EXIBIDO (o da última leitura válida). Durante a troca, nenhum número do período anterior aparece como
+  // do novo; se a troca FALHAR, os cartões mostram a leitura anterior com o intervalo explícito e o aviso, e "Tentar de novo" pede o solicitado.
+  // 401/403: nada protegido fica na tela. O funil (fotografia atual, não depende do período) e o Asaas (leitura própria) não somem pela troca.
+  const exibido = painel.dados?.resumo?.periodo ?? null;
+  const difere = !!exibido && exibido.id !== periodo;
+  const negado = semAcesso(painel.erro);
+  const trocando = painel.atualizando && difere;
   const resumo0 = vistaDe('resumo');
-  const resumo = trocando ? ({ ...resumo0, dados: null, erro: null, carregando: true } as typeof resumo0) : resumo0;
+  const resumo = negado ? ({ ...resumo0, dados: null } as typeof resumo0)
+    : trocando ? ({ ...resumo0, dados: null, erro: null, carregando: true } as typeof resumo0) : resumo0;
+  const funilDaTroca = trocando && !negado ? painel.dados?.resumo?.funil_aberto ?? null : null;
+  const troca = { solicitado: PERIODOS.find((p) => p.id === periodo)?.rotulo ?? periodo, exibido: negado ? null : exibido, falhou: !painel.atualizando && !!painel.erro && difere && !negado };
   const prioridades = vistaDe('prioridades'), agenda = vistaDe('agenda'), fontes = vistaDe('fontes');
   const topo = useRef<HTMLDivElement>(null);
   // 26/11 (ROXO, auditoria UX/UI F3 item 6 · DSStickyHeader): quando o cabeçalho (título + períodos) sai da tela ao rolar, ele fica PRESO logo
@@ -128,7 +141,7 @@ export function GeralV2() {
       </header>
 
       <BlocoPrioridades b={prioridades} fl={fl} aoAbrir={(id, q) => (id === 'conflito_agenda' ? navegar(agenda.dados?.url_agenda || '#/panel-google-calendar') : setVista({ tipo: 'lista', id, quantidade: q }))} />
-      <BlocoResultado b={resumo} fl={fl} extra={<CartaoAsaas b={asaas} aoVencidas={() => setVista({ tipo: 'vencidas_asaas' })} />} />
+      <BlocoResultado b={resumo} fl={fl} troca={troca} funilDaTroca={funilDaTroca} extra={<CartaoAsaas b={asaas} aoVencidas={() => setVista({ tipo: 'vencidas_asaas' })} />} />
       <div className="gv2-dupla">
         <BlocoPedidosGrafico b={resumo} fl={fl} />
         <BlocoAgenda b={agenda} fl={fl} />
@@ -338,13 +351,15 @@ function contagemCompleta(e: Efetivo | undefined, lacunas: string[] | undefined,
   return l.length > 0 && l.every((x) => deValor.includes(x)) ? { ...e, estado: 'ok', semValor: null, motivo: null } : e;
 }
 // ── 2. Indicadores do negócio (4 cartões, decisão de 25/11 — conceitos separados, nunca somados) ──
-function BlocoResultado({ b, fl, extra }: { b: ReturnType<typeof useBloco<Resumo>>; fl: FontesLidas; extra?: ReactNode }) {
+function BlocoResultado({ b, fl, extra, troca, funilDaTroca }: { b: ReturnType<typeof useBloco<Resumo>>; fl: FontesLidas; extra?: ReactNode;
+  troca?: { solicitado: string; exibido: Resumo['periodo'] | null; falhou: boolean }; funilDaTroca?: Resumo['funil_aberto'] | null }) {
   const r = b.dados; const car = b.carregando && !r;
   const ef = (id: IdIndicador, x: Resumo['pedidos_bling'] | Resumo['negocios_ganhos'] | Resumo['funil_aberto'] | Resumo['recebido'] | undefined) => (x ? efetivo(id, x, fl, !!b.erro, b.okEm) : undefined);
-  const p = r?.pedidos_bling, g = r?.negocios_ganhos, f = r?.funil_aberto;
+  const p = r?.pedidos_bling, g = r?.negocios_ganhos, f = r?.funil_aberto ?? funilDaTroca ?? undefined;   // funil: fotografia atual, fica na troca
   const ep = contagemCompleta(ef('pedidos_bling', p), p?.lacunas, ['sem_canal']);
   const eg = contagemCompleta(ef('negocios_ganhos', g), g?.lacunas, ['sem_valor', 'fora_brl']);
   const eu = ef('funil_aberto', f);
+  const estFunil = (e: Efetivo | undefined): EstadoGeral => (!r && funilDaTroca && e ? (e.conferindo ? 'carregando' : e.estado) : est(e));
   const est = (e: Efetivo | undefined): EstadoGeral => (car || e?.conferindo ? 'carregando' : !r ? (semAcesso(b.erro) ? 'semacesso' : 'erro') : e!.estado);
   const num = (e: Efetivo | undefined, v: number | null | undefined) => (e?.zeroNaoConfirmado || v === null || v === undefined ? null : v);   // "—" nunca vira 0
   const falha: 'semacesso' | 'erro' | null = !r && !car ? (semAcesso(b.erro) ? 'semacesso' : 'erro') : null;
@@ -363,9 +378,10 @@ function BlocoResultado({ b, fl, extra }: { b: ReturnType<typeof useBloco<Resumo
     <section className="gv2-sec" data-gv2-bloco="resultado">
       <div className="gv2-sec-cab gv2-sec-cab--solto">
         <h2 className="gv2-h2">Indicadores do negócio</h2>
-        <span className="gv2-fraco gv2-dir">{r ? `${r.periodo.rotulo} · funil é fotografia atual` : car ? 'Carregando o período…' : 'Período indisponível'}</span>
+        <span className="gv2-fraco gv2-dir" data-gv2-periodo-exibido={r ? r.periodo.id : ''}>{r ? `${r.periodo.rotulo} (${fmtDiaMes(r.periodo.de)}–${fmtDiaMes(r.periodo.ate)}) · funil é fotografia atual` : car ? `Carregando ${troca?.solicitado ?? 'o período'}…` : 'Período indisponível'}</span>
       </div>
-      {r && b.erro && <Problema motivo="A atualização falhou; os cartões mostram a última leitura válida." quando={b.okEm} onTentar={b.recarregar} tentando={b.atualizando} />}
+      {r && b.erro && troca?.falhou && <Problema motivo={`A consulta de "${troca.solicitado}" falhou. Os cartões mostram a última leitura válida, de ${r.periodo.rotulo} (${fmtDiaMes(r.periodo.de)}–${fmtDiaMes(r.periodo.ate)}) — não de "${troca.solicitado}".`} quando={b.okEm} onTentar={b.recarregar} tentando={b.atualizando} />}
+      {r && b.erro && !troca?.falhou && <Problema motivo="A atualização falhou; os cartões mostram a última leitura válida." quando={b.okEm} onTentar={b.recarregar} tentando={b.atualizando} />}
       {/* des-escopo: onde valem os tokens --des-* do pacote DES (o tema segue o do shell) */}
       <div className="gv2-quatro des-escopo">
         <CartaoNumero data="ganhos" marcador="Comercial · Pipedrive" titulo="Negócios ganhos" icone={<TrendUp01 size={18} />} estado={est(eg)} {...tentar}
@@ -373,7 +389,7 @@ function BlocoResultado({ b, fl, extra }: { b: ReturnType<typeof useBloco<Resumo
           comparacao={g ? { anterior: typeof g.anterior?.quantidade === 'number' ? g.anterior.quantidade : null, serie: qtdSerie(g), base: baseCmp } : null} aguardando="Sem valor disponível · nenhum número assumido"
           linha={g && eg && linhaEstado(eg, <>Fechados no período{typeof g.sem_valor === 'number' && g.sem_valor > 0 ? ` · ${fmtN(g.sem_valor)} sem valor` : ''}</>)}
           rodape="Pipedrive · contagem" link={{ rotulo: 'Ver ganhos', rota: '#/panel-pipedrive' }} dica="Quantidade de negócios ganhos no período. Não é receita." />
-        <CartaoNumero data="funil" marcador="Comercial · Pipedrive" titulo="Funil aberto agora" icone={<BarChartSquare02 size={18} />} estado={est(eu)} {...tentar}
+        <CartaoNumero data="funil" marcador="Comercial · Pipedrive" titulo="Funil aberto agora" icone={<BarChartSquare02 size={18} />} estado={estFunil(eu)} {...tentar}
           valor={num(eu, f?.valor)} formato="moeda-inteira" bloco={f} falha={falha} dominio="comercial" aguardando="Sem valor disponível · nenhum número assumido"
           linha={f && eu && linhaEstado(eu, <>{plural(f.quantidade, 'negócio aberto', 'negócios abertos')}{foto && <span className="gv2-num-sub" data-gv2-fotografia>{' · '}Fotografia {/^às /.test(fmtQuando(foto)) ? `de hoje ${fmtQuando(foto)}` : `de ${fmtQuando(foto)}`}</span>}</>, f.valor)}
           rodape="Pipedrive · valor potencial" link={{ rotulo: 'Abrir funil', rota: '#/panel-pipedrive' }} dica="Soma dos valores informados nos negócios abertos agora. Fotografia atual: não filtra pelo período." />
