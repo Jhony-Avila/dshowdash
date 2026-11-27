@@ -264,6 +264,44 @@ final class PipeAnalyticsRepository
         return [$de, $ate, $rotulo];
     }
 
+    /**
+     * PF-001 (27/11): só o ciclo de vendas (ganhos: dias entre criação e ganho, com as faixas). Extraído do conversionCycle SEM mudar a consulta;
+     * o bloco "Ciclo" da Visão Geral chama só isto (antes rodava também os totais por status, ~6,4 mil linhas, e a idade por etapa, que a tela não usa).
+     */
+    private function cicloDaJanela(string $where, array $params, ?string $de, ?string $ate): array
+    {
+        $dd = "DATEDIFF(d.won_time, d.add_time)";
+        // Fase 0: com a janela do período global, MESMA regra do KPI "Ciclo médio" (metricasJanela): ganhos com
+        // won_time na janela (limite superior exclusivo), add_time presente e won_time >= add_time.
+        $janela = ''; $pc = $params;
+        if ($de !== null && $ate !== null) {
+            $janela = " AND d.won_time >= :ini AND d.won_time < :fim";
+            $pc[':ini'] = $de . ' 00:00:00';
+            $pc[':fim'] = date('Y-m-d', strtotime($ate . ' +1 day')) . ' 00:00:00';
+        }
+        $stc = $this->pdo->prepare(
+            "SELECT COUNT(*) n, ROUND(AVG({$dd})) avg_d, ROUND(MAX({$dd})) max_d,
+                    SUM({$dd}<=7) b0, SUM({$dd} BETWEEN 8 AND 30) b1,
+                    SUM({$dd} BETWEEN 31 AND 90) b2, SUM({$dd}>90) b3
+               FROM pipe_deals d
+              WHERE {$where} AND d.status='won'
+                    AND d.won_time IS NOT NULL AND d.add_time IS NOT NULL AND d.won_time >= d.add_time{$janela}"
+        );
+        $stc->execute($pc);
+        $cy = $stc->fetch(PDO::FETCH_ASSOC) ?: [];
+        return [
+            'count'    => (int)($cy['n'] ?? 0),
+            'avg_dias' => isset($cy['avg_d']) && $cy['avg_d'] !== null ? (int)$cy['avg_d'] : null,
+            'max_dias' => isset($cy['max_d']) && $cy['max_d'] !== null ? (int)$cy['max_d'] : null,
+            'buckets'  => [
+                'ate_7'   => (int)($cy['b0'] ?? 0),
+                'd8_30'   => (int)($cy['b1'] ?? 0),
+                'd31_90'  => (int)($cy['b2'] ?? 0),
+                'mais_90' => (int)($cy['b3'] ?? 0),
+            ],
+        ];
+    }
+
     public function conversionCycle(?int $pipelineId = null, ?string $de = null, ?string $ate = null): array
     {
         $where = "d.is_deleted = 0";
@@ -285,26 +323,8 @@ final class PipeAnalyticsRepository
         $aberto = (int)($c['aberto'] ?? 0);
         $fechados = $won + $lost;
 
-        // Ciclo de vendas add_time -> won_time (dias) com distribuicao.
-        $dd = "DATEDIFF(d.won_time, d.add_time)";
-        // Fase 0: com a janela do período global, MESMA regra do KPI "Ciclo médio" (metricasJanela): ganhos com
-        // won_time na janela (limite superior exclusivo), add_time presente e won_time >= add_time.
-        $janela = ''; $pc = $params;
-        if ($de !== null && $ate !== null) {
-            $janela = " AND d.won_time >= :ini AND d.won_time < :fim";
-            $pc[':ini'] = $de . ' 00:00:00';
-            $pc[':fim'] = date('Y-m-d', strtotime($ate . ' +1 day')) . ' 00:00:00';
-        }
-        $stc = $this->pdo->prepare(
-            "SELECT COUNT(*) n, ROUND(AVG({$dd})) avg_d, ROUND(MAX({$dd})) max_d,
-                    SUM({$dd}<=7) b0, SUM({$dd} BETWEEN 8 AND 30) b1,
-                    SUM({$dd} BETWEEN 31 AND 90) b2, SUM({$dd}>90) b3
-               FROM pipe_deals d
-              WHERE {$where} AND d.status='won'
-                    AND d.won_time IS NOT NULL AND d.add_time IS NOT NULL AND d.won_time >= d.add_time{$janela}"
-        );
-        $stc->execute($pc);
-        $cy = $stc->fetch(PDO::FETCH_ASSOC) ?: [];
+        // Ciclo de vendas add_time -> won_time (dias) com distribuicao (PF-001: a mesma consulta, em cicloDaJanela).
+        $ciclo = $this->cicloDaJanela($where, $params, $de, $ate);
 
         // Idade media dos negocios ABERTOS por etapa (estagnacao).
         $sta = $this->pdo->prepare(
@@ -331,17 +351,7 @@ final class PipeAnalyticsRepository
         return [
             'closed'   => ['won' => $won, 'lost' => $lost, 'open' => $aberto],
             'win_rate' => $fechados > 0 ? round($won / $fechados * 100, 1) : null,
-            'cycle'    => [
-                'count'    => (int)($cy['n'] ?? 0),
-                'avg_dias' => isset($cy['avg_d']) && $cy['avg_d'] !== null ? (int)$cy['avg_d'] : null,
-                'max_dias' => isset($cy['max_d']) && $cy['max_d'] !== null ? (int)$cy['max_d'] : null,
-                'buckets'  => [
-                    'ate_7'   => (int)($cy['b0'] ?? 0),
-                    'd8_30'   => (int)($cy['b1'] ?? 0),
-                    'd31_90'  => (int)($cy['b2'] ?? 0),
-                    'mais_90' => (int)($cy['b3'] ?? 0),
-                ],
-            ],
+            'cycle'    => $ciclo,
             'stage_aging' => $aging,
         ];
     }
@@ -703,7 +713,7 @@ final class PipeAnalyticsRepository
         }
 
         // 2) Ciclo: a MESMA regra e janela do KPI "Ciclo médio" (ganhos na janela)
-        if ($quer('ciclo')) $cc = $this->conversionCycle(null, $de, $ate);
+        if ($quer('ciclo')) $cc = ['cycle' => $this->cicloDaJanela('d.is_deleted = 0', [], $de, $ate)];   // PF-001: só o ciclo (a tela não usa totais nem idade)
 
         // 3) Top produtos dos negócios GANHOS no período (itens de pipe_deal_products; cobertura = ganhos do período com produtos lançados)
         if ($quer('top_produtos')) {
