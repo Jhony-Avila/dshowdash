@@ -69,11 +69,35 @@ final class AsaasCobrancas
     private function item(array $i): array
     {
         $x = $i['x'];
-        return ['id' => $i['id'], 'empresa' => $this->empresa($i['conta']), 'cliente_nome' => $i['cliente_nome'], 'vencimento' => $i['venc'],
+        return ['id' => $i['id'], 'empresa' => $this->empresa($i['conta']), 'cliente_ref' => self::ref($i), 'cliente_nome' => $i['cliente_nome'], 'vencimento' => $i['venc'],
                 'valor_original' => AsaasValor::deCentavos($i['c']), 'valor_atualizado' => $i['j'] !== null ? AsaasValor::deCentavos($i['c'] + $i['j']) : null,
                 'juros_multa' => $i['j'] !== null ? AsaasValor::deCentavos($i['j']) : null, 'dias_atraso' => $i['dias'],
                 'forma' => ['codigo' => $x['billing_type'], 'rotulo' => self::FORMA[$x['billing_type'] ?? ''] ?? null],
                 'situacao' => ['status_asaas' => $x['status'], 'negativacao' => $x['status'] === 'DUNNING_REQUESTED', 'protesto' => null, 'cobranca_externa' => null]];
+    }
+
+    /** CB-UX-001 D1 (27/11): chave OPACA do cliente para agrupar na tela (nunca pelo nome). O código cus_ continua SÓ no detalhe. Sem cliente = null. */
+    private static function ref(array $i): ?string { return $i['cliente_id'] === null ? null : substr(hash('sha256', 'asaas-cliente-ref|' . $i['conta'] . '|' . $i['cliente_id']), 0, 16); }
+
+    private static function negativadas(array $l): array { return self::soma(array_filter($l, fn($i) => ($i['x']['status'] ?? null) === 'DUNNING_REQUESTED')); }
+
+    /** CB-UX-001 D3 (27/11): a quebra POR EMPRESA do resumo. Empresa lida = valores medidos (zero é zero); empresa SEM leitura = null (nunca 0). */
+    private function porEmpresa(array $it): array
+    {
+        $out = [];
+        foreach ($this->retrato['contas'] as $c) {
+            $conta = (string) $c['conta']; if ($this->filtro !== null && $conta !== $this->filtro) continue;
+            $dela = array_filter($it, fn($i) => $i['conta'] === $conta);
+            $cli = []; foreach ($dela as $i) if ($i['cliente_id'] !== null) $cli[$i['cliente_id']] = true;
+            $out[$conta] = ['empresa' => $this->empresa($conta), 'lida' => true] + self::soma($dela) + ['clientes' => count($cli), 'negativadas' => self::negativadas($dela)];
+        }
+        foreach ($this->retrato['sem_leitura'] as $c) {
+            $conta = (string) $c['conta']; if (($this->filtro !== null && $conta !== $this->filtro) || isset($out[$conta])) continue;
+            $out[$conta] = ['empresa' => $this->empresa($conta), 'lida' => false, 'valor' => null, 'cobrancas' => null, 'clientes' => null, 'negativadas' => null, 'motivo' => $c['motivo']];
+        }
+        $out = array_values($out);
+        usort($out, fn($a, $b) => [$b['lida'], AsaasValor::centavos((string) ($b['valor'] ?? '0')), $a['empresa']['rotulo']] <=> [$a['lida'], AsaasValor::centavos((string) ($a['valor'] ?? '0')), $b['empresa']['rotulo']]);
+        return $out;
     }
 
     private static function soma(array $l): array { return ['valor' => AsaasValor::deCentavos(array_sum(array_column($l, 'c'))), 'cobrancas' => count($l)]; }
@@ -97,7 +121,8 @@ final class AsaasCobrancas
         }
         usort($porCli, fn($a, $b) => [$b['c'], $b['cobrancas']] <=> [$a['c'], $a['cobrancas']]);
         return ['gerado_em' => $this->geradoEm, 'empresa' => $this->filtro !== null ? $this->empresa($this->filtro) : null] + $this->cobertura() + [
-            'total' => self::soma($it) + ['clientes' => count($clientes)],
+            'total' => self::soma($it) + ['clientes' => count($clientes), 'negativadas' => self::negativadas($it)],   // D2: negativação contada (DUNNING_REQUESTED)
+            'por_empresa' => $this->porEmpresa($it),
             'por_vencimento' => ['mes_atual' => self::soma(array_filter($it, fn($i) => $i['venc'] !== null && str_starts_with($i['venc'], $mes))),
                                  'ultimos_30_dias' => self::soma(array_filter($it, fn($i) => $i['venc'] !== null && $i['venc'] >= $d30)),
                                  'ultimos_3_meses' => self::soma(array_filter($it, fn($i) => $i['venc'] !== null && $i['venc'] >= $m3))],

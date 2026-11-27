@@ -373,8 +373,23 @@ if ($pdo !== null) {
     $cb = new AsaasCobrancas($rt, $agora);
     $rs = $cb->resumo();
     check('cobranças · vencidas_resumo traz gerado_em (hora da conferência, ISO com fuso de Brasília)', isset($rs['gerado_em']) && preg_match('/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d-03:00$/', $rs['gerado_em']) === 1);
-    check('cobranças · resumo: total 135.50 em 4 cobranças de 2 clientes; parcial (conta-z sem leitura)', $rs['total'] === ['valor' => '135.50', 'cobrancas' => 4, 'clientes' => 2]
+    check('cobranças · resumo: total 135.50 em 4 cobranças de 2 clientes; parcial (conta-z sem leitura)', $rs['total'] === ['valor' => '135.50', 'cobrancas' => 4, 'clientes' => 2, 'negativadas' => ['valor' => '100.00', 'cobrancas' => 1]]
         && $rs['completo'] === false && $rs['empresas_sem_leitura'][0]['empresa']['conta'] === 'conta-z', json_encode($rs['total']));
+    // CB-UX-001 (27/11): D2 negativadas no total · D3 por_empresa (lida = medido; sem leitura = null, nunca 0) · D1 cliente_ref opaco na lista
+    $pe = $rs['por_empresa'];
+    check('cobranças · D3 por_empresa: conta-v lida (135.50 · 4 · 2 clientes · negativadas 100.00/1) e conta-z SEM leitura = null em tudo, com o motivo', count($pe) === 2
+        && $pe[0] === ['empresa' => ['conta' => 'conta-v', 'rotulo' => 'conta-v'], 'lida' => true, 'valor' => '135.50', 'cobrancas' => 4, 'clientes' => 2, 'negativadas' => ['valor' => '100.00', 'cobrancas' => 1]]
+        && $pe[1]['lida'] === false && $pe[1]['valor'] === null && $pe[1]['cobrancas'] === null && $pe[1]['negativadas'] === null && $pe[1]['motivo'] === 'nunca_sincronizada', json_encode($pe));
+    check('cobranças · D3 a soma das empresas LIDAS fecha com o total (centavos)', array_sum(array_map(fn($e) => AsaasValor::centavos($e['valor']), array_filter($pe, fn($e) => $e['lida']))) === AsaasValor::centavos($rs['total']['valor'])
+        && array_sum(array_column(array_filter($pe, fn($e) => $e['lida']), 'cobrancas')) === $rs['total']['cobrancas']);
+    $pz = (new AsaasCobrancas($rt, $agora, 'conta-z'))->resumo()['por_empresa'];
+    check('cobranças · D3 com filtro conta-z: só ela, sem leitura (null)', count($pz) === 1 && $pz[0]['empresa']['conta'] === 'conta-z' && $pz[0]['valor'] === null && $pz[0]['lida'] === false);
+    $pv = (new AsaasCobrancas($rt, $agora, 'conta-v'))->resumo();
+    check('cobranças · D2/D3 com filtro conta-v: negativadas 100.00/1 e por_empresa só a conta-v', $pv['total']['negativadas'] === ['valor' => '100.00', 'cobrancas' => 1] && count($pv['por_empresa']) === 1 && $pv['por_empresa'][0]['empresa']['conta'] === 'conta-v');
+    $li = $cb->lista('valor', 'desc', 1, 50)['itens']; $refs = array_column($li, 'cliente_ref', 'id');
+    check('cobranças · D1 cliente_ref na lista: opaco (16 hex), igual para o MESMO cliente (v1, v2, v3 = cus_v) e diferente do cus_w (v8)', preg_match('/^[0-9a-f]{16}$/', (string) $refs['v1']) === 1
+        && $refs['v1'] === $refs['v2'] && $refs['v2'] === $refs['v3'] && $refs['v8'] !== $refs['v1'] && !in_array(null, $refs, true), json_encode($refs));
+    check('cobranças · D1 o cliente_ref não revela o código (não contém cus_ nem o id) e o detalhe segue com o código', !str_contains(json_encode($li), 'cus_') && $cb->detalhe('v1')['cliente_codigo'] === 'cus_v' && $cb->detalhe('v1')['cliente_ref'] === $refs['v1']);
     check('cobranças · faixas: 1-30 (3 dias: 10.00), 31-90 (53 dias: 20.50), 91-180 (114 dias: 100.00); sem vencimento 1', $rs['faixas'][0] === ['faixa' => '1-30', 'valor' => '10.00', 'cobrancas' => 1]
         && $rs['faixas'][1]['valor'] === '20.50' && $rs['faixas'][2] === ['faixa' => '91-180', 'valor' => '100.00', 'cobrancas' => 1] && $rs['faixas'][3]['cobrancas'] === 0 && $rs['sem_vencimento'] === 1, json_encode($rs['faixas']));
     check('cobranças · por vencimento: mês atual 10.00 · 30 dias 10.00 · 3 meses 30.50 (o de 01/08 fica fora de 23/08)', $rs['por_vencimento']['mes_atual']['valor'] === '10.00' && $rs['por_vencimento']['ultimos_30_dias']['valor'] === '10.00'
