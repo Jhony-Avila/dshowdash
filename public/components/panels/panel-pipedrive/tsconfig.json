@@ -16,8 +16,8 @@
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] },
+    "paths": { "@/*": ["src/*"], "@shared/*": ["../../_shared-react/*"] },
     "types": ["vite/client"]
   },
-  "include": ["src", "vite.config.ts"]
+  "include": ["src", "vite.config.ts", "../../_shared-react/des/**/*.tsx"]
 }

@@ -15,6 +15,20 @@
 }
 
 /* ── KPIs ── */
+/* 27/11 (VERDE): faixa de KPI compacta — UMA linha de cartões DES compactos (56 px). Largura mínima por cartão; sobrando espaço, divide igual;
+   faltando (tela estreita), a faixa rola para os lados com encaixe e mostra a ponta do próximo cartão (sinal de que há mais). */
+[data-pp-react-root] .hud-kfaixa { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(114px,1fr); gap:8px; margin-bottom:15px; overflow-x:auto;
+  scroll-snap-type:x proximity; scrollbar-width:thin; overscroll-behavior-x:contain; }
+[data-pp-react-root] .hud-kfaixa:focus-visible { outline:2px solid var(--hud-blue); outline-offset:-2px; border-radius:10px; }
+[data-pp-react-root] .hud-kc { min-width:0; scroll-snap-align:start; border-radius:10px; }
+[data-pp-react-root] .hud-kc .des2-kpi--compacto { height:56px; padding-inline:8px; }   /* 8 cartões a 1440: +4 px úteis para o selo (QI 27/11) */
+[data-pp-react-root] .hud-kc.click { cursor:pointer; }
+[data-pp-react-root] .hud-kc.click:hover .des2-kpi--compacto { border-color:var(--hud-blue); }
+[data-pp-react-root] .hud-kc:focus-visible { outline:2px solid var(--hud-blue); outline-offset:-2px; }
+[data-pp-react-root] .hud-kc .des2-kpi__sub { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+[data-pp-react-root] .hud-kc .des2-kpi__selo { font-size:11px; padding:0 5px; }   /* decisão do arquiteto 27/11 (opção a): selo 11 px só nesta faixa ("Desatualizado" cabe a 1440); o DES não muda */
+[data-pp-react-root] .hud-kc .des2-kpi__sub .good { color:#08c78f; } [data-pp-react-root] .hud-kc .des2-kpi__sub .bad { color:#f75f70; } [data-pp-react-root] .hud-kc .des2-kpi__sub .neutral { color:#6ba5fa; }
+@media (max-width:600px) { [data-pp-react-root] .hud-kfaixa { grid-auto-columns:minmax(150px,44%); } }
 [data-pp-react-root] .hud-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:15px; }
 [data-pp-react-root] .hud-stat { height:124px; background:var(--hud-panel); border:1px solid var(--hud-stroke); border-radius:14px; padding:14px 17px;
   box-shadow:var(--hud-shadow); position:relative; overflow:hidden; color:var(--hud-ink); transition:transform .18s, box-shadow .18s, border-color .18s; }

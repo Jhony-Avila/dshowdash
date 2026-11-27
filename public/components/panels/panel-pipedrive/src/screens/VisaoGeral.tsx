@@ -21,7 +21,7 @@ import { apiGet, chaves, ApiError } from '../lib/api';
 import { fmtNum, fmtData } from '../lib/format';
 import { PageHeader } from './PageHeader';
 import { EstadoErro, SkeletonBloco } from './Estados';
-import { HudKpis, BlocoGanhos, RankingVendedores, PainelDrill, useTooltipNosCortes, type Drill } from './VisaoHud';
+import { HudKpisCompactos, BlocoGanhos, RankingVendedores, PainelDrill, useTooltipNosCortes, type Drill } from './VisaoHud';
 import { BlocoEtapas, BlocoCiclo, TopProdutos, PedeAtencao, UsoApiHud } from './VisaoHud2';
 import type {
   PipeStatus, PipeOverview, PipeSummary, PipePeriodoId,
@@ -144,7 +144,8 @@ export function VisaoGeral({ status, onConfig, onNegocios, onAlertas }: VisaoGer
             <NotaPeriodo resumo={resumoQ.data} />
 
             {/* P13 · desenho R2: 8 KPIs em HUD → Ganhos | Desfecho → Ranking. Os demais blocos seguem como estavam. */}
-            <HudKpis resumo={resumoQ.data} carregando={resumoQ.isLoading} falhou={!!resumoQ.error && !resumoQ.data}
+            {/* 27/11 (VERDE): a faixa de KPI no cartão compacto do DES (uma linha de 56 px; a 390 rola para os lados) */}
+            <HudKpisCompactos resumo={resumoQ.data} carregando={resumoQ.isLoading} falhou={!!resumoQ.error && !resumoQ.data}
               onDrill={setDrill} onDetalhes={onConfig} />
             <BlocoGanhos resumo={resumoQ.data} carregando={resumoQ.isLoading} falhou={!!resumoQ.error && !resumoQ.data} onDrill={setDrill} />
             <RankingVendedores periodo={periodo} resumo={resumoQ.data} onDrill={setDrill} />

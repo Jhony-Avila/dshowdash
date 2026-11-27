@@ -19,7 +19,11 @@ export default defineConfig({
   plugins: [react()],
 
   resolve: {
-    alias: { '@': resolve(RAIZ, 'src') },
+    alias: {
+      '@': resolve(RAIZ, 'src'),
+      // 27/11 (VERDE): faixa de KPI com o cartão compacto do pacote DES (o mesmo das Vencidas), como no panel-dashboard
+      '@shared': resolve(RAIZ, '../../_shared-react'),
+    },
   },
 
   css: {

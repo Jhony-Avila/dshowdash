@@ -24,6 +24,8 @@ import { DealDrawer } from './DealDrawer';
 import type {
   PipeSummary, PipeSummaryKpi, PipeMetrics, PipeDealsPage, PipePeriodoId, PipeEstadoDado, PipeOwnerRow,
 } from '../shell/types';
+import { DSKpiCardV2 } from '@shared/des/DSKpiCardV2';
+import type { EstadoKpi, FormatoKpi } from '@shared/des/DSKpiCard';
 import '../styles/visao-hud.css';
 
 // ── utilitários ──────────────────────────────────────────────────────────────
@@ -242,6 +244,68 @@ export function HudKpis({ resumo, carregando, falhou, onDrill, onDetalhes, semDr
   );
 
   return <div className="hud-grid" aria-busy={carregando}>{cartoes}</div>;
+}
+
+// ── Faixa de KPI compacta (27/11, VERDE · ordem do arquiteto) ──────────────────
+// Os MESMOS 8 indicadores, os mesmos dados, estados, variação e clique do HudKpis, no cartão compacto do pacote DES (DSKpiCardV2 compacto,
+// o das Vencidas): faixa de UMA linha travada em 56 px (contrato espacial de 26/11). Sem micrográfico (o compacto não tem; a série segue nos
+// gráficos abaixo). Tela estreita: rolagem horizontal com encaixe (a região recebe foco pelo teclado); nada se esconde atrás de "ver mais".
+const ESTADO_KPI: Record<EstadoTela, EstadoKpi> = { carregando: 'carregando', atualizado: 'ok', desatualizado: 'desatualizado', parcial: 'parcial', indisponivel: 'erro' };
+const FORMATO_KPI: Record<string, FormatoKpi> = { brl: 'moeda-inteira', pct: 'percentual', dias: 'inteiro' };
+/** rótulo curto no cartão compacto (cabe a 1440 sem cortar); o nome completo vai na dica e no texto do leitor de tela */
+const ROTULO_CURTO: Record<string, string> = { ganhos: 'Ganhos', criados: 'Criados', perdidos: 'Perdidos', taxa_conversao: 'Conversão', ciclo_medio: 'Ciclo médio (dias)' };
+
+export function HudKpisCompactos({ resumo, carregando, falhou, onDrill, onDetalhes }: {
+  resumo?: PipeSummary; carregando: boolean; falhou: boolean; onDrill: (d: Drill) => void; onDetalhes?: () => void;
+}) {
+  const unidade = useContext(UnidadeCtx);
+  const per = resumo?.periodo; const leitura = resumo?.leitura;
+  const ctx = per ? `Mesmo filtro da origem · Período: ${faixa(per.de, per.ate)} · Pipedrive` : '';
+  const base = per ? `vs. ${per.dias_anterior} dias anteriores` : 'vs. período anterior';
+  const baseCurta = per ? `${per.dias_anterior} d` : 'ant.';
+  // QI 27/11 (recorte): a 1440 o cartão compacto tem ~96 px úteis → a linha de contexto leva SÓ o essencial; fora de 'ok' o estado é o selo
+  // (Desatualizado / Dados parciais / Indisponível) e o motivo por extenso vai na dica (title + texto do leitor de tela).
+  const motivoDe = (estado: EstadoTela, extra?: string | null): string | undefined =>
+    estado === 'indisponivel' ? 'Consulta indisponível' : estado === 'desatualizado' ? `Desatualizado: última leitura ${leitura?.atualizado_em ? hhmm(leitura.atualizado_em) : '—'}` : extra ?? undefined;
+  const seloDe = (estado: EstadoTela) => (estado === 'indisponivel' ? { texto: 'Indisponível', tom: 'erro' as const } : undefined);
+  const envolver = (chave: string, clicavel: boolean, abrir: () => void, card: ReactNode) => (
+    <div key={chave} className={`hud-kc${clicavel ? ' click' : ''}`} data-hud-kc={chave} role={clicavel ? 'button' : undefined} tabIndex={clicavel ? 0 : undefined}
+      onClick={clicavel ? abrir : undefined} onKeyDown={(e) => { if (clicavel && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); abrir(); } }}
+      >{card}</div>);   // a dica vai no cartão (title + texto do leitor de tela: DSKpiCardV2 `dica`)
+
+  const cartoes: ReactNode[] = DEFS.map((def) => {
+    const k = resumo?.kpis.find((x) => x.chave === def.chave);
+    const estado: EstadoTela = carregando ? 'carregando' : falhou || !k ? 'indisponivel' : (k.estado ?? 'atualizado');
+    const v = !carregando && !falhou && k ? variacao(k, def.polaridade) : null;
+    const clicavel = estado !== 'carregando' && estado !== 'indisponivel' && !!def.drill && !!per && k?.valor != null;
+    const abrir = () => { if (clicavel && def.drill && per) onDrill({ ...def.drill(per.de, per.ate, ctx), esperado: { n: def.chave === 'ganhos' || def.chave === 'perdidos' || def.chave === 'criados' ? k?.valor ?? null : null, valor: def.chave === 'valor_ganho' ? k?.valor ?? null : null } }); };
+    const dias = k?.formato === 'dias';
+    const sub = v ? <><b className={v.classe}>{v.texto}</b> · {baseCurta}</> : <>sem comparação</>;
+    const extra = estado === 'parcial' && k?.cobertura ? `${fmtNum(k.cobertura.sem_data)} sem data` : null;
+    const nome = k?.rotulo ?? def.rotulo;
+    const dica = [nome, motivoDe(estado, extra), k?.dica, v ? `${v.texto} ${v.adj ? `(${v.adj}) ` : ''}${base}` : null, clicavel ? 'Clique para ver os negócios' : null].filter(Boolean).join(' · ') || undefined;
+    return envolver(def.chave, clicavel, abrir,
+      <DSKpiCardV2 compacto rotulo={ROTULO_CURTO[def.chave] ?? `${nome}${dias ? ' (dias)' : ''}`} valor={estado === 'indisponivel' ? null : k?.valor ?? null}
+        formato={FORMATO_KPI[k?.formato ?? ''] ?? 'inteiro'} estado={ESTADO_KPI[estado]} sub={sub} selo={seloDe(estado)} dica={dica} fonte="Pipedrive" dominio="comercial" />);
+  });
+
+  const e = resumo?.estado;
+  const estAgora: EstadoTela = carregando ? 'carregando' : falhou || !e || e.valor_aberto == null ? 'indisponivel' : (e.estado ?? 'atualizado');
+  const clicAgora = estAgora !== 'carregando';
+  const abrirAgora = () => {
+    if (estAgora === 'indisponivel') { onDetalhes?.(); return; }
+    onDrill({ titulo: 'Em aberto agora', contexto: 'Situação atual da carteira · sem período · Pipedrive', rotuloValor: 'Valor em aberto', filtros: { status: 'open' }, esperado: { n: e?.abertos ?? null, valor: e?.valor_aberto ?? null } });
+  };
+  const dicaAgora = [`Em aberto agora: ${contar(e?.abertos, unidade)}`, motivoDe(estAgora), estAgora === 'indisponivel' ? 'Clique para ver os detalhes da leitura' : 'Situação atual da carteira (sem período anterior) · Clique para ver os negócios'].filter(Boolean).join(' · ');
+  cartoes.push(envolver('agora', clicAgora, abrirAgora,
+    <DSKpiCardV2 compacto rotulo="Em aberto agora" valor={estAgora === 'indisponivel' ? null : e?.valor_aberto ?? null} formato="moeda-inteira" estado={ESTADO_KPI[estAgora]}
+      sub={<>{contar(e?.abertos, unidade)}</>} selo={seloDe(estAgora)} dica={dicaAgora} fonte="Pipedrive" dominio="comercial" />));
+
+  return (
+    <div className="des-escopo hud-kfaixa" data-hud-kfaixa role="region" aria-label="Indicadores do período (em tela estreita, role para os lados)" tabIndex={0} aria-busy={carregando}>
+      {cartoes}
+    </div>
+  );
 }
 
 // ── Ganhos ao longo do tempo + Desfecho ──────────────────────────────────────
