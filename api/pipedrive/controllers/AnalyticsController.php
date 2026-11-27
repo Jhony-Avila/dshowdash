@@ -64,9 +64,15 @@ final class PipeAnalyticsController
     public static function overviewBlocks(string $method, PDO $pdo): void
     {
         requireMethod(['GET']);
-        $q = pipe_query(['periodo']);
+        $q = pipe_query(['periodo', 'bloco']);
         $per = isset($q['periodo']) && in_array($q['periodo'], PipeAnalyticsRepository::PERIODOS, true) ? (string)$q['periodo'] : null;
-        ApiResponse::success((new PipeAnalyticsRepository($pdo))->visaoGeralBlocos($per), ['ts' => date('c')]);
+        // PF-001 (26/11 noite): ?bloco=<um dos 5> executa SÓ as consultas daquele bloco (a tela pede cada bloco à parte: um bloco lento ou com
+        // erro não prende os outros). Lista fechada: valor fora dela = 400, sem consulta. Sem `bloco`, a resposta é a de sempre (os 5).
+        $bloco = $q['bloco'] ?? null;
+        if ($bloco !== null && !in_array($bloco, PipeAnalyticsRepository::BLOCOS, true)) {
+            ApiResponse::error(ApiResponse::ERR_VALIDATION_ERROR, 400, ['message' => 'bloco inválido', 'campos' => ['bloco']]);
+        }
+        ApiResponse::success((new PipeAnalyticsRepository($pdo))->visaoGeralBlocos($per, $bloco), ['ts' => date('c')]);
     }
 
     /** GET /alerts-app?dias_parado=30&valor_alto=50000 — alertas do "Pede atenção" no formato AlertOut do app (contrato para a ESQUERDA). */
