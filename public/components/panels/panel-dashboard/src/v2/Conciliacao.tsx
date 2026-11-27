@@ -131,7 +131,9 @@ function LinhaEmpresa({ e }: { e: ConcEmpresa }) {
 export function Conciliacao() {
   const b = useBloco((s) => lerConciliacao(s), []);
   const [legenda, setLegenda] = useState(false);
-  const naoMostra = b.erro instanceof ErroV2 && (b.erro.http === 404 || b.erro.semAcesso) && !b.dados;
+  // Reforço P2 (AZUL, 27/11): 404 (flag) ou sem acesso (403/semAcesso) RETIRA o bloco na hora, MESMO com uma leitura anterior na tela —
+  // conteúdo financeiro protegido não fica visível depois da revogação. Falha transitória (5xx/rede) continua mostrando a última leitura.
+  const naoMostra = b.erro instanceof ErroV2 && (b.erro.http === 404 || b.erro.http === 403 || b.erro.semAcesso);
   if (naoMostra) return null;                                 // sem a flag ou sem financeiro_asaas_leitura: o bloco não existe para a pessoa
   if (b.carregando && !b.dados) return <div className="gv2-integ gv2-integ--osso" aria-busy><span className="gv2-osso" style={{ width: '30%' }} /><span className="gv2-osso" style={{ width: '55%' }} /></div>;
   const d = b.dados; const empresas = d?.empresas ?? null;

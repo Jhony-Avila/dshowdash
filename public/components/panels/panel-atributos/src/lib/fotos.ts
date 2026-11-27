@@ -34,7 +34,7 @@ export const sessaoReentravel = (codigo: string) => codigo !== 'USER_DISABLED';
  *    `authenticated:false`, `user:null`);
  *  - desconhecido: check 503 SESSION_CHECK_UNAVAILABLE, rede, timeout, 403 de CSRF, 5xx. */
 export type SaidaSessao = { estado: 'encerrada'; sessaoAntiga: string | null } | { estado: 'desconhecido'; motivo: string };
-type Checagem = { estado: 'autenticado'; token: string | null; csrf: string } | { estado: 'nao_autenticado' } | { estado: 'desconhecido'; motivo: string };
+type Checagem = { estado: 'autenticado'; token: string | null; csrf: string; usuario: number | null } | { estado: 'nao_autenticado' } | { estado: 'desconhecido'; motivo: string };
 const comPrazo = (ms: number) => { const c = new AbortController(); const t = window.setTimeout(() => c.abort(), ms); return { sinal: c.signal, fim: () => window.clearTimeout(t) }; };
 
 /** check.php pelo validador ÚNICO de sessão encerrada (core/auth/sessao-encerrada, DIREITA 993dd85e — o mesmo arquivo-fonte da P7, nunca
@@ -45,8 +45,15 @@ export async function checarSessao(): Promise<Checagem> {
   const p = comPrazo(10000);
   try {
     const r = await fetch('/api/auth/check.php', { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' }, signal: p.sinal });
+    const copia = r.clone();
     const l = await lerRespostaCheck(r);
-    if (l.estado === 'ativa') return { estado: 'autenticado', token: l.token, csrf: l.csrf };
+    if (l.estado === 'ativa') {
+      // Reforço P2: QUEM está na sessão (id do usuário), para a retomada não atravessar contas; ilegível = null (nunca retoma por suposição)
+      let usuario: number | null = null;
+      try { const id = (JSON.parse(await copia.text()) as { data?: { user?: { id?: unknown } } }).data?.user?.id; usuario = Number.isSafeInteger(Number(id)) && Number(id) > 0 ? Number(id) : null; } catch { usuario = null; }
+      if (usuario !== null) titularPagina ??= usuario;
+      return { estado: 'autenticado', token: l.token, csrf: l.csrf, usuario };
+    }
     if (l.estado === 'encerrada') return { estado: 'nao_autenticado' };
     return { estado: 'desconhecido', motivo: l.motivo };
   } catch { return { estado: 'desconhecido', motivo: 'rede ou tempo esgotado' }; } finally { p.fim(); }
@@ -93,13 +100,23 @@ export async function entrarNovamente(): Promise<SaidaSessao> {
   return r;
 }
 
+/** Reforço P2 (AZUL, 27/11, aprovado pelo arquiteto): TITULAR da fila desta página = o 1º usuário autenticado visto aqui. "Entrar novamente" abre o
+ *  login em OUTRA aba; se lá entrar OUTRA conta, a fila desta aba (fotos escolhidas por outra pessoa) NUNCA é retomada com a sessão dela. */
+let titularPagina: number | null = null;
+export const titularDaFila = (): number | null => titularPagina;
+/** Chamada ao abrir a ficha (sessão ativa): fixa o titular. Sem confirmação = titular desconhecido = nenhuma retomada. */
+export async function lembrarTitular(): Promise<number | null> { if (titularPagina === null) await checarSessao(); return titularPagina; }
+
 /** Retomar depois de "Entrar novamente": só com um LOGIN REAL — autenticado e com uma sessão diferente da que foi encerrada. A sessão
  *  antiga ainda viva (logout que não pegou) ou o check indisponível NUNCA contam como reentrada. */
-export async function sessaoRenovada(sessaoAntiga: string | null): Promise<'nova' | 'sem_login' | 'antiga' | 'desconhecido'> {
+export async function sessaoRenovada(sessaoAntiga: string | null): Promise<'nova' | 'sem_login' | 'antiga' | 'desconhecido' | 'outra_conta'> {
+  const titular = titularPagina;   // lido ANTES da nova checagem (que não troca um titular já fixado)
   const c = await checarSessao();
   if (c.estado === 'desconhecido') return 'desconhecido';
   if (c.estado === 'nao_autenticado') return 'sem_login';
   if (sessaoAntiga !== null && (c.token === null || c.token === sessaoAntiga)) return 'antiga';
+  // Reforço P2: sessão nova, mas de OUTRA pessoa (ou titular/usuário desconhecido) → não retoma
+  if (titular === null || c.usuario === null || c.usuario !== titular) return 'outra_conta';
   return 'nova';
 }
 /** Proxy corrigido (35f037cd): o canal recusou a assinatura (401 ou 403 assinatura_invalida do app) → 503 APP_UNAVAILABLE com desfecho

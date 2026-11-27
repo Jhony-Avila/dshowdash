@@ -28,6 +28,11 @@
 export const VERSION = '9.3.0-P2-ENTERPRISE';
 export const MODULE_ID = 'panel-01/ui/kanban-view';
 
+// Reforço P2 (AZUL, 27/11, aprovado pelo arquiteto): todo dado interpolado em HTML passa por escape (texto E atributo; aspas incluídas).
+const escHtml = (v: unknown): string => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
+/** Cor só se for um valor CSS simples (#hex, nome, rgb/hsl); qualquer outra coisa vira a cor neutra (nada injeta estilo). */
+const corSegura = (v: unknown): string => (/^(#[0-9a-fA-F]{3,8}|[a-zA-Z]{3,20}|(rgb|hsl)a?\([\d\s.,%]+\))$/.test(String(v ?? '')) ? String(v) : '#888');
+
 export const DEFAULT_COLUMNS = [
   { id: 'pendente', label: 'Pendente', color: '#f59e0b', status: 'Pendente' },
   { id: 'em-analise', label: 'Em Análise', color: '#3b82f6', status: 'Em Análise' },
@@ -66,14 +71,14 @@ KanbanViewManager.prototype.render = function() {
   let html = '<div class="p01-kanban">';
   this.columns.forEach((col: Record<string, unknown>) => {
     const items = self._groupedData[col.status as string] || [];
-    html += `<div class="p01-kanban-column" data-status="${col.status}" style="border-top-color: ${col.color}">`;
-    html += `<div class="p01-kanban-header"><span class="p01-kanban-title">${col.label}</span><span class="p01-kanban-count">${items.length}</span></div>`;
+    html += `<div class="p01-kanban-column" data-status="${escHtml(col.status)}" style="border-top-color: ${corSegura(col.color)}">`;
+    html += `<div class="p01-kanban-header"><span class="p01-kanban-title">${escHtml(col.label)}</span><span class="p01-kanban-count">${items.length}</span></div>`;
     html += '<div class="p01-kanban-cards">';
     items.forEach((item: Record<string, unknown>) => {
       const id = item.id || item.Id_Requisicao;
-      html += `<div class="p01-kanban-card" draggable="true" data-id="${id}">`;
-      html += `<div class="p01-kanban-card-id">#${id}</div>`;
-      html += `<div class="p01-kanban-card-title">${((item.descricao || item.Descricao_Requisicao || '-') as string).substring(0, 50)}</div></div>`;
+      html += `<div class="p01-kanban-card" draggable="true" data-id="${escHtml(id)}">`;
+      html += `<div class="p01-kanban-card-id">#${escHtml(id)}</div>`;
+      html += `<div class="p01-kanban-card-title">${escHtml(String(item.descricao || item.Descricao_Requisicao || '-').substring(0, 50))}</div></div>`;
     });
     html += '</div></div>';
   });

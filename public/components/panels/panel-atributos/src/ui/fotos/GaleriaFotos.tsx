@@ -6,7 +6,7 @@
 // Aba Fotos: "Definir como principal", Reordenar (arrastar ou setas; "A primeira foto será a principal"; Salvar ordem / Cancelar), remover com Desfazer, restaurar.
 import React from 'react';
 import { ErroApi, novaChaveOperacao } from '../../lib/api';
-import { ACEITOS, conferirFoto, DETALHES_LIMITES, ehHeic, entrarNovamente, sessaoRenovada, FORMATOS_TEXTO, LIMITE_BYTES, marcarCapa, ordenarFotos, prepararArquivo, publicarFoto, removerFoto, restaurarFoto,
+import { ACEITOS, conferirFoto, DETALHES_LIMITES, ehHeic, entrarNovamente, lembrarTitular, sessaoRenovada, FORMATOS_TEXTO, LIMITE_BYTES, marcarCapa, ordenarFotos, prepararArquivo, publicarFoto, removerFoto, restaurarFoto,
   urlImagem, type EstadoGaleria, type FotoGaleria, type ReciboFoto, type RespostaFoto, classificarErroFoto } from '../../lib/fotos';
 import { marcarPendencia } from '../../lib/pendencias';
 import { Botao, Dialogo, Foto } from '../Comuns';
@@ -22,6 +22,9 @@ const VAZIA: Item[] = [];
 const ler = (p: number) => filas.get(p) ?? VAZIA;
 const gravar = (p: number, f: (xs: Item[]) => Item[]) => { filas.set(p, f(ler(p))); ouvintes.get(p)?.forEach((o) => o()); };
 const mudar = (p: number, id: number, d: Partial<Item>) => gravar(p, (xs) => xs.map((x) => (x.id === id ? { ...x, ...d } : x)));
+/** Reforço P2: outra conta entrou nesta aba → as filas (fotos escolhidas pela pessoa anterior) saem da tela e não são enviadas. */
+function descartarFilas() { for (const [p, xs] of filas) { xs.forEach((x) => { if (x.preview) URL.revokeObjectURL(x.preview); }); filas.set(p, VAZIA); ouvintes.get(p)?.forEach((o) => o()); } }
+void lembrarTitular();   // titular da fila = quem abriu a ficha (sessão ativa); sem confirmação, nenhuma retomada acontece
 function useFila(p: number): Item[] {
   return React.useSyncExternalStore((o) => { const s = ouvintes.get(p) ?? new Set(); s.add(o); ouvintes.set(p, s); return () => { s.delete(o); }; }, () => ler(p));
 }
@@ -47,6 +50,7 @@ export function EntrarNovamente({ aoContinuar, rotulo = 'Continuar' }: { aoConti
     if (fase.f !== 'aguardando') return; const antiga = fase.sessaoAntiga; setFase({ f: 'conferindo', sessaoAntiga: antiga });
     void sessaoRenovada(antiga).then((v) => {
       if (v === 'nova') { setFase({ f: 'inicial' }); aoContinuar(); return; }
+      if (v === 'outra_conta') { descartarFilas(); setFase({ f: 'aguardando', sessaoAntiga: antiga, aviso: 'Outra conta entrou nesta aba. Por segurança, os envios pendentes não continuam e a fila foi descartada; recarregue a página para trabalhar com a sua conta.' }); return; }
       setFase({ f: 'aguardando', sessaoAntiga: antiga, aviso: v === 'desconhecido' ? 'Não foi possível verificar a sua entrada agora. Tente de novo.'
         : v === 'antiga' ? 'A sessão anterior ainda está ativa. Entre de novo na outra aba e depois clique em “' + rotulo + '”.'
         : 'Ainda não identificamos a sua entrada. Entre na outra aba e depois clique em “' + rotulo + '”.' });

@@ -27,6 +27,11 @@
 export const VERSION = '9.3.0-P2-ENTERPRISE';
 export const MODULE_ID = 'panel-01/ui/timeline-view';
 
+// Reforço P2 (AZUL, 27/11, aprovado pelo arquiteto): todo dado interpolado em HTML passa por escape (texto E atributo; aspas incluídas).
+const escHtml = (v: unknown): string => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
+/** Cor só se for um valor CSS simples (#hex, nome, rgb/hsl); qualquer outra coisa vira a cor neutra (nada injeta estilo). */
+const corSegura = (v: unknown): string => (/^(#[0-9a-fA-F]{3,8}|[a-zA-Z]{3,20}|(rgb|hsl)a?\([\d\s.,%]+\))$/.test(String(v ?? '')) ? String(v) : '#888');
+
 export function TimelineViewManager(this: any, options: Record<string, unknown> = {}) {
   this.dateField = options.dateField || 'Data_Requisicao';
   this.valueField = options.valueField || 'valor_total';
@@ -95,7 +100,7 @@ TimelineViewManager.prototype._renderDay = function(dateKey: string, group: Reco
   
   let itemsHtml = (group.items as Record<string, unknown>[]).slice(0, 5).map((item: Record<string, unknown>) => {
     const id = item.id || item.Id_Requisicao;
-    return `<div class="p01-timeline-item" data-id="${id}"><span class="p01-timeline-item-id">#${id}</span><span class="p01-timeline-item-desc">${self._truncate(item.descricao || item.Descricao_Requisicao || '-', 40)}</span><span class="p01-timeline-item-value">R$ ${self._formatNumber(item.valor_total || item.Valor_Total)}</span></div>`;
+    return `<div class="p01-timeline-item" data-id="${escHtml(id)}"><span class="p01-timeline-item-id">#${escHtml(id)}</span><span class="p01-timeline-item-desc">${escHtml(self._truncate(String(item.descricao || item.Descricao_Requisicao || '-'), 40))}</span><span class="p01-timeline-item-value">R$ ${self._formatNumber(item.valor_total || item.Valor_Total)}</span></div>`;
   }).join('');
   
   const moreCount = (group.items as unknown[]).length - 5;

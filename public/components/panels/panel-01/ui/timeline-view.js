@@ -1,5 +1,7 @@
 const VERSION = "9.3.0-P2-ENTERPRISE";
 const MODULE_ID = "panel-01/ui/timeline-view";
+const escHtml = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const corSegura = (v) => /^(#[0-9a-fA-F]{3,8}|[a-zA-Z]{3,20}|(rgb|hsl)a?\([\d\s.,%]+\))$/.test(String(v ?? "")) ? String(v) : "#888";
 function TimelineViewManager(options = {}) {
   this.dateField = options.dateField || "Data_Requisicao";
   this.valueField = options.valueField || "valor_total";
@@ -58,7 +60,7 @@ TimelineViewManager.prototype._renderDay = function(dateKey, group) {
   const month = date.toLocaleDateString("pt-BR", { month: "short" });
   let itemsHtml = group.items.slice(0, 5).map((item) => {
     const id = item.id || item.Id_Requisicao;
-    return `<div class="p01-timeline-item" data-id="${id}"><span class="p01-timeline-item-id">#${id}</span><span class="p01-timeline-item-desc">${self._truncate(item.descricao || item.Descricao_Requisicao || "-", 40)}</span><span class="p01-timeline-item-value">R$ ${self._formatNumber(item.valor_total || item.Valor_Total)}</span></div>`;
+    return `<div class="p01-timeline-item" data-id="${escHtml(id)}"><span class="p01-timeline-item-id">#${escHtml(id)}</span><span class="p01-timeline-item-desc">${escHtml(self._truncate(String(item.descricao || item.Descricao_Requisicao || "-"), 40))}</span><span class="p01-timeline-item-value">R$ ${self._formatNumber(item.valor_total || item.Valor_Total)}</span></div>`;
   }).join("");
   const moreCount = group.items.length - 5;
   if (moreCount > 0) {
