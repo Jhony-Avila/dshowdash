@@ -1,4 +1,15 @@
 <?php
+// ═══ APOSENTADO em 27/11/2026 (decisão do Jhony, 05:00) ═══ carrossel da tela inicial · slide-02.
+// Motivo: o require abaixo aponta para api/modules/_init.php, que não existe → o endpoint respondia 500 desde sempre; nenhuma tela, menu,
+// rota ou cron o consome (o componente public/components/carousel não chama /api/modules/carousel). Saiu da lista da MIG-001 (ficam 51).
+// Agora: guarda de sessão (401 sem sessão, como o resto da API) e depois 410 "aposentado". O código legado fica abaixo, preservado e INALCANÇÁVEL.
+// Religar = decisão nova: corrigir o caminho para __DIR__ . '/../_init.php' e manter a guarda de sessão. VINHO (ACIMA_ESQUERDA).
+require_once __DIR__ . '/../../../core/AcessoSessao.php';
+AcessoSessao::exigir();
+require_once __DIR__ . '/../../../_helpers/ApiResponse.php';
+ApiResponse::error('APOSENTADO', 410, ['aposentado_em' => '2026-11-27']);   // mesmo envelope do resto da API: {ok:false, data:null, error}
+exit;
+// ─── código legado (aposentado; não executa) ───
 // Carousel Slide 02 - Distribuicao de Status
 // @version 2.3.0-P06-ENTERPRISE
 
