@@ -123,7 +123,13 @@ export interface Conciliacao { gerado_em: string; janela: { de: string; ate: str
 export function lerConciliacao(s?: AbortSignal) { return ler<Conciliacao>('/conciliacao-asaas.php?dias=30', s, 20000); }
 /** 26/11 (CIMA): cartão do Asaas — contrato da ACIMA_ESQUERDA (P21, GET /api/geral/v2/asaas.php; GeralV2Asaas::cartao). Dinheiro em TEXTO.
  *  404 = flag global `geral_v2_asaas` desligada OU sem `financeiro_asaas_leitura` → o cartão NÃO aparece. Total só com TODAS as empresas ok. */
-export interface AsaasValores { recebido_hoje: string; a_receber_7d: string; vencidas: string; vencidas_qtd: number }
+/** 27/11 (VINHO 70286e71): vencidas/vencidas_qtd = só OVERDUE (compatível); o TOTAL da tela das Vencidas = vencidas_total(_qtd) = OVERDUE + DUNNING_REQUESTED (negativacao) */
+export interface AsaasValores { recebido_hoje: string; a_receber_7d: string; vencidas: string; vencidas_qtd: number; negativacao?: string; negativacao_qtd?: number; vencidas_total?: string; vencidas_total_qtd?: number }
+/** O que o cartão mostra como "Vencidas": o total da tela quando o serviço manda; senão (serviço antigo) o OVERDUE de sempre. */
+export const vencidasDoCartao = (v: AsaasValores) => ({ valor: v.vencidas_total ?? v.vencidas, qtd: typeof v.vencidas_total_qtd === 'number' ? v.vencidas_total_qtd : v.vencidas_qtd,
+  negativacaoQtd: typeof v.vencidas_total_qtd === 'number' && typeof v.negativacao_qtd === 'number' ? v.negativacao_qtd : null,
+  /** quebra (arquiteto 27/11): "N vencidas" = só as OVERDUE, para a quebra somar o total (75 + 52 = 127) */
+  overdueQtd: v.vencidas_qtd });
 export interface AsaasEmpresa { conta: string; nome: string | null; estado: 'ok' | 'desatualizado' | 'indisponivel'; motivo: string | null; atualizado_em: string | null; valores: AsaasValores | null }
 export interface AsaasCartao { gerado_em: string; janela: { hoje: string; a_receber_ate: string }; empresas: AsaasEmpresa[]; total: AsaasValores | null; total_parcial: boolean; regras?: string }
 export function lerAsaas(s?: AbortSignal) { return ler<AsaasCartao>('/asaas.php', s); }

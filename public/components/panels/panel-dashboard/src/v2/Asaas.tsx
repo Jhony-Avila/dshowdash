@@ -5,7 +5,7 @@
 // motivo, nunca R$ 0; valor bruto da cobrança (sem juros/multa). A tela nunca mostra chave nem CNPJ (o serviço não manda).
 import { useState, type ReactNode } from 'react';
 import { ArrowRight, Banknote } from 'lucide-react';
-import { ErroV2, dinheiro, fmtDiaMes, fmtMoeda2, fmtN, fmtQuando, type AsaasCartao, type AsaasEmpresa, type Fonte } from './servico';
+import { ErroV2, dinheiro, fmtDiaMes, fmtMoeda2, fmtN, fmtQuando, type AsaasCartao, type AsaasEmpresa, type Fonte, vencidasDoCartao } from './servico';
 import { Problema, useBloco } from './comuns';
 
 type BlocoAsaas = ReturnType<typeof useBloco<AsaasCartao>>;
@@ -17,7 +17,9 @@ const MOTIVO: Record<string, string> = {
   nunca_sincronizada: 'ainda não sincronizada',
   desatualizada: 'leitura com mais de 3 h',
 };
-export const textoMotivoAsaas = (m: string | null) => (m === null ? '' : MOTIVO[m] ?? (m.startsWith('erro:') ? 'a sincronização falhou' : m.startsWith('ultima_tentativa_falhou:') ? 'última tentativa falhou (valores da leitura anterior)' : m));
+/** "pausa_noturna:HH:MM" (VINHO 84bba5bc): fora do horário do cron os dados continuam valendo, com a hora da última rodada */
+const pausaNoturna = (m: string) => { const x = /^pausa_noturna:(\d{2}:\d{2})$/.exec(m); return x ? `última sincronização ${x[1]} · pausa noturna` : null; };
+export const textoMotivoAsaas = (m: string | null) => (m === null ? '' : MOTIVO[m] ?? pausaNoturna(m) ?? (m.startsWith('erro:') ? 'a sincronização falhou' : m.startsWith('ultima_tentativa_falhou:') ? 'última tentativa falhou (valores da leitura anterior)' : m));
 const nomeEmp = (e: { nome: string | null; conta: string }) => e.nome ?? e.conta;
 
 type Estado = 'ok' | 'parcial' | 'desatualizado' | 'erro' | 'aguardando' | 'carregando';
@@ -68,7 +70,7 @@ export function CartaoAsaas({ b, aoVencidas }: { b: BlocoAsaas; aoVencidas: () =
   const d = b.dados; const est = estadoCartao(b); const selo = SELO[est];
   const t = d?.total ?? null;
   const m = (v: string | undefined | null) => fmtMoeda2(v === undefined ? null : dinheiro(v));
-  const qtd = t ? t.vencidas_qtd : null;
+  const vc = t ? vencidasDoCartao(t) : null; const qtd = vc ? vc.qtd : null;   // 27/11: o MESMO total da tela das Vencidas
   const semLeitura = d ? d.empresas.filter((e) => e.estado !== 'ok').length : 0;
   return (
     <article className="gv2-cartao gv2-num gv2-asaas ger-entra" data-gv2-cartao="asaas" data-gv2-estado={est}>
@@ -90,8 +92,10 @@ export function CartaoAsaas({ b, aoVencidas }: { b: BlocoAsaas; aoVencidas: () =
               <Valor dado="a_receber_7d" rotulo="A receber em 7 dias" valor={m(t?.a_receber_7d)} linha={<>Vencimento de {fmtDiaMes(d.janela.hoje)} a {fmtDiaMes(d.janela.a_receber_ate)}</>} />
             </div>
             <button type="button" className="gv2-asaas-item gv2-asaas-item--acao" data-gv2-asaas="vencidas" onClick={aoVencidas}>
-              <Valor dado="vencidas" rotulo="Vencidas" valor={m(t?.vencidas)}
-                linha={<>{qtd === null ? 'Quantidade: —' : `${fmtN(qtd)} ${qtd === 1 ? 'cobrança vencida' : 'cobranças vencidas'}`}<span className="gv2-asaas-ver">Ver vencidas <ArrowRight size={13} aria-hidden /></span></>} />
+              <Valor dado="vencidas" rotulo="Vencidas" valor={m(vc?.valor)}
+                linha={<>{qtd === null || !vc ? 'Quantidade: —' : vc.negativacaoQtd !== null && vc.negativacaoQtd > 0
+                  ? `${fmtN(vc.overdueQtd)} ${vc.overdueQtd === 1 ? 'vencida' : 'vencidas'} · ${fmtN(vc.negativacaoQtd)} em negativação`   // soma = o total (número grande)
+                  : `${fmtN(qtd)} ${qtd === 1 ? 'vencida' : 'vencidas'}`}<span className="gv2-asaas-ver">Ver vencidas <ArrowRight size={13} aria-hidden /></span></>} />
             </button>
           </div>
           {d.empresas.length === 0 ? <p className="gv2-fraco">Nenhuma conta do Asaas configurada · nenhum número assumido.</p>
@@ -120,7 +124,7 @@ function PorEmpresa({ empresas }: { empresas: AsaasEmpresa[] }) {
               <th scope="row">{nomeEmp(e)}</th>
               <td className="gv2-conc-num">{m(v?.recebido_hoje)}</td>
               <td className="gv2-conc-num">{m(v?.a_receber_7d)}</td>
-              <td className="gv2-conc-num">{v ? `${m(v.vencidas)} · ${fmtN(v.vencidas_qtd)}` : '—'}</td>
+              <td className="gv2-conc-num">{v ? `${m(vencidasDoCartao(v).valor)} · ${fmtN(vencidasDoCartao(v).qtd)}` : '—'}</td>
               <td className="gv2-asaas-leitura">{e.estado === 'ok' ? `${e.atualizado_em ? `Atualizada ${fmtQuando(e.atualizado_em)}` : 'Atualizada'}${e.motivo ? ` · ${textoMotivoAsaas(e.motivo)}` : ''}` : `— · ${textoMotivoAsaas(e.motivo) || 'sem leitura'}${e.atualizado_em ? ` · última ${fmtQuando(e.atualizado_em)}` : ''}`}</td>
             </tr>
           ); })}
