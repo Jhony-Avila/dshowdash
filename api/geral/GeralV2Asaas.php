@@ -46,6 +46,9 @@ final class GeralV2Asaas
                                  'negativacao' => $dec($tot['negativacao']), 'negativacao_qtd' => $tot['negativacao_qtd'],
                                  'vencidas_total' => $dec($tot['vencidas'] + $tot['negativacao']), 'vencidas_total_qtd' => $tot['vencidas_qtd'] + $tot['negativacao_qtd']] : null,
             'total_parcial' => !$todas,
+            // 27/11 (F03, ROXO c8bc5dd6): o horário da PRÓXIMA rodada do coletor (AsaasAgenda, a mesma do /etc/cron.d/dshow-asaas); a tela relê nele
+            // (+2 min) só com a aba visível. null quando a agenda não prevê rodada nas próximas 48 h (a tela então só relê ao voltar à aba).
+            'proxima_sincronizacao' => AsaasAgenda::padrao()->proxima($agora)?->format(DATE_ATOM),
             'regras' => 'recebido hoje = cobranças RECEIVED/CONFIRMED/RECEIVED_IN_CASH com pagamento hoje (valor bruto); a receber 7 dias = PENDING com '
                       . 'vencimento de hoje a +6 dias; vencidas = OVERDUE; em negativação = DUNNING_REQUESTED; vencidas_total = as duas (o total da tela das Vencidas). '
                       . 'Valor bruto da cobrança (sem juros/multa).',

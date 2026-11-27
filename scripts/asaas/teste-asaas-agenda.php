@@ -40,6 +40,10 @@ $ck('04:40 · cartão: total presente (não "parcial"), as 2 empresas ok com o m
     && array_unique(array_column($card['empresas'] ?? $card['contas'] ?? [], 'motivo')) === ['pausa_noturna:01:38'], json_encode($card));
 $ck('cartão = o MESMO total da tela (OVERDUE + DUNNING) com a quebra: 3 = 2 vencidas · 1 em negativação; vencidas_qtd segue só OVERDUE', $card['total']['vencidas_total_qtd'] === $res['total']['cobrancas']
     && $card['total']['vencidas_qtd'] === 2 && $card['total']['negativacao_qtd'] === 1 && $card['total']['vencidas_total'] === '300.00' && $card['total']['vencidas_total'] === $res['total']['valor'], json_encode([$card['total'], $res['total']]));
+$ck('cartão traz a PRÓXIMA rodada do coletor pela agenda (04:40, pausa 02–05 → 06:37 de Brasília), para a tela reler nela (F03, ROXO c8bc5dd6)',
+    ($card['proxima_sincronizacao'] ?? null) === '2026-11-27T06:37:00-03:00', json_encode($card['proxima_sincronizacao'] ?? null));
+$card2 = (new GeralV2Asaas($pdo))->cartao(['zenthra', 'rovic'], $T('23:50:00'));
+$ck('23:50 → a próxima rodada vira o dia (00:37 de 28/11)', ($card2['proxima_sincronizacao'] ?? null) === '2026-11-28T00:37:00-03:00', json_encode($card2['proxima_sincronizacao'] ?? null));
 $c2 = new AsaasCobrancas($R->vencidasDetalhadas(['zenthra', 'rovic'], $T('06:45:00')), $T('06:45:00'));
 $ck('06:45 (a rodada de 06:37 ainda não gravou): continua visível e já sem o aviso de pausa', $c2->resumo()['total']['cobrancas'] === 3 && $c2->resumo()['pausa_noturna'] === null);
 AsaasAgenda::definirPadrao(null);
