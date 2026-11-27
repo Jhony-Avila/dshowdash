@@ -43,6 +43,10 @@ export function getSidebarRegistry(context: Record<string, unknown>) {
   return null;
 }
 
+/** 27/11 (P91): título dos painéis próprios quando NÃO há item de menu para eles (antes do portão de banco do menu, ou link direto).
+ *  Sem isto o recuo humaniza o id e a barra mostrava "Integracoes", sem acento. Com item de menu, vale o rótulo do menu. */
+export const TITULOS_PAINEL: Readonly<Record<string, string>> = Object.freeze({ 'panel-integracoes': 'Integrações', 'panel-gmail': 'Gmail' });
+
 /** DSHOW-062: painéis que vários itens do menu dividem (o provisório dos "Geral X"). */
 export const PAINEIS_COMPARTILHADOS = new Set(['panel-stub-dev']);
 
@@ -72,6 +76,7 @@ export function createLabelResolver(sidebarRegistry: { getItems?: () => Array<Re
       }
     } catch (e) { }
     if (compartilhado) return 'Painel';
+    if (TITULOS_PAINEL[panelId]) return TITULOS_PAINEL[panelId];
     return panelId.replace(/^panel-/, '').replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
   };
 }

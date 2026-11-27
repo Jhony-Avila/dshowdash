@@ -13,6 +13,7 @@ function getSidebarRegistry(context) {
   if (_injectedSidebarRegistry) return _injectedSidebarRegistry;
   return null;
 }
+const TITULOS_PAINEL = Object.freeze({ "panel-integracoes": "Integra\xE7\xF5es", "panel-gmail": "Gmail" });
 const PAINEIS_COMPARTILHADOS = /* @__PURE__ */ new Set(["panel-stub-dev"]);
 function createLabelResolver(sidebarRegistry) {
   return function resolvePanelLabel(panelId, origem = {}) {
@@ -38,6 +39,7 @@ function createLabelResolver(sidebarRegistry) {
     } catch (e) {
     }
     if (compartilhado) return "Painel";
+    if (TITULOS_PAINEL[panelId]) return TITULOS_PAINEL[panelId];
     return panelId.replace(/^panel-/, "").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   };
 }
@@ -53,6 +55,7 @@ function info() {
 export {
   MODULE_ID,
   PAINEIS_COMPARTILHADOS,
+  TITULOS_PAINEL,
   VERSION,
   createLabelResolver,
   getInjectedSidebarRegistry,
