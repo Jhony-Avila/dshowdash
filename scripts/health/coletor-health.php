@@ -31,13 +31,18 @@ if ($modo !== '--ciclo') {
 }
 
 $ms = static fn (float $t0): float => round((microtime(true) - $t0) * 1000, 1);
-// Timeouts por check (ms). Configuração inicial = PROPOSTA do GPT Manager Visuais (27/11), NÃO definitiva: o valor final é
+// Timeouts por check (ms). PROPOSTA do GPT Manager Visuais (27/11), CONFIRMADA pela medição de produção de 27/11 (ver timeouts.json); a regra é
 // máx(proposta, 3 × p95 medido em homologação — normal, durante build e com o ERP indisponível), gravado em timeouts.json (modo --medir).
 // Estourou o timeout = amostra INVÁLIDA (`timeout`): a rota v4 a trata como inválida e o frescor NÃO é renovado (bloqueia).
 const PROPOSTA_TIMEOUT_MS = ['database' => 100, 'redis' => 50, 'session' => 50, 'disk' => 30, 'memory' => 20];
+// 27/11 (medição de produção, AZUL): valores DEFINITIVOS versionados em scripts/health/timeouts.json (proposta confirmada: 3 × p95 < proposta).
+// Ordem: proposta do código → arquivo versionado → timeouts.json do diretório de trabalho. Cada camada só SOBE o valor (≥ proposta, ≤ 2000 ms):
+// um arquivo errado nunca deixa um check mais apertado que a proposta.
 $timeouts = PROPOSTA_TIMEOUT_MS;
-$tj = @json_decode((string) @file_get_contents("$dir/timeouts.json"), true);
-if (is_array($tj)) { foreach (PROPOSTA_TIMEOUT_MS as $k => $v) { if (is_int($tj[$k] ?? null) && $tj[$k] >= $v && $tj[$k] <= 2000) { $timeouts[$k] = $tj[$k]; } } }
+foreach ([__DIR__ . '/timeouts.json', "$dir/timeouts.json"] as $arqT) {
+    $tj = @json_decode((string) @file_get_contents($arqT), true);
+    if (is_array($tj)) { foreach (PROPOSTA_TIMEOUT_MS as $k => $v) { if (is_int($tj[$k] ?? null) && $tj[$k] >= $v && $tj[$k] <= 2000) { $timeouts[$k] = max($timeouts[$k], $tj[$k]); } } }
+}
 
 $sonda = static function (string $alias) use ($ms): array {
     $host = getenv("DB_{$alias}_HOST") ?: 'displaysolutions.com.br';
@@ -126,6 +131,7 @@ if ($modo === '--medir') {
         printf("%-10s %6d %8s %8s %10d %10d\n", $k, count($v), $p95 === null ? '-' : number_format($p95, 1, '.', ''), $v ? number_format(end($v), 1, '.', '') : '-', $prop, $sug[$k]);
     }
     echo 'timeouts.json sugerido: ', json_encode($sug), "\n";
+    echo 'timeouts vigentes: ', json_encode($timeouts), "\n";   // proposta → scripts/health/timeouts.json → timeouts.json do diretório (só sobem)
     flock($trava, LOCK_UN); fclose($trava); exit(0);
 }
 

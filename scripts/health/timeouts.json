@@ -1,0 +1,10 @@
+{
+  "database": 100,
+  "redis": 50,
+  "session": 50,
+  "disk": 30,
+  "memory": 20,
+  "_regra": "máx(proposta, 3 × p95 medido); estouro = amostra inválida (timeout). Valores em ms.",
+  "_medicao": "produção 27/11/2026 03:40, release ac2e099d, condição normal com o ERP fora (HEALTH-MEDIR v1, 120 amostras): p95 database 7,7 · redis 1,5 · session 0,0 · disk 0,0 · memory 0,4 ms → 3 × p95 < proposta em todos; HTTP /api/health p95 52,0 ms (100/100 com 200).",
+  "_pendente": "condição build (durante o próximo trem). Se 3 × p95 do build passar da proposta em algum check, esse valor sobe por novo degrau."
+}
