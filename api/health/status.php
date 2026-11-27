@@ -26,8 +26,10 @@ function isInternalIpCheck(string $ip): bool {
     return $ip === '::1';
 }
 
-$clientIp = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-if (strpos($clientIp, ',') !== false) $clientIp = trim(explode(',', $clientIp)[0]);
+// SEC-002 (AZUL, 27/11): o IP de quem abriu a conexão decide; X-Forwarded-For não autoriza nada (sem proxies de confiança: não há
+// monitor externo — decisão do Jhony, 27/11).
+require_once __DIR__ . '/../core/ClienteIp.php';
+$clientIp = ClienteIp::resolver($_SERVER, []);
 
 if (!isInternalIpCheck($clientIp)) {
     echo json_encode(['ok' => true, 'data' => ['status' => 'healthy', 'timestamp' => date('c')]]);

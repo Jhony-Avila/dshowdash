@@ -1793,6 +1793,9 @@ tools-golden/
 !/scripts/validate_preloader_syntax.sh
 !/scripts/weather/
 !/scripts/weather/**
+# scripts/health/ — coletor do health (HL-001-R1, AZUL 27/11)
+!/scripts/health/
+!/scripts/health/**
 # scripts/erp-novo/ — ERP novo (ds_prod): testes e comparação da camada nova dos painéis (rebase do patch 0002 de 30/10, AZUL 26/11)
 !/scripts/erp-novo/
 !/scripts/erp-novo/**
