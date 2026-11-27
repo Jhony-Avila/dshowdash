@@ -26,13 +26,13 @@ final class GeralV2Asaas
         $agora = $agora->setTimezone($this->fuso);
         $hoje = $agora->format('Y-m-d'); $fim7 = $agora->modify('+6 days')->format('Y-m-d');
         $empresas = []; $todas = $rotulos !== [];
-        $tot = ['recebido_hoje' => 0, 'a_receber_7d' => 0, 'vencidas' => 0, 'vencidas_qtd' => 0];
+        $tot = ['recebido_hoje' => 0, 'a_receber_7d' => 0, 'vencidas' => 0, 'vencidas_qtd' => 0, 'negativacao' => 0, 'negativacao_qtd' => 0];
         foreach ($rotulos as $r) {
             $e = $this->empresa($r, $agora, $hoje, $fim7);
             $empresas[] = $e;
             if ($e['estado'] !== 'ok') { $todas = false; continue; }
-            foreach (['recebido_hoje', 'a_receber_7d', 'vencidas'] as $k) $tot[$k] += AsaasValor::centavos($e['valores'][$k]);
-            $tot['vencidas_qtd'] += $e['valores']['vencidas_qtd'];
+            foreach (['recebido_hoje', 'a_receber_7d', 'vencidas', 'negativacao'] as $k) $tot[$k] += AsaasValor::centavos($e['valores'][$k]);
+            $tot['vencidas_qtd'] += $e['valores']['vencidas_qtd']; $tot['negativacao_qtd'] += $e['valores']['negativacao_qtd'];
         }
         $dec = static fn(int $c) => AsaasValor::deCentavos($c);
         return [
@@ -40,10 +40,15 @@ final class GeralV2Asaas
             'janela' => ['hoje' => $hoje, 'a_receber_ate' => $fim7],
             'empresas' => $empresas,
             'total' => $todas ? ['recebido_hoje' => $dec($tot['recebido_hoje']), 'a_receber_7d' => $dec($tot['a_receber_7d']),
-                                 'vencidas' => $dec($tot['vencidas']), 'vencidas_qtd' => $tot['vencidas_qtd']] : null,
+                                 'vencidas' => $dec($tot['vencidas']), 'vencidas_qtd' => $tot['vencidas_qtd'],
+                                 // 27/11 (decisão do arquiteto): o cartão mostra o MESMO total da tela das Vencidas (OVERDUE + DUNNING_REQUESTED) com a quebra
+                                 // "N vencidas · M em negativação"; 'vencidas'/'vencidas_qtd' continuam sendo só OVERDUE (compatível)
+                                 'negativacao' => $dec($tot['negativacao']), 'negativacao_qtd' => $tot['negativacao_qtd'],
+                                 'vencidas_total' => $dec($tot['vencidas'] + $tot['negativacao']), 'vencidas_total_qtd' => $tot['vencidas_qtd'] + $tot['negativacao_qtd']] : null,
             'total_parcial' => !$todas,
             'regras' => 'recebido hoje = cobranças RECEIVED/CONFIRMED/RECEIVED_IN_CASH com pagamento hoje (valor bruto); a receber 7 dias = PENDING com '
-                      . 'vencimento de hoje a +6 dias; vencidas = OVERDUE (todas). Valor bruto da cobrança (sem juros/multa).',
+                      . 'vencimento de hoje a +6 dias; vencidas = OVERDUE; em negativação = DUNNING_REQUESTED; vencidas_total = as duas (o total da tela das Vencidas). '
+                      . 'Valor bruto da cobrança (sem juros/multa).',
         ];
     }
 
@@ -88,13 +93,17 @@ final class GeralV2Asaas
         $in = implode(',', array_fill(0, count(self::RECEBIDO), '?'));
         $q = $this->pdo->prepare("SELECT COALESCE(SUM(CASE WHEN `status` IN ($in) AND `data_pagamento` = ? THEN `valor` END),0) recebido_hoje,
                COALESCE(SUM(CASE WHEN `status`='PENDING' AND `vencimento` BETWEEN ? AND ? THEN `valor` END),0) a_receber_7d,
-               COALESCE(SUM(CASE WHEN `status`='OVERDUE' THEN `valor` END),0) vencidas, COALESCE(SUM(`status`='OVERDUE'),0) vencidas_qtd
+               COALESCE(SUM(CASE WHEN `status`='OVERDUE' THEN `valor` END),0) vencidas, COALESCE(SUM(`status`='OVERDUE'),0) vencidas_qtd,
+               COALESCE(SUM(CASE WHEN `status`='DUNNING_REQUESTED' THEN `valor` END),0) negativacao, COALESCE(SUM(`status`='DUNNING_REQUESTED'),0) negativacao_qtd
              FROM `{$this->p}asaas_cobrancas` WHERE `conta`=? AND `geracao`=? AND `presente`=1 AND `deletada`=0");
         $q->execute([...self::RECEBIDO, $hoje, $hoje, $fim7, $r, (int) $c['geracao_ativa']]);
         $v = $q->fetch(PDO::FETCH_ASSOC);
         $dec = static fn($x) => AsaasValor::deCentavos(AsaasValor::centavos((string) $x));
         return ['estado' => 'ok', 'motivo' => $c['estado'] === 'erro' ? 'ultima_tentativa_falhou:' . $c['erro_codigo'] : $pausa, 'atualizado_em' => $ok->format(DATE_ATOM),
                 'valores' => ['recebido_hoje' => $dec($v['recebido_hoje']), 'a_receber_7d' => $dec($v['a_receber_7d']),
-                              'vencidas' => $dec($v['vencidas']), 'vencidas_qtd' => (int) $v['vencidas_qtd']]] + $base;
+                              'vencidas' => $dec($v['vencidas']), 'vencidas_qtd' => (int) $v['vencidas_qtd'],
+                              'negativacao' => $dec($v['negativacao']), 'negativacao_qtd' => (int) $v['negativacao_qtd'],
+                              'vencidas_total' => $dec(AsaasValor::centavos((string) $v['vencidas']) + AsaasValor::centavos((string) $v['negativacao'])),
+                              'vencidas_total_qtd' => (int) $v['vencidas_qtd'] + (int) $v['negativacao_qtd']]] + $base;
     }
 }

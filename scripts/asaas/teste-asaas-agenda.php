@@ -38,6 +38,8 @@ $ck('04:40 · tela das Vencidas: as 3 cobranças continuam (nenhuma empresa sem 
 $card = (new GeralV2Asaas($pdo))->cartao(['zenthra', 'rovic'], $T('04:40:00'));
 $ck('04:40 · cartão: total presente (não "parcial"), as 2 empresas ok com o motivo pausa_noturna:01:38', $card['total'] !== null && $card['total_parcial'] === false
     && array_unique(array_column($card['empresas'] ?? $card['contas'] ?? [], 'motivo')) === ['pausa_noturna:01:38'], json_encode($card));
+$ck('cartão = o MESMO total da tela (OVERDUE + DUNNING) com a quebra: 3 = 2 vencidas · 1 em negativação; vencidas_qtd segue só OVERDUE', $card['total']['vencidas_total_qtd'] === $res['total']['cobrancas']
+    && $card['total']['vencidas_qtd'] === 2 && $card['total']['negativacao_qtd'] === 1 && $card['total']['vencidas_total'] === '300.00' && $card['total']['vencidas_total'] === $res['total']['valor'], json_encode([$card['total'], $res['total']]));
 $c2 = new AsaasCobrancas($R->vencidasDetalhadas(['zenthra', 'rovic'], $T('06:45:00')), $T('06:45:00'));
 $ck('06:45 (a rodada de 06:37 ainda não gravou): continua visível e já sem o aviso de pausa', $c2->resumo()['total']['cobrancas'] === 3 && $c2->resumo()['pausa_noturna'] === null);
 AsaasAgenda::definirPadrao(null);
