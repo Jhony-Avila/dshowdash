@@ -91,24 +91,24 @@ final class PipeReconcileService
         // set O(1) dos deals ativos locais
         $localAtivos = array_fill_keys(array_map('intval', $this->repo->activeIds('deal')), true);
 
-        $scanned = 0; $matched = [];
+        $scanned = 0; $matched = []; $versoes = [];
         $res = $client->paginate('deals', [
             'version' => 'v2',
             'query'   => ['status' => 'deleted', 'sort_by' => 'update_time', 'sort_direction' => 'desc'],
             'limit'   => (int)($opts['limit'] ?? 500),
             'maxPages' => (int)($opts['maxPages'] ?? 0),
             'maxItems' => (int)($opts['maxItems'] ?? 0),
-        ], function (array $lote) use (&$scanned, &$matched, $localAtivos) {
+        ], function (array $lote) use (&$scanned, &$matched, &$versoes, $localAtivos) {
             foreach ($lote as $d) {
                 if (!is_array($d) || !isset($d['id'])) { continue; }
                 $scanned++;
                 $id = (int)$d['id'];
-                if (isset($localAtivos[$id])) { $matched[] = (string)$id; }
+                if (isset($localAtivos[$id])) { $matched[] = (string)$id; $versoes[(string)$id] = $d['update_time'] ?? null; }   // DDI-030: versão da exclusão
             }
         });
 
         $marked = 0;
-        if (!$dryRun && $matched) { $marked = $this->repo->markDeletedBatch('deal', $matched); }
+        if (!$dryRun && $matched) { $marked = $this->repo->markDeletedBatch('deal', $matched, $versoes); }
 
         return [
             'ok' => (bool)($res['ok'] ?? false), 'strategy' => 'deleted-scan',
@@ -133,6 +133,7 @@ final class PipeReconcileService
         $incompletoPorCap = false;
 
         $seen = [];
+        $leituraEm = gmdate('Y-m-d H:i:s');   // DDI-030: o que não aparece numa leitura COMPLETA iniciada agora foi excluído até este instante
         $res = $client->paginate($path, [
             'version' => $version, 'limit' => 500,
             'maxPages' => $maxPages, 'maxItems' => $maxItems,
@@ -160,7 +161,7 @@ final class PipeReconcileService
         foreach ($local as $id) { if (!isset($seen[$id])) { $ausentes[] = $id; } }
 
         $marked = 0;
-        if (!$dryRun && $ausentes) { $marked = $this->repo->markDeletedBatch($entity, $ausentes); }
+        if (!$dryRun && $ausentes) { $marked = $this->repo->markDeletedBatch($entity, $ausentes, $leituraEm); }   // DDI-030: versão = início da leitura completa
 
         return [
             'ok' => true, 'strategy' => 'presence',

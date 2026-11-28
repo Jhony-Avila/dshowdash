@@ -289,6 +289,13 @@ final class PipeSyncRepository
         return $st->rowCount() === 1 ? 'created' : 'updated';
     }
 
+    /** DDI-030 (GPT DATA, 28/11): condição do upsert CONDICIONAL pela versão da ORIGEM (update_time do Pipedrive → source_updated_at). Sem versão
+     *  persistida = grava; versão recebida ausente com uma persistida = NÃO grava (não dá para provar que é mais nova). As atribuições do
+     *  ON DUPLICATE KEY UPDATE são avaliadas da esquerda para a direita, por isso source_updated_at é SEMPRE a última. last_synced_at = observação local. */
+    private const VERSAO_NOVA = '(source_updated_at IS NULL OR (VALUES(source_updated_at) IS NOT NULL AND VALUES(source_updated_at) >= source_updated_at))';
+    /** Entidades com versão da origem (coluna source_updated_at). */
+    private const VERSIONADAS = ['deal', 'person', 'organization', 'activity', 'lead'];
+
     // ── upserts por entidade ────────────────────────────────────
     public function upsertPipeline(array $p): string
     {
@@ -419,6 +426,7 @@ final class PipeSyncRepository
         $custom = $d['custom_fields'] ?? null;
         $raw = json_encode($d, JSON_UNESCAPED_UNICODE);
 
+        $vn = self::VERSAO_NOVA;   // DDI-030: só grava se a versão da origem recebida for >= à persistida (source_updated_at por ÚLTIMO)
         $st = $this->pdo->prepare(
             "INSERT INTO pipe_deals
                (pipedrive_id, company_id, title, value, currency, status, pipeline_id, stage_id,
@@ -433,16 +441,16 @@ final class PipeSyncRepository
                 :custom, :del, :add, :upd, :upd2,
                 :raw, :hash, NOW())
              ON DUPLICATE KEY UPDATE
-               company_id=VALUES(company_id), title=VALUES(title), value=VALUES(value), currency=VALUES(currency),
-               status=VALUES(status), pipeline_id=VALUES(pipeline_id), stage_id=VALUES(stage_id),
-               person_id=VALUES(person_id), org_id=VALUES(org_id), owner_id=VALUES(owner_id),
-               creator_user_id=VALUES(creator_user_id), label_ids=VALUES(label_ids), probability=VALUES(probability),
-               expected_close_date=VALUES(expected_close_date), won_time=VALUES(won_time), lost_time=VALUES(lost_time),
-               lost_reason=VALUES(lost_reason), stage_change_time=VALUES(stage_change_time),
-               custom_fields=VALUES(custom_fields), is_deleted=VALUES(is_deleted),
-               add_time=VALUES(add_time), update_time=VALUES(update_time), source_updated_at=VALUES(source_updated_at),
-               raw_payload=VALUES(raw_payload), payload_hash=VALUES(payload_hash),
-               last_synced_at=NOW(), sync_version=sync_version+1"
+               company_id=IF({$vn}, VALUES(company_id), company_id), title=IF({$vn}, VALUES(title), title), value=IF({$vn}, VALUES(value), value), currency=IF({$vn}, VALUES(currency), currency),
+               status=IF({$vn}, VALUES(status), status), pipeline_id=IF({$vn}, VALUES(pipeline_id), pipeline_id), stage_id=IF({$vn}, VALUES(stage_id), stage_id),
+               person_id=IF({$vn}, VALUES(person_id), person_id), org_id=IF({$vn}, VALUES(org_id), org_id), owner_id=IF({$vn}, VALUES(owner_id), owner_id),
+               creator_user_id=IF({$vn}, VALUES(creator_user_id), creator_user_id), label_ids=IF({$vn}, VALUES(label_ids), label_ids), probability=IF({$vn}, VALUES(probability), probability),
+               expected_close_date=IF({$vn}, VALUES(expected_close_date), expected_close_date), won_time=IF({$vn}, VALUES(won_time), won_time), lost_time=IF({$vn}, VALUES(lost_time), lost_time),
+               lost_reason=IF({$vn}, VALUES(lost_reason), lost_reason), stage_change_time=IF({$vn}, VALUES(stage_change_time), stage_change_time),
+               custom_fields=IF({$vn}, VALUES(custom_fields), custom_fields), is_deleted=IF({$vn}, VALUES(is_deleted), is_deleted),
+               add_time=IF({$vn}, VALUES(add_time), add_time), update_time=IF({$vn}, VALUES(update_time), update_time), raw_payload=IF({$vn}, VALUES(raw_payload), raw_payload), payload_hash=IF({$vn}, VALUES(payload_hash), payload_hash),
+               last_synced_at=IF({$vn}, NOW(), last_synced_at), sync_version=IF({$vn}, sync_version+1, sync_version),
+               source_updated_at=IF({$vn}, VALUES(source_updated_at), source_updated_at)"
         );
         $st->execute([
             ':pd' => self::i($d['id']),
@@ -482,6 +490,7 @@ final class PipeSyncRepository
         $labels = $o['label_ids'] ?? null;
         if (is_array($labels)) { $labels = implode(',', array_map('strval', $labels)); }
         $raw = json_encode($o, JSON_UNESCAPED_UNICODE);
+        $vn = self::VERSAO_NOVA;   // DDI-030: só grava se a versão da origem recebida for >= à persistida (source_updated_at por ÚLTIMO)
         $st = $this->pdo->prepare(
             "INSERT INTO pipe_organizations
                (pipedrive_id, company_id, name, address, city, state, country, postal_code,
@@ -490,13 +499,13 @@ final class PipeSyncRepository
              VALUES (:pd,:co,:name,:addr,:city,:state,:country,:zip,:owner,:creator,:labels,:custom,:del,
                      :add,:upd,:upd2,:raw,:hash,NOW())
              ON DUPLICATE KEY UPDATE
-               company_id=VALUES(company_id), name=VALUES(name), address=VALUES(address), city=VALUES(city),
-               state=VALUES(state), country=VALUES(country), postal_code=VALUES(postal_code),
-               owner_id=VALUES(owner_id), creator_user_id=VALUES(creator_user_id), label_ids=VALUES(label_ids),
-               custom_fields=VALUES(custom_fields), is_deleted=VALUES(is_deleted),
-               add_time=VALUES(add_time), update_time=VALUES(update_time), source_updated_at=VALUES(source_updated_at),
-               raw_payload=VALUES(raw_payload), payload_hash=VALUES(payload_hash), last_synced_at=NOW(),
-               sync_version=sync_version+1"
+               company_id=IF({$vn}, VALUES(company_id), company_id), name=IF({$vn}, VALUES(name), name), address=IF({$vn}, VALUES(address), address), city=IF({$vn}, VALUES(city), city),
+               state=IF({$vn}, VALUES(state), state), country=IF({$vn}, VALUES(country), country), postal_code=IF({$vn}, VALUES(postal_code), postal_code),
+               owner_id=IF({$vn}, VALUES(owner_id), owner_id), creator_user_id=IF({$vn}, VALUES(creator_user_id), creator_user_id), label_ids=IF({$vn}, VALUES(label_ids), label_ids),
+               custom_fields=IF({$vn}, VALUES(custom_fields), custom_fields), is_deleted=IF({$vn}, VALUES(is_deleted), is_deleted),
+               add_time=IF({$vn}, VALUES(add_time), add_time), update_time=IF({$vn}, VALUES(update_time), update_time), raw_payload=IF({$vn}, VALUES(raw_payload), raw_payload), payload_hash=IF({$vn}, VALUES(payload_hash), payload_hash), last_synced_at=IF({$vn}, NOW(), last_synced_at),
+               sync_version=IF({$vn}, sync_version+1, sync_version),
+               source_updated_at=IF({$vn}, VALUES(source_updated_at), source_updated_at)"
         );
         $st->execute([
             ':pd' => self::i($o['id']), ':co' => self::i($o['company_id'] ?? null),
@@ -524,6 +533,7 @@ final class PipeSyncRepository
         $labels = $p['label_ids'] ?? null;
         if (is_array($labels)) { $labels = implode(',', array_map('strval', $labels)); }
         $raw = json_encode($p, JSON_UNESCAPED_UNICODE);
+        $vn = self::VERSAO_NOVA;   // DDI-030: só grava se a versão da origem recebida for >= à persistida (source_updated_at por ÚLTIMO)
         $st = $this->pdo->prepare(
             "INSERT INTO pipe_persons
                (pipedrive_id, company_id, name, org_id, job_title, owner_id, creator_user_id, label_ids,
@@ -532,14 +542,14 @@ final class PipeSyncRepository
              VALUES (:pd,:co,:name,:org,:job,:owner,:creator,:labels,:pe,:pp,:en,:pn,:custom,:del,
                      :add,:upd,:upd2,:raw,:hash,NOW())
              ON DUPLICATE KEY UPDATE
-               company_id=VALUES(company_id), name=VALUES(name), org_id=VALUES(org_id), job_title=VALUES(job_title),
-               owner_id=VALUES(owner_id), creator_user_id=VALUES(creator_user_id), label_ids=VALUES(label_ids),
-               primary_email=VALUES(primary_email), primary_phone=VALUES(primary_phone),
-               email_norm=VALUES(email_norm), phone_norm=VALUES(phone_norm),
-               custom_fields=VALUES(custom_fields), is_deleted=VALUES(is_deleted),
-               add_time=VALUES(add_time), update_time=VALUES(update_time), source_updated_at=VALUES(source_updated_at),
-               raw_payload=VALUES(raw_payload), payload_hash=VALUES(payload_hash), last_synced_at=NOW(),
-               sync_version=sync_version+1"
+               company_id=IF({$vn}, VALUES(company_id), company_id), name=IF({$vn}, VALUES(name), name), org_id=IF({$vn}, VALUES(org_id), org_id), job_title=IF({$vn}, VALUES(job_title), job_title),
+               owner_id=IF({$vn}, VALUES(owner_id), owner_id), creator_user_id=IF({$vn}, VALUES(creator_user_id), creator_user_id), label_ids=IF({$vn}, VALUES(label_ids), label_ids),
+               primary_email=IF({$vn}, VALUES(primary_email), primary_email), primary_phone=IF({$vn}, VALUES(primary_phone), primary_phone),
+               email_norm=IF({$vn}, VALUES(email_norm), email_norm), phone_norm=IF({$vn}, VALUES(phone_norm), phone_norm),
+               custom_fields=IF({$vn}, VALUES(custom_fields), custom_fields), is_deleted=IF({$vn}, VALUES(is_deleted), is_deleted),
+               add_time=IF({$vn}, VALUES(add_time), add_time), update_time=IF({$vn}, VALUES(update_time), update_time), raw_payload=IF({$vn}, VALUES(raw_payload), raw_payload), payload_hash=IF({$vn}, VALUES(payload_hash), payload_hash), last_synced_at=IF({$vn}, NOW(), last_synced_at),
+               sync_version=IF({$vn}, sync_version+1, sync_version),
+               source_updated_at=IF({$vn}, VALUES(source_updated_at), source_updated_at)"
         );
         $st->execute([
             ':pd' => self::i($p['id']), ':co' => self::i($p['company_id'] ?? null),
@@ -555,8 +565,10 @@ final class PipeSyncRepository
             ':upd2' => self::dt($p['update_time'] ?? null), ':raw' => $raw, ':hash' => hash('sha256', $raw),
         ]);
         $out = self::outcome($st);
-        $this->replaceChildren('pipe_person_emails', 'person_pd_id', (int)$p['id'], $emails, ['value', 'label', 'primary']);
-        $this->replaceChildren('pipe_person_phones', 'person_pd_id', (int)$p['id'], $phones, ['value', 'label', 'primary']);
+        if ($st->rowCount() > 0) {   // DDI-030: resposta ANTIGA (upsert condicional não aplicou) não troca e-mails/telefones da versão mais nova
+            $this->replaceChildren('pipe_person_emails', 'person_pd_id', (int)$p['id'], $emails, ['value', 'label', 'primary']);
+            $this->replaceChildren('pipe_person_phones', 'person_pd_id', (int)$p['id'], $phones, ['value', 'label', 'primary']);
+        }
         return $out;
     }
 
@@ -646,6 +658,7 @@ final class PipeSyncRepository
     public function upsertActivity(array $a): string
     {
         $raw = json_encode($a, JSON_UNESCAPED_UNICODE);
+        $vn = self::VERSAO_NOVA;   // DDI-030: só grava se a versão da origem recebida for >= à persistida (source_updated_at por ÚLTIMO)
         $st = $this->pdo->prepare(
             "INSERT INTO pipe_activities
                (pipedrive_id, company_id, subject, type, status, owner_id, creator_user_id, due_date, due_time,
@@ -654,15 +667,15 @@ final class PipeSyncRepository
              VALUES (:pd,:co,:subj,:type,:status,:owner,:creator,:dd,:dt,:dur,:done,:mdt,:loc,:note,
                      :deal,:person,:org,:custom,:del,:add,:upd,:upd2,:raw,:hash,NOW())
              ON DUPLICATE KEY UPDATE
-               company_id=VALUES(company_id), subject=VALUES(subject), type=VALUES(type), status=VALUES(status),
-               owner_id=VALUES(owner_id), creator_user_id=VALUES(creator_user_id), due_date=VALUES(due_date),
-               due_time=VALUES(due_time), duration=VALUES(duration), done=VALUES(done),
-               marked_done_time=VALUES(marked_done_time), location=VALUES(location), note=VALUES(note),
-               deal_pd_id=VALUES(deal_pd_id), person_pd_id=VALUES(person_pd_id), org_pd_id=VALUES(org_pd_id),
-               custom_fields=VALUES(custom_fields), is_deleted=VALUES(is_deleted),
-               add_time=VALUES(add_time), update_time=VALUES(update_time), source_updated_at=VALUES(source_updated_at),
-               raw_payload=VALUES(raw_payload), payload_hash=VALUES(payload_hash), last_synced_at=NOW(),
-               sync_version=sync_version+1"
+               company_id=IF({$vn}, VALUES(company_id), company_id), subject=IF({$vn}, VALUES(subject), subject), type=IF({$vn}, VALUES(type), type), status=IF({$vn}, VALUES(status), status),
+               owner_id=IF({$vn}, VALUES(owner_id), owner_id), creator_user_id=IF({$vn}, VALUES(creator_user_id), creator_user_id), due_date=IF({$vn}, VALUES(due_date), due_date),
+               due_time=IF({$vn}, VALUES(due_time), due_time), duration=IF({$vn}, VALUES(duration), duration), done=IF({$vn}, VALUES(done), done),
+               marked_done_time=IF({$vn}, VALUES(marked_done_time), marked_done_time), location=IF({$vn}, VALUES(location), location), note=IF({$vn}, VALUES(note), note),
+               deal_pd_id=IF({$vn}, VALUES(deal_pd_id), deal_pd_id), person_pd_id=IF({$vn}, VALUES(person_pd_id), person_pd_id), org_pd_id=IF({$vn}, VALUES(org_pd_id), org_pd_id),
+               custom_fields=IF({$vn}, VALUES(custom_fields), custom_fields), is_deleted=IF({$vn}, VALUES(is_deleted), is_deleted),
+               add_time=IF({$vn}, VALUES(add_time), add_time), update_time=IF({$vn}, VALUES(update_time), update_time), raw_payload=IF({$vn}, VALUES(raw_payload), raw_payload), payload_hash=IF({$vn}, VALUES(payload_hash), payload_hash), last_synced_at=IF({$vn}, NOW(), last_synced_at),
+               sync_version=IF({$vn}, sync_version+1, sync_version),
+               source_updated_at=IF({$vn}, VALUES(source_updated_at), source_updated_at)"
         );
         $done = !empty($a['done']);
         $st->execute([
@@ -690,6 +703,7 @@ final class PipeSyncRepository
         $labels = $l['label_ids'] ?? null;
         if (is_array($labels)) { $labels = implode(',', array_map('strval', $labels)); }
         $raw = json_encode($l, JSON_UNESCAPED_UNICODE);
+        $vn = self::VERSAO_NOVA;   // DDI-030: só grava se a versão da origem recebida for >= à persistida (source_updated_at por ÚLTIMO)
         $st = $this->pdo->prepare(
             "INSERT INTO pipe_leads
                (pipedrive_id, company_id, title, person_id, org_id, owner_id, creator_user_id, origin, label_ids,
@@ -698,14 +712,15 @@ final class PipeSyncRepository
              VALUES (:pd,:co,:title,:person,:org,:owner,:creator,:origin,:labels,:val,:cur,:arch,:archt,:seen,:conv,:custom,
                      :del,:add,:upd,:upd2,:raw,:hash,NOW())
              ON DUPLICATE KEY UPDATE
-               company_id=VALUES(company_id), title=VALUES(title), person_id=VALUES(person_id), org_id=VALUES(org_id),
-               owner_id=VALUES(owner_id), creator_user_id=VALUES(creator_user_id), origin=VALUES(origin),
-               label_ids=VALUES(label_ids), value=VALUES(value), currency=VALUES(currency),
-               is_archived=VALUES(is_archived), archive_time=VALUES(archive_time), seen=VALUES(seen),
-               converted_deal_id=VALUES(converted_deal_id), custom_fields=VALUES(custom_fields),
-               is_deleted=VALUES(is_deleted), add_time=VALUES(add_time), update_time=VALUES(update_time),
-               source_updated_at=VALUES(source_updated_at), raw_payload=VALUES(raw_payload),
-               payload_hash=VALUES(payload_hash), last_synced_at=NOW(), sync_version=sync_version+1"
+               company_id=IF({$vn}, VALUES(company_id), company_id), title=IF({$vn}, VALUES(title), title), person_id=IF({$vn}, VALUES(person_id), person_id), org_id=IF({$vn}, VALUES(org_id), org_id),
+               owner_id=IF({$vn}, VALUES(owner_id), owner_id), creator_user_id=IF({$vn}, VALUES(creator_user_id), creator_user_id), origin=IF({$vn}, VALUES(origin), origin),
+               label_ids=IF({$vn}, VALUES(label_ids), label_ids), value=IF({$vn}, VALUES(value), value), currency=IF({$vn}, VALUES(currency), currency),
+               is_archived=IF({$vn}, VALUES(is_archived), is_archived), archive_time=IF({$vn}, VALUES(archive_time), archive_time), seen=IF({$vn}, VALUES(seen), seen),
+               converted_deal_id=IF({$vn}, VALUES(converted_deal_id), converted_deal_id), custom_fields=IF({$vn}, VALUES(custom_fields), custom_fields),
+               is_deleted=IF({$vn}, VALUES(is_deleted), is_deleted), add_time=IF({$vn}, VALUES(add_time), add_time), update_time=IF({$vn}, VALUES(update_time), update_time),
+               raw_payload=IF({$vn}, VALUES(raw_payload), raw_payload),
+               payload_hash=IF({$vn}, VALUES(payload_hash), payload_hash), last_synced_at=IF({$vn}, NOW(), last_synced_at), sync_version=IF({$vn}, sync_version+1, sync_version),
+               source_updated_at=IF({$vn}, VALUES(source_updated_at), source_updated_at)"
         );
         $st->execute([
             ':pd' => self::s($l['id'] ?? null), ':co' => self::i($l['company_id'] ?? null),
@@ -772,10 +787,27 @@ final class PipeSyncRepository
         return $tabelas[$entity] ?? null;
     }
 
-    public function markDeleted(string $entity, string $externalId): bool
+    /** Exclusão local (soft delete). DDI-030: com a VERSÃO DA ORIGEM da exclusão ($versaoOrigem, UTC 'Y-m-d H:i:s') a exclusão só se aplica se
+     *  a versão persistida for <= a dela (exclusão ANTIGA não apaga um estado mais NOVO) e grava essa versão em source_updated_at (resposta
+     *  ANTIGA não "ressuscita" o registro, pelo upsert condicional). update_time (da origem) não é mais sobrescrito pelo relógio local;
+     *  last_synced_at = observação local. Entidade sem versão (produto, nota) = comportamento anterior. */
+    public function markDeleted(string $entity, string $externalId, ?string $versaoOrigem = null): bool
     {
         $tabela = self::entityTable($entity);
         if ($tabela === null) { return false; }
+        if (in_array($entity, self::VERSIONADAS, true)) {
+            $v = self::dt($versaoOrigem) ?? gmdate('Y-m-d H:i:s');
+            // Exclusão que chega ANTES de qualquer versão local deixa uma LÁPIDE (só pipedrive_id + is_deleted + versão): senão uma resposta
+            // antiga, chegando depois, criaria o registro como ativo. Com a linha existente, a mesma regra de versão (<=) decide.
+            $cd = '(source_updated_at IS NULL OR source_updated_at <= VALUES(source_updated_at))';
+            $st = $this->pdo->prepare(
+                "INSERT INTO {$tabela} (pipedrive_id, is_deleted, source_updated_at, last_synced_at) VALUES (:pd, 1, :v, NOW())
+                 ON DUPLICATE KEY UPDATE is_deleted = IF({$cd}, 1, is_deleted), last_synced_at = IF({$cd}, NOW(), last_synced_at),
+                   source_updated_at = IF({$cd}, VALUES(source_updated_at), source_updated_at)"
+            );
+            $st->execute([':pd' => $externalId, ':v' => $v]);
+            return $st->rowCount() > 0;
+        }
         $st = $this->pdo->prepare(
             "UPDATE {$tabela} SET is_deleted = 1, update_time = NOW(), last_synced_at = NOW()
              WHERE pipedrive_id = :pd"
@@ -793,12 +825,27 @@ final class PipeSyncRepository
                          ->fetchAll(PDO::FETCH_COLUMN);
     }
 
-    /** Marca em lote como excluido (reconciliacao). @return int linhas afetadas. */
-    public function markDeletedBatch(string $entity, array $ids): int
+    /** Marca em lote como excluido (reconciliacao). @return int linhas afetadas.
+     *  DDI-030: $versoes = versão da origem da exclusão — string única (ex.: início da leitura completa) ou mapa id => versão (ex.: update_time do
+     *  negócio excluído); a mesma regra do markDeleted (só apaga se a persistida for <= e grava a versão). */
+    public function markDeletedBatch(string $entity, array $ids, $versoes = null): int
     {
         $tabela = self::entityTable($entity);
         if ($tabela === null || !$ids) { return 0; }
         $afetadas = 0;
+        if (in_array($entity, self::VERSIONADAS, true)) {
+            $padrao = is_string($versoes) ? (self::dt($versoes) ?? gmdate('Y-m-d H:i:s')) : gmdate('Y-m-d H:i:s');
+            $st = $this->pdo->prepare(
+                "UPDATE {$tabela} SET is_deleted = 1, source_updated_at = :v, last_synced_at = NOW()
+                 WHERE is_deleted = 0 AND pipedrive_id = :pd AND (source_updated_at IS NULL OR source_updated_at <= :v2)"
+            );
+            foreach ($ids as $id) {
+                $v = is_array($versoes) ? (self::dt($versoes[$id] ?? null) ?? $padrao) : $padrao;
+                $st->execute([':pd' => (string) $id, ':v' => $v, ':v2' => $v]);
+                $afetadas += $st->rowCount();
+            }
+            return $afetadas;
+        }
         foreach (array_chunk($ids, 500) as $lote) {
             $ph = implode(',', array_fill(0, count($lote), '?'));
             $st = $this->pdo->prepare(

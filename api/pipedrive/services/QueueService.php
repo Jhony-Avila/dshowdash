@@ -205,13 +205,14 @@ final class PipeQueueService
         }
         [$version, $path, $upsert] = $map;
 
+        $consultaEm = gmdate('Y-m-d H:i:s');   // DDI-030: versão da origem da exclusão = o instante da consulta (nada mais novo que isso é apagado)
         $res = $client->request('GET', $version, '/' . $path . '/' . rawurlencode($extId));
         $this->accounts->logApiRequest('GET', '/' . $path . '/{id}', $res);
         $status = (int)($res['status'] ?? 0);
 
         // Excluido a montante -> soft delete local (idempotente).
         if ($status === 404 || $status === 410) {
-            $this->repo->markDeleted($entity, $extId);
+            $this->repo->markDeleted($entity, $extId, $consultaEm);
             return ['ok' => true, 'action' => 'deleted'];
         }
 
