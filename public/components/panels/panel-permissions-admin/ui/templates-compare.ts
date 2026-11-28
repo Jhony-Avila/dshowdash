@@ -29,6 +29,8 @@
 
 import { Icons } from './icons.js';
 import { getInitials, groupByArea, formatArea } from './templates-helpers.js';
+// P0 suspeito XSS-UARPS (VERDE 27/11): nomes vêm do perfil editável pela própria pessoa; no HTML só a versão escapada.
+const _esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
 
 export const VERSION = '9.3.0-P2-ENTERPRISE';
 export const MODULE_ID = 'uarps-templates-compare';
@@ -49,7 +51,7 @@ export function compareLegend() {
 export function compareUsers(userA: Record<string, unknown> | null, userB: Record<string, unknown> | null) {
   const initialsA = getInitials(String((userA && userA.nome) || 'A'));
   const initialsB = getInitials(String((userB && userB.nome) || 'B'));
-  return `<div class="uarps-compare-users"><span class="uarps-compare-users__label">Comparando:</span><div class="uarps-compare-users__list"><div class="uarps-compare-users__avatar uarps-tooltip" data-tooltip="${(userA && userA.nome) || 'Usuário A'}">${initialsA}</div><div class="uarps-compare-users__avatar uarps-tooltip" data-tooltip="${(userB && userB.nome) || 'Usuário B'}">${initialsB}</div></div></div>`;
+  return `<div class="uarps-compare-users"><span class="uarps-compare-users__label">Comparando:</span><div class="uarps-compare-users__list"><div class="uarps-compare-users__avatar uarps-tooltip" data-tooltip="${_esc((userA && userA.nome) || 'Usuário A')}">${_esc(initialsA)}</div><div class="uarps-compare-users__avatar uarps-tooltip" data-tooltip="${_esc((userB && userB.nome) || 'Usuário B')}">${_esc(initialsB)}</div></div></div>`;
 }
 
 interface CompareData {
@@ -63,7 +65,7 @@ interface CompareData {
 }
 
 export function compareStats(data: CompareData) {
-  return `<div class="uarps-compare-stats"><div class="uarps-stats__item uarps-tooltip" data-tooltip="Triggers exclusivos de ${data.userA && data.userA.nome}"><div class="uarps-compare-legend__dot uarps-compare-legend__dot--a"></div><span class="uarps-stats__value">${data.stats?.onlyA}</span></div><div class="uarps-stats__item uarps-tooltip" data-tooltip="Triggers exclusivos de ${data.userB && data.userB.nome}"><div class="uarps-compare-legend__dot uarps-compare-legend__dot--b"></div><span class="uarps-stats__value">${data.stats?.onlyB}</span></div><div class="uarps-stats__item uarps-tooltip" data-tooltip="Triggers em comum"><div class="uarps-compare-legend__dot uarps-compare-legend__dot--both"></div><span class="uarps-stats__value">${data.stats?.both}</span></div></div>`;
+  return `<div class="uarps-compare-stats"><div class="uarps-stats__item uarps-tooltip" data-tooltip="Triggers exclusivos de ${_esc(data.userA && data.userA.nome)}"><div class="uarps-compare-legend__dot uarps-compare-legend__dot--a"></div><span class="uarps-stats__value">${data.stats?.onlyA}</span></div><div class="uarps-stats__item uarps-tooltip" data-tooltip="Triggers exclusivos de ${_esc(data.userB && data.userB.nome)}"><div class="uarps-compare-legend__dot uarps-compare-legend__dot--b"></div><span class="uarps-stats__value">${data.stats?.onlyB}</span></div><div class="uarps-stats__item uarps-tooltip" data-tooltip="Triggers em comum"><div class="uarps-compare-legend__dot uarps-compare-legend__dot--both"></div><span class="uarps-stats__value">${data.stats?.both}</span></div></div>`;
 }
 
 export function triggerMatrixCompare(triggers: Record<string, unknown>[], compareData: CompareData | null) {
