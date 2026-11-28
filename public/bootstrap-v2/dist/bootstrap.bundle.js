@@ -1,25 +1,25 @@
-import { guardedBoot as Gd } from "/boot/boot-guard.js";
+import { guardedBoot as zd } from "/boot/boot-guard.js";
 import { BOOT_EVENTS as Ot } from "/core/runtime/events/catalog/boot.events.js";
 import { createCorePorts as Ln } from "/core/runtime/ports-profiles.js";
-import { isStrict as de, recordViolation as Sn, setBootReady as zd, EnterpriseViolationError as Ht, setEventBusGetter as Vd, VERSION as Va, healthCheck as Yd, getViolations as jd, exposeDevTools as Wd } from "/core/runtime/enterprise/strict-mode.js";
+import { isStrict as de, recordViolation as Sn, setBootReady as Vd, EnterpriseViolationError as Ht, setEventBusGetter as Yd, VERSION as Va, healthCheck as jd, getViolations as Wd, exposeDevTools as $d } from "/core/runtime/enterprise/strict-mode.js";
 import * as Vt from "/core/runtime/enterprise/governance-telemetry-bridge.js";
-import { createReadyPayload as $d, createUpdatedPayload as al } from "/core/runtime/constants/payload-contracts.js";
-import { createEarlyLogger as Kd } from "/core/runtime/early-boot-logger.js";
+import { createReadyPayload as Kd, createUpdatedPayload as al } from "/core/runtime/constants/payload-contracts.js";
+import { createEarlyLogger as qd } from "/core/runtime/early-boot-logger.js";
 import { DEGRADATION_EVENTS as _n } from "/core/runtime/events/catalog/degradation.events.js";
 import { CORE_EVENTS as Bt } from "/core/runtime/events/catalog/core.events.js";
-import { validateAll as qd } from "/core/runtime/contracts/runtime-governance-rules.js";
-import { registerModule as Jd, aggregateHealth as Zd } from "/core/runtime/health/runtime-health-aggregator.js";
+import { validateAll as Jd } from "/core/runtime/contracts/runtime-governance-rules.js";
+import { registerModule as Zd, aggregateHealth as Qd } from "/core/runtime/health/runtime-health-aggregator.js";
 import { AUTH_EVENTS as st } from "/core/runtime/events/catalog/auth.events.js";
-import Qd from "/core/auth/permissions/permissions-guard-enterprise.js";
-import Xd from "/core/auth/policies/security-policies-enterprise.js";
-import ef from "/core/auth/auth-orchestrator/auth-orchestrator.js";
-import tf, { setOrchestrator as rf } from "/core/auth/adapters/auth-adapter-enterprise.js";
+import Xd from "/core/auth/permissions/permissions-guard-enterprise.js";
+import ef from "/core/auth/policies/security-policies-enterprise.js";
+import tf from "/core/auth/auth-orchestrator/auth-orchestrator.js";
+import rf, { setOrchestrator as nf } from "/core/auth/adapters/auth-adapter-enterprise.js";
 import { SessionManager as ne } from "/components/session-manager/dist/session-manager.bundle.js";
-import { createAuthRedirectController as nf } from "/core/auth/bridges/auth-redirect-controller.js";
+import { createAuthRedirectController as af } from "/core/auth/bridges/auth-redirect-controller.js";
 import { ROUTER_EVENTS as Gl } from "/core/runtime/events/catalog/router.events.js";
-import { ORCHESTRATOR_EVENTS as af } from "/core/runtime/events/catalog/orchestrator.events.js";
+import { ORCHESTRATOR_EVENTS as of } from "/core/runtime/events/catalog/orchestrator.events.js";
 import { findRegion as pt, REGION_IDS as Et } from "/platform/shell/layout-regions.js";
-import { SHELL_EVENTS as of } from "/core/runtime/events/catalog/shell.events.js";
+import { SHELL_EVENTS as sf } from "/core/runtime/events/catalog/shell.events.js";
 var Or = "bootstrap-v2-loader", rr = "7.0.0-EXPLICIT-START", sr = typeof window < "u";
 const lr = {
   preBootOrchestrator: null,
@@ -30,25 +30,25 @@ const lr = {
 function _i() {
   return lr.preBootOrchestrator;
 }
-function sf(e) {
+function lf(e) {
   lr.preBootOrchestrator = e;
 }
 function yo() {
   return lr.bootstrapInstance;
 }
-function lf(e) {
+function uf(e) {
   lr.bootstrapInstance = e;
 }
 function zi() {
   return lr.preBootResult;
 }
-function uf(e) {
+function cf(e) {
   lr.preBootResult = e;
 }
 function zl() {
   return lr.bootResult;
 }
-function cf(e) {
+function df(e) {
   lr.bootResult = e;
 }
 const z = Object.freeze({
@@ -104,13 +104,13 @@ const z = Object.freeze({
   UNHEALTHY: "UNHEALTHY",
   FAILED: "FAILED"
 });
-function df(e) {
+function ff(e) {
   return z[e] || z.DEFAULT_MODULE;
 }
-function ff() {
+function hf() {
   return { ...z };
 }
-var B = N, hf = Object.freeze([
+var B = N, gf = Object.freeze([
   N.HEALTHY,
   N.DEGRADED,
   N.UNHEALTHY,
@@ -144,7 +144,7 @@ var B = N, hf = Object.freeze([
   UNHEALTHY: N.UNHEALTHY,
   FAILED: N.FAILED
 });
-function gf(e) {
+function mf(e) {
   if (!e || typeof e != "string")
     return N.DEGRADED;
   var t = Ya[e];
@@ -152,13 +152,13 @@ function gf(e) {
   var r = e.toUpperCase();
   return Ya[r] ? Ya[r] : N.DEGRADED;
 }
-function mf(e) {
-  return hf.indexOf(e) !== -1;
+function pf(e) {
+  return gf.indexOf(e) !== -1;
 }
 function ue(e) {
   e || (e = {});
   var t = e.status || N.DEGRADED;
-  mf(t) || (t = gf(t));
+  pf(t) || (t = mf(t));
   var r = {
     status: t,
     moduleId: e.moduleId || "unknown",
@@ -202,7 +202,7 @@ const V = Object.freeze({
   DEGRADATION: "degradation",
   KERNEL: "kernel",
   ROLLBACK: "rollback"
-}), pf = Object.freeze({
+}), Ef = Object.freeze({
   // PRE-BOOT: Apenas informacional
   [ye.PRE_BOOT]: {
     allowedRoles: [V.INFORMATIONAL, V.PROGRESS],
@@ -309,14 +309,14 @@ const V = Object.freeze({
     description: "Rollback events inform about rollback execution"
   }
 });
-function Ef(e) {
+function vf(e) {
   if (!e || typeof e != "string")
     return null;
   const t = e.toLowerCase();
   return t.indexOf("pre-boot") !== -1 || t.indexOf("preboot") !== -1 ? ye.PRE_BOOT : t.indexOf("orchestrator") !== -1 ? ye.ORCHESTRATOR : t.indexOf("phase") !== -1 && t.indexOf("progress") === -1 ? ye.PHASE : t.indexOf("module") !== -1 ? ye.MODULE : t.indexOf("bootstrap") !== -1 ? ye.BOOTSTRAP : t.indexOf("progress") !== -1 ? ye.PROGRESS : t.indexOf("health") !== -1 ? ye.HEALTH : t.indexOf("degrad") !== -1 ? ye.DEGRADATION : t.indexOf("kernel") !== -1 ? ye.KERNEL : t.indexOf("rollback") !== -1 ? ye.ROLLBACK : null;
 }
-function vf(e, t, r) {
-  const n = [], i = [], o = Ef(e), l = o ? pf[o] : null;
+function yf(e, t, r) {
+  const n = [], i = [], o = vf(e), l = o ? Ef[o] : null;
   return l ? (l.forbiddenRoles.indexOf(t) !== -1 && n.push('Role "' + t + '" is forbidden for ' + o + " events"), l.allowedRoles.indexOf(t) === -1 && i.push('Role "' + t + '" is not in allowed list for ' + o), (t === V.DECISIONAL || t === V.COMMAND) && n.push("Events cannot have DECISIONAL or COMMAND role (Briefing principle)"), r && (r.triggersFlowChange && !l.canTriggerFlowChange && n.push("Event " + e + " cannot trigger flow changes"), r.triggersUIChange && !l.canTriggerUIChange && i.push("Event " + e + " should not trigger UI changes")), {
     valid: n.length === 0,
     errors: n,
@@ -381,7 +381,7 @@ function Ao() {
   };
 }
 function It(e, t) {
-  var r = Nn + e, n = vf(r, V.OBSERVABILITY, {
+  var r = Nn + e, n = yf(r, V.OBSERVABILITY, {
     triggersFlowChange: !1,
     triggersUIChange: !1
   });
@@ -405,7 +405,7 @@ function It(e, t) {
     // v2.4.0: Add role from contract
     role: V.OBSERVABILITY
   };
-  for (yf(i), At.unshift(i); At.length > Vl; )
+  for (Af(i), At.unshift(i); At.length > Vl; )
     At.pop();
   var o = wt[e] || [];
   o.forEach(function(a) {
@@ -427,7 +427,7 @@ function It(e, t) {
     }
   return i;
 }
-function yf(e) {
+function Af(e) {
   var t = e.phaseId, r = e.moduleId;
   switch (t && !J.byPhase[t] && (J.byPhase[t] = {
     started: 0,
@@ -671,7 +671,7 @@ function iu() {
     }
   });
 }
-var Af = {
+var Sf = {
   MODULE_EVENT_TYPES: De,
   MODULE_EVENTS_NAMESPACE: Nn,
   init: Yl,
@@ -710,7 +710,7 @@ const au = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   MODULE_ID: Vi,
   VERSION: Yi,
   clearHistory: ru,
-  default: Af,
+  default: Sf,
   emit: It,
   emitModuleComplete: Kl,
   emitModuleError: ql,
@@ -759,7 +759,7 @@ var Jr = "opentelemetry-adapter", Zr = "1.1.0-HEALTH-CONTRACT", je = {
   COUNTER: "counter",
   HISTOGRAM: "histogram",
   GAUGE: "gauge"
-}, qt = [], Jt = [], Sf = 100, Of = 500, Ve = {
+}, qt = [], Jt = [], Of = 100, If = 500, Ve = {
   serviceName: "dshowdash-bootstrap",
   serviceVersion: "2.8.0-PERSISTENCE",
   serviceNamespace: "bootstrap-v2",
@@ -774,7 +774,7 @@ function ou() {
     t += e[Math.floor(Math.random() * 16)];
   return t;
 }
-function If() {
+function Tf() {
   for (var e = "0123456789abcdef", t = "", r = 0; r < 16; r++)
     t += e[Math.floor(Math.random() * 16)];
   return t;
@@ -782,7 +782,7 @@ function If() {
 function wo(e, t, r) {
   var n = {
     traceId: Co || ou(),
-    spanId: If(),
+    spanId: Tf(),
     parentSpanId: r || null,
     name: e,
     kind: "INTERNAL",
@@ -792,7 +792,7 @@ function wo(e, t, r) {
     status: { code: On.UNSET },
     events: []
   };
-  for (qt.unshift(n); qt.length > Sf; )
+  for (qt.unshift(n); qt.length > Of; )
     qt.pop();
   return n;
 }
@@ -825,7 +825,7 @@ function kn(e, t, r, n, i) {
     attributes: Hn(Object.assign({}, Ki(), n || {})),
     timestamp: Date.now()
   };
-  for (Jt.unshift(o); Jt.length > Of; )
+  for (Jt.unshift(o); Jt.length > If; )
     Jt.pop();
   return o;
 }
@@ -973,7 +973,7 @@ function fu() {
     }
   });
 }
-var Tf = {
+var bf = {
   OTEL_ATTRIBUTES: je,
   SPAN_STATUS: On,
   METRIC_TYPES: nr,
@@ -1000,7 +1000,7 @@ var Tf = {
   MODULE_ID: Jr,
   VERSION: Zr
 };
-const bf = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const Rf = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   METRIC_TYPES: nr,
   MODULE_ID: Jr,
@@ -1013,7 +1013,7 @@ const bf = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   clearSpans: Ho,
   configure: cu,
   createSpan: wo,
-  default: Tf,
+  default: bf,
   endSpan: su,
   endTrace: _o,
   exportMetrics: Mo,
@@ -1043,12 +1043,12 @@ var qi = "network-detector", Ji = "1.1.0-HEALTH-CONTRACT", Ae = {
   poor: 2.5,
   offline: 0,
   unknown: 1.2
-}, Rf = {
+}, wf = {
   "4g": Ae.EXCELLENT,
   "3g": Ae.GOOD,
   "2g": Ae.FAIR,
   "slow-2g": Ae.POOR
-}, cn = null, Wa = null, wf = 5e3, Br = [];
+}, cn = null, Wa = null, Df = 5e3, Br = [];
 function xo() {
   return typeof navigator > "u" ? null : navigator.connection || navigator.mozConnection || navigator.webkitConnection || null;
 }
@@ -1073,7 +1073,7 @@ function Qi() {
       online: !0
     };
   var t = e.effectiveType || null, r = e.downlink || null, n = e.rtt || null, i = e.saveData || !1, o = Ae.UNKNOWN;
-  return t && (o = Rf[t] || Ae.UNKNOWN), n !== null && (n < 50 ? o = Ae.EXCELLENT : n < 100 ? o = Ae.GOOD : n < 300 ? o = Ae.FAIR : o = Ae.POOR), i && o === Ae.EXCELLENT && (o = Ae.GOOD), {
+  return t && (o = wf[t] || Ae.UNKNOWN), n !== null && (n < 50 ? o = Ae.EXCELLENT : n < 100 ? o = Ae.GOOD : n < 300 ? o = Ae.FAIR : o = Ae.POOR), i && o === Ae.EXCELLENT && (o = Ae.GOOD), {
     quality: o,
     effectiveType: t,
     downlink: r,
@@ -1085,7 +1085,7 @@ function Qi() {
 function He(e) {
   if (!e && cn && Wa) {
     var t = Date.now() - Wa;
-    if (t < wf)
+    if (t < Df)
       return cn;
   }
   return cn = Qi(), Wa = Date.now(), cn;
@@ -1114,13 +1114,13 @@ function hu(e, t) {
   };
 }
 function gu(e) {
-  return Br.push(e), Br.length === 1 && Df(), function() {
+  return Br.push(e), Br.length === 1 && Cf(), function() {
     var t = Br.indexOf(e);
-    t !== -1 && Br.splice(t, 1), Br.length === 0 && Cf();
+    t !== -1 && Br.splice(t, 1), Br.length === 0 && Lf();
   };
 }
 var Dt = null;
-function Df() {
+function Cf() {
   if (!(typeof window > "u")) {
     Dt = function() {
       cn = null;
@@ -1136,7 +1136,7 @@ function Df() {
     e && e.addEventListener && e.addEventListener("change", Dt);
   }
 }
-function Cf() {
+function Lf() {
   if (!(typeof window > "u" || !Dt)) {
     window.removeEventListener("online", Dt), window.removeEventListener("offline", Dt);
     var e = xo();
@@ -1186,7 +1186,7 @@ function zo() {
     }
   });
 }
-var Lf = {
+var _f = {
   NETWORK_QUALITY: Ae,
   TIMEOUT_MULTIPLIERS: Zi,
   detectNetworkQuality: Qi,
@@ -1209,7 +1209,7 @@ const mu = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   TIMEOUT_MULTIPLIERS: Zi,
   VERSION: Ji,
   calculateAdjustedTimeout: Bn,
-  default: Lf,
+  default: _f,
   detectNetworkQuality: Qi,
   getNetworkInfo: He,
   getPhaseTimeout: hu,
@@ -1220,8 +1220,8 @@ const mu = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   isOnline: Xi,
   onNetworkChange: gu
 }, Symbol.toStringTag, { value: "Module" }));
-var ea = "manifest-integrity", ta = "2.1.0-HEALTH-CONTRACT", Vo = "bootstrap-v2:manifest-hash", Yo = "bootstrap-v2:manifest-hash-meta", oe = null, Ne = null, Re = null, Fr = [], _f = 20, ir = !1;
-function Nf() {
+var ea = "manifest-integrity", ta = "2.1.0-HEALTH-CONTRACT", Vo = "bootstrap-v2:manifest-hash", Yo = "bootstrap-v2:manifest-hash-meta", oe = null, Ne = null, Re = null, Fr = [], Nf = 20, ir = !1;
+function Mf() {
   try {
     return !!(window.crypto && window.crypto.subtle && window.crypto.subtle.digest);
   } catch {
@@ -1229,7 +1229,7 @@ function Nf() {
   }
 }
 (function() {
-  ir = Nf();
+  ir = Mf();
 })();
 function In(e) {
   for (var t = 2166136261, r = 0; r < e.length; r++)
@@ -1391,7 +1391,7 @@ function Xr(e, t) {
     issues: i,
     algorithm: "fnv-1a"
   };
-  for (Re = a, Fr.unshift(a); Fr.length > _f; )
+  for (Re = a, Fr.unshift(a); Fr.length > Nf; )
     Fr.pop();
   return {
     valid: n,
@@ -1470,7 +1470,7 @@ function Jo() {
     }
   });
 }
-var Mf = {
+var Pf = {
   hashString: Wo,
   hashStringFNV: In,
   hashStringSHA256: jo,
@@ -1500,7 +1500,7 @@ const Iu = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   calculateManifestHash: Un,
   calculateManifestHashAsync: ra,
   clearPersistedHash: qo,
-  default: Mf,
+  default: Pf,
   getLastValidation: Su,
   getValidationHistory: Au,
   hashObject: Ir,
@@ -1518,7 +1518,7 @@ const Iu = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   validateIntegrityAsync: yu,
   wasTampered: ia
 }, Symbol.toStringTag, { value: "Module" }));
-var oa = "phase-rollback", sa = "1.1.0-HEALTH-CONTRACT", We = {}, Nt = [], vr = [], Pf = 50, Ct = {
+var oa = "phase-rollback", sa = "1.1.0-HEALTH-CONTRACT", We = {}, Nt = [], vr = [], kf = 50, Ct = {
   PENDING: "pending",
   IN_PROGRESS: "in_progress",
   COMPLETED: "completed",
@@ -1683,7 +1683,7 @@ function $a(e) {
     status: e.status,
     handlersExecuted: e.handlersExecuted,
     duration: e.duration
-  }); vr.length > Pf; )
+  }); vr.length > kf; )
     vr.pop();
 }
 function es() {
@@ -1741,7 +1741,7 @@ function Lu() {
     }
   });
 }
-var kf = {
+var Hf = {
   ROLLBACK_STATUS: Ct,
   registerRollback: Zo,
   unregisterRollback: Tu,
@@ -1760,14 +1760,14 @@ var kf = {
   MODULE_ID: oa,
   VERSION: sa
 };
-const Hf = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const Bf = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   MODULE_ID: oa,
   ROLLBACK_STATUS: Ct,
   VERSION: sa,
   clearHistory: Cu,
   clearPhaseExecution: Qo,
-  default: kf,
+  default: Hf,
   getExecutedPhases: wu,
   getPhaseHandlers: Ru,
   getRegisteredPhases: ua,
@@ -1875,7 +1875,7 @@ async function ns(e, t) {
   if (gr.has(e))
     return gr.get(e);
   Pe.lazyLoadsTriggered++;
-  var r = performance.now(), n = Bf(e, t, r);
+  var r = performance.now(), n = Uf(e, t, r);
   gr.set(e, n);
   try {
     var i = await n;
@@ -1884,7 +1884,7 @@ async function ns(e, t) {
     gr.delete(e);
   }
 }
-async function Bf(e, t, r) {
+async function Uf(e, t, r) {
   var n = t || {};
   try {
     var i = yt.getFeature ? yt.getFeature(e) : null;
@@ -1895,7 +1895,7 @@ async function Bf(e, t, r) {
           throw new Error("Failed to enable: " + JSON.stringify(o.errors));
       }
     } else {
-      var l = n.path || "../features/" + e + "/index.js", a = await Uf(
+      var l = n.path || "../features/" + e + "/index.js", a = await xf(
         import(l),
         Zt.loadTimeoutMs,
         e
@@ -1919,7 +1919,7 @@ async function Bf(e, t, r) {
     return Pe.lazyLoadsFailed++, ol("error", "❌ Failed to load: " + e, c), { ok: !1, featureId: e, error: c.message, duration: u };
   }
 }
-function Uf(e, t, r) {
+function xf(e, t, r) {
   return new Promise(function(n, i) {
     var o = setTimeout(function() {
       i(new Error("Load timeout for " + r + " after " + t + "ms"));
@@ -2009,7 +2009,7 @@ function Hu() {
     }
   });
 }
-var xf = {
+var Ff = {
   MODULE_ID: ca,
   VERSION: xn,
   init: _u,
@@ -2034,7 +2034,7 @@ const Bu = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   MODULE_ID: ca,
   VERSION: xn,
   addRouteFeature: ku,
-  default: xf,
+  default: Ff,
   destroy: Nu,
   getLoadedFeatures: as,
   getMetrics: ss,
@@ -2057,7 +2057,7 @@ var ga = "boot-cancellation", ma = "1.2.0-HEALTH-CONTRACT", Qt = null, _t = null
   reason: null,
   phase: null,
   abortController: null
-}, Gr = [], pn = [], Ff = 20;
+}, Gr = [], pn = [], Gf = 20;
 function Uu(e) {
   return e === void 0 && (e = {}), Qt = e.eventBus || null, _t = e.getBootState || null, { initialized: !0, hasEventBus: !!Qt, hasBootStateGetter: !!_t };
 }
@@ -2112,7 +2112,7 @@ function pa(e, t) {
     timestamp: X.cancelledAt,
     reason: X.reason,
     phase: X.phase
-  }); pn.length > Ff; )
+  }); pn.length > Gf; )
     pn.pop();
   var n = {
     cancelled: !0,
@@ -2218,7 +2218,7 @@ function us() {
   });
 }
 Fu();
-var Gf = {
+var zf = {
   init: Uu,
   setEventBus: xu,
   isCancelled: Fn,
@@ -2243,7 +2243,7 @@ const ju = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   canCancel: wr,
   cancel: pa,
   checkCancellation: zu,
-  default: Gf,
+  default: zf,
   getAbortSignal: Gu,
   getHistory: Yu,
   getState: Gn,
@@ -2256,7 +2256,7 @@ const ju = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   reset: va,
   setEventBus: xu
 }, Symbol.toStringTag, { value: "Module" }));
-var ya = "partial-reinit", Aa = "1.1.0-HEALTH-CONTRACT", yr = [], zf = 30, Ge = {}, zn = [
+var ya = "partial-reinit", Aa = "1.1.0-HEALTH-CONTRACT", yr = [], Vf = 30, Ge = {}, zn = [
   "phase-4-ui-prep",
   "phase-5-ui",
   "phase-6-platform"
@@ -2327,7 +2327,7 @@ function Yn(e, t) {
             results: o,
             duration: u
           };
-          Vf(d), r(d);
+          Yf(d), r(d);
           return;
         }
         var f = n[s], g = performance.now();
@@ -2392,14 +2392,14 @@ function cs(e, t, r) {
   var o = n.slice(i);
   return jn(o, t, r);
 }
-function Vf(e) {
+function Yf(e) {
   for (yr.unshift({
     timestamp: Date.now(),
     phaseId: e.phaseId,
     success: e.success,
     handlersExecuted: e.handlersExecuted,
     duration: e.duration
-  }); yr.length > zf; )
+  }); yr.length > Vf; )
     yr.pop();
 }
 function Ku() {
@@ -2450,7 +2450,7 @@ function Zu() {
     }
   });
 }
-var Yf = {
+var jf = {
   REINIT_SUPPORTED_PHASES: zn,
   registerHandler: Wu,
   unregisterHandler: $u,
@@ -2472,7 +2472,7 @@ const Qu = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   MODULE_ID: ya,
   REINIT_SUPPORTED_PHASES: zn,
   VERSION: Aa,
-  default: Yf,
+  default: jf,
   getHistory: Ku,
   getPhaseHandlers: qu,
   getRegisteredPhases: Sa,
@@ -2486,7 +2486,7 @@ const Qu = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   supportsReinit: Vn,
   unregisterHandler: $u
 }, Symbol.toStringTag, { value: "Module" }));
-function jf() {
+function Wf() {
   if (!sr) return null;
   if (window.Core && window.Core.windowAdapter && window.Core.windowAdapter.get) {
     var e = window.Core.windowAdapter.get("Kernel");
@@ -2494,11 +2494,11 @@ function jf() {
   }
   return window.Kernel || null;
 }
-function Wf() {
-  var e = yo();
-  return e && e.getKernel ? e.getKernel() : jf();
-}
 function $f() {
+  var e = yo();
+  return e && e.getKernel ? e.getKernel() : Wf();
+}
+function Kf() {
   return {
     moduleId: Or,
     version: rr,
@@ -2530,7 +2530,7 @@ function $f() {
     hasBootResult: !!zl()
   };
 }
-function Kf() {
+function qf() {
   var e = _i(), t = yo(), r = e ? e.healthCheck() : null, n = t ? t.healthCheck() : null, i = "INITIALIZING";
   if (n && (i = n.status), Qr() && (i = i === "HEALTHY" ? "DEGRADED" : i), t && t.getManifest) {
     var o = Xr(t.getManifest());
@@ -2552,24 +2552,24 @@ function Kf() {
     timestamp: Date.now()
   };
 }
-const qf = Ln({ moduleId: Or + ":loader-logger" });
+const Jf = Ln({ moduleId: Or + ":loader-logger" });
 function te(e, t, r) {
-  const n = qf.get("logger");
+  const n = Jf.get("logger");
   if (n && n[e]) {
     n[e]("[" + Or + "] " + t, r || "");
     return;
   }
   e === "error" && console.error("[" + Or + "]", t, r || "");
 }
-let Jf = null;
+let Zf = null;
 function uo(e, t) {
   try {
-    const r = Jf || (sr ? window.EventBus : null);
+    const r = Zf || (sr ? window.EventBus : null);
     r && r.emit && r.emit(e, Object.assign({}, t, { source: Or, timestamp: Date.now() }));
   } catch {
   }
 }
-var Zf = "1.0.1-CONTRACTS", at = {
+var Qf = "1.0.1-CONTRACTS", at = {
   IDLE: "idle",
   INITIALIZING: "initializing",
   LOADING_BRIDGE: "loading-bridge",
@@ -2601,11 +2601,11 @@ function qa() {
       moduleTimings: {}
     },
     errors: [],
-    version: Zf
+    version: Qf
   };
 }
 var Ja = "pre-boot-orchestrator", sl = "1.2.0-DOMAIN-PURE";
-function Qf(e) {
+function Xf(e) {
   e === void 0 && (e = {});
   var t = at.IDLE, r = qa(), n = {}, i = [], o = e.logger || null, l = e.eventBus || null, a = {
     status: "INITIALIZING",
@@ -2792,10 +2792,10 @@ function Qf(e) {
   };
 }
 var Za = null;
-function Xf(e) {
-  return Za || (Za = Qf(e)), Za;
+function eh(e) {
+  return Za || (Za = Xf(e)), Za;
 }
-function eh() {
+function th() {
   if (!sr) return null;
   if (window.Core && window.Core.windowAdapter && window.Core.windowAdapter.get) {
     const e = window.Core.windowAdapter.get("Logger");
@@ -2803,17 +2803,17 @@ function eh() {
   }
   return window.Logger || null;
 }
-function th() {
+function rh() {
   te("info", "Stage -1: Pre-Boot starting");
-  const e = Xf({ logger: eh() });
-  return sf(e), e.run().then(function(t) {
-    return uf(t), te("info", "Stage -1: Pre-Boot complete", {
+  const e = eh({ logger: th() });
+  return lf(e), e.run().then(function(t) {
+    return cf(t), te("info", "Stage -1: Pre-Boot complete", {
       success: t.success,
       totalTime: t.timing.totalTime
     }), t;
   });
 }
-function rh(e, t) {
+function nh(e, t) {
   sr && (window[e] = t);
 }
 const ds = "circuit-breaker", fs = "1.2.0-HEALTH-CONTRACT", ce = {
@@ -3002,7 +3002,7 @@ function gs() {
     health: Dr()
   };
 }
-var nh = {
+var ih = {
   createCircuitBreaker: hs,
   getBreaker: Wn,
   getAllBreakers: $n,
@@ -3023,7 +3023,7 @@ const tt = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   STATES: ce,
   VERSION: fs,
   createCircuitBreaker: hs,
-  default: nh,
+  default: ih,
   getAllBreakers: $n,
   getBreaker: Wn,
   getOpenBreakers: Ia,
@@ -3033,7 +3033,7 @@ const tt = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   resetAll: Xu,
   subscribe: Mi
 }, Symbol.toStringTag, { value: "Module" }));
-var ec = N, ih = Object.freeze([
+var ec = N, ah = Object.freeze([
   N.HEALTHY,
   N.DEGRADED,
   N.UNHEALTHY,
@@ -3067,7 +3067,7 @@ var ec = N, ih = Object.freeze([
   UNHEALTHY: N.UNHEALTHY,
   FAILED: N.FAILED
 });
-function ah(e) {
+function oh(e) {
   if (!e || typeof e != "string")
     return N.DEGRADED;
   var t = Qa[e];
@@ -3075,13 +3075,13 @@ function ah(e) {
   var r = e.toUpperCase();
   return Qa[r] ? Qa[r] : N.DEGRADED;
 }
-function oh(e) {
-  return ih.indexOf(e) !== -1;
+function sh(e) {
+  return ah.indexOf(e) !== -1;
 }
 function tc(e) {
   e || (e = {});
   var t = e.status || N.DEGRADED;
-  oh(t) || (t = ah(t));
+  sh(t) || (t = oh(t));
   var r = {
     status: t,
     moduleId: e.moduleId || "unknown",
@@ -3116,7 +3116,7 @@ const pe = Object.freeze({
   // Erro — impacto significativo
   CRITICAL: "critical"
   // Crítico — sistema comprometido
-}), sh = Object.freeze([
+}), lh = Object.freeze([
   pe.NONE,
   pe.PARTIAL,
   pe.SIGNIFICANT,
@@ -3130,63 +3130,63 @@ Object.freeze([
   ie.ALLOW_SHELL_ONLY,
   ie.ALLOW_LOGIN_ONLY
 ]);
-const lh = Object.freeze([
+const uh = Object.freeze([
   Ee.INFO,
   Ee.WARNING,
   Ee.ERROR,
   Ee.CRITICAL
-]), uh = Object.freeze({
+]), ch = Object.freeze({
   [ie.HALT]: pe.TOTAL,
   [ie.DEGRADED]: pe.SIGNIFICANT,
   [ie.ALLOW_LOGIN_ONLY]: pe.SEVERE,
   [ie.ALLOW_SHELL_ONLY]: pe.SEVERE,
   [ie.SKIP]: pe.PARTIAL
-}), ch = Object.freeze({
+}), dh = Object.freeze({
   [ie.HALT]: Ee.CRITICAL,
   [ie.DEGRADED]: Ee.ERROR,
   [ie.ALLOW_LOGIN_ONLY]: Ee.ERROR,
   [ie.ALLOW_SHELL_ONLY]: Ee.WARNING,
   [ie.SKIP]: Ee.WARNING
-}), dh = Object.freeze({
+}), fh = Object.freeze({
   [ie.HALT]: !1,
   [ie.DEGRADED]: !0,
   [ie.ALLOW_LOGIN_ONLY]: !0,
   [ie.ALLOW_SHELL_ONLY]: !0,
   [ie.SKIP]: !0
 });
-function fh(e) {
-  return sh.indexOf(e) !== -1;
-}
 function hh(e) {
   return lh.indexOf(e) !== -1;
 }
 function gh(e) {
-  return e ? uh[e] || pe.SIGNIFICANT : pe.NONE;
+  return uh.indexOf(e) !== -1;
 }
 function mh(e) {
-  return e ? ch[e] || Ee.WARNING : Ee.INFO;
+  return e ? ch[e] || pe.SIGNIFICANT : pe.NONE;
 }
 function ph(e) {
-  if (!e) return !0;
-  const t = dh[e];
-  return t !== void 0 ? t : !0;
+  return e ? dh[e] || Ee.WARNING : Ee.INFO;
 }
 function Eh(e) {
+  if (!e) return !0;
+  const t = fh[e];
+  return t !== void 0 ? t : !0;
+}
+function vh(e) {
   e || (e = {});
   const t = e.mode || null;
   let r = e.status;
-  (!r || !fh(r)) && (r = gh(t));
+  (!r || !hh(r)) && (r = mh(t));
   let n = e.severity;
-  (!n || !hh(n)) && (n = mh(t));
+  (!n || !gh(n)) && (n = ph(t));
   const i = {
     status: r,
     mode: t,
     phaseId: e.phaseId || "unknown",
     timestamp: e.timestamp || Date.now()
   };
-  return e.reason && typeof e.reason == "string" && (i.reason = e.reason), i.severity = n, i.recoverable = e.recoverable !== void 0 ? e.recoverable : ph(t), e.details && typeof e.details == "object" && (i.details = e.details), i.notified = e.notified !== void 0 ? e.notified : !1, e.error && (i.error = typeof e.error == "string" ? e.error : e.error.message || "Unknown error"), i;
+  return e.reason && typeof e.reason == "string" && (i.reason = e.reason), i.severity = n, i.recoverable = e.recoverable !== void 0 ? e.recoverable : Eh(t), e.details && typeof e.details == "object" && (i.details = e.details), i.notified = e.notified !== void 0 ? e.notified : !1, e.error && (i.error = typeof e.error == "string" ? e.error : e.error.message || "Unknown error"), i;
 }
-const vh = Object.freeze({
+const yh = Object.freeze({
   "boot-failed": { status: pe.TOTAL, severity: Ee.CRITICAL },
   "critical-phase-failed": { status: pe.TOTAL, severity: Ee.CRITICAL },
   "phase-failed": { status: pe.SIGNIFICANT, severity: Ee.ERROR },
@@ -3195,8 +3195,8 @@ const vh = Object.freeze({
   "phase-degraded": { status: pe.PARTIAL, severity: Ee.WARNING },
   "timeout-warning": { status: pe.PARTIAL, severity: Ee.WARNING }
 });
-function yh(e) {
-  return !e || typeof e != "string" ? { status: pe.PARTIAL, severity: Ee.WARNING } : vh[e] || { status: pe.PARTIAL, severity: Ee.WARNING };
+function Ah(e) {
+  return !e || typeof e != "string" ? { status: pe.PARTIAL, severity: Ee.WARNING } : yh[e] || { status: pe.PARTIAL, severity: Ee.WARNING };
 }
 const ur = "degradation-notifier", Ta = "1.4.0-DEGRADATION-CONTRACT", Kn = Ln({ moduleId: ur });
 function rc(e) {
@@ -3208,7 +3208,7 @@ function nc(e) {
 function ic() {
   return Kn.snapshot();
 }
-const Ye = Ee, Ah = {
+const Ye = Ee, Sh = {
   enabled: !0,
   showToast: !0,
   showBanner: !0,
@@ -3218,10 +3218,10 @@ const Ye = Ee, Ah = {
   persistCritical: !0,
   logToConsole: !0
 };
-let ze = Object.assign({}, Ah), _e = [], Vr = [], ll = 0, qn = !1, ms = null;
-function Sh(e, t, r) {
+let ze = Object.assign({}, Sh), _e = [], Vr = [], ll = 0, qn = !1, ms = null;
+function Oh(e, t, r) {
   ll++;
-  const n = yh(e);
+  const n = Ah(e);
   return {
     id: ll,
     type: e,
@@ -3259,7 +3259,7 @@ function qr(e, t, r) {
   const n = "[" + ur + "]", i = rc("logger");
   i && i[e] && i[e](n + " " + t, r || "");
 }
-function Oh(e) {
+function Ih(e) {
   ze.showToast && (Zn(_n.TOAST, {
     id: e.id,
     type: e.type,
@@ -3277,7 +3277,7 @@ function ba(e, t) {
     severity: t ? t.severity : null
   }), e ? qr("warn", "Banner shown", t) : qr("info", "Banner hidden");
 }
-function Ih(e) {
+function Th(e) {
   if (!ze.groupSimilar) return !1;
   for (let t = 0; t < _e.length; t++) {
     const r = _e[t];
@@ -3286,7 +3286,7 @@ function Ih(e) {
   }
   return !1;
 }
-function Th() {
+function bh() {
   const e = _e.filter(function(t) {
     return !t.dismissed;
   });
@@ -3302,8 +3302,8 @@ function Th() {
 }
 function Pt(e, t, r) {
   if (!ze.enabled) return null;
-  const n = Sh(e, t, r);
-  return Ih(n) ? null : (_e.push(n), Th(), Oh(n), (n.severity === Ye.CRITICAL || n.severity === Ye.ERROR) && ba(!0, {
+  const n = Oh(e, t, r);
+  return Th(n) ? null : (_e.push(n), bh(), Ih(n), (n.severity === Ye.CRITICAL || n.severity === Ye.ERROR) && ba(!0, {
     message: n.message,
     severity: n.severity,
     status: n.status,
@@ -3435,7 +3435,7 @@ function hc() {
     }
   });
 }
-var bh = {
+var Rh = {
   MODULE_ID: ur,
   VERSION: Ta,
   SEVERITY: Ye,
@@ -3467,7 +3467,7 @@ const we = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   SEVERITY: Ye,
   VERSION: Ta,
   configure: uc,
-  default: bh,
+  default: Rh,
   dismiss: ys,
   dismissAll: As,
   getActive: Qn,
@@ -3489,7 +3489,7 @@ const we = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   reset: dc,
   subscribe: lc
 }, Symbol.toStringTag, { value: "Module" }));
-function Rh() {
+function wh() {
   if (!sr) return null;
   if (window.Core && window.Core.windowAdapter && window.Core.windowAdapter.get) {
     var e = window.Core.windowAdapter.get("Kernel");
@@ -3497,7 +3497,7 @@ function Rh() {
   }
   return window.Kernel || null;
 }
-function wh(e, t) {
+function Dh(e, t) {
   return {
     // Core
     boot: function() {
@@ -3558,7 +3558,7 @@ function wh(e, t) {
     },
     // Enterprise: Kernel
     getKernel: function() {
-      return e.getKernel ? e.getKernel() : Rh();
+      return e.getKernel ? e.getKernel() : wh();
     },
     getStateMachine: function() {
       return e.getStateMachine ? e.getStateMachine() : null;
@@ -3610,14 +3610,14 @@ function wh(e, t) {
     },
     // Quality: Tests and Validation
     runKernelTests: function() {
-      return Promise.resolve().then(() => Yh).then(function(r) {
+      return Promise.resolve().then(() => jh).then(function(r) {
         return r.run();
       }).catch(function(r) {
         return { error: r.message };
       });
     },
     validateManifest: function() {
-      return Promise.resolve().then(() => ig).then(function(r) {
+      return Promise.resolve().then(() => ag).then(function(r) {
         return r.validateManifest();
       }).catch(function(r) {
         return { valid: !1, error: r.message };
@@ -3671,7 +3671,7 @@ function wh(e, t) {
       return So(r, n);
     },
     // OpenTelemetry
-    OpenTelemetry: bf,
+    OpenTelemetry: Rf,
     exportOtelSpans: function() {
       return No();
     },
@@ -3715,7 +3715,7 @@ function wh(e, t) {
       var r = e.getManifest ? e.getManifest() : null;
       return ia(r);
     },
-    PhaseRollback: Hf,
+    PhaseRollback: Bf,
     registerRollback: function(r, n, i) {
       return Zo(r, n, i);
     },
@@ -3797,12 +3797,12 @@ function wh(e, t) {
     _degradationNotifier: we
   };
 }
-function Dh() {
+function Ch() {
   return te("info", "Stage 0+: Bootstrap Platform starting"), va(), Promise.resolve().then(() => TE).then(function(e) {
     const t = sr && window.BOOTSTRAP_CONFIG || { debug: !1, telemetry: { enabled: !0 } }, r = e.getInstance ? e.getInstance(t) : e.createBootstrapV2(t);
-    lf(r), r.getManifest && na(r.getManifest());
-    const n = wh(r, e);
-    return rh("BootstrapV2", n), te("info", "BootstrapV2 exposed globally (Complete Stack)", {
+    uf(r), r.getManifest && na(r.getManifest());
+    const n = Dh(r, e);
+    return nh("BootstrapV2", n), te("info", "BootstrapV2 exposed globally (Complete Stack)", {
       version: n.VERSION,
       loaderVersion: rr,
       sprints: "1-9",
@@ -3825,7 +3825,7 @@ function ul() {
   var t = ki("DShowDash");
   return t && t.eventBus ? t.eventBus : null;
 }
-function Ch(e) {
+function Lh(e) {
   te("info", "Post-Boot: Loading UI Feedback, Features Toolbar, Integration & Panel Loading Transition"), e.success && Po(
     e.totalTime,
     e.success,
@@ -3891,12 +3891,12 @@ function Ch(e) {
     return e;
   });
 }
-function Lh() {
+function _h() {
   const e = performance.now();
-  return Lo("full-boot-sequence"), te("info", "Full Boot Sequence starting (Complete Stack)", { version: rr }), th().then(function(t) {
-    return Fn() ? { success: !1, cancelled: !0, reason: Gn().reason } : Dh();
+  return Lo("full-boot-sequence"), te("info", "Full Boot Sequence starting (Complete Stack)", { version: rr }), rh().then(function(t) {
+    return Fn() ? { success: !1, cancelled: !0, reason: Gn().reason } : Ch();
   }).then(function(t) {
-    if (cf(t), _o(), t.cancelled)
+    if (df(t), _o(), t.cancelled)
       return te("info", "Boot was cancelled", t), t;
     if (t.bootLoopDetected)
       return te("error", "Boot blocked by loop detection", t), uo(Ot.BOOT_LOOP_DETECTED, t), t;
@@ -3909,7 +3909,7 @@ function Lh() {
       health: t.health,
       sprints: "1-9",
       improvements: 26
-    }), Ch(t);
+    }), Lh(t);
   }).then(function(t) {
     const r = Math.round(performance.now() - e);
     return uo(Ot.BOOTSTRAP_V2_COMPLETE, {
@@ -3926,14 +3926,14 @@ function Lh() {
 }
 var co = !1, fn = null;
 function gc() {
-  return co && fn ? (te("info", "Bootstrap already started, returning existing promise"), fn) : (co = !0, te("info", "Bootstrap starting via explicit startBootstrap() call", { version: rr }), fn = Gd(Lh).catch(function(e) {
+  return co && fn ? (te("info", "Bootstrap already started, returning existing promise"), fn) : (co = !0, te("info", "Bootstrap starting via explicit startBootstrap() call", { version: rr }), fn = zd(_h).catch(function(e) {
     throw te("error", "BootGuard intercepted critical failure", { error: e.message }), uo(Ot.BOOTSTRAP_V2_ERROR, { error: e.message }), we && Ra("Critical: " + e.message), e;
   }), fn);
 }
-function _h() {
+function Nh() {
   return co;
 }
-function Nh() {
+function Mh() {
   return fn;
 }
 (function() {
@@ -3958,13 +3958,13 @@ const ev = {
   getBootResult: zl,
   getBootstrapInstance: yo,
   getPreBootOrchestrator: _i,
-  getKernel: Wf,
-  info: $f,
-  healthCheck: Kf,
+  getKernel: $f,
+  info: Kf,
+  healthCheck: qf,
   // New APIs (v7.0.0)
   startBootstrap: gc,
-  isBootStarted: _h,
-  getBootPromise: Nh
+  isBootStarted: Nh,
+  getBootPromise: Mh
 };
 var k = {
   INITIALIZING: "INITIALIZING",
@@ -3973,7 +3973,7 @@ var k = {
   MAINTENANCE: "MAINTENANCE",
   RECOVERY: "RECOVERY",
   FAILED: "FAILED"
-}, Mh = {
+}, Ph = {
   COLD: "cold",
   INITIALIZING: "initializing",
   LOADING_CRITICAL: "loading-critical",
@@ -3986,7 +3986,7 @@ var k = {
   READY: "ready",
   ERROR: "error",
   RECOVERING: "recovering"
-}, Ph = {
+}, kh = {
   cold: k.INITIALIZING,
   initializing: k.INITIALIZING,
   "loading-critical": k.INITIALIZING,
@@ -4002,7 +4002,7 @@ var k = {
 };
 function Rt(e, t) {
   t === void 0 && (t = !1);
-  var r = Ph[e];
+  var r = kh[e];
   return r ? r === k.NORMAL && t ? k.DEGRADED : r : k.INITIALIZING;
 }
 var Q = {
@@ -4114,7 +4114,7 @@ var Q = {
   CIRCUIT_BREAKER_CHANGE: "kernel:circuit-breaker-change",
   // #10: Sincronização
   SYNC_STATE: "kernel:sync-state"
-}, kh = {
+}, Hh = {
   INITIALIZING: ["NORMAL", "DEGRADED", "FAILED"],
   NORMAL: ["DEGRADED", "MAINTENANCE", "RECOVERY", "FAILED"],
   DEGRADED: ["NORMAL", "RECOVERY", "MAINTENANCE", "FAILED"],
@@ -4123,7 +4123,7 @@ var Q = {
   FAILED: ["RECOVERY", "INITIALIZING"]
 };
 function mc(e, t) {
-  var r = kh[e];
+  var r = Hh[e];
   return r && r.indexOf(t) !== -1;
 }
 function Xa(e) {
@@ -4329,7 +4329,7 @@ function ht(e, t) {
   if (!e)
     throw new Error(t || "Expected true but got false");
 }
-function Hh(e, t) {
+function Bh(e, t) {
   if (e)
     throw new Error(t);
 }
@@ -4337,11 +4337,11 @@ function he(e, t) {
   if (e == null)
     throw new Error(t || "Expected value to be defined");
 }
-function Bh(e, t, r) {
+function Uh(e, t, r) {
   if (e.indexOf(t) === -1)
     throw new Error(r + ": " + t);
 }
-function Uh() {
+function xh() {
   console.log(`
 === KERNEL CONSTANTS TESTS ===
 `), Te("KERNEL_MODES should have all required modes", function() {
@@ -4358,7 +4358,7 @@ function Uh() {
     mt(Rt("unknown-state"), k.INITIALIZING, "unknown → INITIALIZING");
   });
 }
-function xh() {
+function Fh() {
   console.log(`
 === CAPABILITY MANAGER TESTS ===
 `), Te("createCapabilityManager should create manager with default capabilities", function() {
@@ -4369,7 +4369,7 @@ function xh() {
     ht(e.isEnabled(Q.FULL_UI), "FULL_UI should be enabled"), ht(e.isEnabled(Q.AUTH), "AUTH should be enabled"), ht(e.isEnabled(Q.NAVIGATION), "NAVIGATION should be enabled");
   }), Te("manager should be able to disable capabilities", function() {
     var e = qe();
-    e.disable(Q.TELEMETRY), Hh(e.isEnabled(Q.TELEMETRY), "TELEMETRY should be disabled");
+    e.disable(Q.TELEMETRY), Bh(e.isEnabled(Q.TELEMETRY), "TELEMETRY should be disabled");
   }), Te("manager should be able to re-enable capabilities", function() {
     var e = qe();
     e.disable(Q.TELEMETRY), e.enable(Q.TELEMETRY), ht(e.isEnabled(Q.TELEMETRY), "TELEMETRY should be re-enabled");
@@ -4380,7 +4380,7 @@ function xh() {
     var e = qe();
     e.disable(Q.TELEMETRY);
     var t = e.getDisabled();
-    ht(Array.isArray(t), "getDisabled should return array"), Bh(t, Q.TELEMETRY, "TELEMETRY should be in disabled list");
+    ht(Array.isArray(t), "getDisabled should return array"), Uh(t, Q.TELEMETRY, "TELEMETRY should be in disabled list");
   }), Te("manager should apply mode presets correctly", function() {
     var e = qe();
     e.applyModePreset(k.DEGRADED);
@@ -4410,17 +4410,17 @@ function xh() {
     mt(t.status, "DEGRADED", "should be DEGRADED with disabled capabilities");
   });
 }
-function Fh() {
-  return console.log("╔════════════════════════════════════════════════════════════╗"), console.log("║           KERNEL UNIT TESTS - Sprint 4 #19                 ║"), console.log("╚════════════════════════════════════════════════════════════╝"), Wt = { passed: 0, failed: 0, tests: [] }, Uh(), xh(), console.log(`
+function Gh() {
+  return console.log("╔════════════════════════════════════════════════════════════╗"), console.log("║           KERNEL UNIT TESTS - Sprint 4 #19                 ║"), console.log("╚════════════════════════════════════════════════════════════╝"), Wt = { passed: 0, failed: 0, tests: [] }, xh(), Fh(), console.log(`
 ════════════════════════════════════════════════════════════`), console.log("RESULTS: " + Wt.passed + " passed, " + Wt.failed + " failed"), console.log(`════════════════════════════════════════════════════════════
 `), Wt;
 }
-const Gh = "1.0.0-P4-ENTERPRISE", zh = "bootstrap-v2.kernel.__tests__.test-runner";
+const zh = "1.0.0-P4-ENTERPRISE", Vh = "bootstrap-v2.kernel.__tests__.test-runner";
 let Ze = null;
 function pc() {
   return console.log(`
 🧪 Starting Kernel Tests...
-`), Ze = Fh(), typeof window < "u" && (window.__KERNEL_TEST_RESULTS__ = Ze), Ze;
+`), Ze = Gh(), typeof window < "u" && (window.__KERNEL_TEST_RESULTS__ = Ze), Ze;
 }
 function Ec() {
   return Ze;
@@ -4434,18 +4434,18 @@ function vc() {
     passRate: Math.round(Ze.passed / (Ze.passed + Ze.failed) * 100) + "%"
   } : { status: "NOT_RUN", message: "Tests have not been executed yet" };
 }
-var Vh = { run: pc, getResults: Ec, getSummary: vc };
-const Yh = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var Yh = { run: pc, getResults: Ec, getSummary: vc };
+const jh = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: zh,
-  VERSION: Gh,
-  default: Vh,
+  MODULE_ID: Vh,
+  VERSION: zh,
+  default: Yh,
   getResults: Ec,
   getSummary: vc,
   run: pc
-}, Symbol.toStringTag, { value: "Module" })), jh = "1.3.0-ROUTER-FIX", Wh = "1.3.0", Z = {
-  version: jh,
-  manifestVersion: Wh,
+}, Symbol.toStringTag, { value: "Module" })), Wh = "1.3.0-ROUTER-FIX", $h = "1.3.0", Z = {
+  version: Wh,
+  manifestVersion: $h,
   // Configurações globais
   global: {
     defaultTimeout: z.DEFAULT_PHASE,
@@ -4635,7 +4635,7 @@ const Yh = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   ]
 };
 var Ss = !0;
-function $h(e) {
+function Kh(e) {
   Ss = e;
 }
 function wa() {
@@ -4653,10 +4653,10 @@ function Os() {
 function yc() {
   return Z.phases.filter((e) => e.critical);
 }
-function Kh() {
+function qh() {
   return Z.phases.filter((e) => !e.critical);
 }
-function qh(e) {
+function Jh(e) {
   const t = Cr(e);
   return t ? t.dependsOn.slice() : [];
 }
@@ -4741,13 +4741,13 @@ function Da() {
     e += Z.phases[t].healthWeight || 0;
   return e;
 }
-function Jh() {
+function Zh() {
   return Z.phases.length;
 }
-function Zh() {
+function Qh() {
   return { ...Z.global };
 }
-const Qh = "dependency-graph", Xh = "1.2.1-CONTRACTS";
+const Xh = "dependency-graph", eg = "1.2.1-CONTRACTS";
 function Oc() {
   let e = {}, t = {}, r = null;
   function n(E, m) {
@@ -4894,8 +4894,8 @@ function Oc() {
       t.hasOwnProperty(w) && (E += t[w].length);
     const m = Object.keys(e).length, v = u();
     return {
-      moduleId: Qh,
-      version: Xh,
+      moduleId: Xh,
+      version: eg,
       nodeCount: m,
       edgeCount: E,
       hasCycle: v.hasCycle,
@@ -5098,10 +5098,10 @@ var Tr = Object.freeze({
     ]
   }
 });
-function eg(e) {
+function tg(e) {
   return Tr[e] || null;
 }
-function tg(e) {
+function rg(e) {
   for (var t = Object.keys(Tr), r = 0; r < t.length; r++) {
     var n = Tr[t[r]];
     if (n.creates.indexOf(e) !== -1)
@@ -5109,7 +5109,7 @@ function tg(e) {
   }
   return null;
 }
-function rg(e) {
+function ng(e) {
   for (var t = [], r = Object.keys(Tr), n = 0; n < r.length; n++) {
     var i = Tr[r[n]];
     i.requires.indexOf(e) !== -1 ? t.push({ phaseId: r[n], type: "required" }) : i.optional.indexOf(e) !== -1 && t.push({ phaseId: r[n], type: "optional" });
@@ -5187,7 +5187,7 @@ function Rc() {
     }
   });
 }
-var ng = {
+var ig = {
   VERSION: Ca,
   MODULE_ID: La,
   TIMEOUTS: void 0,
@@ -5233,7 +5233,7 @@ var ng = {
   info: bc,
   healthCheck: Rc
 };
-const ig = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const ag = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   BOOT_HEALTH: N,
   BOOT_MANIFEST: Z,
@@ -5242,26 +5242,26 @@ const ig = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   PHASE_GLOBALS_CONTRACT: Tr,
   TIMEOUTS: z,
   VERSION: Ca,
-  default: ng,
+  default: ig,
   getAllAdjustedTimeouts: Sc,
-  getAllTimeouts: ff,
+  getAllTimeouts: hf,
   getCriticalPhases: yc,
-  getGlobalConfig: Zh,
-  getGlobalConsumers: rg,
-  getGlobalCreator: tg,
-  getNonCriticalPhases: Kh,
+  getGlobalConfig: Qh,
+  getGlobalConsumers: ng,
+  getGlobalCreator: rg,
+  getNonCriticalPhases: qh,
   getPhaseById: Cr,
   getPhaseConfig: fo,
-  getPhaseContract: eg,
-  getPhaseCount: Jh,
-  getPhaseDependencies: qh,
+  getPhaseContract: tg,
+  getPhaseCount: Zh,
+  getPhaseDependencies: Jh,
   getPhaseOrder: Os,
-  getTimeout: df,
+  getTimeout: ff,
   getTotalHealthWeight: Da,
   healthCheck: Rc,
   info: bc,
   isDynamicTimeoutEnabled: wa,
-  setDynamicTimeoutEnabled: $h,
+  setDynamicTimeoutEnabled: Kh,
   validateCircularDependencies: Ic,
   validateGlobalsAvailable: Tc,
   validateManifest: Xn
@@ -5286,7 +5286,7 @@ var _a = "boot-errors", Na = "2.1.0-HEALTH-CONTRACT", Qe = {
   BootLoopError: { retry: !1, fallback: "safe-mode" },
   CircuitBreakerError: { retry: !1, fallback: "degraded" },
   UnknownError: { retry: !0, maxRetries: 1, backoff: !1, fallback: "degraded" }
-}, xe = [], ag = 50;
+}, xe = [], og = 50;
 function Ma(e) {
   var t = (e.message || "").toLowerCase(), r = e.name || "";
   return t.indexOf("boot loop") !== -1 || t.indexOf("loop detected") !== -1 ? Qe.BOOT_LOOP : t.indexOf("circuit") !== -1 || t.indexOf("breaker") !== -1 || t.indexOf("open") !== -1 && t.indexOf("circuit") !== -1 ? Qe.CIRCUIT_BREAKER : t.indexOf("network") !== -1 || t.indexOf("fetch") !== -1 || t.indexOf("connection") !== -1 || t.indexOf("offline") !== -1 || r === "NetworkError" || r === "TypeError" && t.indexOf("failed to fetch") !== -1 ? Qe.NETWORK : t.indexOf("timeout") !== -1 || t.indexOf("timed out") !== -1 || t.indexOf("aborted") !== -1 || r === "AbortError" || r === "TimeoutError" ? Qe.TIMEOUT : t.indexOf("auth") !== -1 || t.indexOf("unauthorized") !== -1 || t.indexOf("forbidden") !== -1 || t.indexOf("401") !== -1 || t.indexOf("403") !== -1 || t.indexOf("session") !== -1 || t.indexOf("token") !== -1 ? Qe.AUTH : t.indexOf("module") !== -1 || t.indexOf("import") !== -1 || t.indexOf("load") !== -1 || t.indexOf("script") !== -1 || r === "SyntaxError" ? Qe.MODULE_LOAD : t.indexOf("dependency") !== -1 || t.indexOf("not met") !== -1 || t.indexOf("required") !== -1 ? Qe.DEPENDENCY : t.indexOf("validation") !== -1 || t.indexOf("invalid") !== -1 || t.indexOf("manifest") !== -1 ? Qe.VALIDATION : Qe.UNKNOWN;
@@ -5332,9 +5332,9 @@ function wc(e, t, r) {
     chainDepth: o.depth,
     chainSummary: o.summary
   };
-  return og(l), l;
+  return sg(l), l;
 }
-function og(e) {
+function sg(e) {
   for (xe.unshift({
     id: e.id,
     type: e.type,
@@ -5343,7 +5343,7 @@ function og(e) {
     rootCause: e.rootCause ? e.rootCause.message : null,
     chainSummary: e.chainSummary,
     timestamp: e.timestamp
-  }); xe.length > ag; )
+  }); xe.length > og; )
     xe.pop();
 }
 function Dc() {
@@ -5424,7 +5424,7 @@ function kc() {
     }
   });
 }
-var sg = {
+var lg = {
   ERROR_TYPES: Qe,
   RECOVERY_STRATEGIES: bn,
   classifyError: Ma,
@@ -5453,7 +5453,7 @@ const fl = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   classifyError: Ma,
   clearErrorHistory: _c,
   createTypedError: wc,
-  default: sg,
+  default: lg,
   extractRootCause: Ts,
   getErrorHistory: Dc,
   getErrorsByPhase: Lc,
@@ -5465,7 +5465,7 @@ const fl = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   shouldRetry: Nc
 }, Symbol.toStringTag, { value: "Module" }));
 let hl = !1, gl = !1;
-function lg() {
+function ug() {
   if (gl)
     return { redirected: hl, alreadyChecked: !0 };
   if (gl = !0, typeof window > "u" || !window.location)
@@ -5518,7 +5518,7 @@ var En = {
     return e[t] = En[t].enabled, e;
   }, {})
 }, Ar = JSON.parse(JSON.stringify(Tt));
-function ug(e) {
+function cg(e) {
   return e === void 0 && (e = {}), Ar = {
     debug: e.debug !== void 0 ? e.debug : Tt.debug,
     timeouts: Object.assign({}, Tt.timeouts, e.timeouts || {}),
@@ -5530,10 +5530,10 @@ function ug(e) {
     features: Object.assign({}, Tt.features, e.features || {})
   }, Ar;
 }
-function cg(e) {
+function dg(e) {
   return Ar.features[e] === !0;
 }
-function dg() {
+function fg() {
   var e = {};
   for (var t in En)
     En.hasOwnProperty(t) && (e[t] = {
@@ -5548,13 +5548,13 @@ function Hc() {
     Ar.features.hasOwnProperty(t) && Ar.features[t] && e.push(t);
   return e;
 }
-const Rn = "application-kernel", bs = "1.2.0-MODULAR", fg = "__APPLICATION_KERNEL__";
-function hg(e) {
+const Rn = "application-kernel", bs = "1.2.0-MODULAR", hg = "__APPLICATION_KERNEL__";
+function gg(e) {
   return function(r, n, i) {
     e && e[r] ? e[r]("[" + Rn + "] " + n, i) : typeof console < "u" && console[r] && console[r]("[" + Rn + "] " + n, i || "");
   };
 }
-function gg(e) {
+function mg(e) {
   const t = e.eventBus, r = e.listeners, n = e.getMode, i = e.log;
   return function(l, a) {
     const s = Object.assign({ timestamp: Date.now(), mode: n() }, a);
@@ -5571,7 +5571,7 @@ function gg(e) {
       }
   };
 }
-function mg(e) {
+function pg(e) {
   e === void 0 && (e = 50);
   let t = [];
   return {
@@ -5595,7 +5595,7 @@ function mg(e) {
     }
   };
 }
-function pg(e) {
+function Eg(e) {
   const t = e.log, r = e.cleanups, n = e.onEvent;
   if (!tt || !Mi)
     return t("warn", "CircuitBreaker module not available"), { enabled: !1 };
@@ -5604,7 +5604,7 @@ function pg(e) {
   });
   return typeof i == "function" && r.push(i), t("info", "Circuit Breaker integration enabled"), { enabled: !0 };
 }
-function Eg(e) {
+function vg(e) {
   var t = e.log, r = e.emit, n = e.getMode, i = e.setModeInternal, o = e.checkIfDegraded, l = e.degradationThreshold || 1;
   function a(c) {
     if (!(!c || !c.event)) {
@@ -5631,7 +5631,7 @@ function Eg(e) {
     checkRecovery: u
   };
 }
-function vg(e) {
+function yg(e) {
   const t = e.isEnabled;
   return {
     getStatus: function() {
@@ -5652,7 +5652,7 @@ function vg(e) {
     }
   };
 }
-function yg(e) {
+function Ag(e) {
   const t = e.stateMachine, r = e.log, n = e.cleanups, i = e.onTransition, o = e.setLastSyncedState;
   if (!t || !t.on)
     return r("warn", "StateMachine does not support listeners, sync disabled"), { enabled: !1, initialState: null };
@@ -5663,7 +5663,7 @@ function yg(e) {
   const a = t.getState ? t.getState() : null;
   return o(a), r("info", "StateMachine sync enabled", { initialState: a }), { enabled: !0, initialState: a };
 }
-function Ag(e) {
+function Sg(e) {
   var t = e.getMode, r = e.setModeInternal, n = e.checkIfDegraded, i = e.emit, o = e.setLastSyncedState;
   function l(a) {
     if (!(!a || !a.to)) {
@@ -5684,7 +5684,7 @@ function Ag(e) {
     handleTransition: l
   };
 }
-function Sg(e) {
+function Og(e) {
   var t = e.stateMachine, r = e.getMode, n = e.setMode, i = e.checkIfDegraded;
   return {
     sync: function() {
@@ -5702,7 +5702,7 @@ function Sg(e) {
     }
   };
 }
-function Og(e) {
+function Ig(e) {
   const t = e.log, r = e.emit, n = e.modeHistoryManager, i = e.capabilityManager, o = e.getModeRef, l = e.setModeRef, a = e.setLastModeChange;
   function s() {
     return o();
@@ -5723,7 +5723,7 @@ function Og(e) {
     setModeInternal: u
   };
 }
-function Ig(e) {
+function Tg(e) {
   const t = e.getMode, r = e.isInitialized;
   return {
     isReady: function() {
@@ -5747,7 +5747,7 @@ function Ig(e) {
     }
   };
 }
-function Tg(e) {
+function bg(e) {
   const t = e.getHealthAggregator, r = e.getBootContext;
   return {
     getHealth: function() {
@@ -5779,7 +5779,7 @@ function Tg(e) {
     }
   };
 }
-function bg(e) {
+function Rg(e) {
   var t = e.getBootContext, r = e.getMode, n = e.isInitialized, i = e.getInitTimestamp, o = e.getLastModeChange, l = e.capabilityManager, a = e.healthManager, s = e.getSyncEnabled, u = e.getLastSyncedState, c = e.getCircuitBreakerEnabled, d = e.getCircuitBreakerStatus;
   return {
     getState: function() {
@@ -5805,7 +5805,7 @@ function bg(e) {
     }
   };
 }
-function Rg(e) {
+function wg(e) {
   var t = e.listeners, r = e.cleanups;
   return {
     subscribe: function(n) {
@@ -5823,7 +5823,7 @@ function Rg(e) {
     }
   };
 }
-function wg(e) {
+function Dg(e) {
   var t = e.log, r = e.emit, n = e.setDependencies, i = e.setInitTimestamp, o = e.setInitialized, l = e.isInitialized, a = e.setupStateMachineSync, s = e.setupCircuitBreakerIntegration;
   return e.getSyncEnabled, e.getCircuitBreakerEnabled, {
     initialize: function(u) {
@@ -5853,7 +5853,7 @@ function wg(e) {
     }
   };
 }
-function Dg(e) {
+function Cg(e) {
   var t = e.log, r = e.cleanups, n = e.listeners, i = e.capabilityManager, o = e.modeHistoryManager, l = e.resetState;
   return {
     cleanupAll: function() {
@@ -5882,7 +5882,7 @@ function Dg(e) {
     }
   };
 }
-function Cg(e) {
+function Lg(e) {
   const t = e.getMode, r = e.isInitialized, n = e.getInitTimestamp, i = e.getLastModeChange, o = e.modeHistoryManager, l = e.listeners, a = e.cleanups, s = e.getSyncEnabled, u = e.getLastSyncedState, c = e.getCircuitBreakerEnabled, d = e.getCircuitBreakerStatus, f = e.capabilityManager;
   e.healthManager;
   const g = e.getBootContext, h = e.getHealthAggregator, p = e.getOrchestrator, A = e.getStateMachine, T = e.getEventBus;
@@ -5918,7 +5918,7 @@ function Cg(e) {
     }
   };
 }
-function Lg(e) {
+function _g(e) {
   const t = e.getMode, r = e.isInitialized, n = e.healthManager, i = e.capabilityManager, o = e.getSyncEnabled, l = e.getCircuitBreakerEnabled, a = e.cleanups;
   return {
     healthCheck: function() {
@@ -5945,14 +5945,14 @@ function Lg(e) {
   };
 }
 let Ut = null, nn = null;
-function _g(e, t) {
-  return Ut || (Ut = e(t), t && t.windowAdapter && (nn = t.windowAdapter), typeof window < "u" && (window[fg] = Ut, window.ApplicationKernel = Ut, window.Kernel = Ut), nn && nn.expose && (nn.expose("Kernel", Ut), nn.expose("ApplicationKernel", Ut))), Ut;
+function Ng(e, t) {
+  return Ut || (Ut = e(t), t && t.windowAdapter && (nn = t.windowAdapter), typeof window < "u" && (window[hg] = Ut, window.ApplicationKernel = Ut, window.Kernel = Ut), nn && nn.expose && (nn.expose("Kernel", Ut), nn.expose("ApplicationKernel", Ut))), Ut;
 }
-var an = "3.7.0-STRICT-MODE", hr = "runtime-context", dr = Kd(hr), Nr = Object.freeze({
+var an = "3.7.0-STRICT-MODE", hr = "runtime-context", dr = qd(hr), Nr = Object.freeze({
   READY: "kernel.runtime-context.ready",
   UPDATED: "kernel.runtime-context.updated"
 });
-function Ng(e) {
+function Mg(e) {
   if (!e)
     throw new Error("[RuntimeContext] Kernel instance is required");
   var t = e, r = [], n = null, i = null, o = !1, l = null, a = null, s = [], u = 10;
@@ -6239,18 +6239,18 @@ function Ng(e) {
     CAPABILITIES: Q
   });
   return setTimeout(function() {
-    f(Nr.READY, $d(j(), an));
+    f(Nr.READY, Kd(j(), an));
   }, 0), me;
 }
 var on = null;
 function Rs(e) {
-  if (!on && e && (on = Ng(e), typeof window < "u")) {
+  if (!on && e && (on = Mg(e), typeof window < "u")) {
     var t = de();
     window.Core && window.Core.windowAdapter && window.Core.windowAdapter.expose && window.Core.windowAdapter.expose("RuntimeContext", on), t || (window.RuntimeContext = on);
   }
   return on;
 }
-function Mg(e) {
+function Pg(e) {
   if (typeof window > "u") return null;
   if (window.Core && window.Core.windowAdapter && window.Core.windowAdapter.get) {
     var t = window.Core.windowAdapter.get(e);
@@ -6258,22 +6258,22 @@ function Mg(e) {
   }
   return window[e] || null;
 }
-function Pg(e) {
+function kg(e) {
   e === void 0 && (e = {});
-  var t = e.bootContext || null, r = e.healthAggregator || null, n = e.orchestrator || null, i = e.stateMachine || null, o = e.eventBus || null, l = e.logger || null, a = k.INITIALIZING, s = !1, u = null, c = null, d = !1, f = null, g = !1, h = [], p = [], A = hg(l), T = mg(50), S = qe({ initialMode: a, eventBus: o, logger: l }), L = function() {
+  var t = e.bootContext || null, r = e.healthAggregator || null, n = e.orchestrator || null, i = e.stateMachine || null, o = e.eventBus || null, l = e.logger || null, a = k.INITIALIZING, s = !1, u = null, c = null, d = !1, f = null, g = !1, h = [], p = [], A = gg(l), T = pg(50), S = qe({ initialMode: a, eventBus: o, logger: l }), L = function() {
     return a;
   }, H = function(F) {
     a = F;
   }, E = function(F) {
     c = F;
-  }, m = gg({ eventBus: o, listeners: h, getMode: L, log: A }), v = Tg({
+  }, m = mg({ eventBus: o, listeners: h, getMode: L, log: A }), v = bg({
     getHealthAggregator: function() {
       return r;
     },
     getBootContext: function() {
       return t;
     }
-  }), w = Og({
+  }), w = Ig({
     log: A,
     emit: m,
     modeHistoryManager: T,
@@ -6281,16 +6281,16 @@ function Pg(e) {
     getModeRef: L,
     setModeRef: H,
     setLastModeChange: E
-  }), y = Eg({
+  }), y = vg({
     log: A,
     emit: m,
     getMode: L,
     setModeInternal: w.setModeInternal,
     checkIfDegraded: v.checkIfDegraded,
     degradationThreshold: 1
-  }), R = vg({ isEnabled: function() {
+  }), R = yg({ isEnabled: function() {
     return g;
-  } }), O = Ag({
+  } }), O = Sg({
     getMode: L,
     setModeInternal: w.setModeInternal,
     checkIfDegraded: v.checkIfDegraded,
@@ -6298,7 +6298,7 @@ function Pg(e) {
     setLastSyncedState: function(F) {
       f = F;
     }
-  }), b = Sg({
+  }), b = Og({
     stateMachine: i,
     getMode: L,
     setMode: w.setMode,
@@ -6306,7 +6306,7 @@ function Pg(e) {
   });
   function P() {
     if (!i) return { enabled: !1 };
-    var F = yg({
+    var F = Ag({
       stateMachine: i,
       log: A,
       cleanups: p,
@@ -6319,14 +6319,14 @@ function Pg(e) {
     return d = F.enabled, F;
   }
   function C() {
-    var F = pg({
+    var F = Eg({
       log: A,
       cleanups: p,
       onEvent: y.handleEvent
     });
     return g = F.enabled, F;
   }
-  var $ = bg({
+  var $ = Rg({
     getBootContext: function() {
       return t;
     },
@@ -6352,9 +6352,9 @@ function Pg(e) {
       return g;
     },
     getCircuitBreakerStatus: R.getStatus
-  }), Y = Rg({ listeners: h, cleanups: p }), D = Ig({ getMode: L, isInitialized: function() {
+  }), Y = wg({ listeners: h, cleanups: p }), D = Tg({ getMode: L, isInitialized: function() {
     return s;
-  } }), U = wg({
+  } }), U = Dg({
     log: A,
     emit: m,
     setDependencies: function(F) {
@@ -6377,7 +6377,7 @@ function Pg(e) {
     getCircuitBreakerEnabled: function() {
       return g;
     }
-  }), G = Dg({
+  }), G = Cg({
     log: A,
     cleanups: p,
     listeners: h,
@@ -6427,7 +6427,7 @@ function Pg(e) {
     getEventBus: function() {
       return o;
     }
-  }, $e = Cg(j), nt = Lg(j), ct = {
+  }, $e = Lg(j), nt = _g(j), ct = {
     initialize: U.initialize,
     reset: G.reset,
     getMode: w.getMode,
@@ -6500,7 +6500,7 @@ function Pg(e) {
     MODES: k,
     EVENTS: Oe,
     CAPABILITIES: Q,
-    BOOT_STATES: Mh,
+    BOOT_STATES: Ph,
     VERSION: bs,
     MODULE_ID: Rn
   };
@@ -6508,17 +6508,17 @@ function Pg(e) {
     return Rs(ct);
   }, ct;
 }
-function kg(e) {
-  var t = _g(
-    Pg,
+function Hg(e) {
+  var t = Ng(
+    kg,
     e
   );
   return t && Rs(t), t;
 }
-function Hg() {
-  return Rs() || Mg("RuntimeContext");
+function Bg() {
+  return Rs() || Pg("RuntimeContext");
 }
-const ml = "boot-context", Bg = "1.1.0-MODULAR", Ie = {
+const ml = "boot-context", Ug = "1.1.0-MODULAR", Ie = {
   PENDING: "pending",
   INITIALIZING: "initializing",
   READY: "ready",
@@ -6530,7 +6530,7 @@ const ml = "boot-context", Bg = "1.1.0-MODULAR", Ie = {
   PHASE_COMPLETE: "boot:progress:phase:complete",
   COMPLETE: "boot:progress:complete"
 };
-function Ug() {
+function xg() {
   const e = {
     status: Ie.PENDING,
     phases: {},
@@ -6681,7 +6681,7 @@ function Ug() {
     }
   };
 }
-function xg(e) {
+function Fg(e) {
   e === void 0 && (e = {});
   const t = e.stateStore, r = e.notifyListeners, n = e.eventBus || null;
   function i(o, l) {
@@ -6738,7 +6738,7 @@ function xg(e) {
     }
   };
 }
-function Fg(e) {
+function Gg(e) {
   e === void 0 && (e = {});
   const t = e.stateStore;
   return {
@@ -6762,7 +6762,7 @@ function Fg(e) {
     }
   };
 }
-function Gg(e) {
+function zg(e) {
   e === void 0 && (e = {});
   const t = e.stateStore, r = e.healthCalculator, n = e.progressTracker, i = e.notifyListeners;
   return {
@@ -6818,7 +6818,7 @@ function Gg(e) {
     }
   };
 }
-function zg(e) {
+function Vg(e) {
   e === void 0 && (e = {});
   const t = e.stateStore;
   return {
@@ -6873,7 +6873,7 @@ function Bc(e) {
     }
   return e;
 }
-function Vg(e) {
+function Yg(e) {
   e === void 0 && (e = {});
   var t = e.stateStore, r = e.freezeSnapshots !== !1;
   return {
@@ -6918,7 +6918,7 @@ function Vg(e) {
         },
         // Meta
         timestamp: Date.now(),
-        version: Bg,
+        version: Ug,
         immutable: r,
         snapshotVersion: "1.2.0-QUALITY"
       };
@@ -6947,7 +6947,7 @@ function Vg(e) {
   };
 }
 const pl = "1.2.0-HEALTH-CONTRACT";
-function Yg(e) {
+function jg(e) {
   let t = [];
   function r(v, w) {
     for (let y = 0; y < t.length; y++)
@@ -6956,19 +6956,19 @@ function Yg(e) {
       } catch {
       }
   }
-  const n = Ug(), i = xg({
+  const n = xg(), i = Fg({
     stateStore: n,
     notifyListeners: r
-  }), o = Fg({
+  }), o = Gg({
     stateStore: n
-  }), l = Gg({
+  }), l = zg({
     stateStore: n,
     healthCalculator: o,
     progressTracker: i,
     notifyListeners: r
-  }), a = zg({
+  }), a = Vg({
     stateStore: n
-  }), s = Vg({
+  }), s = Yg({
     stateStore: n
   });
   function u() {
@@ -7091,8 +7091,8 @@ function Yg(e) {
   };
 }
 let to = null;
-function jg() {
-  return to || (to = Yg()), to;
+function Wg() {
+  return to || (to = jg()), to;
 }
 var El = "boot-health-aggregator", ci = "1.3.0-HEALTH-CONTRACT", di = {
   HEALTHY: 90,
@@ -7102,7 +7102,7 @@ var El = "boot-health-aggregator", ci = "1.3.0-HEALTH-CONTRACT", di = {
   interval: 3e4,
   maxChecks: 100
 };
-function Wg(e, t) {
+function $g(e, t) {
   t === void 0 && (t = {});
   var r = e, n = t.eventBus || null, i = null, o = [], l = {
     running: !1,
@@ -7358,8 +7358,8 @@ function Wg(e, t) {
   };
 }
 var sn = null;
-function $g(e, t) {
-  return sn ? (e && sn.setContext(e), t && t.eventBus && sn.setEventBus(t.eventBus)) : sn = Wg(e, t), sn;
+function Kg(e, t) {
+  return sn ? (e && sn.setContext(e), t && t.eventBus && sn.setEventBus(t.eventBus)) : sn = $g(e, t), sn;
 }
 var Uc = "boot-metrics-summary", xc = "1.0.1-CONTRACTS", x = {
   bootStartTime: null,
@@ -7510,7 +7510,7 @@ function Wc() {
     summary: mr()
   };
 }
-var Kg = {
+var qg = {
   startBoot: ws,
   endBoot: Ds,
   recordPhase: Fc,
@@ -7527,7 +7527,7 @@ const fi = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   MODULE_ID: Uc,
   VERSION: xc,
-  default: Kg,
+  default: qg,
   endBoot: Ds,
   getSummary: mr,
   info: Wc,
@@ -7565,7 +7565,7 @@ const fi = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   PHASE_ROLLBACK_COMPLETE: "orchestrator:phase:rollback:complete",
   PHASE_ROLLBACK_ERROR: "orchestrator:phase:rollback:error"
 };
-function qg(e) {
+function Jg(e) {
   e === void 0 && (e = {});
   const t = e.logger, r = e.moduleId || "event-emitter";
   let n = {};
@@ -7756,14 +7756,14 @@ Object.freeze({
   })
 });
 Object.values(Yt);
-const Jg = Object.values(ft);
-function Zg(e) {
-  return Jg.indexOf(e) !== -1;
+const Zg = Object.values(ft);
+function Qg(e) {
+  return Zg.indexOf(e) !== -1;
 }
-function Qg(e, t) {
+function Xg(e, t) {
   return !e || typeof e != "string" || yl.FORBIDDEN_FOR.indexOf(e) !== -1 ? !1 : yl.ALLOWED_FOR.indexOf(e) !== -1 ? !0 : (t && (t.phaseId === "phase-0-critical" || t.attempt >= t.maxAttempts || t.circuitOpen), !1);
 }
-function Xg(e) {
+function em(e) {
   e || (e = {});
   const t = ve.retry;
   return {
@@ -7779,7 +7779,7 @@ function Xg(e) {
     jitterFactor: e.jitterFactor || t.jitterFactor
   };
 }
-function em(e) {
+function tm(e) {
   e || (e = {});
   const t = ve.timeout;
   let r = e.timeout || e.timeoutMs || t.module;
@@ -7794,7 +7794,7 @@ function em(e) {
 function Hi(e) {
   e || (e = {});
   let t = e.outcome || ft.SUCCESS;
-  Zg(t) || (t = ft.SUCCESS);
+  Qg(t) || (t = ft.SUCCESS);
   const r = {
     outcome: t,
     success: t === ft.SUCCESS || t === ft.SUCCESS_AFTER_RETRY || t === ft.DEGRADED,
@@ -7803,18 +7803,18 @@ function Hi(e) {
   };
   return e.phaseId && (r.phaseId = e.phaseId), e.attempt !== void 0 && (r.attempt = e.attempt, r.retriesUsed = e.attempt > 1 ? e.attempt - 1 : 0), e.error && (r.error = typeof e.error == "string" ? e.error : e.error.message || "Unknown error"), e.level && (r.level = e.level), e.details && typeof e.details == "object" && (r.details = e.details), r;
 }
-const tm = "retry-executor", rm = "3.1.0-RESILIENCE-CONTRACT";
-function nm(e, t) {
+const rm = "retry-executor", nm = "3.1.0-RESILIENCE-CONTRACT";
+function im(e, t) {
   if (t === void 0 && (t = ve.retry.jitterFactor), t <= 0) return e;
   const r = (Math.random() * 2 - 1) * t, n = e * (1 + r);
   return Math.max(100, Math.round(n));
 }
-function im(e, t, r, n, i) {
+function am(e, t, r, n, i) {
   t === void 0 && (t = ve.retry.baseDelay), r === void 0 && (r = ve.retry.backoffMultiplier), n === void 0 && (n = ve.retry.jitterEnabled), i === void 0 && (i = ve.retry.jitterFactor);
   let o = Math.round(t * Math.pow(r, e - 1));
-  return o > ve.retry.maxDelay && (o = ve.retry.maxDelay), n && (o = nm(o, i)), o;
+  return o > ve.retry.maxDelay && (o = ve.retry.maxDelay), n && (o = im(o, i)), o;
 }
-function am(e) {
+function om(e) {
   e === void 0 && (e = {});
   const t = e.logger, r = e.onRetry, n = e.jitterEnabled !== void 0 ? e.jitterEnabled : ve.retry.jitterEnabled, i = e.jitterFactor || ve.retry.jitterFactor;
   let o = {
@@ -7836,7 +7836,7 @@ function am(e) {
      * @returns {Promise} - Resultado da execução
      */
     execute: function(a, s, u) {
-      const c = Xg(s), d = c.maxAttempts, f = c.baseDelay, g = c.backoffMultiplier;
+      const c = em(s), d = c.maxAttempts, f = c.baseDelay, g = c.backoffMultiplier;
       let h = 0;
       const p = Date.now(), A = c.jitterEnabled, T = c.jitterFactor;
       o.totalExecutions++;
@@ -7853,13 +7853,13 @@ function am(e) {
             details: { result: L }
           }) : L;
         }).catch(function(L) {
-          const H = h < d && c.enabled, E = L.type || L.code || "unknown", m = Qg(E, {
+          const H = h < d && c.enabled, E = L.type || L.code || "unknown", m = Xg(E, {
             phaseId: u,
             attempt: h,
             maxAttempts: d
           });
           if (H && m !== !1) {
-            const v = im(h, f, g, A, T);
+            const v = am(h, f, g, A, T);
             return o.totalRetries++, r && r({
               attempt: h,
               maxAttempts: d,
@@ -7922,8 +7922,8 @@ function am(e) {
      */
     info: function() {
       return {
-        moduleId: tm,
-        version: rm,
+        moduleId: rm,
+        version: nm,
         jitterEnabled: n,
         jitterFactor: i,
         defaults: {
@@ -7939,7 +7939,7 @@ function am(e) {
     }
   };
 }
-const Al = "degradation-handler", om = "2.4.0-DEGRADATION-CONTRACT";
+const Al = "degradation-handler", sm = "2.4.0-DEGRADATION-CONTRACT";
 function hi() {
   if (typeof window < "u") {
     if (window.RuntimeContext && window.RuntimeContext.isAuthenticated)
@@ -7972,7 +7972,7 @@ function Sl(e) {
         mode: c,
         message: u.message
       });
-      const d = Eh({
+      const d = vh({
         mode: c,
         phaseId: a,
         reason: u.message || "Phase degraded",
@@ -8042,7 +8042,7 @@ function Sl(e) {
     info: function() {
       return {
         moduleId: Al,
-        version: om,
+        version: sm,
         handlerModuleId: r,
         appliedPoliciesCount: o.length,
         policiesSummary: this.getAppliedPoliciesCount(),
@@ -8058,12 +8058,12 @@ function Sl(e) {
     }
   };
 }
-const sm = "phase-executor", lm = "3.1.0-MODULAR", um = Object.freeze({
+const lm = "phase-executor", um = "3.1.0-MODULAR", cm = Object.freeze({
   failureThreshold: 2,
   successThreshold: 1,
   timeout: 6e4
 });
-function cm(e) {
+function dm(e) {
   const t = e.logger, r = e.telemetry, n = e.eventEmitter, i = e.moduleId;
   return {
     log: function(o, l, a) {
@@ -8084,7 +8084,7 @@ function gi() {
     timestamp: Date.now()
   } : null;
 }
-function dm(e) {
+function fm(e) {
   return {
     resolve: function(t) {
       const r = e ? e(t.id) : null;
@@ -8102,7 +8102,7 @@ function dm(e) {
     }
   };
 }
-function fm(e) {
+function hm(e) {
   const t = e.enabled !== !1, r = e.breakerConfig;
   return {
     isEnabled: function() {
@@ -8129,7 +8129,7 @@ function fm(e) {
     }
   };
 }
-function hm(e) {
+function gm(e) {
   const t = e.breakerManager, r = e.helpers, n = e.metrics, i = e.notificationsEnabled;
   return {
     canExecute: function(o, l) {
@@ -8152,7 +8152,7 @@ function hm(e) {
     }
   };
 }
-function gm(e) {
+function mm(e) {
   const t = e.metricsSummary, r = e.healthAggregator, n = {
     phaseTimings: {},
     phasesExecuted: 0,
@@ -8208,7 +8208,7 @@ function gm(e) {
     }
   };
 }
-function mm(e, t) {
+function pm(e, t) {
   t === void 0 && (t = {});
   const r = t.resolveGlobal || null, n = t.logger || null;
   return {
@@ -8241,7 +8241,7 @@ function mm(e, t) {
     }
   };
 }
-function pm(e) {
+function Em(e) {
   const t = e.helpers, r = e.phaseMetrics, n = e.phaseResults;
   return {
     handle: function(i) {
@@ -8319,7 +8319,7 @@ const re = Object.freeze({
 });
 Object.values(re);
 Object.values(ge);
-function Em(e) {
+function vm(e) {
   if (!e)
     return Se({
       outcome: re.FAIL_SOFT,
@@ -8345,7 +8345,7 @@ function Em(e) {
     context: ge.ERROR
   });
 }
-function vm(e) {
+function ym(e) {
   if (!e)
     return Se({
       outcome: re.FAIL_SOFT,
@@ -8367,7 +8367,7 @@ function vm(e) {
     context: ge.RECOVERY
   });
 }
-function ym(e) {
+function Am(e) {
   if (!e)
     return Se({
       outcome: re.PROCEED,
@@ -8448,8 +8448,8 @@ function Se(e) {
   };
   return e.shouldSkip !== void 0 && (t.shouldSkip = e.shouldSkip), e.shouldSuppress !== void 0 && (t.shouldSuppress = e.shouldSuppress), e.canProceed !== void 0 && (t.canProceed = e.canProceed), e.missingDeps !== void 0 && (t.missingDeps = e.missingDeps), e.phaseId !== void 0 && (t.phaseId = e.phaseId), t;
 }
-const Am = "suppression-handler", Sm = "3.2.0-DECISION-CONTRACT";
-function Om(e) {
+const Sm = "suppression-handler", Om = "3.2.0-DECISION-CONTRACT";
+function Im(e) {
   const t = e.helpers, r = e.phaseMetrics, n = e.phaseResults, i = e.degradationHandler, o = e.notificationsEnabled !== !1;
   return {
     /**
@@ -8509,8 +8509,8 @@ function Om(e) {
      */
     info: function() {
       return {
-        moduleId: Am,
-        version: Sm,
+        moduleId: Sm,
+        version: Om,
         contractVersion: "1.0.0",
         usesDecisionContract: !0
       };
@@ -8518,13 +8518,6 @@ function Om(e) {
   };
 }
 re.RECOVER, re.SUPPRESS, re.FAIL_CRITICAL, re.FAIL_SOFT, re.ROLLBACK_THEN_SUPPRESS, re.ROLLBACK_THEN_FAIL;
-function Im(e) {
-  const t = Em(e);
-  return {
-    outcome: t.outcome,
-    reason: t.reason
-  };
-}
 function Tm(e) {
   const t = vm(e);
   return {
@@ -8533,6 +8526,13 @@ function Tm(e) {
   };
 }
 function bm(e) {
+  const t = ym(e);
+  return {
+    outcome: t.outcome,
+    reason: t.reason
+  };
+}
+function Rm(e) {
   const t = e.helpers, r = e.phaseMetrics, n = e.phaseResults, i = e.degradationHandler, o = e.suppressionHandler, l = e.notificationsEnabled, a = e.rollbackExecutor;
   function s(c, d) {
     if (!a)
@@ -8568,7 +8568,7 @@ function bm(e) {
       }), i.applyPolicy(g, A), t.emit(ke.RECOVERY, { phaseId: g }), l && we && Tn(g, "Recovered from error: " + d.message), { success: !0, recovered: !0, time: f };
     }).catch(function(H) {
       t.log("error", "Phase " + g + " recovery failed", { error: H.message });
-      const E = Tm({
+      const E = bm({
         critical: L,
         shouldSuppress: i.shouldSuppressError(g, A),
         hasRollback: !!a
@@ -8614,7 +8614,7 @@ function bm(e) {
         time: v,
         circuitBreakerState: m ? m.getState() : "n/a"
       }), t.emit(ke.PHASE_ERROR, { phaseId: g, error: d.message }), t.track("phase-error", { phaseId: g, error: d.message }), l && we && ps(g, d.message, A);
-      const w = Im({
+      const w = Tm({
         recoverable: T,
         hasRecover: !!(p && p.recover),
         critical: A,
@@ -8657,8 +8657,8 @@ function bm(e) {
     executeRollback: s
   };
 }
-const Rm = "skip-handler", wm = "3.2.0-DECISION-CONTRACT";
-function Dm(e) {
+const wm = "skip-handler", Dm = "3.2.0-DECISION-CONTRACT";
+function Cm(e) {
   const t = e.helpers, r = e.phaseMetrics, n = e.phaseResults, i = e.degradationHandler;
   return {
     /**
@@ -8667,7 +8667,7 @@ function Dm(e) {
      * @returns {Object} - Skip result
      */
     handle: function(o) {
-      const l = o.phaseId, a = o.phaseStart, s = o.critical, u = o.manifestConfig, c = o.bootContext, d = Date.now() - a, f = ym({
+      const l = o.phaseId, a = o.phaseStart, s = o.critical, u = o.manifestConfig, c = o.bootContext, d = Date.now() - a, f = Am({
         circuitOpen: !0,
         phaseId: l,
         optional: !s
@@ -8717,15 +8717,15 @@ function Dm(e) {
      */
     info: function() {
       return {
-        moduleId: Rm,
-        version: wm,
+        moduleId: wm,
+        version: Dm,
         contractVersion: "1.0.0",
         usesDecisionContract: !0
       };
     }
   };
 }
-function Cm(e) {
+function Lm(e) {
   var t = e.helpers, r = e.configResolver, n = e.executionGuard, i = e.dependencyChecker, o = e.successHandler, l = e.errorHandler, a = e.skipHandler, s = e.retryExecutor, u = e.breakerManager, c = e.rollbackRegistry;
   return {
     execute: function(d, f, g, h) {
@@ -8803,7 +8803,7 @@ function Cm(e) {
     }
   };
 }
-function Lm(e) {
+function _m(e) {
   var t = e.moduleId, r = e.phaseResults, n = e.phaseMetrics, i = e.breakerManager, o = e.circuitBreakerEnabled, l = e.notificationsEnabled;
   return {
     getPhaseCircuitBreaker: function(a) {
@@ -8832,7 +8832,7 @@ function Lm(e) {
     info: function() {
       return {
         moduleId: t,
-        version: lm,
+        version: um,
         modular: !0,
         circuitBreakerEnabled: o,
         notificationsEnabled: l,
@@ -8843,7 +8843,7 @@ function Lm(e) {
     }
   };
 }
-var _m = "1.0.1-CONTRACTS", Il = "rollback-registry", be = Object.freeze({
+var Nm = "1.0.1-CONTRACTS", Il = "rollback-registry", be = Object.freeze({
   WINDOW_PROPERTY: "window-property",
   GLOBAL_OBJECT: "global-object",
   DOM_ELEMENT: "dom-element",
@@ -8853,7 +8853,7 @@ var _m = "1.0.1-CONTRACTS", Il = "rollback-registry", be = Object.freeze({
   STORAGE: "storage",
   CUSTOM: "custom"
 });
-function Nm(e) {
+function Mm(e) {
   e === void 0 && (e = {});
   var t = e.logger, r = e.maxEffectsPerPhase || 100, n = /* @__PURE__ */ new Map(), i = {
     totalRegistered: 0,
@@ -8969,7 +8969,7 @@ function Nm(e) {
       h.push({ phaseId: A, effectCount: p.length });
     }), {
       moduleId: Il,
-      version: _m,
+      version: Nm,
       trackedPhases: n.size,
       phases: h,
       metrics: Object.assign({}, i),
@@ -8987,8 +8987,8 @@ function Nm(e) {
     EFFECT_TYPES: be
   };
 }
-var Mm = "1.0.1-CONTRACTS", Tl = "rollback-executor";
-function Pm(e) {
+var Pm = "1.0.1-CONTRACTS", Tl = "rollback-executor";
+function km(e) {
   e === void 0 && (e = {});
   var t = e.logger, r = e.registry, n = e.eventEmitter, i = e.continueOnError !== !1, o = {
     rollbacksExecuted: 0,
@@ -9152,7 +9152,7 @@ function Pm(e) {
   function H() {
     return {
       moduleId: Tl,
-      version: Mm,
+      version: Pm,
       metrics: Object.assign({}, o),
       continueOnError: i,
       hasRegistry: !!r
@@ -9171,18 +9171,18 @@ function Pm(e) {
 }
 function bl(e) {
   e === void 0 && (e = {});
-  var t = e.moduleId || sm, r = e.circuitBreakerEnabled !== !1, n = e.circuitBreakerConfig || um, i = e.notificationsEnabled !== !1, o = e.rollbackEnabled !== !1, l = e.windowAdapter || null, a = null, s = cm({
+  var t = e.moduleId || lm, r = e.circuitBreakerEnabled !== !1, n = e.circuitBreakerConfig || cm, i = e.notificationsEnabled !== !1, o = e.rollbackEnabled !== !1, l = e.windowAdapter || null, a = null, s = dm({
     logger: e.logger,
     telemetry: e.telemetry,
     eventEmitter: e.eventEmitter,
     moduleId: t
-  }), u = dm(e.getPhaseConfig), c = gm({
+  }), u = fm(e.getPhaseConfig), c = mm({
     metricsSummary: e.metricsSummary,
     healthAggregator: e.healthAggregator
-  }), d = fm({
+  }), d = hm({
     enabled: r,
     breakerConfig: n
-  }), f = hm({
+  }), f = gm({
     breakerManager: d,
     helpers: s,
     metrics: c,
@@ -9191,14 +9191,14 @@ function bl(e) {
   l && typeof l.get == "function" && (a = function(v) {
     return l.get(v);
   });
-  var h = mm(g, {
+  var h = pm(g, {
     resolveGlobal: a,
     logger: e.logger
   }), p = null, A = null;
-  o && (p = Nm({
+  o && (p = Mm({
     logger: e.logger,
     maxEffectsPerPhase: e.maxEffectsPerPhase || 100
-  }), A = Pm({
+  }), A = km({
     logger: e.logger,
     registry: p,
     eventEmitter: e.eventEmitter,
@@ -9207,18 +9207,18 @@ function bl(e) {
     enabled: !0,
     maxEffectsPerPhase: e.maxEffectsPerPhase || 100
   }));
-  var T = Om({
+  var T = Im({
     helpers: s,
     phaseMetrics: c,
     phaseResults: g,
     // @ts-expect-error strict migration — TS2322
     degradationHandler: e.degradationHandler,
     notificationsEnabled: i
-  }), S = pm({
+  }), S = Em({
     helpers: s,
     phaseMetrics: c,
     phaseResults: g
-  }), L = bm({
+  }), L = Rm({
     helpers: s,
     phaseMetrics: c,
     phaseResults: g,
@@ -9227,13 +9227,13 @@ function bl(e) {
     suppressionHandler: T,
     notificationsEnabled: i,
     rollbackExecutor: A
-  }), H = Dm({
+  }), H = Cm({
     helpers: s,
     phaseMetrics: c,
     phaseResults: g,
     // @ts-expect-error strict migration — TS2322
     degradationHandler: e.degradationHandler
-  }), E = Cm({
+  }), E = Lm({
     helpers: s,
     configResolver: u,
     executionGuard: f,
@@ -9246,7 +9246,7 @@ function bl(e) {
     breakerManager: d,
     // @ts-expect-error strict migration — TS2322
     rollbackRegistry: p
-  }), m = Lm({
+  }), m = _m({
     moduleId: t,
     phaseResults: g,
     phaseMetrics: c,
@@ -9386,12 +9386,12 @@ function Ls(e, t) {
   const r = $c[e];
   return r ? r.indexOf(t) !== -1 : !1;
 }
-function km(e) {
+function Hm(e) {
   return e ? $c[e] || [] : [];
 }
 function qc(e, t, r) {
   const n = [], i = [], o = Object.values(I);
-  return o.indexOf(e) === -1 && n.push("Invalid fromState: " + e), o.indexOf(t) === -1 && n.push("Invalid toState: " + t), n.length > 0 ? { valid: !1, errors: n, warnings: i } : (Ls(e, t) || (n.push("Transition not allowed: " + e + " → " + t), n.push("Valid targets from " + e + ": " + km(e).join(", "))), r && (t !== I.PHASE_0_CRITICAL && t !== I.COLD && t !== I.INITIALIZING && t !== I.FAILED && (r.phase0Complete || i.push("INV-002: Phase-0 should complete before proceeding")), r.skippedPhases && r.skippedPhases.length > 0 && t === I.READY && i.push("INV-003: Skipped phases detected, consider DEGRADED state")), {
+  return o.indexOf(e) === -1 && n.push("Invalid fromState: " + e), o.indexOf(t) === -1 && n.push("Invalid toState: " + t), n.length > 0 ? { valid: !1, errors: n, warnings: i } : (Ls(e, t) || (n.push("Transition not allowed: " + e + " → " + t), n.push("Valid targets from " + e + ": " + Hm(e).join(", "))), r && (t !== I.PHASE_0_CRITICAL && t !== I.COLD && t !== I.INITIALIZING && t !== I.FAILED && (r.phase0Complete || i.push("INV-002: Phase-0 should complete before proceeding")), r.skippedPhases && r.skippedPhases.length > 0 && t === I.READY && i.push("INV-003: Skipped phases detected, consider DEGRADED state")), {
     valid: n.length === 0,
     errors: n,
     warnings: i,
@@ -9399,7 +9399,7 @@ function qc(e, t, r) {
     toState: t
   });
 }
-function Hm(e) {
+function Bm(e) {
   if (!e || !Array.isArray(e) || e.length === 0)
     return {
       valid: !1,
@@ -9428,18 +9428,18 @@ function Jc(e) {
 function Zc(e) {
   return e === I.FAILED;
 }
-function Bm(e) {
+function Um(e) {
   return ho.indexOf(e) !== -1;
 }
-function Um(e) {
+function xm(e) {
   return Kc[e] || null;
 }
-function xm(e) {
+function Fm(e) {
   e === void 0 && (e = {});
   var t = e.telemetry, r = e.logger, n = e.windowAdapter || null, i = Le.IDLE, o = null, l = null, a = [], s = I.COLD, u = [I.COLD], c = [], d = null, f = null, g = null, h = {
     totalTime: 0,
     retryAttempts: 0
-  }, p = qg({ logger: r, moduleId: xt }), A = am({
+  }, p = Jg({ logger: r, moduleId: xt }), A = om({
     logger: r,
     onRetry: function(O) {
       h.retryAttempts++;
@@ -9506,7 +9506,7 @@ function xm(e) {
         reason: "invalid-manifest",
         errors: b.errors
       });
-    E(I.INITIALIZING, { phase0Complete: !1 }), ws(), d = jg(), f = $g(d), d.start(), f && f.captureMemoryBaseline && (f.captureMemoryBaseline(), S("info", "Memory baseline captured by orchestrator")), T = Sl({
+    E(I.INITIALIZING, { phase0Complete: !1 }), ws(), d = Wg(), f = Kg(d), d.start(), f && f.captureMemoryBaseline && (f.captureMemoryBaseline(), S("info", "Memory baseline captured by orchestrator")), T = Sl({
       logger: r,
       moduleId: xt,
       metricsSummary: fi,
@@ -9543,7 +9543,7 @@ function xm(e) {
         return Promise.resolve();
       var U = O[C];
       C++, o = U.id;
-      var G = Um(U.id);
+      var G = xm(U.id);
       return G && E(G, {
         phase0Complete: Y,
         skippedPhases: $
@@ -9701,7 +9701,7 @@ function xm(e) {
     BOOT_STATES: I
   };
 }
-var Fm = "boot-state-machine", Gm = "2.0.0-BOOT-CONTRACT", Qc = {
+var Gm = "boot-state-machine", zm = "2.0.0-BOOT-CONTRACT", Qc = {
   "loading-critical": I.PHASE_0_CRITICAL,
   "loading-core": I.PHASE_1_CORE,
   authenticating: I.PHASE_2_AUTH,
@@ -9717,7 +9717,7 @@ Object.keys(Qc).forEach(function(e) {
 function mi(e) {
   return Qc[e] || e;
 }
-function zm(e) {
+function Vm(e) {
   e === void 0 && (e = {});
   var t = I.COLD, r = [], n = {}, i = e.maxHistory || 50, o = {
     phase0Complete: !1,
@@ -9798,7 +9798,7 @@ function zm(e) {
     return Zc(t);
   }
   function T() {
-    return Bm(t);
+    return Um(t);
   }
   function S() {
     return Jc(t);
@@ -9812,15 +9812,15 @@ function zm(e) {
   }
   function H() {
     var v = [I.COLD].concat(f());
-    return Hm(v);
+    return Bm(v);
   }
   function E() {
     t = I.COLD, r.length = 0, o.phase0Complete = !1, o.skippedPhases = [];
   }
   function m() {
     return {
-      moduleId: Fm,
-      version: Gm,
+      moduleId: Gm,
+      version: zm,
       currentState: t,
       historyLength: r.length,
       isReady: h(),
@@ -9862,8 +9862,8 @@ function zm(e) {
     STATES: I
   };
 }
-const Vm = "logger-adapter", Rl = "1.5.0-DOMAIN-PURE", Xc = typeof window < "u", vn = { logger: null, _initialized: !1 };
-function Ym(e) {
+const Ym = "logger-adapter", Rl = "1.5.0-DOMAIN-PURE", Xc = typeof window < "u", vn = { logger: null, _initialized: !1 };
+function jm(e) {
   if (!Xc) return null;
   if (window.Core && window.Core.windowAdapter && window.Core.windowAdapter.get) {
     const t = window.Core.windowAdapter.get(e);
@@ -9871,13 +9871,13 @@ function Ym(e) {
   }
   return window[e] || null;
 }
-function jm() {
-  vn._initialized || (Xc && (vn.logger = Ym("Logger")), vn._initialized = !0);
+function Wm() {
+  vn._initialized || (Xc && (vn.logger = jm("Logger")), vn._initialized = !0);
 }
 function Mr(e) {
-  return vn._initialized || jm(), vn[e] || null;
+  return vn._initialized || Wm(), vn[e] || null;
 }
-function Wm(e) {
+function $m(e) {
   e === void 0 && (e = {});
   const t = e.prefix || "bootstrap-v2", r = e.debug || !1;
   function n(l) {
@@ -9911,15 +9911,15 @@ function Wm(e) {
       s && s.error && s.error(n(l), i(a));
     },
     getInfo: function() {
-      return { moduleId: Vm, version: Rl, hasGlobalLogger: !!Mr("logger"), debug: r };
+      return { moduleId: Ym, version: Rl, hasGlobalLogger: !!Mr("logger"), debug: r };
     },
     healthCheck: function() {
       return { healthy: !!Mr("logger"), version: Rl };
     }
   };
 }
-const $m = "telemetry-adapter", Km = "1.2.0-DOMAIN-PURE";
-function qm(e) {
+const Km = "telemetry-adapter", qm = "1.2.0-DOMAIN-PURE";
+function Jm(e) {
   e === void 0 && (e = {});
   const t = e.namespace || "bootstrap-v2", r = e.enabled !== !1, n = {}, i = { events: 0, errors: 0, warnings: 0 };
   function o() {
@@ -9971,7 +9971,7 @@ function qm(e) {
       return Object.assign({}, i);
     },
     getInfo: function() {
-      return { moduleId: $m, version: Km, hasTelemetry: !!o(), enabled: r, metrics: Object.assign({}, i) };
+      return { moduleId: Km, version: qm, hasTelemetry: !!o(), enabled: r, metrics: Object.assign({}, i) };
     }
   };
 }
@@ -10045,7 +10045,7 @@ const Yr = Object.freeze({
       clearedAfter: "boot-complete"
     }
   })
-}), Jm = Object.freeze({
+}), Zm = Object.freeze({
   PERSISTENT: "persistent",
   // Vive durante toda a sessão
   BOOT_ONLY: "boot-only",
@@ -10060,7 +10060,7 @@ const wl = 500;
 function ed(e) {
   return !e || typeof e != "string" ? !1 : Yr.ALLOWED[e] || Yr.TEMPORARY[e] ? !0 : (Yr.FORBIDDEN[e], !1);
 }
-function Zm(e) {
+function Qm(e) {
   if (!e) return null;
   const t = Yr.ALLOWED, r = Yr.TEMPORARY, n = Yr.FORBIDDEN;
   return t[e] ? {
@@ -10070,7 +10070,7 @@ function Zm(e) {
   } : r[e] ? {
     status: "temporary",
     details: r[e],
-    lifecycle: Jm.BOOT_ONLY
+    lifecycle: Zm.BOOT_ONLY
   } : n[e] ? {
     status: "forbidden",
     reason: n[e],
@@ -10081,7 +10081,7 @@ function Zm(e) {
     lifecycle: null
   };
 }
-function Qm(e, t, r) {
+function Xm(e, t, r) {
   const n = {
     globalName: e,
     accessType: t,
@@ -10091,13 +10091,13 @@ function Qm(e, t, r) {
   };
   return pi.push(n), pi.length > wl && (pi = pi.slice(-wl)), n;
 }
-const Dl = "eventbus-adapter", Xm = "2.2.0-GLOBALS-CONTRACT";
-function ep(e) {
+const Dl = "eventbus-adapter", ep = "2.2.0-GLOBALS-CONTRACT";
+function tp(e) {
   e === void 0 && (e = {});
   const t = e.namespace || "bootstrap-v2", r = e.validateGlobals !== !1, n = {};
   let i = 0, o = !1;
   function l() {
-    return typeof window < "u" && window.EventBus ? (r && (o || (ed("EventBus") || console.warn("[EventBusAdapter] window.EventBus access not allowed by globals-contract"), o = !0), Qm("EventBus", "read", Dl), i++), window.EventBus) : null;
+    return typeof window < "u" && window.EventBus ? (r && (o || (ed("EventBus") || console.warn("[EventBusAdapter] window.EventBus access not allowed by globals-contract"), o = !0), Xm("EventBus", "read", Dl), i++), window.EventBus) : null;
   }
   function a(s) {
     return s.indexOf(t) === 0 ? s : t + ":" + s;
@@ -10154,13 +10154,13 @@ function ep(e) {
       return {
         accessCount: i,
         validated: o,
-        globalPolicy: Zm("EventBus")
+        globalPolicy: Qm("EventBus")
       };
     },
     info: function() {
       return {
         moduleId: Dl,
-        version: Xm,
+        version: ep,
         hasGlobalEventBus: !!l(),
         localListenerCount: Object.keys(n).length,
         namespace: t,
@@ -10171,8 +10171,8 @@ function ep(e) {
     }
   };
 }
-const tp = "ready-flags-adapter", rp = "1.2.0-DOMAIN-PURE";
-function np() {
+const rp = "ready-flags-adapter", np = "1.2.0-DOMAIN-PURE";
+function ip() {
   const e = {}, t = {};
   function r() {
     if (typeof window > "u") return null;
@@ -10231,7 +10231,7 @@ function np() {
       return !!r();
     },
     info: function() {
-      return { moduleId: tp, version: rp, hasGlobalReadyFlags: !!r(), internalFlagsCount: Object.keys(e).length };
+      return { moduleId: rp, version: np, hasGlobalReadyFlags: !!r(), internalFlagsCount: Object.keys(e).length };
     }
   };
 }
@@ -10286,7 +10286,7 @@ const ro = "window-adapter", Cl = "2.5.0-HARD-ENFORCE", no = [
   // Core namespace
   "Core"
 ];
-function ip() {
+function ap() {
   const e = {}, t = [];
   function r() {
     return typeof window < "u";
@@ -10498,7 +10498,7 @@ var ka = "root-cause-analyzer", Ha = "1.1.0-HEALTH-CONTRACT", ee = {
   { pattern: /memory|heap|allocation/i, cause: ee.MEMORY_EXHAUSTED },
   { pattern: /circular|cyclic|recursion/i, cause: ee.CYCLIC_DEPENDENCY },
   { pattern: /not supported|incompatible|polyfill/i, cause: ee.BROWSER_INCOMPATIBLE }
-], rt = [], ap = 50, se = {
+], rt = [], op = 50, se = {
   networkInfo: null,
   memoryInfo: null,
   previousErrors: [],
@@ -10520,13 +10520,13 @@ function Ns(e, t, r) {
     timestamp: Date.now()
   }), se.previousErrors.length > 20 && (se.previousErrors = se.previousErrors.slice(-20));
 }
-function op(e) {
+function sp(e) {
   for (var t = e.message || String(e), r = 0; r < io.length; r++)
     if (io[r].pattern.test(t))
       return io[r].cause;
   return ee.UNKNOWN;
 }
-function sp(e, t, r) {
+function lp(e, t, r) {
   if (!t || t.length === 0 || !r) return null;
   for (var n = 0; n < t.length; n++) {
     var i = t[n], o = r[i];
@@ -10535,7 +10535,7 @@ function sp(e, t, r) {
   }
   return null;
 }
-function lp() {
+function up() {
   var e = [];
   if (se.networkInfo) {
     var t = se.networkInfo.quality;
@@ -10550,7 +10550,7 @@ function lp() {
   });
   return n.length > 2 && e.push(Xt.PREVIOUS_ERRORS), e;
 }
-function up(e, t) {
+function cp(e, t) {
   var r = {
     [ee.DEPENDENCY_FAILED]: function() {
       return "A dependent phase (" + (t.failedDependency || "unknown") + ") failed. Check that phase's errors first.";
@@ -10591,7 +10591,7 @@ function up(e, t) {
   }, n = r[e];
   return n ? n() : "No specific suggestion available.";
 }
-function cp(e, t) {
+function dp(e, t) {
   var r = 0.5;
   return t.failedDependency && e === ee.DEPENDENCY_FAILED && (r += 0.3), t.contributingFactors.indexOf(Xt.SLOW_NETWORK) !== -1 && (e === ee.NETWORK_ERROR || e === ee.TIMEOUT) && (r += 0.2), t.contributingFactors.indexOf(Xt.HIGH_MEMORY) !== -1 && e === ee.MEMORY_EXHAUSTED && (r += 0.25), t.contributingFactors.indexOf(Xt.PREVIOUS_ERRORS) !== -1 && (r += 0.1), Math.min(r, 0.95);
 }
@@ -10599,12 +10599,12 @@ function Bi(e) {
   e === void 0 && (e = {});
   var t = e.error, r = e.phaseId, n = e.moduleId, i = e.dependencies || [], o = e.phaseResults || {}, l = e.networkState, a = e.memoryState;
   l && (se.networkInfo = l), a && (se.memoryInfo = a), t && Ns(t, r, n);
-  var s = sp(r, i, o), u;
-  s ? u = ee.DEPENDENCY_FAILED : t ? u = op(t) : u = ee.UNKNOWN;
-  var c = lp(), d = {
+  var s = lp(r, i, o), u;
+  s ? u = ee.DEPENDENCY_FAILED : t ? u = sp(t) : u = ee.UNKNOWN;
+  var c = up(), d = {
     failedDependency: s,
     contributingFactors: c
-  }, f = up(u, d), g = cp(u, d), h = {
+  }, f = cp(u, d), g = dp(u, d), h = {
     primaryCause: u,
     failedDependency: s,
     contributingFactors: c,
@@ -10620,7 +10620,7 @@ function Bi(e) {
       recentErrors: se.previousErrors.length
     }
   };
-  for (rt.unshift(h); rt.length > ap; )
+  for (rt.unshift(h); rt.length > op; )
     rt.pop();
   return h;
 }
@@ -10698,7 +10698,7 @@ function ad() {
     }
   });
 }
-var dp = {
+var fp = {
   CAUSE_TYPES: ee,
   CONTRIBUTING_FACTORS: Xt,
   analyze: Bi,
@@ -10715,7 +10715,7 @@ var dp = {
   MODULE_ID: ka,
   VERSION: Ha
 };
-const fp = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const hp = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   CAUSE_TYPES: ee,
   CONTRIBUTING_FACTORS: Xt,
@@ -10723,7 +10723,7 @@ const fp = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   VERSION: Ha,
   analyze: Bi,
   clearHistory: nd,
-  default: dp,
+  default: fp,
   getErrorTrends: ei,
   getPhaseAnalysis: td,
   getRecentAnalyses: rd,
@@ -10755,7 +10755,7 @@ function od() {
     t += e[Math.floor(Math.random() * 16)];
   return t;
 }
-function hp() {
+function gp() {
   for (var e = "0123456789abcdef", t = "", r = 0; r < 16; r++)
     t += e[Math.floor(Math.random() * 16)];
   return t;
@@ -10764,7 +10764,7 @@ function Oi() {
   return Date.now() * 1e6;
 }
 function ks(e) {
-  return e === void 0 && (e = {}), q.enabled = e.enabled !== !1, q.endpoint = e.endpoint || null, q.serviceName = e.serviceName || q.serviceName, q.serviceVersion = e.serviceVersion || q.serviceVersion, q.environment = e.environment || q.environment, q.batchSize = e.batchSize || q.batchSize, q.flushIntervalMs = e.flushIntervalMs || q.flushIntervalMs, q.timeout = e.timeout || q.timeout, q.headers = e.headers || {}, wn = !0, q.enabled && q.endpoint && gp(), {
+  return e === void 0 && (e = {}), q.enabled = e.enabled !== !1, q.endpoint = e.endpoint || null, q.serviceName = e.serviceName || q.serviceName, q.serviceVersion = e.serviceVersion || q.serviceVersion, q.environment = e.environment || q.environment, q.batchSize = e.batchSize || q.batchSize, q.flushIntervalMs = e.flushIntervalMs || q.flushIntervalMs, q.timeout = e.timeout || q.timeout, q.headers = e.headers || {}, wn = !0, q.enabled && q.endpoint && mp(), {
     success: !0,
     config: {
       enabled: q.enabled,
@@ -10773,7 +10773,7 @@ function ks(e) {
     }
   };
 }
-function gp() {
+function mp() {
   Wr && clearInterval(Wr), Wr = setInterval(function() {
     Fe.length > 0 && Rr();
   }, q.flushIntervalMs);
@@ -10783,7 +10783,7 @@ function sd() {
 }
 function ni(e, t) {
   t === void 0 && (t = {});
-  var r = hp(), n = t.traceId || er || od(), i = t.parentSpanId || br || null, o = {
+  var r = gp(), n = t.traceId || er || od(), i = t.parentSpanId || br || null, o = {
     traceId: n,
     spanId: r,
     parentSpanId: i,
@@ -11000,7 +11000,7 @@ function hd() {
     }
   });
 }
-var mp = {
+var pp = {
   init: ks,
   createSpan: ni,
   startBootTrace: ld,
@@ -11016,12 +11016,12 @@ var mp = {
   MODULE_ID: ti,
   VERSION: ri
 };
-const pp = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const Ep = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   MODULE_ID: ti,
   VERSION: ri,
   createSpan: ni,
-  default: mp,
+  default: pp,
   flush: Rr,
   getExportData: Hs,
   getTraceContext: Bs,
@@ -11055,12 +11055,12 @@ const pp = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   interval: 3e4,
   maxChecks: 100,
   startDelay: 5e3
-}), Ep = Ln({ moduleId: en + ":logger-helper" });
+}), vp = Ln({ moduleId: en + ":logger-helper" });
 function md(e) {
-  const t = Array.prototype.slice.call(arguments, 1), r = Ep.get("logger");
+  const t = Array.prototype.slice.call(arguments, 1), r = vp.get("logger");
   r && typeof r[e] == "function" && r[e].apply(r, ["[" + en + "]"].concat(t));
 }
-function vp() {
+function yp() {
   const e = Array.prototype.slice.call(arguments);
   md.apply(null, ["warn"].concat(e));
 }
@@ -11083,13 +11083,13 @@ function _l(e) {
   } catch {
   }
 }
-function yp() {
+function Ap() {
   try {
     sessionStorage.removeItem(Ue.storageKey);
   } catch {
   }
 }
-function Ap(e) {
+function Sp(e) {
   const t = pd(), r = Date.now();
   if (t.cooldownUntil && r < t.cooldownUntil) {
     const i = t.cooldownUntil - r;
@@ -11140,13 +11140,13 @@ function Fs() {
     config: Ue
   };
 }
-function Sp() {
-  yp();
+function Ed() {
+  Ap();
 }
 const Op = "timeout-manager", Ip = "2.7.0-RESILIENCE-CONTRACT";
 function Tp(e) {
   e || (e = {});
-  const t = e.onTimeout, r = e.onWarning, n = e.loggerAdapter, i = e.config || go, o = em({
+  const t = e.onTimeout, r = e.onWarning, n = e.loggerAdapter, i = e.config || go, o = tm({
     timeout: i.timeoutMs || ve.timeout.global,
     warning: i.warningMs || ve.timeout.warning,
     enabled: i.enabled !== void 0 ? i.enabled : !0
@@ -11307,7 +11307,7 @@ function bp(e) {
 function Rp() {
   if (typeof window > "u") return;
   const e = Ba();
-  e ? (e.state === Me.RUNNING || e.state === Me.COMPLETED) && vp("Bootstrap already " + e.state + ", blocking duplicate execution") : bp({
+  e ? (e.state === Me.RUNNING || e.state === Me.COMPLETED) && yp("Bootstrap already " + e.state + ", blocking duplicate execution") : bp({
     state: Me.IDLE,
     startCount: 0,
     timestamp: null,
@@ -11353,7 +11353,7 @@ function Gt(e, t) {
     } catch {
     }
 }
-var Ed = {
+var vd = {
   id: "phase-0-critical",
   name: "Critical Infrastructure",
   order: 0,
@@ -11467,7 +11467,7 @@ var Ed = {
     return ue({ status: B.HEALTHY, moduleId: gt, version: Nl, details: { emitMetrics: Object.assign({}, $t), p24Instrumented: !0, preloaderManaged: !0 } });
   },
   info: function() {
-    return { moduleId: gt, version: Nl, modules: Ed.modules.map(function(e) {
+    return { moduleId: gt, version: Nl, modules: vd.modules.map(function(e) {
       return e.id;
     }), emitMetrics: Object.assign({}, $t), preloaderManaged: !0 };
   }
@@ -11502,7 +11502,7 @@ var bt = {
   ],
   execute: function(e) {
     var t = e.logger, r = e.telemetry, n = e.windowAdapter, i = { initialized: [], failed: [] }, o = performance.now();
-    bi = n, zd(), t && t.info("Phase 1 starting: Core Systems"), r && r.track("phase-1-start");
+    bi = n, Vd(), t && t.info("Phase 1 starting: Core Systems"), r && r.track("phase-1-start");
     var l = [];
     return l.push(import("/core/js/event-bus/dist/event-bus.bundle.js").then(function(a) {
       var s = a.default || a;
@@ -11589,7 +11589,7 @@ var bt = {
             var u = ln();
             u && u.setReady && u.setReady("feature-flags", !0), _.featureFlagsInitialized = !0, i.initialized.push("feature-flags");
             var c = s.getVersion ? s.getVersion() : s.VERSION || "unknown";
-            s.healthCheck && Jd("feature-flags", s.healthCheck, "component"), t && t.info("Feature Flags Manager ready (formal init)", { version: c, strictMode: de() });
+            s.healthCheck && Zd("feature-flags", s.healthCheck, "component"), t && t.info("Feature Flags Manager ready (formal init)", { version: c, strictMode: de() });
           });
       }).catch(function(a) {
         i.failed.push({ id: "feature-flags", error: a.message, critical: !1 }), t && t.warn("Feature Flags Manager failed (non-critical)", { error: a.message });
@@ -11622,7 +11622,7 @@ var bt = {
       });
     }).then(function() {
       try {
-        var a = qd({ phase: "phase-1", module: Ei });
+        var a = Jd({ phase: "phase-1", module: Ei });
         if (_.governanceValidated = a.passed, _.governanceScore = a.score, i.initialized.push("governance-validation"), t && t.info("Governance rules validated", {
           passed: a.passed,
           score: a.score,
@@ -11638,7 +11638,7 @@ var bt = {
       }
     }).then(function() {
       try {
-        var a = Zd();
+        var a = Qd();
         _.runtimeHealthScore = a.score, _.runtimeHealthStatus = a.status, i.initialized.push("runtime-health-aggregator"), t && t.info("Runtime health aggregated", {
           status: a.status,
           score: a.score,
@@ -11856,7 +11856,7 @@ var _p = {
   ],
   execute: function(e) {
     var t = e.logger, r = e.telemetry, n = e.eventBusAdapter, i = e.readyFlagsAdapter, o = e.windowAdapter, l = { initialized: [], failed: [], authState: null }, a = performance.now();
-    pr = o, Je = nf({
+    pr = o, Je = af({
       logger: t,
       telemetry: r,
       eventBusAdapter: n,
@@ -11867,7 +11867,7 @@ var _p = {
       return t && t.info("[" + ae + "] Initializing SessionManager singleton..."), ne.init({ checkOnInit: !1, trackActivity: !0, autoRefresh: !0 });
     }).then(function() {
       t && t.info("[" + ae + "] Creating enterprise auth modules...");
-      var c = Qd({ eventBus: s }), d = Xd({ eventBus: s }), f = {
+      var c = Xd({ eventBus: s }), d = ef({ eventBus: s }), f = {
         isAuthenticated: function() {
           return ne.isAuthenticated();
         },
@@ -11909,13 +11909,13 @@ var _p = {
         _isLiveProxy: !1,
         _isSingletonAdapter: !0,
         _version: ne.version
-      }, g = ef({
+      }, g = tf({
         eventBus: s,
         sessionManager: f,
         permissionsGuard: c,
         policiesManager: d
       });
-      return rf(g), t && t.info("[" + ae + "] Initializing Auth Orchestrator..."), g.init({
+      return nf(g), t && t.info("[" + ae + "] Initializing Auth Orchestrator..."), g.init({
         session: {},
         permissions: {
           routePermissions: {
@@ -11999,7 +11999,7 @@ var _p = {
       var d = c.authOrchestrator, f = un("AppContext") || {};
       f.getAuth = function() {
         return d.getAuthContext();
-      }, f.auth = tf, pr && pr.expose && pr.expose("AppContext", f), window.AppContext = f, l.initialized.push("auth-orchestrator"), l.initialized.push("session-manager-singleton");
+      }, f.auth = rf, pr && pr.expose && pr.expose("AppContext", f), window.AppContext = f, l.initialized.push("auth-orchestrator"), l.initialized.push("session-manager-singleton");
       var g = performance.now() - a;
       return t && t.info("[" + ae + "] Phase 2 complete", {
         duration: g.toFixed(0) + "ms",
@@ -12075,7 +12075,7 @@ function Np(e, t) {
   try {
     var i = Di(e);
     if (!i) return;
-    r && r.info("Revealing regions with fade transitions"), t && t.setFullscreen ? t.setFullscreen(!1) : n && n.emit && n.emit(af.LAYOUT_REQUEST, {
+    r && r.info("Revealing regions with fade transitions"), t && t.setFullscreen ? t.setFullscreen(!1) : n && n.emit && n.emit(of.LAYOUT_REQUEST, {
       mode: "default",
       source: Ui,
       timestamp: Date.now()
@@ -12118,7 +12118,7 @@ function Di(e) {
   }
   return !1;
 }
-var vd = {
+var yd = {
   id: "phase-3-shell",
   name: "Shell & Router",
   order: 3,
@@ -12219,7 +12219,7 @@ var vd = {
     return tc({ status: ec.HEALTHY, moduleId: Ui, version: Ri });
   },
   info: function() {
-    return { moduleId: Ui, version: Ri, modules: vd.modules.map(function(e) {
+    return { moduleId: Ui, version: Ri, modules: yd.modules.map(function(e) {
       return e.id;
     }) };
   }
@@ -12554,7 +12554,7 @@ function Fp(e) {
             },
             VERSION: c.VERSION || u.VERSION || ao
           });
-          return t.exposeGlobal("Main", p), t.exposeGlobal("MainModule", u), s && s.expose && s.expose("Main", p), o && o.info("[P14] Main exposed to window"), a && a.setReady && a.setReady("main", !0), i.initialized.push("main"), r = !0, l && l.emit && l.emit(of.MAIN_READY, { version: ao }), o && o.info("[P14] Main Enterprise v2 mounted successfully", { version: ao }), h;
+          return t.exposeGlobal("Main", p), t.exposeGlobal("MainModule", u), s && s.expose && s.expose("Main", p), o && o.info("[P14] Main exposed to window"), a && a.setReady && a.setReady("main", !0), i.initialized.push("main"), r = !0, l && l.emit && l.emit(sf.MAIN_READY, { version: ao }), o && o.info("[P14] Main Enterprise v2 mounted successfully", { version: ao }), h;
         });
       }).catch(function(u) {
         throw i.failed.push({ id: "main", error: u.message }), o && o.error("[P14] Main Enterprise v2 mount failed", {
@@ -12706,7 +12706,7 @@ function zp(e) {
     }
   };
 }
-var xi = "4.6.0-HEALTH-CONTRACT", ar = Hp(), oo = Bp({ portsManager: ar }), $r = Up(), Sr = Fp({ portsManager: ar }), Fi = Gp({ portsManager: ar }), yd = zp({ portsManager: ar });
+var xi = "4.6.0-HEALTH-CONTRACT", ar = Hp(), oo = Bp({ portsManager: ar }), $r = Up(), Sr = Fp({ portsManager: ar }), Fi = Gp({ portsManager: ar }), Ad = zp({ portsManager: ar });
 function Eo(e) {
   if (typeof window > "u") return null;
   if (window.Core && window.Core.windowAdapter && window.Core.windowAdapter.get) {
@@ -12716,7 +12716,7 @@ function Eo(e) {
   return window[e] || null;
 }
 function vo() {
-  return yd.getBootstrap() || Eo("CMBootstrap");
+  return Ad.getBootstrap() || Eo("CMBootstrap");
 }
 function Bl(e, t, r) {
   return Sr.mount(e, t).then(function(n) {
@@ -12729,7 +12729,7 @@ function Vp(e, t) {
     e && e.info("[P14] CMBootstrap not yet available - Main.init may still be initializing");
     return;
   }
-  e && e.info("[P14] Bootstrap found - syncing reference"), yd._setBootstrap(r), Fi._setMounted(!0);
+  e && e.info("[P14] Bootstrap found - syncing reference"), Ad._setBootstrap(r), Fi._setMounted(!0);
   var n = Eo("ContainerMain");
   if (!n) {
     var i = document.getElementById("container-main") || document.querySelector(".dsd-container") || document.querySelector('[data-container-main="true"]'), o = {
@@ -12867,10 +12867,10 @@ typeof window < "u" && (window.__dev = window.__dev || {}, window.__dev.phase4 =
   healthCheck: jp,
   version: xi
 });
-var so = "phase-5-ui", Ci = "5.7.0-ROUTE-CHANGED-EVENT", Ur = ["appshell", "header", "sidebar", "navRail", "footer"], Ad = 8e3, Hr = null;
+var so = "phase-5-ui", Ci = "5.7.0-ROUTE-CHANGED-EVENT", Ur = ["appshell", "header", "sidebar", "navRail", "footer"], Sd = 8e3, Hr = null;
 function Ai() {
   if (Hr) return Hr;
-  var e = Hg();
+  var e = Bg();
   return e ? (Hr = e, Hr) : (typeof window < "u" && window.RuntimeContext && (Hr = window.RuntimeContext), Hr);
 }
 function Wp() {
@@ -12882,7 +12882,7 @@ function $p(e) {
     return e && e.warn("[phase-5] ReadyFlags not available, skipping shell wait"), Promise.resolve({ allReady: !1, readyCount: 0, total: 0, notReady: [], reason: "ReadyFlags not available" });
   e && e.info("[phase-5] Waiting for shell components...", { flags: Ur });
   var r = Ur.map(function(n) {
-    return t.waitFor(n, Ad).then(function(i) {
+    return t.waitFor(n, Sd).then(function(i) {
       return { flag: n, ready: i };
     });
   });
@@ -12927,7 +12927,7 @@ function Kp(e) {
 function qp() {
   return typeof window > "u" ? null : window.Core && window.Core.EventBus ? window.Core.EventBus : window.EventBus || window.EventBusGlobal || null;
 }
-var Sd = {
+var Od = {
   id: "phase-5-ui",
   name: "UI Components",
   order: 5,
@@ -13133,13 +13133,13 @@ var Sd = {
     return {
       moduleId: so,
       version: Ci,
-      modules: Sd.modules.map(function(r) {
+      modules: Od.modules.map(function(r) {
         return r.id;
       }),
       overlayLayerIntegrated: !!(t && t.isKernelIntegrated && t.isKernelIntegrated()),
       runtimeContextVersion: e ? e.VERSION : null,
       shellReadyFlags: Ur,
-      shellReadyTimeout: Ad
+      shellReadyTimeout: Sd
     };
   }
 };
@@ -13193,12 +13193,12 @@ var Ul = "phase-6-platform", Si = "3.3.0-HEALTH-CONTRACT", Jp = {
   }
 };
 const Zp = {
-  "phase-0-critical": Ed,
+  "phase-0-critical": vd,
   "phase-1-core": bt,
   "phase-2-auth": _p,
-  "phase-3-shell": vd,
+  "phase-3-shell": yd,
   "phase-4-main": Yp,
-  "phase-5-ui": Sd,
+  "phase-5-ui": Od,
   "phase-6-platform": Jp
 }, Qp = {
   "phase-0-critical": "critical",
@@ -13311,7 +13311,7 @@ function sE(e) {
     }), !0) : !1;
   }
   function h() {
-    const T = Gs(), S = Ap(s);
+    const T = Gs(), S = Sp(s);
     if (!S.allowed) {
       o.error("Boot blocked by loop detection", S), l.error("boot-loop-blocked", S), Pr({ state: Me.SAFE_MODE, bootLoopDetected: !0 });
       const E = nE(S);
@@ -13361,7 +13361,15 @@ function sE(e) {
           syncEnabled: w.syncEnabled
         });
       }
-      if (f.success ? p(f, m, v, H) : A(f), d && typeof d == "function")
+      if (f.success) {
+        try {
+          Ed();
+        } catch {
+        }
+        p(f, m, v, H);
+      } else
+        A(f);
+      if (d && typeof d == "function")
         try {
           d(f), o.info("Boot result persisted", { success: f.success });
         } catch (w) {
@@ -13633,7 +13641,7 @@ function fE(e) {
     s.length = 0, u.length = 0, a.setResult(null), t.reset(), r && r.reset(), c.value = null, n && n.reset(), wp(), l.info("Bootstrap reset (Modular Architecture)");
   }
   function g() {
-    Sp(), l.info("Boot loop tracker reset");
+    Ed(), l.info("Boot loop tracker reset");
   }
   return {
     reset: f,
@@ -13717,7 +13725,7 @@ function js(e) {
   const r = Date.now() - t.timestamp;
   return t.success && r < e;
 }
-function Od() {
+function Id() {
   return hE(or.CURRENT_BOOT, !1);
 }
 function Ws(e) {
@@ -13790,13 +13798,13 @@ function mE() {
   let e = window.sessionStorage.getItem("__SESSION_ID__");
   return e || (e = "sess-" + Date.now().toString(36) + "-" + Math.random().toString(36).substring(2, 9), window.sessionStorage.setItem("__SESSION_ID__", e)), e;
 }
-function Id(e) {
+function Td(e) {
   e.maxHistorySize !== void 0 && (ut.maxHistorySize = e.maxHistorySize), e.persistenceEnabled !== void 0 && (ut.persistenceEnabled = e.persistenceEnabled), e.useSessionStorage !== void 0 && (ut.useSessionStorage = e.useSessionStorage), e.historyInLocalStorage !== void 0 && (ut.historyInLocalStorage = e.historyInLocalStorage);
 }
-function Td() {
+function bd() {
   return { ...ut };
 }
-function bd() {
+function Rd() {
   const e = ai();
   return {
     moduleId: xa,
@@ -13809,7 +13817,7 @@ function bd() {
     improvements: ["#1-SessionStoragePersistence", "#4-BootHistory"]
   };
 }
-function Rd() {
+function wd() {
   var e = typeof window < "u" && window.sessionStorage && window.localStorage, t = ai(), r = B.HEALTHY;
   return e || (r = B.DEGRADED), ue({
     status: r,
@@ -13837,17 +13845,17 @@ var pE = {
   getCurrentBoot: ii,
   getLastSuccessfulBoot: Fa,
   hasRecentValidBoot: js,
-  clearCurrentBoot: Od,
+  clearCurrentBoot: Id,
   // #4: Histórico
   addToHistory: Ws,
   getHistory: tn,
   clearHistory: $s,
   analyzeHistory: ai,
   // Config
-  configure: Id,
-  getConfig: Td,
-  info: bd,
-  healthCheck: Rd
+  configure: Td,
+  getConfig: bd,
+  info: Rd,
+  healthCheck: wd
 };
 const EE = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
@@ -13855,17 +13863,17 @@ const EE = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   VERSION: Ua,
   addToHistory: Ws,
   analyzeHistory: ai,
-  clearCurrentBoot: Od,
+  clearCurrentBoot: Id,
   clearHistory: $s,
-  configure: Id,
+  configure: Td,
   default: pE,
-  getConfig: Td,
+  getConfig: bd,
   getCurrentBoot: ii,
   getHistory: tn,
   getLastSuccessfulBoot: Fa,
   hasRecentValidBoot: js,
-  healthCheck: Rd,
-  info: bd,
+  healthCheck: wd,
+  info: Rd,
   saveCurrentBoot: Ys
 }, Symbol.toStringTag, { value: "Module" })), Ga = "1.2.0-DOMAIN-PURE", oi = "debug-mode";
 var si = Ln({ moduleId: oi });
@@ -13897,10 +13905,10 @@ function vE() {
   return window.BootstrapV2 || null;
 }
 function li(e) {
-  return e === void 0 && (e = {}), le.enabled = !0, le.level = e.level || "debug", le.startedAt = Date.now(), Dd(!0), Cd(!0), e.exposeGlobal !== !1 && yE(), kt("info", "Debug mode ENABLED", { level: le.level, options: e }), Lr();
+  return e === void 0 && (e = {}), le.enabled = !0, le.level = e.level || "debug", le.startedAt = Date.now(), Cd(!0), Ld(!0), e.exposeGlobal !== !1 && yE(), kt("info", "Debug mode ENABLED", { level: le.level, options: e }), Lr();
 }
 function ui() {
-  return kt("info", "Debug mode DISABLED", { duration: Date.now() - le.startedAt }), le.enabled = !1, le.startedAt = null, Dd(!1), Cd(!1), AE(), Lr();
+  return kt("info", "Debug mode DISABLED", { duration: Date.now() - le.startedAt }), le.enabled = !1, le.startedAt = null, Cd(!1), Ld(!1), AE(), Lr();
 }
 function za() {
   return le.enabled ? ui() : li();
@@ -13925,7 +13933,7 @@ function Js(e) {
 function Zs(e) {
   return le.modules[e] = !1, kt("debug", "Module debug disabled: " + e), !0;
 }
-function wd(e) {
+function Dd(e) {
   return !(!le.enabled || le.modules[e] === !1);
 }
 function kt(e, t, r) {
@@ -13945,7 +13953,7 @@ async function Xs(e, t) {
   const r = performance.now(), n = await t(), i = performance.now() - r;
   return kt("debug", "MEASURE [" + e + "]: " + i.toFixed(2) + "ms"), n;
 }
-function Dd(e) {
+function Cd(e) {
   try {
     var t = vE();
     t && t._instance && t._instance.config && Ks.forEach(function(r) {
@@ -13954,7 +13962,7 @@ function Dd(e) {
   } catch {
   }
 }
-function Cd(e) {
+function Ld(e) {
   try {
     var t = si.get("logger");
     t && (e ? typeof t.enableLevel == "function" && (t.enableLevel("debug"), t.enableLevel("trace")) : typeof t.disableLevel == "function" && (t.disableLevel("debug"), t.disableLevel("trace")));
@@ -13977,7 +13985,7 @@ function yE() {
 function AE() {
   typeof window > "u" || delete window.__debug;
 }
-function Ld() {
+function _d() {
   return {
     moduleId: oi,
     version: Ga,
@@ -13988,7 +13996,7 @@ function Ld() {
     improvements: ["#20-UnifiedDebugMode"]
   };
 }
-function _d() {
+function Nd() {
   return ue({
     status: B.HEALTHY,
     moduleId: oi,
@@ -14000,10 +14008,10 @@ function _d() {
     }
   });
 }
-function Nd(e) {
+function Md(e) {
   return si.inject(e);
 }
-function Md() {
+function Pd() {
   return si.snapshot();
 }
 var SE = {
@@ -14017,14 +14025,14 @@ var SE = {
   getState: Lr,
   enableModule: Js,
   disableModule: Zs,
-  isModuleEnabled: wd,
+  isModuleEnabled: Dd,
   log: kt,
   measure: Qs,
   measureAsync: Xs,
-  info: Ld,
-  healthCheck: _d,
-  injectPorts: Nd,
-  getPorts: Md
+  info: _d,
+  healthCheck: Nd,
+  injectPorts: Md,
+  getPorts: Pd
 };
 const OE = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
@@ -14035,34 +14043,34 @@ const OE = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   disableModule: Zs,
   enable: li,
   enableModule: Js,
-  getPorts: Md,
+  getPorts: Pd,
   getState: Lr,
-  healthCheck: _d,
-  info: Ld,
-  injectPorts: Nd,
+  healthCheck: Nd,
+  info: _d,
+  injectPorts: Md,
   isEnabled: qs,
-  isModuleEnabled: wd,
+  isModuleEnabled: Dd,
   log: kt,
   measure: Qs,
   measureAsync: Xs,
   toggle: za
 }, Symbol.toStringTag, { value: "Module" }));
-lg();
+ug();
 Rp();
 var jt = null;
 function el(e) {
   e === void 0 && (e = {});
-  var t = ug(e), r = Xn();
+  var t = cg(e), r = Xn();
   r.valid || console.error("[bootstrap-v2] Boot Manifest validation failed", r.errors);
   try {
     na(Z);
   } catch (b) {
     console.warn("[bootstrap-v2] Failed to store manifest hash", b.message);
   }
-  var n = ip(), i = Wm({ prefix: "bootstrap-v2", debug: t.debug }), o = qm({ namespace: t.telemetry.namespace, enabled: t.telemetry.enabled }), l = ep({ namespace: "bootstrap-v2" }), a = np();
+  var n = ap(), i = $m({ prefix: "bootstrap-v2", debug: t.debug }), o = Jm({ namespace: t.telemetry.namespace, enabled: t.telemetry.enabled }), l = tp({ namespace: "bootstrap-v2" }), a = ip();
   typeof window < "u" && (window.Core = window.Core || {}, window.Core.windowAdapter = n);
   var s = { logger: i, telemetry: o, eventBusAdapter: l, readyFlagsAdapter: a, windowAdapter: n };
-  Vd(function() {
+  Yd(function() {
     return n && n.get ? n.get("EventBus") : null;
   });
   try {
@@ -14076,8 +14084,8 @@ function el(e) {
   }
   typeof window < "u" && (window.Core = window.Core || {}, window.Core.strictMode = {
     isStrict: de,
-    getViolations: jd,
-    healthCheck: Yd,
+    getViolations: Wd,
+    healthCheck: jd,
     recordViolation: Sn,
     version: Va
   }, window.Core.governanceBridge = {
@@ -14087,7 +14095,7 @@ function el(e) {
     emitViolationSummary: Vt.emitViolationSummary,
     version: Vt.VERSION
   }, i.debug("window.Core.strictMode and window.Core.governanceBridge exposed"));
-  var u = zm(), c = xm(s), d = { value: Oc() }, f = kg({
+  var u = Vm(), c = Fm(s), d = { value: Oc() }, f = Hg({
     windowAdapter: n,
     logger: i,
     // @ts-expect-error strict migration — TS2322
@@ -14153,7 +14161,7 @@ function el(e) {
     // Sprint 5: Hook para persistir resultado do boot
     onBootComplete: function(b) {
       try {
-        Ys(b), Ws(b), Wd(), t.otel && t.otel.enabled && Rr().catch(function() {
+        Ys(b), Ws(b), $d(), t.otel && t.otel.enabled && Rr().catch(function() {
         });
       } catch (P) {
         i.warn("Failed to persist boot result", { error: P.message });
@@ -14221,8 +14229,8 @@ function el(e) {
     getDependencyGraph: function() {
       return d.value;
     },
-    getFeatureFlags: dg,
-    isFeatureEnabled: cg,
+    getFeatureFlags: fg,
+    isFeatureEnabled: dg,
     // Kernel
     getKernel: function() {
       return f;
@@ -14368,9 +14376,9 @@ function el(e) {
     ModuleEvents: au,
     LazyLoader: Bu,
     BootCancellation: ju,
-    RootCauseAnalyzer: fp,
+    RootCauseAnalyzer: hp,
     PartialReinit: Qu,
-    OTelExporter: pp,
+    OTelExporter: Ep,
     // Módulos Sprint 5
     BootPersistence: EE,
     DebugMode: OE,
@@ -14389,12 +14397,12 @@ function el(e) {
     STRICT_MODE_VERSION: Va
   };
 }
-function Pd(e) {
+function kd(e) {
   e === void 0 && (e = {});
   var t = typeof window < "u" ? window.__BOOTSTRAP_V2_STATE__ : null;
   return t && (t.state === Me.RUNNING || t.state === Me.COMPLETED) && jt || jt || (jt = el(e)), jt;
 }
-function kd() {
+function Hd() {
   jt && jt.reset(), jt = null;
   try {
     bo(), Ps(), Us(), (void 0)(), va();
@@ -14408,8 +14416,8 @@ function kd() {
 }
 var IE = {
   createBootstrapV2: el,
-  getInstance: Pd,
-  resetInstance: kd,
+  getInstance: kd,
+  resetInstance: Hd,
   VERSION: Dn,
   MODULE_ID: en,
   SINGLETON_STATES: Me,
@@ -14425,11 +14433,11 @@ const TE = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   SINGLETON_STATES: Me,
   createBootstrapV2: el,
   default: IE,
-  getInstance: Pd,
-  resetInstance: kd
+  getInstance: kd,
+  resetInstance: Hd
 }, Symbol.toStringTag, { value: "Module" }));
-var tl = "1.0.0-LOTTIE-TRANSITION", rl = "bootstrap-v2.loader.stages.panel-loading-transition", bE = "https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js", RE = "/assets/animacoes/Loading_Cube.json", tr = "dsd-panel-lottie-loading", Hd = 300, wE = 80, mn = null, yn = null, xr = null, Li = null, An = !1, xl = !1, Er = null;
-function Bd() {
+var tl = "1.0.0-LOTTIE-TRANSITION", rl = "bootstrap-v2.loader.stages.panel-loading-transition", bE = "https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js", RE = "/assets/animacoes/Loading_Cube.json", tr = "dsd-panel-lottie-loading", Bd = 300, wE = 80, mn = null, yn = null, xr = null, Li = null, An = !1, xl = !1, Er = null;
+function Ud() {
   return typeof lottie < "u" ? Promise.resolve(!0) : new Promise(function(e) {
     var t = document.querySelector('script[src*="lottie-web"]');
     if (t) {
@@ -14468,7 +14476,7 @@ function DE() {
       "  z-index: 50;",
       "  background: var(--dsd-bg-primary, #0a0c14);",
       "  opacity: 1;",
-      "  transition: opacity " + Hd + "ms ease;",
+      "  transition: opacity " + Bd + "ms ease;",
       "  pointer-events: none;",
       "}",
       "." + tr + "__anim {",
@@ -14482,7 +14490,7 @@ function DE() {
 `), document.head.appendChild(e), xl = !0;
   }
 }
-function Ud() {
+function xd() {
   var e = document.getElementById("container-main");
   if (e) {
     var t = e.querySelector(".dsd-container__content");
@@ -14497,7 +14505,7 @@ function Ud() {
 }
 function Fl() {
   if (!An) {
-    var e = Ud();
+    var e = xd();
     if (e) {
       An = !0, Er && (clearTimeout(Er), Er = null), DE();
       var t = getComputedStyle(e).position;
@@ -14505,7 +14513,7 @@ function Fl() {
       var r = document.createElement("div");
       r.className = tr, r.setAttribute("data-lottie-transition", "active");
       var n = document.createElement("div");
-      n.className = tr + "__anim", r.appendChild(n), e.appendChild(r), CE(e), Bd().then(function(i) {
+      n.className = tr + "__anim", r.appendChild(n), e.appendChild(r), CE(e), Ud().then(function(i) {
         if (!(!i || typeof lottie > "u") && !(!r.parentNode || !An))
           try {
             Li = lottie.loadAnimation({
@@ -14526,7 +14534,7 @@ function Fl() {
 function nl() {
   if (An) {
     An = !1, Er && (clearTimeout(Er), Er = null), il();
-    var e = Ud();
+    var e = xd();
     if (e) {
       var t = e.querySelector("." + tr);
       if (t) {
@@ -14539,7 +14547,7 @@ function nl() {
         }
         t.classList.add(tr + "--hiding"), setTimeout(function() {
           t.parentNode && t.parentNode.removeChild(t);
-        }, Hd + 50);
+        }, Bd + 50);
       }
     }
   }
@@ -14568,33 +14576,33 @@ function LE(e) {
     Fl();
   })));
 }
-function xd(e) {
-  return e ? (LE(e), Bd(), { ok: !0, version: tl, moduleId: rl }) : { ok: !1, reason: "No EventBus" };
+function Fd(e) {
+  return e ? (LE(e), Ud(), { ok: !0, version: tl, moduleId: rl }) : { ok: !1, reason: "No EventBus" };
 }
-function Fd() {
+function Gd() {
   nl(), xr && typeof xr == "function" ? xr() : mn && mn.off && mn.off("router.route.changed"), il(), mn = null, xr = null;
 }
-var _E = { init: xd, destroy: Fd, VERSION: tl, MODULE_ID: rl };
+var _E = { init: Fd, destroy: Gd, VERSION: tl, MODULE_ID: rl };
 const NE = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   MODULE_ID: rl,
   VERSION: tl,
   default: _E,
-  destroy: Fd,
-  init: xd
+  destroy: Gd,
+  init: Fd
 }, Symbol.toStringTag, { value: "Module" }));
 export {
   Or as MODULE_ID,
   rr as VERSION,
   ev as default,
-  Nh as getBootPromise,
+  Mh as getBootPromise,
   zl as getBootResult,
   yo as getBootstrapInstance,
-  Wf as getKernel,
+  $f as getKernel,
   _i as getPreBootOrchestrator,
   zi as getPreBootResult,
-  Kf as healthCheck,
-  $f as info,
-  _h as isBootStarted,
+  qf as healthCheck,
+  Kf as info,
+  Nh as isBootStarted,
   gc as startBootstrap
 };

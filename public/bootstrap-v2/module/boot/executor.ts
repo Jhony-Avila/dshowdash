@@ -34,7 +34,7 @@ import { BOOT_EVENTS } from '/core/runtime/events/catalog/boot.events.js';
 import { KERNEL_MODES, KERNEL_EVENTS } from '../../kernel/index.js';
 import { SINGLETON_STATES } from '../constants.js';
 import { getSingletonState, setSingletonState } from '../singleton/index.js';
-import { checkBootLoop } from '../boot-loop/index.js';
+import { checkBootLoop, resetBootLoopStatus } from '../boot-loop/index.js';
 import { PERIODIC_HEALTH_CONFIG } from '../configs/index.js';
 import {
   resolveBootLoopMode,
@@ -216,6 +216,9 @@ export function createBootExecutor(context: BootContext) {
       }
       
       if (bootResult.success) {
+        // CACHE-MENU-P1 · BOOT-CRITICAL (ROXO 27/11): laço de boot = boots que NÃO terminam. Um boot CONCLUÍDO zera o rastreador; antes, toda
+        // navegação (voltar/avançar/recarregar, logout → login) contava, e 3 em 30 s caíam em BOOT-CRITICAL mesmo com todos os boots bem-sucedidos.
+        try { resetBootLoopStatus(); } catch (_e) { /* sessionStorage indisponível: segue como antes */ }
         _handleBootSuccess(bootResult, contextSnapshot, healthResult, healthAgg, startTime);
       } else {
         _handleBootFailure(bootResult);
