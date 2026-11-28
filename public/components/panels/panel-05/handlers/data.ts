@@ -45,6 +45,12 @@ export async function loadAllData(moduleId: string, version: string) {
   try {
     const params = store.getFiltersForAPI();
     const response = await apiClient.fetchAllData(params);
+    // DDI-091 (QI AZUL 15:00, P1): a NEGATIVA vem ANTES da obsolescência — a parte negada invalida e aborta as irmãs do mesmo lote, que
+    // voltam OBSOLETAS; o lote sai com negado=true E obsoleta=true. Negativa (401/403) em qualquer parte = a tela inteira é apagada e nada
+    // desta carga é aplicado (o padrão F03 da Geral V2).
+    if ((response as { negado?: boolean }).negado) { store.reset(); store.setError('Sem acesso a parte destes dados'); return; }
+    // resposta de antes de uma fronteira (desmontagem/troca) ou de uma carga já superada não toca a tela
+    if ((response as { obsoleta?: boolean }).obsoleta) return;
     if (response.kpis) store.setKPIs(response.kpis);
     if (response.clientes) store.setClientes(response.clientes);
     const adapted = adaptAll(response as Record<string, unknown>);
@@ -76,6 +82,7 @@ export async function loadClientes() {
   try {
     const params = store.getFiltersForAPI();
     const response = await apiClient.fetchClientes(params);
+    if (response.error === 'RESPOSTA_OBSOLETA') return;   // DDI-091 (d)
     if (response.ok && response.data) { store.setClientes(response.data); }
     else { store.setError((response.error as string) || 'Erro ao carregar clientes'); toastManager.error((response.error as string) || 'Erro ao carregar clientes'); }
     Telemetry.endTimer('loadClientes');
@@ -91,6 +98,8 @@ export async function loadCliente360(id: unknown) {
   Telemetry.startTimer('loadCliente360');
   try {
     const response = await apiClient.fetchCliente360(id);
+    if (response.error === 'RESPOSTA_OBSOLETA') return;   // DDI-091 (d) / DDI-086: a ficha de outra seleção ou de antes da fronteira não aparece
+    if (response.error === 'HTTP_401' || response.error === 'HTTP_403') { store.reset(); store.setError('Sem acesso a este cliente'); return; }   // negativa: nada da ficha anterior fica na tela
     if (response.ok && response.data) { store.setCliente360(response.data); }
     else { store.setError((response.error as string) || 'Cliente não encontrado'); toastManager.error('Cliente não encontrado'); }
     Telemetry.endTimer('loadCliente360');

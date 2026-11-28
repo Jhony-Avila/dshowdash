@@ -157,6 +157,12 @@ export const mount = (container: HTMLElement, config: Record<string, unknown> = 
     _refs = refs; _initToast();
     Cliente360View.init(_refs.cliente360 as HTMLElement, _refs, MODULE_ID, VERSION);
     Subscriptions.setup(_getContext());
+    // DDI-091 (QI AZUL 15:00, "a provar"): logout, sessão expirada ou troca de identidade SEM recarregar a página = fronteira: nada em voo
+    // volta e a tela é apagada (o shell pode não desmontar o painel nessas fronteiras).
+    { const eb = _getEventBus(); const fronteira = () => { apiClient.invalidar('sessao'); store.reset(); };
+      for (const ev of ['auth:logout', 'auth:session:expired', 'session:expired', 'auth:identity:changed', 'session:changed']) {
+        try { const off = eb?.on?.(ev, fronteira); _offSessao.push(typeof off === 'function' ? off : () => { try { eb?.off?.(ev, fronteira); } catch { /* sem off */ } }); } catch { /* barramento sem on */ }
+      } }
     const ctx = _getContext();
     (_refs.container as HTMLElement).addEventListener('click', (e) => handleClick(e, ctx), { signal: _abortController.signal });
     (_refs.container as HTMLElement).addEventListener('change', (e) => handleChange(e, ctx), { signal: _abortController.signal });
@@ -189,10 +195,14 @@ export const mount = (container: HTMLElement, config: Record<string, unknown> = 
   return doMount();
 };
 
+const _offSessao: Array<() => void> = [];   // DDI-091: as assinaturas de fronteira de sessão desta montagem
+
 export const unmount = () => {
   _emitLifecycle(PANEL_EVENTS.UNMOUNTING);
   Telemetry.track('unmount', { uptime: _mountedAt ? Date.now() - _mountedAt : 0 });
   if (_abortController) { _abortController.abort(); _abortController = null; }
+  apiClient.invalidar('desmontagem');   // DDI-091 (c): a remontagem nunca recebe nada da montagem anterior
+  for (const off of _offSessao.splice(0)) { try { off(); } catch { /* já removido */ } }
   stopScheduler(); Subscriptions.clear(); clearSearchTimeout(); ModalController.close();
   Cliente360View.destroy(); clearTable(); store.reset(); bootstrapUnmount();
   _refs = null; _initialized = false; Favoritos.clear(); _selectedIds.clear(); _mountedAt = null;

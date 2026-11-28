@@ -61,6 +61,9 @@ function ApiClient() {
   this._cacheTTL = 3e4;
   this._controller = null;
   this._metrics = { calls: 0, successes: 0, failures: 0, retries: 0, cacheHits: 0 };
+  this._geracao = 0;
+  this._intencoes = /* @__PURE__ */ new Map();
+  this._emVoo = /* @__PURE__ */ new Set();
 }
 ApiClient.prototype._getRetryDelay = (attempt) => {
   const delay = Math.min(RETRY_CONFIG.baseDelay * Math.pow(RETRY_CONFIG.backoffFactor, attempt), RETRY_CONFIG.maxDelay);
@@ -81,18 +84,22 @@ ApiClient.prototype._buildUrl = function(params) {
   });
   return url;
 };
-ApiClient.prototype._requestWithRetry = function(params, cacheKey = null, cacheTTL = null, attempt = 0) {
-  if (cacheKey) {
-    const cached = this._getCache(cacheKey);
-    if (cached) {
-      this._metrics.cacheHits++;
-      return Promise.resolve(cached);
-    }
+const RESPOSTA_OBSOLETA = "RESPOSTA_OBSOLETA";
+const NEGADO = (code) => code === "HTTP_401" || code === "HTTP_403";
+ApiClient.prototype._requestWithRetry = function(params, cacheKey = null, cacheTTL = null, attempt = 0, intencao) {
+  if (!intencao) {
+    const k = JSON.stringify(params);
+    const n = (this._intencoes.get(k) ?? 0) + 1;
+    this._intencoes.set(k, n);
+    intencao = { g: this._geracao, k, n };
   }
+  const obsoleta = () => intencao.g !== this._geracao || this._intencoes.get(intencao.k) !== intencao.n;
+  if (obsoleta()) return Promise.resolve({ ok: false, error: RESPOSTA_OBSOLETA });
   this._metrics.calls++;
   const startTime = performance.now();
   this._controller = new AbortController();
   const controller = this._controller;
+  this._emVoo.add(controller);
   const timeoutId = setTimeout(() => {
     controller.abort();
   }, this._timeout);
@@ -102,20 +109,24 @@ ApiClient.prototype._requestWithRetry = function(params, cacheKey = null, cacheT
     if (!response.ok) throw new Error(`HTTP_${response.status}`);
     return response.json();
   }).then((data) => {
+    this._emVoo.delete(controller);
+    if (obsoleta()) return { ok: false, error: RESPOSTA_OBSOLETA };
     const duration = performance.now() - startTime;
-    if (cacheKey && data.ok !== false) this._setCache(cacheKey, data, cacheTTL || this._cacheTTL);
     this._metrics.successes++;
     this._emitEvent(API_EVENTS.SUCCESS, { endpoint: params.action, duration });
     return data;
   }).catch((error) => {
     clearTimeout(timeoutId);
+    this._emVoo.delete(controller);
+    if (obsoleta()) return { ok: false, error: RESPOSTA_OBSOLETA };
     const duration = performance.now() - startTime;
     const errorCode = error.name === "AbortError" ? "REQUEST_TIMEOUT" : error.message || "NETWORK_ERROR";
+    if (NEGADO(errorCode)) this.invalidar("negativa");
     if (attempt < RETRY_CONFIG.maxRetries && this._isRetryable(errorCode)) {
       this._metrics.retries++;
       const delay = this._getRetryDelay(attempt);
       _log("warn", `Retry ${attempt + 1}/${RETRY_CONFIG.maxRetries} for ${params.action} in ${delay}ms`);
-      return this._sleep(delay).then(() => this._requestWithRetry(params, cacheKey, cacheTTL, attempt + 1));
+      return this._sleep(delay).then(() => this._requestWithRetry(params, cacheKey, cacheTTL, attempt + 1, intencao));
     }
     this._metrics.failures++;
     this._emitEvent(API_EVENTS.ERROR, { endpoint: params.action, error: errorCode, duration, attempts: attempt + 1 });
@@ -185,7 +196,9 @@ ApiClient.prototype.fetchAllData = function(params = {}) {
   return Promise.all([this.fetchKPIs(), this.fetchClientes(params), this.fetchCharts(), this.fetchTopClientes(10), this.fetchVendedores(), this.fetchInsights(), this.fetchComparativo("mes"), this.fetchFunil(), this.fetchMetrics(), this.fetchChurn(), this.fetchRanking("receita", "12m"), this.fetchHeatmap()]).then((results) => {
     const duration = performance.now() - startTime;
     this._emitEvent(API_EVENTS.BATCH_COMPLETE, { duration, endpoints: 12 });
-    return { ok: true, kpis: results[0].ok ? results[0].data : null, clientes: results[1].ok ? results[1].data : null, charts: results[2].ok ? results[2].data : null, topClientes: results[3].ok ? results[3].data : null, vendedores: results[4].ok ? results[4].data : null, insights: results[5].ok ? results[5].data : null, comparativo: results[6].ok ? results[6].data : null, funil: results[7].ok ? results[7].data : null, metrics: results[8].ok ? results[8].data : null, churn: results[9].ok ? results[9].data : null, ranking: results[10].ok ? results[10].data : null, heatmap: results[11].ok ? results[11].data : null };
+    const obsoleta = results.some((r) => r && r.error === RESPOSTA_OBSOLETA);
+    const negado = results.some((r) => r && NEGADO(String(r.error || "")));
+    return { ok: true, obsoleta, negado, kpis: results[0].ok ? results[0].data : null, clientes: results[1].ok ? results[1].data : null, charts: results[2].ok ? results[2].data : null, topClientes: results[3].ok ? results[3].data : null, vendedores: results[4].ok ? results[4].data : null, insights: results[5].ok ? results[5].data : null, comparativo: results[6].ok ? results[6].data : null, funil: results[7].ok ? results[7].data : null, metrics: results[8].ok ? results[8].data : null, churn: results[9].ok ? results[9].data : null, ranking: results[10].ok ? results[10].data : null, heatmap: results[11].ok ? results[11].data : null };
   });
 };
 ApiClient.prototype._getCache = function(key) {
@@ -201,9 +214,22 @@ ApiClient.prototype._setCache = function(key, data, ttl) {
   this._cache.set(key, { data, expires: Date.now() + ttl });
 };
 ApiClient.prototype.clearCache = function() {
+  return this.invalidar("clearCache");
+};
+ApiClient.prototype.invalidar = function(motivo = "manual") {
   const size = this._cache.size;
   this._cache.clear();
-  return { ok: true, cleared: size };
+  this._geracao++;
+  this._intencoes.clear();
+  for (const c of this._emVoo) {
+    try {
+      c.abort();
+    } catch {
+    }
+  }
+  this._emVoo.clear();
+  _log("info", `invalidado (${motivo}): gera\xE7\xE3o ${this._geracao}`);
+  return { ok: true, cleared: size, geracao: this._geracao, motivo };
 };
 ApiClient.prototype.cancel = function() {
   if (this._controller) this._controller.abort();

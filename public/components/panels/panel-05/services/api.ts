@@ -76,6 +76,7 @@ function ApiClient(this: any) {
     this._cacheTTL = 30000;
     this._controller = null;
     this._metrics = { calls: 0, successes: 0, failures: 0, retries: 0, cacheHits: 0 };
+    this._geracao = 0; this._intencoes = new Map(); this._emVoo = new Set();   // DDI-091
 }
 
 ApiClient.prototype._getRetryDelay = (attempt: number) => {
@@ -95,12 +96,26 @@ ApiClient.prototype._buildUrl = function(params: Record<string, unknown>) {
     return url;
 };
 
-ApiClient.prototype._requestWithRetry = function(params: Record<string, unknown>, cacheKey: string | null = null, cacheTTL: number | null = null, attempt: number = 0) {
-    if (cacheKey) { const cached = this._getCache(cacheKey); if (cached) { this._metrics.cacheHits++; return Promise.resolve(cached); } }
+// DDI-091 (P0 potencial, GPT DATA 009-R02; LARANJA 28/11): o cache local respondia ANTES do servidor com chave sem usuário/sessão/escopo
+// (ex.: cliente360_<id> por 60 s) → conteúdo financeiro de outra identidade ou de antes de uma revogação. Correção mínima na tela atual:
+//  (a) NENHUMA resposta do panel-05 é guardada no navegador (todas as ações podem trazer financeiro: kpis, ficha, ranking, top, gráficos…);
+//      `cacheKey`/`cacheTTL` ficam na assinatura por compatibilidade, mas não leem nem gravam nada;
+//  (c) `clearCache()`/`invalidar()` = fronteira: limpa, aborta o que está em voo e avança a GERAÇÃO (desmontagem, logout, sessão expirada, negativa);
+//  (d) resposta de uma geração anterior, ou de uma intenção já superada para a mesma ação, NÃO volta para a tela: devolve RESPOSTA_OBSOLETA;
+//      um 401/403 do servidor avança a geração (a negativa invalida tudo o que estava em voo antes dela).
+const RESPOSTA_OBSOLETA = 'RESPOSTA_OBSOLETA';
+const NEGADO = (code: string) => code === 'HTTP_401' || code === 'HTTP_403';
+ApiClient.prototype._requestWithRetry = function(params: Record<string, unknown>, cacheKey: string | null = null, cacheTTL: number | null = null, attempt: number = 0, intencao?: { g: number; k: string; n: number }) {
+    void cacheTTL;
+    // a intenção é criada na 1ª tentativa e reaproveitada nas novas tentativas (o retry não é uma intenção nova)
+    if (!intencao) { const k = JSON.stringify(params); const n = (this._intencoes.get(k) ?? 0) + 1; this._intencoes.set(k, n); intencao = { g: this._geracao, k, n }; }
+    const obsoleta = () => intencao!.g !== this._geracao || this._intencoes.get(intencao!.k) !== intencao!.n;
+    if (obsoleta()) return Promise.resolve({ ok: false, error: RESPOSTA_OBSOLETA });
+    void cacheKey;
     this._metrics.calls++;
     const startTime = performance.now();
     this._controller = new AbortController();
-    const controller = this._controller;
+    const controller = this._controller; this._emVoo.add(controller);
     const timeoutId = setTimeout(() => { controller.abort(); }, this._timeout);
     const url = this._buildUrl(params);
     return fetch(url.toString(), { method: 'GET', headers: { 'Accept': 'application/json' }, credentials: 'same-origin', signal: controller.signal }).then((response) => {
@@ -108,20 +123,23 @@ ApiClient.prototype._requestWithRetry = function(params: Record<string, unknown>
         if (!response.ok) throw new Error(`HTTP_${response.status}`);
         return response.json();
     }).then((data) => {
+        this._emVoo.delete(controller);
+        if (obsoleta()) return { ok: false, error: RESPOSTA_OBSOLETA };   // (d) chegou depois da fronteira ou de uma intenção mais nova
         const duration = performance.now() - startTime;
-        if (cacheKey && data.ok !== false) this._setCache(cacheKey, data, cacheTTL || this._cacheTTL);
         this._metrics.successes++;
         this._emitEvent(API_EVENTS.SUCCESS, { endpoint: params.action, duration });
         return data;
     }).catch((error) => {
-        clearTimeout(timeoutId);
+        clearTimeout(timeoutId); this._emVoo.delete(controller);
+        if (obsoleta()) return { ok: false, error: RESPOSTA_OBSOLETA };   // abortada pela fronteira: sem nova tentativa
         const duration = performance.now() - startTime;
         const errorCode = error.name === 'AbortError' ? 'REQUEST_TIMEOUT' : (error.message || 'NETWORK_ERROR');
+        if (NEGADO(errorCode)) this.invalidar('negativa');   // a negativa do servidor invalida o que estava em voo antes dela
         if (attempt < RETRY_CONFIG.maxRetries && this._isRetryable(errorCode)) {
             this._metrics.retries++;
             const delay = this._getRetryDelay(attempt);
             _log('warn', `Retry ${attempt + 1}/${RETRY_CONFIG.maxRetries} for ${params.action} in ${delay}ms`);
-            return this._sleep(delay).then(() => this._requestWithRetry(params, cacheKey, cacheTTL, attempt + 1));
+            return this._sleep(delay).then(() => this._requestWithRetry(params, cacheKey, cacheTTL, attempt + 1, intencao));
         }
         this._metrics.failures++;
         this._emitEvent(API_EVENTS.ERROR, { endpoint: params.action, error: errorCode, duration, attempts: attempt + 1 });
@@ -162,13 +180,22 @@ ApiClient.prototype.fetchAllData = function(params: Record<string, unknown> = {}
     return Promise.all([this.fetchKPIs(), this.fetchClientes(params), this.fetchCharts(), this.fetchTopClientes(10), this.fetchVendedores(), this.fetchInsights(), this.fetchComparativo('mes'), this.fetchFunil(), this.fetchMetrics(), this.fetchChurn(), this.fetchRanking('receita', '12m'), this.fetchHeatmap()]).then((results) => {
         const duration = performance.now() - startTime;
         this._emitEvent(API_EVENTS.BATCH_COMPLETE, { duration, endpoints: 12 });
-        return { ok: true, kpis: results[0].ok ? results[0].data : null, clientes: results[1].ok ? results[1].data : null, charts: results[2].ok ? results[2].data : null, topClientes: results[3].ok ? results[3].data : null, vendedores: results[4].ok ? results[4].data : null, insights: results[5].ok ? results[5].data : null, comparativo: results[6].ok ? results[6].data : null, funil: results[7].ok ? results[7].data : null, metrics: results[8].ok ? results[8].data : null, churn: results[9].ok ? results[9].data : null, ranking: results[10].ok ? results[10].data : null, heatmap: results[11].ok ? results[11].data : null };
+        // DDI-091: o chamador precisa saber se ALGUMA parte chegou obsoleta (não aplica nada) ou NEGADA (apaga o que estava na tela)
+        const obsoleta = results.some((r: { error?: string }) => r && r.error === RESPOSTA_OBSOLETA); const negado = results.some((r: { error?: string }) => r && NEGADO(String(r.error || '')));
+        return { ok: true, obsoleta, negado, kpis: results[0].ok ? results[0].data : null, clientes: results[1].ok ? results[1].data : null, charts: results[2].ok ? results[2].data : null, topClientes: results[3].ok ? results[3].data : null, vendedores: results[4].ok ? results[4].data : null, insights: results[5].ok ? results[5].data : null, comparativo: results[6].ok ? results[6].data : null, funil: results[7].ok ? results[7].data : null, metrics: results[8].ok ? results[8].data : null, churn: results[9].ok ? results[9].data : null, ranking: results[10].ok ? results[10].data : null, heatmap: results[11].ok ? results[11].data : null };
     });
 };
 
 ApiClient.prototype._getCache = function(key: string) { const item = this._cache.get(key); if (!item) return null; if (Date.now() > item.expires) { this._cache.delete(key); return null; } return item.data; };
 ApiClient.prototype._setCache = function(key: string, data: unknown, ttl: number) { this._cache.set(key, { data, expires: Date.now() + ttl }); };
-ApiClient.prototype.clearCache = function() { const size = this._cache.size; this._cache.clear(); return { ok: true, cleared: size }; };
+ApiClient.prototype.clearCache = function() { return this.invalidar('clearCache'); };
+/** DDI-091 (c): fronteira — limpa o cache (sempre vazio desde o DDI-091), aborta as requisições em voo e avança a geração; nada anterior volta. */
+ApiClient.prototype.invalidar = function(motivo: string = 'manual') {
+    const size = this._cache.size; this._cache.clear(); this._geracao++; this._intencoes.clear();
+    for (const c of this._emVoo) { try { c.abort(); } catch { /* já encerrada */ } } this._emVoo.clear();
+    _log('info', `invalidado (${motivo}): geração ${this._geracao}`);
+    return { ok: true, cleared: size, geracao: this._geracao, motivo };
+};
 ApiClient.prototype.cancel = function() { if (this._controller) this._controller.abort(); };
 ApiClient.prototype.getMetrics = function() { return { ...this._metrics, cacheSize: this._cache.size, successRate: this._metrics.calls > 0 ? (this._metrics.successes / this._metrics.calls) : 1 }; };
 ApiClient.prototype.resetMetrics = function() { this._metrics = { calls: 0, successes: 0, failures: 0, retries: 0, cacheHits: 0 }; return { ok: true }; };

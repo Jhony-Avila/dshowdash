@@ -108,6 +108,25 @@ const mount = (container, config = {}) => {
     _initToast();
     Cliente360View.init(_refs.cliente360, _refs, MODULE_ID, VERSION);
     Subscriptions.setup(_getContext());
+    {
+      const eb = _getEventBus();
+      const fronteira = () => {
+        apiClient.invalidar("sessao");
+        store.reset();
+      };
+      for (const ev of ["auth:logout", "auth:session:expired", "session:expired", "auth:identity:changed", "session:changed"]) {
+        try {
+          const off = eb?.on?.(ev, fronteira);
+          _offSessao.push(typeof off === "function" ? off : () => {
+            try {
+              eb?.off?.(ev, fronteira);
+            } catch {
+            }
+          });
+        } catch {
+        }
+      }
+    }
     const ctx = _getContext();
     _refs.container.addEventListener("click", (e) => handleClick(e, ctx), { signal: _abortController.signal });
     _refs.container.addEventListener("change", (e) => handleChange(e, ctx), { signal: _abortController.signal });
@@ -147,12 +166,20 @@ const mount = (container, config = {}) => {
   if (_initialized) return unmount().then(doMount);
   return doMount();
 };
+const _offSessao = [];
 const unmount = () => {
   _emitLifecycle(PANEL_EVENTS.UNMOUNTING);
   Telemetry.track("unmount", { uptime: _mountedAt ? Date.now() - _mountedAt : 0 });
   if (_abortController) {
     _abortController.abort();
     _abortController = null;
+  }
+  apiClient.invalidar("desmontagem");
+  for (const off of _offSessao.splice(0)) {
+    try {
+      off();
+    } catch {
+    }
   }
   stopScheduler();
   Subscriptions.clear();

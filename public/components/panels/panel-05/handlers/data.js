@@ -14,6 +14,12 @@ async function loadAllData(moduleId, version) {
   try {
     const params = store.getFiltersForAPI();
     const response = await apiClient.fetchAllData(params);
+    if (response.negado) {
+      store.reset();
+      store.setError("Sem acesso a parte destes dados");
+      return;
+    }
+    if (response.obsoleta) return;
     if (response.kpis) store.setKPIs(response.kpis);
     if (response.clientes) store.setClientes(response.clientes);
     const adapted = adaptAll(response);
@@ -44,6 +50,7 @@ async function loadClientes() {
   try {
     const params = store.getFiltersForAPI();
     const response = await apiClient.fetchClientes(params);
+    if (response.error === "RESPOSTA_OBSOLETA") return;
     if (response.ok && response.data) {
       store.setClientes(response.data);
     } else {
@@ -62,6 +69,12 @@ async function loadCliente360(id) {
   Telemetry.startTimer("loadCliente360");
   try {
     const response = await apiClient.fetchCliente360(id);
+    if (response.error === "RESPOSTA_OBSOLETA") return;
+    if (response.error === "HTTP_401" || response.error === "HTTP_403") {
+      store.reset();
+      store.setError("Sem acesso a este cliente");
+      return;
+    }
     if (response.ok && response.data) {
       store.setCliente360(response.data);
     } else {
