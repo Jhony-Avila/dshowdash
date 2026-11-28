@@ -87,12 +87,47 @@ $e2 = p05_escopo(7, 'novo', fn() => true, fn($u, $t) => $t === P05_CAP_SEM_RESP,
 $ok($e2['ids'] === [1, 3, 5], 'com a capacidade sem_responsavel entra só o "sem responsável" CONFIRMADO (5); o que vem com pessoa (10) não conta como sem responsável · ' . json_encode($e2));
 $ok(p05_escopo(8, 'novo', fn() => true, fn($u, $t) => false, $fonte($mix))['ids'] === [2], 'outra pessoa vê só a carteira dela (2)');
 $ok(p05_escopo(7, 'novo', fn() => true, fn($u, $t) => false, function () { throw new PDOException('tabela'); }) === ['modo' => 'carteira', 'ids' => [], 'motivo' => 'carteira_indisponivel'], 'fonte ausente/ilegível = carteira VAZIA (falha fechada)');
-$ok(P05_FONTE_ATIVA === null && p05_escopo(7, 'novo', fn() => true, fn($u, $t) => false) === ['modo' => 'carteira', 'ids' => [], 'motivo' => 'sem_fonte_ativa'], 'NENHUMA fonte ativa (padrão) = todo cliente "não resolvido": carteira vazia para quem não vê a base inteira');
+$ok(P05_FONTE_ATIVA === 'tabela' && p05_escopo(7, 'novo', fn() => true, fn($u, $t) => false, null, null) === ['modo' => 'carteira', 'ids' => [], 'motivo' => 'sem_fonte_ativa'], 'NENHUMA fonte ativa (padrão) = todo cliente "não resolvido": carteira vazia para quem não vê a base inteira');
 $ok(p05_escopo(7, 'novo', fn() => true, fn($u, $t) => false, null, 'inexistente')['motivo'] === 'sem_fonte_ativa' && array_keys(p05_fontes()) === ['tabela'], 'fonte ativa desconhecida = não resolvido; registrada só a "tabela" (sem ativar)');
 $ok(array_map('p05_classificar', [$C(1, 'confirmado', 7), $C(1, 'confirmado', null), $C(1, 'confirmado', 0), $C(1, 'sem_responsavel', null), $C(1, 'sem_responsavel', 3), $C(1, '', null), []]) === ['confirmado', 'nao_resolvido', 'nao_resolvido', 'sem_responsavel', 'nao_resolvido', 'nao_resolvido', 'nao_resolvido'], 'regra dos 3 estados: o padrão é "não resolvido"');
 $ok(is_file(P05_API . '/feature-flags/resolver.php') && is_file(P05_API . '/core/UARPSGate.php'), 'os require padrão (flag e capacidade) apontam para arquivos que existem');
 $ok(p05_escopo(null, 'novo', fn() => true)['ids'] === [], 'sem identidade = carteira vazia');
 $ok(p05_escopo_cache(['modo' => 'todos', 'ids' => [], 'motivo' => 'x']) === '' && p05_escopo_cache($e) !== p05_escopo_cache(['modo' => 'carteira', 'ids' => [1], 'motivo' => 'carteira']), 'o escopo entra na chave do cache (carteiras diferentes = chaves diferentes)');
+// ── 27/11 22:4x · fonte ATIVA = 'tabela' (decisão D sem conflitos): o escopo lido da app_cliente_carteira REAL (DDL v2) + a flag pelo resolvedor REAL ──
+if (!function_exists('getConnection')) { function getConnection(string $n): PDO { return $GLOBALS['__dashpdo']; } }
+$GLOBALS['__dashpdo'] = $pdo;
+$pdo->exec("DROP TABLE IF EXISTS app_cliente_carteira, app_feature_flags");
+$pdo->exec("CREATE TABLE app_cliente_carteira (origem ENUM('novo','legado') NOT NULL, cliente_id BIGINT UNSIGNED NOT NULL, situacao ENUM('confirmado','nao_resolvido','sem_responsavel') NOT NULL,
+  user_id INT UNSIGNED NULL, motivo VARCHAR(40) NULL, fonte VARCHAR(32) NOT NULL, revisao BIGINT UNSIGNED NOT NULL, PRIMARY KEY (origem, cliente_id))");
+$pdo->exec("INSERT INTO app_cliente_carteira VALUES ('novo',1,'confirmado',990049,NULL,'precifica',1),('novo',3,'confirmado',990049,NULL,'pipedrive',1),('novo',2,'nao_resolvido',NULL,'pessoas_diferentes','conciliacao',1),
+  ('novo',4,'sem_responsavel',NULL,NULL,'precifica',1),('legado',2,'confirmado',990049,NULL,'precifica',1),('novo',5,'confirmado',990030,NULL,'precifica',1)");
+$pdo->exec("DROP TABLE IF EXISTS app_users, app_usuario_f1");
+$pdo->exec("CREATE TABLE app_users (id INT PRIMARY KEY, status ENUM('active','disabled','locked','pending') NOT NULL, deleted_at DATETIME NULL)");
+$pdo->exec("CREATE TABLE app_usuario_f1 (user_id INT PRIMARY KEY, situacao ENUM('pendente_f1','revisado') NOT NULL)");
+$pdo->exec("INSERT INTO app_users VALUES (990049,'active',NULL),(990030,'active',NULL)");
+$eT = p05_escopo(990049, 'novo', fn() => true, fn($u, $t) => false);
+$ok($eT === ['modo' => 'carteira', 'ids' => [1, 3], 'motivo' => 'carteira'], "fonte padrão 'tabela': 990049 recebe 1 e 3 (os confirmados DELE na origem novo; o 2 não resolvido, o 4 sem responsável, o do legado e o de outra pessoa ficam fora) · " . json_encode($eT));
+$ok(p05_escopo(990049, 'novo', fn() => true, fn($u, $t) => $t === P05_CAP_SEM_RESP)['ids'] === [1, 3, 4] && p05_escopo(990030, 'novo', fn() => true, fn($u, $t) => false)['ids'] === [5], 'com a capacidade sem_responsavel entra o 4; outra pessoa vê só o dela');
+// Warps 28/11 00:23: a CONTA é conferida NA LEITURA (desativada DEPOIS do portão; reativada sem F1)
+$cnt = static fn(int $u) => p05_escopo($u, 'novo', fn() => true, fn($x, $t) => false)['ids'];
+$pdo->exec("UPDATE app_users SET status = 'disabled' WHERE id = 990049"); $d1 = $cnt(990049);
+$pdo->exec("UPDATE app_users SET status = 'pending' WHERE id = 990049"); $d2 = $cnt(990049);
+$pdo->exec("UPDATE app_users SET status = 'active' WHERE id = 990049"); $pdo->exec("INSERT INTO app_usuario_f1 VALUES (990049,'pendente_f1')"); $d3 = $cnt(990049);
+$pdo->exec("UPDATE app_usuario_f1 SET situacao = 'revisado' WHERE user_id = 990049"); $d4 = $cnt(990049);
+$pdo->exec("UPDATE app_users SET deleted_at = NOW() WHERE id = 990049"); $d5 = $cnt(990049); $pdo->exec("UPDATE app_users SET deleted_at = NULL WHERE id = 990049");
+$ok($d1 === [] && $d2 === [] && $d3 === [] && $d4 === [1, 3] && $d5 === [] && p05_escopo(990049, 'novo', fn() => true, fn($u, $t) => $t === P05_CAP_SEM_RESP)['ids'] === [1, 3, 4], 'conta conferida NA LEITURA: desativada depois do portão = vazia · pendente = vazia · reativada SEM F1 = vazia · com F1 registrada = [1,3] · apagada = vazia; o sem responsável não depende da conta · ' . json_encode([$d1, $d2, $d3, $d4, $d5]));
+$GLOBALS['P05_ESCOPO'] = $eT; $lT = getClientesList($pdo, $v(['per_page' => '100']))['data'];
+ob_start(); exportCSV($pdo, $v([])); $cT = ob_get_clean();
+$ok($lT['pagination']['total'] === 2 && getCliente360($pdo, 2)['ok'] === false && !str_contains($cT, 'Cliente 2') && !str_contains($cT, 'Cliente 4'), 'de ponta a ponta (tabela → escopo → painel): lista/paginação 2, ficha do 2 = 404, exportação sem 2 e 4');
+unset($GLOBALS['P05_ESCOPO']);
+$pdo->exec("CREATE TABLE app_feature_flags (id INT AUTO_INCREMENT PRIMARY KEY, flag_key VARCHAR(100) UNIQUE, flag_name VARCHAR(150), description VARCHAR(255), is_enabled TINYINT(1), rollout_percentage TINYINT UNSIGNED NULL,
+  payload_json JSON NULL, environment ENUM('all','production','staging','development') DEFAULT 'all', starts_at DATETIME(3) NULL, ends_at DATETIME(3) NULL, deleted_at DATETIME(3) NULL)");
+$f0 = p05_flag('clientes_cl3_escopo');
+$pdo->exec("INSERT INTO app_feature_flags (flag_key, flag_name, is_enabled, rollout_percentage, environment) VALUES ('clientes_cl3_escopo', 'CL3', 1, 100, 'all')"); $f1 = p05_flag('clientes_cl3_escopo');
+$pdo->exec("UPDATE app_feature_flags SET is_enabled = 0 WHERE flag_key = 'clientes_cl3_escopo'"); $f2 = p05_flag('clientes_cl3_escopo');
+$pdo->exec("DROP TABLE app_feature_flags"); $f3 = p05_flag('clientes_cl3_escopo');
+$ok($f0 === false && $f1 === true && $f2 === false && $f3 === true, 'flag pelo resolvedor REAL: inexistente = desligada · ligada = ligada · is_enabled 0 (volta de 1 linha) = desligada · banco/tabela com ERRO = LIGADA (falha fechada; antes, desligava e mostrava tudo) · ' . json_encode([$f0, $f1, $f2, $f3]));
+$pdo->exec("DROP TABLE IF EXISTS app_cliente_carteira, app_users, app_usuario_f1");
 unset($GLOBALS['P05_ESCOPO']);
 foreach ($T as $t) { $pdo->exec("DROP TABLE IF EXISTS $t"); }
 if ($f) { echo "[ERRO] painel05-cl3:\n - " . implode("\n - ", $f) . "\n"; exit(1); }

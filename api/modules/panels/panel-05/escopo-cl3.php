@@ -7,15 +7,26 @@ declare(strict_types=1);
  *  - SEM responsável confirmado → só quem tem a autorização específica dessa categoria.
  *  O recorte é aplicado nas TRÊS visões de cliente (organização, orçamento, contas a receber), então vale igual para lista, busca, ficha, totais,
  *  rankings, paginação e exportação. A FONTE da carteira está em aberto (decisão do Jhony): fontes PLUGÁVEIS (p05_fontes), NENHUMA ativa
- *  (P05_FONTE_ATIVA = null) = todo cliente NÃO RESOLVIDO (o padrão). A tabela app_cliente_carteira nasce VAZIA (portão de banco). Flag global `clientes_cl3_escopo` DESLIGADA = o painel como hoje.
+ *  (P05_FONTE_ATIVA = 'tabela' desde a decisão do Jhony 27/11 22:32; null = todo cliente NÃO RESOLVIDO). A tabela app_cliente_carteira nasce VAZIA (portão de banco). Flag global `clientes_cl3_escopo` DESLIGADA = o painel como hoje.
  *  Falha fechada: com a flag ligada, tabela ausente/ilegível ou decisão indeterminada = carteira VAZIA para quem não vê a base inteira.
  *  Capacidades (UARPS, nomes a ratificar): `clientes:base_inteira` e `clientes:sem_responsavel`.
  */
 const P05_API = __DIR__ . '/../../..';   // api/ (este arquivo está em api/modules/panels/panel-05/)
 const P05_CAP_BASE = 'clientes:base_inteira';
 const P05_CAP_SEM_RESP = 'clientes:sem_responsavel';
-/** FONTE DA CARTEIRA ATIVA: NENHUMA (decisão do Jhony em aberto). Ativar = trocar null pelo nome registrado em p05_fontes(), por degrau próprio. */
-const P05_FONTE_ATIVA = null;
+/**
+ * Flag global lida pelo resolvedor. FALHA FECHADA de verdade: o resolvedor NÃO lança em erro de banco (devolve enabled=false, source=error);
+ * aqui, source=error ou exceção = trata como LIGADA (correção 27/11 22:4x: antes, um banco fora desligaria o recorte e mostraria a base inteira).
+ */
+function p05_flag(string $chave): bool
+{
+    try { require_once P05_API . '/feature-flags/resolver.php'; $r = (new FeatureFlagResolver(getConnection('DSHOWDASH')))->resolve($chave, null);
+          if (($r['source'] ?? '') === 'error') { error_log("[cl3] flag $chave ilegível (resolvedor: error)"); return true; }
+          return (bool) ($r['enabled'] ?? false); }
+    catch (Throwable $e) { error_log("[cl3] flag $chave: " . get_class($e)); return true; }
+}
+/** FONTE DA CARTEIRA ATIVA (registrada em p05_fontes()). */
+const P05_FONTE_ATIVA = 'tabela';   // 27/11 22:4x: decisão do Jhony (D sem conflitos) → a app_cliente_carteira, preenchida pelo portão CARTEIRA-POPULAR. A flag clientes_cl3_escopo continua mandando (desligada = como hoje).
 
 /**
  * Fontes PLUGÁVEIS da carteira. Contrato: Closure(int $uid, string $origem): iterable de ['cliente_id' => int, 'situacao' => string, 'user_id' => ?int].
@@ -27,7 +38,10 @@ function p05_fontes(): array
 {
     return [
         'tabela' => static function (int $u, string $o): array {
-            $st = getConnection('DSHOWDASH')->prepare("SELECT cliente_id, situacao, user_id FROM app_cliente_carteira WHERE origem = ? AND (user_id = ? OR situacao = 'sem_responsavel')");
+            // Warps 28/11 00:23: a conta é conferida NA LEITURA (não só quando o portão gravou): confirmado de conta não 'active', apagada ou com F1 pendente = fora.
+            $st = getConnection('DSHOWDASH')->prepare("SELECT c.cliente_id, c.situacao, c.user_id FROM app_cliente_carteira c
+                LEFT JOIN app_users u ON u.id = c.user_id LEFT JOIN app_usuario_f1 f ON f.user_id = c.user_id AND f.situacao = 'pendente_f1'
+                WHERE c.origem = ? AND ((c.situacao = 'confirmado' AND c.user_id = ? AND u.status = 'active' AND u.deleted_at IS NULL AND f.user_id IS NULL) OR c.situacao = 'sem_responsavel')");
             $st->execute([$o, $u]); return $st->fetchAll(PDO::FETCH_ASSOC);
         },
     ];
@@ -45,10 +59,7 @@ function p05_classificar(array $l): string
 /** @return array{modo:'todos'|'carteira', ids:list<int>, motivo:string} */
 function p05_escopo(?int $uid, string $origem, ?Closure $flag = null, ?Closure $cap = null, ?Closure $fonte = null, ?string $fonteAtiva = P05_FONTE_ATIVA): array
 {
-    $flag ??= static function (): bool {
-        try { require_once P05_API . '/feature-flags/resolver.php'; return (bool) ((new FeatureFlagResolver(getConnection('DSHOWDASH')))->resolve('clientes_cl3_escopo', null)['enabled'] ?? false); }
-        catch (Throwable $e) { error_log('[cl3] flag: ' . get_class($e)); return true; }   // flag ilegível = trata como LIGADA (falha fechada)
-    };
+    $flag ??= static fn(): bool => p05_flag('clientes_cl3_escopo');   // ilegível/erro = LIGADA (falha fechada)
     if (!$flag()) return ['modo' => 'todos', 'ids' => [], 'motivo' => 'escopo_desligado'];
     if ($uid === null || $uid <= 0) return ['modo' => 'carteira', 'ids' => [], 'motivo' => 'sem_identidade'];
     $cap ??= static function (int $u, string $t): bool {
@@ -89,10 +100,7 @@ function p05_escopo_cache(array $e): string
 const P05_CAP_EXPORTAR = 'clientes:exportar';
 function p05_pode_exportar(?int $uid, ?Closure $flag = null, ?Closure $cap = null): bool
 {
-    $flag ??= static function (): bool {
-        try { require_once P05_API . '/feature-flags/resolver.php'; return (bool) ((new FeatureFlagResolver(getConnection('DSHOWDASH')))->resolve('clientes_ex1_exportar', null)['enabled'] ?? false); }
-        catch (Throwable $e) { error_log('[ex1] flag: ' . get_class($e)); return true; }
-    };
+    $flag ??= static fn(): bool => p05_flag('clientes_ex1_exportar');
     if (!$flag()) return true;
     if ($uid === null || $uid <= 0) return false;
     $cap ??= static function (int $u, string $t): bool {
