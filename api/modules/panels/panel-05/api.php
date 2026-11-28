@@ -32,6 +32,20 @@ $ERP_ORIGEM = erp_ponto_origem('painel05');
 $FIN = erp_novo_autorizado(AuthHelpers::getCurrentUserId());
 // CL3 (UARPS v4, 27/11, VINHO): recorte de CARTEIRA no servidor, aplicado nas 3 visões de cliente (lista, busca, ficha, totais, rankings, exportação).
 require_once __DIR__ . '/escopo-cl3.php';
+// CL3 (VINHO 27/11) · P0 28/11 (AMARELO 14:19 / VERDE 14:20): declarada AQUI, ANTES do despachante. Função dentro de `if` NÃO é antecipada pelo
+// PHP: no fim do arquivo ela só passava a existir depois do `exit` do switch → `Call to undefined function p05v()` = 500 em toda ação com dado.
+if (!function_exists('p05v')) {
+/** A visão RECORTADA (o mesmo recorte em toda consulta). PESSOA (contatos) não tem cliente confiável → vazia na carteira (o KPI sai null). */
+function p05v(string $nome): string
+{
+    $base = constant('ERP_V_' . $nome);
+    $e = $GLOBALS['P05_ESCOPO'] ?? null;
+    if (!is_array($e) || $e['modo'] === 'todos') return $base;
+    if ($nome === 'PESSOA') return "(SELECT * FROM $base v_cl3 WHERE 1 = 0)";
+    $in = $e['ids'] === [] ? 'NULL' : implode(',', array_map('intval', $e['ids']));
+    return "(SELECT * FROM $base v_cl3 WHERE v_cl3.Id_Organizacao IN ($in))";
+}
+}
 $P05_ESCOPO = p05_escopo(AuthHelpers::getCurrentUserId() ?: null, $ERP_ORIGEM === 'novo' ? 'novo' : 'legado');
 $CACHE_PREFIX = ($ERP_ORIGEM === 'novo' ? 'panel:05n:' : 'panel:05:') . ($FIN ? 'f1:' : 'f0:') . p05_escopo_cache($P05_ESCOPO);   // cache separado por permissão   // + o escopo (CL3)
 const P05_SEM_FIN = 'Sem permissão para dados financeiros.';
@@ -295,16 +309,3 @@ function getCliente360($pdo, $id) {
     return ['ok' => true, 'data' => ['cliente' => $cliente, 'orcamentos' => ['items' => $orcamentos, 'stats' => $os]]];
 }
 
-// CL3 (VINHO 27/11): aqui (e não no escopo-cl3.php) para estar no mesmo bloco das funções que os testes carregam.
-if (!function_exists('p05v')) {
-/** A visão RECORTADA (o mesmo recorte em toda consulta). PESSOA (contatos) não tem cliente confiável → vazia na carteira (o KPI sai null). */
-function p05v(string $nome): string
-{
-    $base = constant('ERP_V_' . $nome);
-    $e = $GLOBALS['P05_ESCOPO'] ?? null;
-    if (!is_array($e) || $e['modo'] === 'todos') return $base;
-    if ($nome === 'PESSOA') return "(SELECT * FROM $base v_cl3 WHERE 1 = 0)";
-    $in = $e['ids'] === [] ? 'NULL' : implode(',', array_map('intval', $e['ids']));
-    return "(SELECT * FROM $base v_cl3 WHERE v_cl3.Id_Organizacao IN ($in))";
-}
-}
