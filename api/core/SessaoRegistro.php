@@ -18,6 +18,12 @@ final class SessaoRegistro
     public const REVOGADA = 'revogada';
     public const EXPIRADA = 'expirada';
     public const FALHA = 'falha';
+    /** P0 LOGS-010 (AZUL 28/11): a CONTA do titular não está ativa (status ≠ 'active') ou foi excluída (deleted_at) → a sessão não vale */
+    public const CONTA_INATIVA = 'conta_inativa';
+    /** QI VINHO 01:16 (P1-2): conta reativada com a revisão F1 PENDENTE (app_usuario_f1) não opera até a F1 ser registrada */
+    public const F1_PENDENTE = 'f1_pendente';
+    /** a tabela app_usuario_f1 existe? (nasce na DDL v2b; antes dela a regra da F1 não se aplica). null = ainda não conferido nesta requisição */
+    private static ?bool $temF1 = null;
 
     /** @var null|callable(): PDO */
     private static $fornecedor = null;
@@ -28,11 +34,13 @@ final class SessaoRegistro
     {
         self::$fornecedor = $fornecedor;
         self::$cache = [];
+        self::$temF1 = null;
     }
 
     public static function limparCache(): void
     {
         self::$cache = [];
+        self::$temF1 = null;
     }
 
     private static function pdo(): PDO
@@ -61,7 +69,13 @@ final class SessaoRegistro
             return self::$cache[$chave];
         }
         try {
-            $st = self::pdo()->prepare('SELECT user_id, is_active, (expires_at > NOW()) AS vigente FROM app_user_sessions WHERE session_token = ? LIMIT 1');
+            // P0 LOGS-010: a conta do titular entra na MESMA consulta (desativada, bloqueada, pendente ou excluída = a sessão não vale, sem depender de revogação)
+            $pdo = self::pdo();   // UMA conexão para as duas leituras (o teste DSHOW-110 conta as chamadas à conexão)
+            if (self::$temF1 === null) {   // 1 consulta por requisição; falha aqui = FALHA (nega), nunca "sem F1"
+                self::$temF1 = (int) $pdo->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'app_usuario_f1'")->fetchColumn() === 1;
+            }
+            $f1 = self::$temF1 ? ", (SELECT COUNT(*) FROM app_usuario_f1 f WHERE f.user_id = s.user_id AND f.situacao = 'pendente_f1') AS f1_pendente" : ', 0 AS f1_pendente';
+            $st = $pdo->prepare('SELECT s.user_id, s.is_active, (s.expires_at > NOW()) AS vigente, u.status AS conta_status, (u.deleted_at IS NULL) AS conta_viva' . $f1 . ' FROM app_user_sessions s LEFT JOIN app_users u ON u.id = s.user_id WHERE s.session_token = ? LIMIT 1');
             $st->execute([$token]);
             $linha = $st->fetch(PDO::FETCH_ASSOC);
         } catch (\Throwable $e) {
@@ -76,6 +90,10 @@ final class SessaoRegistro
             $r = self::REVOGADA;
         } elseif ((int) $linha['vigente'] !== 1) {
             $r = self::EXPIRADA;
+        } elseif (($linha['conta_status'] ?? null) !== 'active' || (int) ($linha['conta_viva'] ?? 0) !== 1) {
+            $r = self::CONTA_INATIVA;
+        } elseif ((int) ($linha['f1_pendente'] ?? 0) > 0) {
+            $r = self::F1_PENDENTE;
         } else {
             $r = self::OK;
         }

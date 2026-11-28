@@ -76,9 +76,7 @@ switch ($method) {
                 break;
             case 'terminate-session':
             case 'terminate-user-sessions':
-                // Gestão de sessões por usuário ainda não implementada neste endpoint;
-                // responde OK vazio para não quebrar a tela de detalhe.
-                ApiResponse::success(['message' => 'NOT_IMPLEMENTED', 'terminated' => 0]);
+                handleTerminateSessions($action);   // P0 LOGS-010 / LOGS-021: encerra de verdade (antes: 200 NOT_IMPLEMENTED, terminated 0)
                 break;
             case 'create':
             default:
@@ -154,6 +152,66 @@ function attachRoles(PDO $pdo, array &$users): void {
         $u['user_level'] = (int)($u['user_level'] ?? 0);
     }
     unset($u);
+}
+
+/**
+ * P0 LOGS-010 (AZUL 28/11, desenho aprovado pelo arquiteto 01:12): conta que deixa de estar ativa perde TODAS as sessões na MESMA transação
+ * da mudança (desativar, bloquear, pendente, excluir, em massa). A reativação NÃO revive sessão antiga: exige login novo.
+ * Também marca a revisão F1 pendente (regra CL3 do Warps 00:23) quando a tabela app_usuario_f1 já existe (antes da DDL v2b: só pula).
+ */
+function contaRevogarSessoes(PDO $pdo, array $ids, string $motivo): int {
+    $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn(int $i): bool => $i > 0)));
+    if ($ids === []) return 0;
+    $in = implode(',', array_fill(0, count($ids), '?'));
+    $st = $pdo->prepare("UPDATE app_user_sessions SET is_active = 0, logout_at = NOW(3), logout_reason = ? WHERE user_id IN ({$in}) AND is_active = 1");
+    $st->execute(array_merge([substr($motivo, 0, 50)], $ids));
+    return $st->rowCount();
+}
+function contaMarcarF1Pendente(PDO $pdo, array $ids): void {
+    $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn(int $i): bool => $i > 0)));
+    if ($ids === []) return;
+    $existe = (int) $pdo->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'app_usuario_f1'")->fetchColumn();
+    if ($existe !== 1) return;   // DDL v2b ainda não aplicada: a regra CL3 só passa a valer com ela
+    $in = implode(',', array_fill(0, count($ids), '?'));
+    // QI VINHO 01:16 (P1-1) + re-QI (arquiteto 01:45): cada desativação VOLTA a pendente e ZERA a revisão anterior (revisado_em, revisor_id,
+    // revisao_vazia) — senão o CHECK da DDL v2b (pendente_f1 ⇒ revisado_em IS NULL) rejeita e a 2ª desativação falha inteira
+    $pdo->prepare("INSERT INTO app_usuario_f1 (user_id, situacao, desde, origem) SELECT id, 'pendente_f1', NOW(3), 'admin-desativar' FROM app_users WHERE id IN ({$in})
+                   ON DUPLICATE KEY UPDATE situacao = 'pendente_f1', desde = NOW(3), origem = 'admin-desativar', revisado_em = NULL, revisor_id = NULL, revisao_vazia = NULL")->execute($ids);
+}
+
+/** LOGS-021: encerra UMA sessão (session_id + user_id) ou TODAS as de uma conta (user_id). Alçada = a deste endpoint (gate:admin:users + nível 80 + GuardaDono). */
+/** P0 LOGS-010 (condições B/E do GPT LOGS/Warps): auditoria DENTRO da transação, sem engolir erro — se falhar, nada é confirmado (rollback).
+ *  Autor = sessão do admin; alvo = ids; horário = NOW(3); quantidade real de sessões revogadas em new_values. Nunca token. */
+function contaAuditarNaTransacao(PDO $pdo, string $acao, array $ids, array $detalhe): void {
+    $pdo->prepare("INSERT INTO app_audit_trail (user_id, action, entity_type, entity_id, old_values, new_values, ip_address, user_agent, created_at) VALUES (?, ?, 'users', ?, NULL, ?, ?, ?, NOW(3))")
+        ->execute([$_SESSION['user_id'] ?? null, $acao, implode(',', array_map('intval', $ids)), json_encode($detalhe, JSON_UNESCAPED_UNICODE),
+                   $_SERVER['REMOTE_ADDR'] ?? null, substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255)]);
+}
+
+function handleTerminateSessions(string $action): void {
+    $input = json_decode(file_get_contents('php://input'), true) ?: [];
+    $uid = (int) ($input['user_id'] ?? $_GET['user_id'] ?? 0);
+    if ($uid <= 0) { ApiResponse::error('MISSING_USER_ID', 400); return; }
+    try {
+        $pdo = getConnection('DSHOWDASH');
+        $sid = (int) ($input['session_id'] ?? 0);
+        if ($action === 'terminate-session' && $sid <= 0) { ApiResponse::error('MISSING_SESSION_ID', 400); return; }
+        $pdo->beginTransaction();   // encerramento + auditoria = UMA transação; a resposta traz a quantidade REAL persistida
+        try {
+            if ($action === 'terminate-session') {
+                $st = $pdo->prepare("UPDATE app_user_sessions SET is_active = 0, logout_at = NOW(3), logout_reason = 'admin_terminated' WHERE id = ? AND user_id = ? AND is_active = 1");
+                $st->execute([$sid, $uid]); $n = $st->rowCount();
+            } else {
+                $n = contaRevogarSessoes($pdo, [$uid], 'admin_terminated_all');
+            }
+            if ($n > 0) contaAuditarNaTransacao($pdo, $action === 'terminate-session' ? 'user_session_terminated' : 'user_sessions_terminated', [$uid], ['sessoes_encerradas' => $n] + ($action === 'terminate-session' ? ['sessao_id' => $sid] : []));
+            $pdo->commit();
+        } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
+        ApiResponse::success(['terminated' => $n]);   // repetir = terminated 0 e nenhum evento novo (sem falso sucesso)
+    } catch (Throwable $e) {
+        error_log('[admin/users] terminate: ' . get_class($e));
+        ApiResponse::error(ApiResponse::ERR_DATABASE_ERROR, 500, ['message' => 'Erro ao encerrar sessões']);
+    }
 }
 
 function handleGetUsers(): void {
@@ -434,6 +492,10 @@ function handleUpdateUser(): void {
             $userUpdates[] = "avatar_url = ?";
             $userParams[]  = $input['avatar_url'] ?? $input['avatar'];
         }
+        if (isset($input['status']) && !in_array($input['status'], ['active', 'disabled', 'locked', 'pending'], true)) {
+            ApiResponse::error('INVALID_STATUS', 400, ['message' => 'status inválido']);
+            return;
+        }
         if (isset($input['status'])) {
             $userUpdates[] = "status = ?";
             $userParams[]  = $input['status'];
@@ -470,6 +532,11 @@ function handleUpdateUser(): void {
             }
         }
 
+        if (isset($input['status']) && $input['status'] !== 'active') {   // P0 LOGS-010: status + revogação + F1 + auditoria = UMA transação
+            $revogadas = contaRevogarSessoes($pdo, [$uid], 'conta_' . $input['status']);
+            if ($input['status'] === 'disabled') contaMarcarF1Pendente($pdo, [$uid]);
+            contaAuditarNaTransacao($pdo, 'user_status_sessions_revoked', [$uid], ['status' => $input['status'], 'sessoes_revogadas' => $revogadas]);
+        }
         $pdo->commit();
         logAudit($pdo, 'user_updated', 'users', $uid);
 
@@ -498,8 +565,17 @@ function handleBulkUpdateStatus(): void {
         $pdo = getConnection('DSHOWDASH');
         $ids = array_map('intval', $ids);
         $in = implode(',', array_fill(0, count($ids), '?'));
-        $stmt = $pdo->prepare("UPDATE app_users SET status = ?, updated_at = NOW(3) WHERE id IN ({$in}) AND deleted_at IS NULL");
-        $stmt->execute(array_merge([$status], $ids));
+        $pdo->beginTransaction();   // P0 LOGS-010: status em massa + revogação das sessões numa transação só
+        try {
+            $stmt = $pdo->prepare("UPDATE app_users SET status = ?, updated_at = NOW(3) WHERE id IN ({$in}) AND deleted_at IS NULL");
+            $stmt->execute(array_merge([$status], $ids));
+            if ($status !== 'active') {
+                $revogadas = contaRevogarSessoes($pdo, $ids, 'conta_' . $status);
+                if ($status === 'disabled') contaMarcarF1Pendente($pdo, $ids);
+                contaAuditarNaTransacao($pdo, 'users_bulk_status_sessions_revoked', $ids, ['status' => $status, 'sessoes_revogadas' => $revogadas]);
+            }
+            $pdo->commit();
+        } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
         logAudit($pdo, 'users_bulk_status', 'users', implode(',', $ids));
         ApiResponse::success(['message' => 'Status atualizado', 'affected' => $stmt->rowCount()]);
     } catch (Exception $e) {
@@ -596,8 +672,15 @@ function handleDeleteUser(): void {
 
         $softDelete = $input['soft_delete'] ?? true;
         if ($softDelete) {
-            $stmt = $pdo->prepare("UPDATE app_users SET status = 'disabled', deleted_at = NOW(3), updated_at = NOW(3) WHERE id = ?");
-            $stmt->execute([$uid]);
+            $pdo->beginTransaction();   // P0 LOGS-010: exclusão lógica + revogação das sessões numa transação só
+            try {
+                $stmt = $pdo->prepare("UPDATE app_users SET status = 'disabled', deleted_at = NOW(3), updated_at = NOW(3) WHERE id = ?");
+                $stmt->execute([$uid]);
+                $revogadas = contaRevogarSessoes($pdo, [$uid], 'conta_excluida');
+                contaMarcarF1Pendente($pdo, [$uid]);
+                contaAuditarNaTransacao($pdo, 'user_deleted_sessions_revoked', [$uid], ['sessoes_revogadas' => $revogadas]);
+                $pdo->commit();
+            } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
         } else {
             $stmt = $pdo->prepare("DELETE FROM app_users WHERE id = ?");
             $stmt->execute([$uid]);
