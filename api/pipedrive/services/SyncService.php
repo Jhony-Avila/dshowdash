@@ -193,21 +193,18 @@ final class PipeSyncService
         }
         // v1/v1root sem marca-d'agua (1a vez) = full pull.
 
-        $maxUpdate = null;
+        $maxOk = null; $minFalha = null; $falhaSemData = false; $paradaNaMarca = false;
         $res = $client->paginate($path, [
             'version' => $version, 'query' => $query,
             'limit' => (int)($opts['limit'] ?? 500), 'maxPages' => (int)($opts['maxPages'] ?? 0), 'maxItems' => (int)($opts['maxItems'] ?? 0),
-        ], function (array $lote) use (&$c, &$maxUpdate, $upsert, $v1StopEarly, $wmDt) {
+        ], function (array $lote) use (&$c, &$maxOk, &$minFalha, &$falhaSemData, &$paradaNaMarca, $upsert, $v1StopEarly, $wmDt) {
             $minLote = null;
             foreach ($lote as $item) {
                 if (!is_array($item)) { $c['skipped']++; continue; }
                 // A marca-d'agua precisa enxergar TODO item da pagina, inclusive os que
                 // nao serao gravados — por isso o update_time e lido antes do upsert.
                 $ut = PipeSyncRepository::dt($item['update_time'] ?? null);
-                if ($ut !== null) {
-                    if ($maxUpdate === null || $ut > $maxUpdate) { $maxUpdate = $ut; }
-                    if ($minLote === null || $ut < $minLote) { $minLote = $ut; }
-                }
+                if ($ut !== null && ($minLote === null || $ut < $minLote)) { $minLote = $ut; }
                 // Abaixo da marca = ja gravado numa rodada anterior. Como a pagina vem
                 // ordenada DESC (a API v1/v1root honra `sort=update_time DESC` — provado
                 // contra a API real), nada mais novo aparece depois deste ponto: reescrever
@@ -223,14 +220,16 @@ final class PipeSyncService
                     $out = $upsert($item);
                     $out === 'created' ? $c['created']++ : $c['updated']++;
                     if (!empty($item['is_deleted'])) { $c['marked_deleted']++; }
+                    if ($ut !== null && ($maxOk === null || $ut > $maxOk)) { $maxOk = $ut; }   // DDI-027: só o PERSISTIDO move a marca
                 } catch (\Throwable $e) {
                     $c['errors']++;
+                    if ($ut === null) { $falhaSemData = true; } elseif ($minFalha === null || $ut < $minFalha) { $minFalha = $ut; }
                     error_log('[pipedrive] upsert ' . $c['processed'] . ' (' . ($item['id'] ?? '?') . '): ' . $e->getMessage());
                 }
             }
             // Ordenado DESC: se o item mais antigo do lote ja e < marca, os proximos
             // sao ainda mais antigos -> ja temos tudo, para de paginar.
-            if ($v1StopEarly && $wmDt !== null && $minLote !== null && $minLote < $wmDt) { return false; }
+            if ($v1StopEarly && $wmDt !== null && $minLote !== null && $minLote < $wmDt) { $paradaNaMarca = true; return false; }
             return true;
         });
 
@@ -240,11 +239,15 @@ final class PipeSyncService
         if (!$ok) { $c['errors']++; }
 
         $incrementalRun = $doIncremental && ($isV2 || $v1StopEarly);
-        $this->repo->bumpWatermark($entity, $maxUpdate); // GREATEST: so avanca
-        if (!$incrementalRun && $ok) { $this->repo->markFullSync($entity); }
-        $this->repo->finishRun($runId, $c, $ok ? 'completed' : 'failed');
+        // DDI-027: cobertura = fim da paginação OU (v1 DESC) parada na marca anterior; teto de páginas/itens = parcial
+        $cobertura = $ok && ((bool)($res['completo'] ?? false) || $paradaNaMarca);
+        $ordemAsc = $doIncremental && $isV2;   // v2 incremental = updated_since ASC
+        $this->repo->bumpWatermark($entity, self::novaMarca($maxOk, $minFalha, $falhaSemData, $cobertura, $ordemAsc)); // GREATEST: so avanca
+        $status = self::statusRodada($ok, $c['errors'], $cobertura);
+        if (!$incrementalRun && $status === 'completed') { $this->repo->markFullSync($entity); }
+        $this->repo->finishRun($runId, $c, $status);
 
-        return ['ok' => $ok, 'entity' => $entity, 'stats' => $c, 'error' => $res['error'] ?? null];
+        return ['ok' => $ok, 'entity' => $entity, 'status' => $status, 'stats' => $c, 'error' => $res['error'] ?? null];
     }
 
     /** So os dados de referencia (pipelines/stages/users), full. */
@@ -274,7 +277,7 @@ final class PipeSyncService
     {
         $runId = $this->repo->startRun($opts['run_type'] ?? 'manual', $entity);
         $c = ['processed' => 0, 'created' => 0, 'updated' => 0, 'skipped' => 0, 'marked_deleted' => 0, 'errors' => 0, 'api_calls' => 0, 'token_cost' => 0];
-        $maxUpdate = null;
+        $maxOk = null; $minFalha = null; $falhaSemData = false;
 
         $res = $client->paginate($path, [
             'version'  => $version,
@@ -282,20 +285,21 @@ final class PipeSyncService
             'limit'    => (int)($opts['limit'] ?? 500),
             'maxPages' => (int)($opts['maxPages'] ?? 0),
             'maxItems' => (int)($opts['maxItems'] ?? 0),
-        ], function (array $lote, array $meta, int $page) use (&$c, &$maxUpdate, $upsert) {
+        ], function (array $lote, array $meta, int $page) use (&$c, &$maxOk, &$minFalha, &$falhaSemData, $upsert) {
             foreach ($lote as $item) {
                 if (!is_array($item)) { $c['skipped']++; continue; }
                 $c['processed']++;
+                $ut = PipeSyncRepository::dt($item['update_time'] ?? ($item['modified'] ?? null));
                 try {
                     $out = $upsert($item);
                     $out === 'created' ? $c['created']++ : $c['updated']++;
                     if (!empty($item['is_deleted'])) { $c['marked_deleted']++; }
+                    if ($ut !== null && ($maxOk === null || $ut > $maxOk)) { $maxOk = $ut; }
                 } catch (\Throwable $e) {
                     $c['errors']++;
+                    if ($ut === null) { $falhaSemData = true; } elseif ($minFalha === null || $ut < $minFalha) { $minFalha = $ut; }
                     error_log('[pipedrive] upsert falhou (' . ($item['id'] ?? '?') . '): ' . $e->getMessage());
                 }
-                $ut = PipeSyncRepository::dt($item['update_time'] ?? ($item['modified'] ?? null));
-                if ($ut !== null && ($maxUpdate === null || $ut > $maxUpdate)) { $maxUpdate = $ut; }
             }
         });
 
@@ -304,11 +308,33 @@ final class PipeSyncService
         $ok = (bool)($res['ok'] ?? false);
         if (!$ok) { $c['errors']++; }
 
-        $this->repo->bumpWatermark($entity, $maxUpdate);
-        if ($full && $ok) { $this->repo->markFullSync($entity); }
-        $this->repo->finishRun($runId, $c, $ok ? 'completed' : 'failed');
+        $cobertura = $ok && (bool)($res['completo'] ?? false);
+        $this->repo->bumpWatermark($entity, self::novaMarca($maxOk, $minFalha, $falhaSemData, $cobertura, false));   // referência: leitura completa
+        $status = self::statusRodada($ok, $c['errors'], $cobertura);
+        if ($full && $status === 'completed') { $this->repo->markFullSync($entity); }
+        $this->repo->finishRun($runId, $c, $status);
 
         return ['ok' => $ok, 'entity' => $entity, 'stats' => $c, 'error' => $res['error'] ?? null];
+    }
+
+    /** DDI-027 (GPT DATA, 28/11): marca-d'água só até o que foi PERSISTIDO. $maxOk = maior update_time gravado com sucesso; $minFalha = menor
+     *  update_time cuja gravação falhou (o próximo ciclo reprocessa a partir dele: a comparação no segundo exato reprocessa); falha SEM data =
+     *  não avança. Ordem DESC/livre (v1 stop-early, leitura completa) só avança com a cobertura comprovada (fim da paginação ou parada na marca);
+     *  ordem ASC (v2 updated_since) avança o que já passou, página a página. bumpWatermark é GREATEST (nunca recua). */
+    private static function novaMarca(?string $maxOk, ?string $minFalha, bool $falhaSemData, bool $cobertura, bool $ordemAsc): ?string
+    {
+        if ($falhaSemData) { return null; }
+        if (!$cobertura && !$ordemAsc) { return null; }
+        if ($minFalha !== null) { return $maxOk === null ? null : min($maxOk, $minFalha); }
+        return $maxOk;
+    }
+
+    /** DDI-027: "completed" só com a paginação OK, zero erro de gravação e cobertura integral; erro individual ou rodada limitada = "partial"
+     *  (o HealthRepository segue considerando saudável só completed + 0 erros). */
+    private static function statusRodada(bool $ok, int $erros, bool $cobertura): string
+    {
+        if (!$ok) { return 'failed'; }
+        return ($erros > 0 || !$cobertura) ? 'partial' : 'completed';
     }
 
     private function syncDeals(PipedriveClient $client, string $mode, ?int $companyId, array $opts): array
@@ -327,27 +353,28 @@ final class PipeSyncService
             }
         }
 
-        $maxUpdate = null;
+        $maxOk = null; $minFalha = null; $falhaSemData = false;
         $res = $client->paginate('deals', [
             'version'  => 'v2',
             'query'    => $query,
             'limit'    => (int)($opts['limit'] ?? 500),
             'maxPages' => (int)($opts['maxPages'] ?? 0),
             'maxItems' => (int)($opts['maxItems'] ?? 0),
-        ], function (array $lote, array $meta, int $page) use (&$c, &$maxUpdate, $companyId) {
+        ], function (array $lote, array $meta, int $page) use (&$c, &$maxOk, &$minFalha, &$falhaSemData, $companyId) {
             foreach ($lote as $item) {
                 if (!is_array($item)) { $c['skipped']++; continue; }
                 $c['processed']++;
+                $ut = PipeSyncRepository::dt($item['update_time'] ?? null);
                 try {
                     $out = $this->repo->upsertDeal($item, $companyId);
                     $out === 'created' ? $c['created']++ : $c['updated']++;
                     if (!empty($item['is_deleted'])) { $c['marked_deleted']++; }
+                    if ($ut !== null && ($maxOk === null || $ut > $maxOk)) { $maxOk = $ut; }
                 } catch (\Throwable $e) {
                     $c['errors']++;
+                    if ($ut === null) { $falhaSemData = true; } elseif ($minFalha === null || $ut < $minFalha) { $minFalha = $ut; }
                     error_log('[pipedrive] upsertDeal falhou (' . ($item['id'] ?? '?') . '): ' . $e->getMessage());
                 }
-                $ut = PipeSyncRepository::dt($item['update_time'] ?? null);
-                if ($ut !== null && ($maxUpdate === null || $ut > $maxUpdate)) { $maxUpdate = $ut; }
             }
         });
 
@@ -356,10 +383,12 @@ final class PipeSyncService
         $ok = (bool)($res['ok'] ?? false);
         if (!$ok) { $c['errors']++; }
 
-        $this->repo->bumpWatermark('deals', $maxUpdate);
-        if (!$incremental && $ok) { $this->repo->markFullSync('deals'); }
-        $this->repo->finishRun($runId, $c, $ok ? 'completed' : 'failed');
+        $cobertura = $ok && (bool)($res['completo'] ?? false);   // DDI-027: teto de páginas/itens = cobertura NÃO integral
+        $this->repo->bumpWatermark('deals', self::novaMarca($maxOk, $minFalha, $falhaSemData, $cobertura, true));   // deals: sempre ASC
+        $status = self::statusRodada($ok, $c['errors'], $cobertura);
+        if (!$incremental && $status === 'completed') { $this->repo->markFullSync('deals'); }
+        $this->repo->finishRun($runId, $c, $status);
 
-        return ['ok' => $ok, 'entity' => 'deals', 'mode' => $mode, 'stats' => $c, 'error' => $res['error'] ?? null];
+        return ['ok' => $ok, 'entity' => 'deals', 'mode' => $mode, 'status' => $status, 'stats' => $c, 'error' => $res['error'] ?? null];
     }
 }
