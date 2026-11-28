@@ -521,7 +521,10 @@ var MODULE_ID = 'dshowdash-service-worker';
 //          painel-12/api.php responde {"ok":false,...}, sem chave `success`.
 //          Os outros 23 arquivos sao fontes .ts; o .js servido ja estava correto e
 //          nao muda de bytes — o bump nao e necessario para eles.
-var VERSION = '9.3.98-ENVELOPE-OK-P12';
+// v9.3.99: CACHE-MENU-P1 (ROXO 27/11, decisão do arquiteto + R45) — /api/ NÃO passa mais pelo SW (nada de API no Cache Storage: o
+//          cache era da ORIGEM, sem usuário, e servia offline a resposta protegida de outra identidade). O bump faz o activate
+//          apagar os caches da versão anterior, levando junto as respostas /api/ já guardadas nos navegadores.
+var VERSION = '9.3.99-CACHE-MENU-P1';
 var CACHE_NAME = 'dshowdash-v' + VERSION;
 
 var PRECACHE_ASSETS = [
@@ -751,6 +754,8 @@ self.addEventListener('activate', function(event) {
 self.addEventListener('fetch', function(event) {
   if (event.request.method !== 'GET') return;
   if (!event.request.url.startsWith('http')) return;
+  // CACHE-MENU-P1: API autenticada nunca é interceptada nem guardada pelo SW (o navegador vai direto à rede; offline = erro, nunca a resposta de outra sessão)
+  try { if (new URL(event.request.url).pathname.startsWith('/api/')) return; } catch (e) { return; }
   var strategy = getStrategy(event.request);
   event.respondWith(strategy(event.request));
 });

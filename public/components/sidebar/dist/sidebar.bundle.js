@@ -1,13 +1,13 @@
-import { createUiPorts as v, createCorePorts as xb } from "/core/runtime/ports-profiles.js";
-import { SIDEBAR_EVENTS as f, ACCORDION_INTENTS as Ba } from "/core/runtime/events/catalog/sidebar.events.js";
-import { SIDEBAR_EVENTS as JC } from "/core/runtime/events/catalog/sidebar.events.js";
-import { isStrict as vt, recordViolation as zn } from "/core/runtime/enterprise/strict-mode.js";
+import { createUiPorts as v, createCorePorts as Qb } from "/core/runtime/ports-profiles.js";
+import { SIDEBAR_EVENTS as f, ACCORDION_INTENTS as Va } from "/core/runtime/events/catalog/sidebar.events.js";
+import { SIDEBAR_EVENTS as mA } from "/core/runtime/events/catalog/sidebar.events.js";
+import { isStrict as It, recordViolation as jn } from "/core/runtime/enterprise/strict-mode.js";
 import { ROUTER_EVENTS as pe } from "/core/runtime/events/catalog/router.events.js";
-import { UI_INTENTS as ni, UI_EVENTS as cl } from "/core/runtime/events/catalog/ui.events.js";
-import { NAV_INTENTS as Pb } from "/core/runtime/events/catalog/nav.events.js";
-import { get as Eu, listNamespaces as Hb } from "/components/icon-registry/index.js";
-import { LAYOUT_EVENTS as Xs } from "/core/runtime/events/catalog/layout.events.js";
-const fr = "5.5.0-ENTERPRISE-FULL", oe = "sidebar-constants", bu = Object.freeze({
+import { UI_INTENTS as oi, UI_EVENTS as bl } from "/core/runtime/events/catalog/ui.events.js";
+import { NAV_INTENTS as e_ } from "/core/runtime/events/catalog/nav.events.js";
+import { get as Md, listNamespaces as t_ } from "/components/icon-registry/index.js";
+import { LAYOUT_EVENTS as Qs } from "/core/runtime/events/catalog/layout.events.js";
+const mr = "5.5.0-ENTERPRISE-FULL", le = "sidebar-constants", Od = Object.freeze({
   canNavigate: !0,
   canCollapse: !0,
   canSearch: !0,
@@ -56,7 +56,7 @@ const fr = "5.5.0-ENTERPRISE-FULL", oe = "sidebar-constants", bu = Object.freeze
   hasCustomCursors: !0,
   compliance: "AAA-BULLETPROOF-FULL",
   totalFeatures: 57
-}), Ua = Object.freeze({ cssTimeout: 5e3, configTimeout: 3e3, adapterTimeout: 2e3, maxRetries: 3, retryDelay: 1e3 }), zb = Object.freeze({ enabled: !0, wrapAround: !0, focusDelay: 50 }), Id = "/components/sidebar/styles/sidebar.bundle.css?v=20260720", Sd = "5.6.0-P18EC", Cd = "sidebar-state-machine", L = Object.freeze({
+}), qa = Object.freeze({ cssTimeout: 5e3, configTimeout: 3e3, adapterTimeout: 2e3, maxRetries: 3, retryDelay: 1e3 }), r_ = Object.freeze({ enabled: !0, wrapAround: !0, focusDelay: 50 }), wu = "/components/sidebar/styles/sidebar.bundle.css?v=20260720", Nu = "5.6.0-P18EC", Ru = "sidebar-state-machine", L = Object.freeze({
   IDLE: "idle",
   INITIALIZING: "initializing",
   MOUNTING: "mounting",
@@ -66,7 +66,7 @@ const fr = "5.5.0-ENTERPRISE-FULL", oe = "sidebar-constants", bu = Object.freeze
   ERROR: "error",
   DESTROYING: "destroying",
   DESTROYED: "destroyed"
-}), Bb = {
+}), n_ = {
   [L.IDLE]: [L.INITIALIZING],
   [L.INITIALIZING]: [L.MOUNTING, L.ERROR],
   [L.MOUNTING]: [L.MOUNTED, L.ERROR],
@@ -76,10 +76,10 @@ const fr = "5.5.0-ENTERPRISE-FULL", oe = "sidebar-constants", bu = Object.freeze
   [L.ERROR]: [L.DESTROYING, L.INITIALIZING],
   [L.DESTROYING]: [L.DESTROYED],
   [L.DESTROYED]: [L.IDLE]
-}, Ub = { persistState: !0, storageKey: "dsd:sidebar:sections", allowMultipleOpen: !0, animationDuration: 250 };
-class jb {
+}, s_ = { persistState: !0, storageKey: "dsd:sidebar:sections", allowMultipleOpen: !0, animationDuration: 250 };
+class i_ {
   constructor(t = {}) {
-    this._lifecycle = L.IDLE, this._collapsed = t.collapsed ?? !1, this._mobileOpen = !1, this._isMobile = !1, this._activeItemId = null, this._hoveredItemId = null, this._subscribers = /* @__PURE__ */ new Set(), this._history = [], this._maxHistory = 50, this._expandedSections = /* @__PURE__ */ new Set(), this._accordionConfig = { ...Ub, ...t.accordion }, this._metrics = { transitions: 0, toggles: 0, sectionExpands: 0, sectionCollapses: 0, notifications: 0, resets: 0 }, this._restoreExpandedSections();
+    this._lifecycle = L.IDLE, this._collapsed = t.collapsed ?? !1, this._mobileOpen = !1, this._isMobile = !1, this._activeItemId = null, this._hoveredItemId = null, this._subscribers = /* @__PURE__ */ new Set(), this._history = [], this._maxHistory = 50, this._expandedSections = /* @__PURE__ */ new Set(), this._accordionConfig = { ...s_, ...t.accordion }, this._metrics = { transitions: 0, toggles: 0, sectionExpands: 0, sectionCollapses: 0, notifications: 0, resets: 0 }, this._restoreExpandedSections();
   }
   get expandedSections() {
     return new Set(this._expandedSections);
@@ -145,7 +145,7 @@ class jb {
     return this._lifecycle;
   }
   canTransitionTo(t) {
-    return (Bb[this._lifecycle] || []).includes(t);
+    return (n_[this._lifecycle] || []).includes(t);
   }
   transitionTo(t) {
     if (!this.canTransitionTo(t)) return { success: !1, error: `Invalid transition: ${this._lifecycle} -> ${t}` };
@@ -282,30 +282,30 @@ class jb {
       historyCount: this._history.length,
       expandedSectionsCount: this._expandedSections.size,
       accordionConfig: this._accordionConfig,
-      version: Sd,
-      moduleId: Cd,
+      version: Nu,
+      moduleId: Ru,
       timestamp: Date.now(),
       metrics: this.getMetrics()
     };
   }
   info() {
-    return { version: Sd, moduleId: Cd, state: this.getState(), metrics: this.getMetrics(), healthCheck: this.healthCheck() };
+    return { version: Nu, moduleId: Ru, state: this.getState(), metrics: this.getMetrics(), healthCheck: this.healthCheck() };
   }
 }
-const dl = "5.10.0-UARPS-ONLY", ss = "sidebar-registry", En = v({ moduleId: ss });
-function Fb() {
-  En.init();
+const _l = "5.10.0-UARPS-ONLY", as = "sidebar-registry", vn = v({ moduleId: as });
+function o_() {
+  vn.init();
 }
-function Gb(e) {
-  return En.get(e);
+function a_(e) {
+  return vn.get(e);
 }
-function Vb(e) {
-  return En.inject(e);
+function l_(e) {
+  return vn.inject(e);
 }
-function qb() {
-  return En.snapshot();
+function c_() {
+  return vn.snapshot();
 }
-const $t = {
+const kt = {
   source: "api",
   apiEndpoint: "/api/ui/navigation.php?action=manifest",
   fallbackToManifest: !0,
@@ -319,8 +319,8 @@ const $t = {
   administracao: "shield",
   config: "cog",
   default: "grid"
-}, Z = /* @__PURE__ */ new Map(), be = /* @__PURE__ */ new Map(), ln = /* @__PURE__ */ new Map(), bn = /* @__PURE__ */ new Map(), Wn = /* @__PURE__ */ new Set();
-let Mt = { data: null, timestamp: 0 }, ul = 0;
+}, J = /* @__PURE__ */ new Map(), be = /* @__PURE__ */ new Map(), hn = /* @__PURE__ */ new Map(), In = /* @__PURE__ */ new Map(), Jn = /* @__PURE__ */ new Set();
+let Ot = { data: null, timestamp: 0 }, yl = 0;
 const H = {
   source: null,
   sectionsLoaded: 0,
@@ -335,26 +335,26 @@ const H = {
   lastUpdate: null,
   errors: 0
 };
-function xt(e, t) {
+function Pt(e, t) {
   const r = {
-    sections: Ai(),
-    items: is(),
-    badges: gl(),
+    sections: $i(),
+    items: ls(),
+    badges: Sl(),
     event: e,
     data: t,
     timestamp: Date.now()
   };
-  Wn.forEach((s) => {
+  Jn.forEach((s) => {
     try {
       s(r);
     } catch {
       H.errors++;
     }
   });
-  const n = Gb("eventBus");
-  n != null && n.emit && n.emit(e, { source: ss, ...r });
+  const n = a_("eventBus");
+  n != null && n.emit && n.emit(e, { source: as, ...r });
 }
-function Yb(e) {
+function u_(e) {
   return {
     ...e,
     key: e.item_key || null,
@@ -367,9 +367,9 @@ function Yb(e) {
     disabled: e.is_disabled === 1
   };
 }
-async function _u(e = $t.apiEndpoint) {
-  if (Mt.data && Date.now() - Mt.timestamp < $t.cacheTTL)
-    return H.cacheHits++, ja(Mt.data), { success: !0, source: "cache", sectionsCount: Z.size, itemsCount: be.size };
+async function Td(e = kt.apiEndpoint) {
+  if (Ot.data && Date.now() - Ot.timestamp < kt.cacheTTL)
+    return H.cacheHits++, Ya(Ot.data), { success: !0, source: "cache", sectionsCount: J.size, itemsCount: be.size };
   H.apiCalls++;
   try {
     const t = await fetch(e, {
@@ -380,22 +380,22 @@ async function _u(e = $t.apiEndpoint) {
     const r = await t.json();
     if (!r.ok && !r.success) throw new Error(r.error || "API returned error");
     const n = r.data;
-    return ul = n.userLevel ?? 0, $t.cacheEnabled && (Mt = { data: n, timestamp: Date.now() }), ja(n), H.source = "api", xt(f.REGISTRY_LOADED, {
+    return yl = n.userLevel ?? 0, kt.cacheEnabled && (Ot = { data: n, timestamp: Date.now() }), Ya(n), H.source = "api", Pt(f.REGISTRY_LOADED, {
       source: "api",
-      sectionsCount: Z.size,
+      sectionsCount: J.size,
       itemsCount: be.size
-    }), { success: !0, source: "api", sectionsCount: Z.size, itemsCount: be.size };
+    }), { success: !0, source: "api", sectionsCount: J.size, itemsCount: be.size };
   } catch {
-    return H.apiFails++, H.errors++, hl();
+    return H.apiFails++, H.errors++, vl();
   }
 }
-function ja(e) {
-  Z.clear(), be.clear(), ln.clear();
+function Ya(e) {
+  J.clear(), be.clear(), hn.clear();
   let t = e.items || [];
   if (Array.isArray(t) || (t = Object.values(t)), e.sections && Array.isArray(e.sections) && e.sections.length > 0)
     e.sections.forEach((r) => {
       const n = r.icon || tt[r.id] || tt[r.key] || tt.default;
-      Z.set(r.id, {
+      J.set(r.id, {
         ...r,
         icon: n,
         visible: !0,
@@ -407,7 +407,7 @@ function ja(e) {
     t.forEach((n) => {
       if (n.item_type === "group" || n.item_type === "header" || n.item_type === "section") {
         const s = n.item_key || n.id, i = n.icon || tt[s] || tt.default;
-        Z.set(s, {
+        J.set(s, {
           id: s,
           key: n.item_key || null,
           label: n.label || n.title || s,
@@ -418,9 +418,9 @@ function ja(e) {
         }), r.add(s);
       }
     }), t.forEach((n) => {
-      if (n.parent_key && !r.has(n.parent_key) && !Z.has(n.parent_key)) {
+      if (n.parent_key && !r.has(n.parent_key) && !J.has(n.parent_key)) {
         const s = tt[n.parent_key] || tt.default;
-        Z.set(n.parent_key, {
+        J.set(n.parent_key, {
           id: n.parent_key,
           key: n.parent_key,
           label: n.parent_key,
@@ -432,270 +432,270 @@ function ja(e) {
       }
     });
   }
-  H.sectionsLoaded = Z.size, t.forEach((r) => {
+  H.sectionsLoaded = J.size, t.forEach((r) => {
     if (r.item_type === "group" || r.item_type === "header" || r.item_type === "section") return;
-    const n = Yb(r);
-    be.set(n.id, n), n.item_key && ln.set(n.item_key, n);
+    const n = u_(r);
+    be.set(n.id, n), n.item_key && hn.set(n.item_key, n);
   }), H.itemsLoaded = be.size, H.lastLoad = Date.now();
 }
-async function hl() {
+async function vl() {
   try {
-    const { getManifest: e } = await Promise.resolve().then(() => zC), t = e();
-    return ja(t), H.source = "manifest", xt(f.REGISTRY_LOADED, {
+    const { getManifest: e } = await Promise.resolve().then(() => rA), t = e();
+    return Ya(t), H.source = "manifest", Pt(f.REGISTRY_LOADED, {
       source: "manifest",
-      sectionsCount: Z.size,
+      sectionsCount: J.size,
       itemsCount: be.size
-    }), { success: !0, source: "manifest", sectionsCount: Z.size, itemsCount: be.size };
+    }), { success: !0, source: "manifest", sectionsCount: J.size, itemsCount: be.size };
   } catch (e) {
-    return H.errors++, xt(f.REGISTRY_ERROR, { error: e.message }), { success: !1, error: e.message };
+    return H.errors++, Pt(f.REGISTRY_ERROR, { error: e.message }), { success: !1, error: e.message };
   }
 }
-async function Kb() {
-  return Fb(), $t.source === "api" ? _u() : hl();
+async function d_() {
+  return o_(), kt.source === "api" ? Td() : vl();
 }
-function Ai() {
-  return Array.from(Z.values()).filter((e) => e.visible !== !1).sort((e, t) => (e.order || e.priority || 100) - (t.order || t.priority || 100));
+function $i() {
+  return Array.from(J.values()).filter((e) => e.visible !== !1).sort((e, t) => (e.order || e.priority || 100) - (t.order || t.priority || 100));
 }
-function Wb(e) {
-  return Z.get(e) || null;
+function h_(e) {
+  return J.get(e) || null;
 }
-function Xb(e) {
-  const t = Z.get(e);
+function f_(e) {
+  const t = J.get(e);
   return (t == null ? void 0 : t.icon) || tt[e] || tt.default;
 }
-function Zb(e, t) {
-  const r = Z.get(e);
-  return r ? (Object.assign(r, t), H.lastUpdate = Date.now(), xt(f.REGISTRY_UPDATED, { type: "section", id: e, updates: t }), { success: !0 }) : { success: !1, error: "Section not found" };
+function g_(e, t) {
+  const r = J.get(e);
+  return r ? (Object.assign(r, t), H.lastUpdate = Date.now(), Pt(f.REGISTRY_UPDATED, { type: "section", id: e, updates: t }), { success: !0 }) : { success: !1, error: "Section not found" };
 }
-function is(e = null) {
+function ls(e = null) {
   let t = Array.from(be.values()).filter((r) => r.visible !== !1);
   return e && (t = t.filter((r) => r.sectionId === e || r.parent_key === e)), t.sort((r, n) => (r.order || r.priority || 100) - (n.order || n.priority || 100));
 }
-function yu(e) {
+function Dd(e) {
   const t = be.get(e);
-  return t || (typeof e == "string" ? (H.keyLookups++, ln.get(e) || null) : null);
+  return t || (typeof e == "string" ? (H.keyLookups++, hn.get(e) || null) : null);
 }
-function vu(e) {
-  return is(e);
+function Ld(e) {
+  return ls(e);
 }
-function fl(e, t) {
-  const r = yu(e);
-  return r ? (Object.assign(r, t), H.lastUpdate = Date.now(), xt(f.REGISTRY_UPDATED, { type: "item", id: e, updates: t }), { success: !0 }) : { success: !1, error: "Item not found" };
+function Il(e, t) {
+  const r = Dd(e);
+  return r ? (Object.assign(r, t), H.lastUpdate = Date.now(), Pt(f.REGISTRY_UPDATED, { type: "item", id: e, updates: t }), { success: !0 }) : { success: !1, error: "Item not found" };
 }
-function Jb(e, t) {
-  return fl(e, { visible: t });
+function m_(e, t) {
+  return Il(e, { visible: t });
 }
-function Qb(e, t) {
-  return fl(e, { disabled: t });
+function p_(e, t) {
+  return Il(e, { disabled: t });
 }
-function e_(e, t) {
-  return bn.set(e, {
+function E_(e, t) {
+  return In.set(e, {
     itemId: e,
     value: t.value ?? null,
     type: t.type || "info",
     visible: t.visible ?? !0,
     pulse: t.pulse ?? !1
-  }), H.badgesSet++, xt(f.REGISTRY_UPDATED, { type: "badge", itemId: e, badge: t }), { success: !0 };
+  }), H.badgesSet++, Pt(f.REGISTRY_UPDATED, { type: "badge", itemId: e, badge: t }), { success: !0 };
 }
-function t_(e) {
-  return bn.get(e) || null;
+function b_(e) {
+  return In.get(e) || null;
 }
-function gl() {
-  return Array.from(bn.values()).filter((e) => e.visible !== !1);
+function Sl() {
+  return Array.from(In.values()).filter((e) => e.visible !== !1);
 }
-function r_(e) {
-  return bn.delete(e), xt(f.REGISTRY_UPDATED, { type: "badge-removed", itemId: e }), { success: !0 };
+function __(e) {
+  return In.delete(e), Pt(f.REGISTRY_UPDATED, { type: "badge-removed", itemId: e }), { success: !0 };
 }
-function n_(e = null, t = []) {
+function y_(e = null, t = []) {
   return H.filtersApplied++, be.forEach((r, n) => {
     let s = !0;
     const i = r.permissions || [];
     i.length > 0 && (s = i.some((o) => t.includes(o))), r.visible = s;
-  }), Z.forEach((r, n) => {
-    const s = vu(n).filter((i) => i.visible);
+  }), J.forEach((r, n) => {
+    const s = Ld(n).filter((i) => i.visible);
     r.visible = s.length > 0;
-  }), xt(f.REGISTRY_UPDATED, { type: "permission-filter", strategy: "uarps-only" }), {
+  }), Pt(f.REGISTRY_UPDATED, { type: "permission-filter", strategy: "uarps-only" }), {
     success: !0,
-    visibleSections: Ai().length,
-    visibleItems: is().length
+    visibleSections: $i().length,
+    visibleItems: ls().length
   };
 }
-function s_() {
-  return ul;
+function v_() {
+  return yl;
 }
-function i_() {
-  return Mt = { data: null, timestamp: 0 }, { success: !0 };
+function I_() {
+  return Ot = { data: null, timestamp: 0 }, { success: !0 };
 }
-function o_(e) {
-  return e === "api" || e === "manifest" ? ($t.source = e, { success: !0, source: e }) : { success: !1, error: "Invalid source" };
+function S_(e) {
+  return e === "api" || e === "manifest" ? (kt.source = e, { success: !0, source: e }) : { success: !1, error: "Invalid source" };
 }
-function a_(e) {
+function C_(e) {
   return typeof e != "function" ? () => {
-  } : (Wn.add(e), () => Wn.delete(e));
+  } : (Jn.add(e), () => Jn.delete(e));
 }
-function l_(e) {
-  Wn.delete(e);
+function A_(e) {
+  Jn.delete(e);
 }
-function Iu() {
-  Z.clear(), be.clear(), ln.clear(), bn.clear(), Mt = { data: null, timestamp: 0 }, ul = 0;
+function $d() {
+  J.clear(), be.clear(), hn.clear(), In.clear(), Ot = { data: null, timestamp: 0 }, yl = 0;
 }
-function c_() {
-  Iu(), Object.keys(H).forEach((e) => {
+function M_() {
+  $d(), Object.keys(H).forEach((e) => {
     typeof H[e] == "number" ? H[e] = 0 : H[e] !== null && (H[e] = null);
   });
 }
-function Su() {
-  const e = be.size > 0, t = Z.size > 0, r = Mt.data && Date.now() - Mt.timestamp < $t.cacheTTL, n = H.errors === 0, s = H.apiFails === 0 || H.apiCalls > H.apiFails, i = En.isInitialized(), o = ln.size > 0, a = { hasItems: e, hasSections: t, hasDualIndex: o, cacheValid: r, noErrors: n, apiWorking: s, portsInitialized: i }, l = Object.values(a).filter(Boolean).length, d = Object.keys(a).length;
-  let u = "HEALTHY";
-  return !e || !t ? u = "UNHEALTHY" : (H.errors > 0 || !s) && (u = "DEGRADED"), {
-    status: u,
+function kd() {
+  const e = be.size > 0, t = J.size > 0, r = Ot.data && Date.now() - Ot.timestamp < kt.cacheTTL, n = H.errors === 0, s = H.apiFails === 0 || H.apiCalls > H.apiFails, i = vn.isInitialized(), o = hn.size > 0, a = { hasItems: e, hasSections: t, hasDualIndex: o, cacheValid: r, noErrors: n, apiWorking: s, portsInitialized: i }, l = Object.values(a).filter(Boolean).length, u = Object.keys(a).length;
+  let d = "HEALTHY";
+  return !e || !t ? d = "UNHEALTHY" : (H.errors > 0 || !s) && (d = "DEGRADED"), {
+    status: d,
     score: l,
-    maxScore: d,
-    scoreDisplay: `${l}/${d}`,
+    maxScore: u,
+    scoreDisplay: `${l}/${u}`,
     checks: a,
     source: H.source,
-    sectionsCount: Z.size,
+    sectionsCount: J.size,
     itemsCount: be.size,
-    itemsByKeyCount: ln.size,
-    badgesCount: bn.size,
-    subscribersCount: Wn.size,
+    itemsByKeyCount: hn.size,
+    badgesCount: In.size,
+    subscribersCount: Jn.size,
     metrics: { ...H },
-    config: { ...$t },
-    version: dl,
-    moduleId: ss,
+    config: { ...kt },
+    version: _l,
+    moduleId: as,
     timestamp: Date.now()
   };
 }
-function d_() {
+function O_() {
   return {
-    version: dl,
-    moduleId: ss,
+    version: _l,
+    moduleId: as,
     source: H.source,
-    sections: Ai(),
-    items: is(),
-    badges: gl(),
+    sections: $i(),
+    items: ls(),
+    badges: Sl(),
     metrics: { ...H },
-    config: { ...$t },
-    portsInitialized: En.isInitialized(),
-    healthCheck: Su()
+    config: { ...kt },
+    portsInitialized: vn.isInitialized(),
+    healthCheck: kd()
   };
 }
-function u_() {
+function T_() {
   return { ...H };
 }
-const Cu = {
-  VERSION: dl,
-  MODULE_ID: ss,
-  load: Kb,
-  loadFromManifest: hl,
-  loadFromAPI: _u,
-  getSections: Ai,
-  getSectionById: Wb,
-  getSectionIcon: Xb,
-  updateSection: Zb,
-  getItems: is,
-  getItemById: yu,
-  getItemsBySection: vu,
-  updateItem: fl,
-  setItemVisible: Jb,
-  setItemDisabled: Qb,
-  setBadge: e_,
-  getBadge: t_,
-  getBadges: gl,
-  removeBadge: r_,
-  applyPermissionFilter: n_,
-  getUserLevel: s_,
-  invalidateCache: i_,
-  setSource: o_,
-  subscribe: a_,
-  unsubscribe: l_,
-  clear: Iu,
-  reset: c_,
-  healthCheck: Su,
-  info: d_,
-  getMetrics: u_,
-  injectPorts: Vb,
-  getPorts: qb
+const wd = {
+  VERSION: _l,
+  MODULE_ID: as,
+  load: d_,
+  loadFromManifest: vl,
+  loadFromAPI: Td,
+  getSections: $i,
+  getSectionById: h_,
+  getSectionIcon: f_,
+  updateSection: g_,
+  getItems: ls,
+  getItemById: Dd,
+  getItemsBySection: Ld,
+  updateItem: Il,
+  setItemVisible: m_,
+  setItemDisabled: p_,
+  setBadge: E_,
+  getBadge: b_,
+  getBadges: Sl,
+  removeBadge: __,
+  applyPermissionFilter: y_,
+  getUserLevel: v_,
+  invalidateCache: I_,
+  setSource: S_,
+  subscribe: C_,
+  unsubscribe: A_,
+  clear: $d,
+  reset: M_,
+  healthCheck: kd,
+  info: O_,
+  getMetrics: T_,
+  injectPorts: l_,
+  getPorts: c_
 };
-typeof window < "u" && (window.SidebarRegistry = Cu);
-var w = Cu;
-const Fa = "dshowdash-layout-sidebarCollapsed", Ga = "dsd-sidebar-collapsed";
-let Va = { saves: 0, loads: 0, errors: 0, migrations: 0 };
-function h_() {
+typeof window < "u" && (window.SidebarRegistry = wd);
+var w = wd;
+const Ka = "dshowdash-layout-sidebarCollapsed", Wa = "dsd-sidebar-collapsed";
+let Xa = { saves: 0, loads: 0, errors: 0, migrations: 0 };
+function D_() {
   try {
-    const e = localStorage.getItem(Fa), t = localStorage.getItem(Ga), r = e !== null ? JSON.parse(e) : null, n = t !== null ? JSON.parse(t) : null;
+    const e = localStorage.getItem(Ka), t = localStorage.getItem(Wa), r = e !== null ? JSON.parse(e) : null, n = t !== null ? JSON.parse(t) : null;
     return { synced: r === n, unified: r, legacy: n };
   } catch (e) {
-    return Va.errors++, { synced: !1, error: e.message };
+    return Xa.errors++, { synced: !1, error: e.message };
   }
 }
-function f_() {
+function L_() {
   try {
-    const e = localStorage.getItem(Fa);
-    if (e !== null) localStorage.setItem(Ga, e);
+    const e = localStorage.getItem(Ka);
+    if (e !== null) localStorage.setItem(Wa, e);
     else {
-      const t = localStorage.getItem(Ga);
-      t !== null && (localStorage.setItem(Fa, t), Va.migrations++);
+      const t = localStorage.getItem(Wa);
+      t !== null && (localStorage.setItem(Ka, t), Xa.migrations++);
     }
     return { success: !0 };
   } catch (e) {
-    return Va.errors++, { success: !1, error: e.message };
+    return Xa.errors++, { success: !1, error: e.message };
   }
 }
-const g_ = "sidebar-error-emitter", m_ = v({ moduleId: g_ });
-function Ma(e) {
-  return m_.get(e);
+const $_ = "sidebar-error-emitter", k_ = v({ moduleId: $_ });
+function wa(e) {
+  return k_.get(e);
 }
-let jn = [], ml = null, os = "idle", ze = null, Be = null;
-function p_(e, t) {
-  ze = e, Be = t;
+let Vn = [], Cl = null, cs = "idle", Be = null, Ue = null;
+function w_(e, t) {
+  Be = e, Ue = t;
 }
-function Au() {
-  const e = Ma("eventBus") || Ma("eventBusGlobal");
-  return e && Ma("eventBus"), e;
+function Nd() {
+  const e = wa("eventBus") || wa("eventBusGlobal");
+  return e && wa("eventBus"), e;
 }
 function _e(e, t) {
   var r, n;
   try {
-    jn.includes(e) || jn.push(e), os = "degraded", ml = t;
-    const s = Au();
+    Vn.includes(e) || Vn.push(e), cs = "degraded", Cl = t;
+    const s = Nd();
     s != null && s.emit && s.emit(f.DEGRADED, {
-      source: oe,
+      source: le,
       component: e,
       error: t,
-      degradedComponents: jn,
+      degradedComponents: Vn,
       timestamp: Date.now()
-    }), (r = ze == null ? void 0 : ze.warn) == null || r.call(ze, `Component degraded: ${e}`, { error: t }), (n = Be == null ? void 0 : Be.trackError) == null || n.call(Be, t, { component: e, phase: "degraded" });
+    }), (r = Be == null ? void 0 : Be.warn) == null || r.call(Be, `Component degraded: ${e}`, { error: t }), (n = Ue == null ? void 0 : Ue.trackError) == null || n.call(Ue, t, { component: e, phase: "degraded" });
   } catch {
   }
 }
-function Zs(e, t = {}) {
+function ei(e, t = {}) {
   var r, n;
   try {
-    os = "error", ml = e;
-    const s = Au();
+    cs = "error", Cl = e;
+    const s = Nd();
     s != null && s.emit && s.emit(f.ERROR, {
-      source: oe,
+      source: le,
       error: (e == null ? void 0 : e.message) || e,
       context: t,
       timestamp: Date.now()
-    }), (r = ze == null ? void 0 : ze.error) == null || r.call(ze, "Sidebar error:", { error: e, context: t }), (n = Be == null ? void 0 : Be.trackError) == null || n.call(Be, e, t);
+    }), (r = Be == null ? void 0 : Be.error) == null || r.call(Be, "Sidebar error:", { error: e, context: t }), (n = Ue == null ? void 0 : Ue.trackError) == null || n.call(Ue, e, t);
   } catch {
   }
 }
-function qa() {
-  return os;
+function Za() {
+  return cs;
 }
-function pl(e) {
-  os = e;
+function Al(e) {
+  cs = e;
 }
-function Mu() {
-  return [...jn];
+function Rd() {
+  return [...Vn];
 }
-function E_() {
-  jn = [], ml = null, os = "idle";
+function N_() {
+  Vn = [], Cl = null, cs = "idle";
 }
-const Ou = "6.0.0-NCS", El = "sidebar-ui-constants", Tu = Object.freeze({ accordion: !0, badges: !0, search: !0, keyboard: !0, mobile: !0, persistence: !0, tooltips: !0, skeleton: !0, ripple: !0 }), ui = Object.freeze({ main: "dashboard", operacional: "cog", analytics: "chart", management: "settings", admin: "shield", financeiro: "money", comercial: "chart", default: "nav" }), p = "dsd-sidebar", c = Object.freeze({
+const xd = "6.0.0-NCS", Ml = "sidebar-ui-constants", Pd = Object.freeze({ accordion: !0, badges: !0, search: !0, keyboard: !0, mobile: !0, persistence: !0, tooltips: !0, skeleton: !0, ripple: !0 }), pi = Object.freeze({ main: "dashboard", operacional: "cog", analytics: "chart", management: "settings", admin: "shield", financeiro: "money", comercial: "chart", default: "nav" }), p = "dsd-sidebar", c = Object.freeze({
   // Root
   ROOT: p,
   // Root modifiers
@@ -813,20 +813,20 @@ const Ou = "6.0.0-NCS", El = "sidebar-ui-constants", Tu = Object.freeze({ accord
   EMPTY: `${p}__empty`,
   EMPTY_ICON: `${p}__empty-icon`,
   EMPTY_TEXT: `${p}__empty-text`
-}), Ya = `<div class="${c.EMPTY}"><span class="${c.EMPTY_ICON}">📋</span><span class="${c.EMPTY_TEXT}">Nenhum item disponível</span></div>`, b_ = `<aside class="${c.ROOT} ${c.MOD_FALLBACK}" id="sidebar" role="navigation"><div class="${c.HEADER}"><span class="${c.BRAND_TEXT}">Menu</span></div><nav class="${c.NAV}"><div class="${c.NAV_CONTENT}">${Ya}</div></nav></aside>`, Mi = "7.1.0-ES6", $r = "sidebar-event-setup", kr = v({ moduleId: $r });
-function __() {
-  kr.init();
+}), Ja = `<div class="${c.EMPTY}"><span class="${c.EMPTY_ICON}">📋</span><span class="${c.EMPTY_TEXT}">Nenhum item disponível</span></div>`, R_ = `<aside class="${c.ROOT} ${c.MOD_FALLBACK}" id="sidebar" role="navigation"><div class="${c.HEADER}"><span class="${c.BRAND_TEXT}">Menu</span></div><nav class="${c.NAV}"><div class="${c.NAV_CONTENT}">${Ja}</div></nav></aside>`, ki = "7.1.0-ES6", Nr = "sidebar-event-setup", Rr = v({ moduleId: Nr });
+function x_() {
+  Rr.init();
 }
-function Du(e) {
-  return kr.get(e);
+function Hd(e) {
+  return Rr.get(e);
 }
-function Lu(e) {
-  return kr.inject(e);
+function zd(e) {
+  return Rr.inject(e);
 }
-function $u() {
-  return kr.snapshot();
+function Bd() {
+  return Rr.snapshot();
 }
-let Ze = [], Fn = null, Pe = null, re = {
+let Ze = [], qn = null, He = null, ne = {
   toggleClicks: 0,
   itemClicks: 0,
   searches: 0,
@@ -837,35 +837,35 @@ let Ze = [], Fn = null, Pe = null, re = {
   navigationEmits: 0,
   errors: 0
 };
-function xe(e, t, r) {
-  Fn && Fn[e] && Fn[e](`[${$r}] ${t}`, r || {});
+function Pe(e, t, r) {
+  qn && qn[e] && qn[e](`[${Nr}] ${t}`, r || {});
 }
-function Ad(e, t) {
+function xu(e, t) {
   try {
-    const r = Du("eventBus");
+    const r = Hd("eventBus");
     if (r && r.emit)
-      return r.emit(e, Object.assign({ source: $r, timestamp: Date.now() }, t || {})), re.navigationEmits++, !0;
+      return r.emit(e, Object.assign({ source: Nr, timestamp: Date.now() }, t || {})), ne.navigationEmits++, !0;
   } catch {
-    re.errors++;
+    ne.errors++;
   }
   return !1;
 }
-function ku(e) {
-  e && kr.inject({ eventBus: e }), __();
-  const t = Du("eventBus");
+function Ud(e) {
+  e && Rr.inject({ eventBus: e }), x_();
+  const t = Hd("eventBus");
   t && t.emit && t.emit(f.EVENT_SETUP_INITIALIZED);
 }
-function bl(e, t) {
-  Fn = e, Pe = t;
+function Ol(e, t) {
+  qn = e, He = t;
 }
-function _l(e, t) {
+function Tl(e, t) {
   if (!e) return () => {
   };
   const r = e.querySelector(`.${c.TOGGLE}`);
   if (!r) return () => {
   };
   const n = () => {
-    re.toggleClicks++, t && t();
+    ne.toggleClicks++, t && t();
   };
   r.addEventListener("click", n);
   const s = () => {
@@ -873,54 +873,54 @@ function _l(e, t) {
   };
   return Ze.push(s), s;
 }
-function yl(e, t) {
+function Dl(e, t) {
   if (!e) return () => {
   };
   const r = t.registry, n = t.routerAdapter, s = t.onSetActiveItem, i = (a) => {
     try {
       const l = a.target.closest(`.${c.LINK}`);
       if (!l) return;
-      const d = l.closest(`.${c.ITEM}`), u = d ? d.dataset.itemId : null;
-      if (!u) {
-        xe("debug", "Click on link without itemId", { link: l.href });
+      const u = l.closest(`.${c.ITEM}`), d = u ? u.dataset.itemId : null;
+      if (!d) {
+        Pe("debug", "Click on link without itemId", { link: l.href });
         return;
       }
-      const h = d ? d.dataset.panelId : null;
+      const h = u ? u.dataset.panelId : null;
       let g = null, m = null, y = null;
-      if (r && typeof r.getItemById == "function" && (g = r.getItemById(u), g && (re.registryHits++, m = g.route, y = g.panelId || null, g.disabled))) {
-        xe("debug", "Item disabled, ignoring click", { itemId: u }), a.preventDefault();
+      if (r && typeof r.getItemById == "function" && (g = r.getItemById(d), g && (ne.registryHits++, m = g.route, y = g.panelId || null, g.disabled))) {
+        Pe("debug", "Item disabled, ignoring click", { itemId: d }), a.preventDefault();
         return;
       }
-      if (!y && h && (y = h, re.panelIdFromDom++, xe("debug", "Using DOM data-panel-id", { itemId: u, panelId: y })), !m) {
+      if (!y && h && (y = h, ne.panelIdFromDom++, Pe("debug", "Using DOM data-panel-id", { itemId: d, panelId: y })), !m) {
         const S = l.getAttribute("href");
-        S && (m = S, re.domFallbacks++, xe("debug", "Using DOM fallback for route", { itemId: u, route: m }));
+        S && (m = S, ne.domFallbacks++, Pe("debug", "Using DOM fallback for route", { itemId: d, route: m }));
       }
       if (!m) {
         const S = l.getAttribute("data-panel");
-        S && (m = `#/${S}`, re.domFallbacks++, xe("debug", "Using data-panel fallback for route", { itemId: u, panel: S, route: m }));
+        S && (m = `#/${S}`, ne.domFallbacks++, Pe("debug", "Using data-panel fallback for route", { itemId: d, panel: S, route: m }));
       }
       if (m) {
-        a.preventDefault(), re.itemClicks++;
+        a.preventDefault(), ne.itemClicks++;
         const S = g ? Object.assign({}, g, { panelId: y || g.panelId }) : {
-          id: u,
+          id: d,
           route: m,
           panelId: y,
-          label: l.textContent ? l.textContent.trim() : u
+          label: l.textContent ? l.textContent.trim() : d
         };
-        Ad(f.ITEM_CLICK, {
-          itemId: u,
+        xu(f.ITEM_CLICK, {
+          itemId: d,
           item: S,
           panelId: y
-        }), Ad(f.NAVIGATE, {
-          itemId: u,
+        }), xu(f.NAVIGATE, {
+          itemId: d,
           item: S,
           route: m,
           panelId: y
-        }), n && typeof n.navigate == "function" ? (n.navigate(m), xe("debug", "Navigated via routerAdapter", { itemId: u, route: m, panelId: y })) : (xe("warn", "No routerAdapter available, using hash fallback", { itemId: u, route: m }), typeof window < "u" && window.location && (window.location.hash = m.charAt(0) === "#" ? m : `#${m}`)), s && s(u), Pe && Pe.trackNavigation && Pe.trackNavigation(u, m);
+        }), n && typeof n.navigate == "function" ? (n.navigate(m), Pe("debug", "Navigated via routerAdapter", { itemId: d, route: m, panelId: y })) : (Pe("warn", "No routerAdapter available, using hash fallback", { itemId: d, route: m }), typeof window < "u" && window.location && (window.location.hash = m.charAt(0) === "#" ? m : `#${m}`)), s && s(d), He && He.trackNavigation && He.trackNavigation(d, m);
       } else
-        xe("warn", "No route found for item", { itemId: u });
+        Pe("warn", "No route found for item", { itemId: d });
     } catch (l) {
-      re.errors++, xe("error", "Click handler error", { error: l.message, stack: l.stack });
+      ne.errors++, Pe("error", "Click handler error", { error: l.message, stack: l.stack });
     }
   };
   e.addEventListener("click", i);
@@ -929,46 +929,46 @@ function yl(e, t) {
   };
   return Ze.push(o), o;
 }
-function vl(e, t) {
+function Ll(e, t) {
   if (!e) return () => {
   };
   const r = t.renderer, n = e.querySelector(`.${c.SEARCH_INPUT}`), s = e.querySelector(`.${c.SEARCH_CLEAR}`);
   if (!n) return () => {
   };
   let i = null;
-  const o = (u) => {
+  const o = (d) => {
     clearTimeout(i), i = setTimeout(() => {
       try {
-        const h = u.target.value, g = r && r.filterItems ? r.filterItems(h) : { visible: 0, hidden: 0 };
-        re.searches++, Pe && Pe.trackSearch && Pe.trackSearch(h, g.visible), s && (s.style.opacity = h ? "1" : "0", s.style.pointerEvents = h ? "auto" : "none");
+        const h = d.target.value, g = r && r.filterItems ? r.filterItems(h) : { visible: 0, hidden: 0 };
+        ne.searches++, He && He.trackSearch && He.trackSearch(h, g.visible), s && (s.style.opacity = h ? "1" : "0", s.style.pointerEvents = h ? "auto" : "none");
       } catch (h) {
-        re.errors++, xe("error", "Search error", { error: h.message });
+        ne.errors++, Pe("error", "Search error", { error: h.message });
       }
     }, 200);
-  }, a = (u) => {
-    u.preventDefault();
+  }, a = (d) => {
+    d.preventDefault();
     try {
-      n.value = "", r && r.clearSearch && r.clearSearch(), s && (s.style.opacity = "0", s.style.pointerEvents = "none"), n.focus(), Pe && Pe.trackSearch && Pe.trackSearch("", 0);
+      n.value = "", r && r.clearSearch && r.clearSearch(), s && (s.style.opacity = "0", s.style.pointerEvents = "none"), n.focus(), He && He.trackSearch && He.trackSearch("", 0);
     } catch (h) {
-      re.errors++, xe("error", "Clear search error", { error: h.message });
+      ne.errors++, Pe("error", "Clear search error", { error: h.message });
     }
-  }, l = (u) => {
-    u.key === "Escape" && n.value && a(u);
+  }, l = (d) => {
+    d.key === "Escape" && n.value && a(d);
   };
   n.addEventListener("input", o), n.addEventListener("keydown", l), s && (s.addEventListener("click", a), s.style.opacity = "0", s.style.pointerEvents = "none");
-  const d = () => {
+  const u = () => {
     clearTimeout(i), n.removeEventListener("input", o), n.removeEventListener("keydown", l), s && s.removeEventListener("click", a);
   };
-  return Ze.push(d), d;
+  return Ze.push(u), u;
 }
-function Il(e, t) {
+function $l(e, t) {
   if (!e) return () => {
   };
   const r = (s) => {
     const i = s.target.closest(`.${c.GROUP_BUTTON}, .${c.SECTION_HEADER}`);
     if (!i) return;
     const o = i.closest(`.${c.SECTION}`), a = o ? o.dataset.sectionId : null;
-    a && o.dataset.collapsible !== "false" && (s.preventDefault(), re.sectionToggles++, t && t(a));
+    a && o.dataset.collapsible !== "false" && (s.preventDefault(), ne.sectionToggles++, t && t(a));
   };
   e.addEventListener("click", r);
   const n = () => {
@@ -976,96 +976,96 @@ function Il(e, t) {
   };
   return Ze.push(n), n;
 }
-function Sl(e, t) {
-  Ze.length > 0 && Xn();
+function kl(e, t) {
+  Ze.length > 0 && Qn();
   const r = t.registry, n = t.routerAdapter, s = t.renderer, i = t.onToggle, o = t.onSetActiveItem, a = t.onToggleSection;
-  return _l(e, i), yl(e, { registry: r, routerAdapter: n, onSetActiveItem: o }), vl(e, { renderer: s }), Il(e, a), () => {
-    Xn();
+  return Tl(e, i), Dl(e, { registry: r, routerAdapter: n, onSetActiveItem: o }), Ll(e, { renderer: s }), $l(e, a), () => {
+    Qn();
   };
 }
-function Xn() {
+function Qn() {
   Ze.forEach((e) => {
     try {
       e();
     } catch {
-      re.errors++;
+      ne.errors++;
     }
   }), Ze = [];
 }
-function wu() {
+function jd() {
   return Ze.slice();
 }
-function Oi() {
-  return Object.assign({}, re);
+function wi() {
+  return Object.assign({}, ne);
 }
-function Nu() {
+function Fd() {
   return {
-    moduleId: $r,
-    version: Mi,
-    portsInitialized: kr.isInitialized(),
+    moduleId: Nr,
+    version: ki,
+    portsInitialized: Rr.isInitialized(),
     listenersActive: Ze.length,
-    hasLogger: !!Fn,
-    hasTracker: !!Pe,
-    metrics: Oi()
+    hasLogger: !!qn,
+    hasTracker: !!He,
+    metrics: wi()
   };
 }
-function Ru() {
+function Gd() {
   return {
-    status: re.errors === 0 ? "HEALTHY" : "DEGRADED",
-    version: Mi,
-    moduleId: $r,
-    portsInitialized: kr.isInitialized(),
+    status: ne.errors === 0 ? "HEALTHY" : "DEGRADED",
+    version: ki,
+    moduleId: Nr,
+    portsInitialized: Rr.isInitialized(),
     checks: {
-      noErrors: re.errors === 0,
+      noErrors: ne.errors === 0,
       listenersActive: Ze.length > 0
     },
-    metrics: Oi()
+    metrics: wi()
   };
 }
-var y_ = {
-  VERSION: Mi,
-  MODULE_ID: $r,
-  init: ku,
-  setDependencies: bl,
-  setupToggleClick: _l,
-  setupItemClicks: yl,
-  setupSearch: vl,
-  setupSectionToggle: Il,
-  setupAllEvents: Sl,
-  destroy: Xn,
-  injectPorts: Lu,
-  getPorts: $u,
-  getCleanups: wu,
-  getMetrics: Oi,
-  info: Nu,
-  healthCheck: Ru
+var P_ = {
+  VERSION: ki,
+  MODULE_ID: Nr,
+  init: Ud,
+  setDependencies: Ol,
+  setupToggleClick: Tl,
+  setupItemClicks: Dl,
+  setupSearch: Ll,
+  setupSectionToggle: $l,
+  setupAllEvents: kl,
+  destroy: Qn,
+  injectPorts: zd,
+  getPorts: Bd,
+  getCleanups: jd,
+  getMetrics: wi,
+  info: Fd,
+  healthCheck: Gd
 };
-const v_ = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const H_ = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: $r,
-  VERSION: Mi,
-  default: y_,
-  destroy: Xn,
-  getCleanups: wu,
-  getMetrics: Oi,
-  getPorts: $u,
-  healthCheck: Ru,
-  info: Nu,
-  init: ku,
-  injectPorts: Lu,
-  setDependencies: bl,
-  setupAllEvents: Sl,
-  setupItemClicks: yl,
-  setupSearch: vl,
-  setupSectionToggle: Il,
-  setupToggleClick: _l
+  MODULE_ID: Nr,
+  VERSION: ki,
+  default: P_,
+  destroy: Qn,
+  getCleanups: jd,
+  getMetrics: wi,
+  getPorts: Bd,
+  healthCheck: Gd,
+  info: Fd,
+  init: Ud,
+  injectPorts: zd,
+  setDependencies: Ol,
+  setupAllEvents: kl,
+  setupItemClicks: Dl,
+  setupSearch: Ll,
+  setupSectionToggle: $l,
+  setupToggleClick: Tl
 }, Symbol.toStringTag, { value: "Module" }));
-let Oa = !1, lr = { timeoutCalls: 0, retryCalls: 0, cssLoadAttempts: 0, cssLoadSuccess: 0, cssLoadFailed: 0 };
-function I_(e, t, r = "Timeout") {
-  return lr.timeoutCalls++, Promise.race([e, new Promise((n, s) => setTimeout(() => s(new Error(r)), t))]);
+let Na = !1, ur = { timeoutCalls: 0, retryCalls: 0, cssLoadAttempts: 0, cssLoadSuccess: 0, cssLoadFailed: 0 };
+function z_(e, t, r = "Timeout") {
+  return ur.timeoutCalls++, Promise.race([e, new Promise((n, s) => setTimeout(() => s(new Error(r)), t))]);
 }
-async function S_(e, t = 3, r = 1e3) {
-  lr.retryCalls++;
+async function B_(e, t = 3, r = 1e3) {
+  ur.retryCalls++;
   let n;
   for (let s = 0; s < t; s++)
     try {
@@ -1075,45 +1075,45 @@ async function S_(e, t = 3, r = 1e3) {
     }
   throw n;
 }
-async function C_() {
-  if (lr.cssLoadAttempts++, Oa) return !0;
-  if (document.querySelector(`link[href="${Id}"]`))
-    return Oa = !0, lr.cssLoadSuccess++, !0;
+async function U_() {
+  if (ur.cssLoadAttempts++, Na) return !0;
+  if (document.querySelector(`link[href="${wu}"]`))
+    return Na = !0, ur.cssLoadSuccess++, !0;
   try {
-    return await I_(
+    return await z_(
       new Promise((r) => {
         const n = document.createElement("link");
-        n.rel = "stylesheet", n.href = Id, n.onload = () => {
-          Oa = !0, lr.cssLoadSuccess++, r(!0);
+        n.rel = "stylesheet", n.href = wu, n.onload = () => {
+          Na = !0, ur.cssLoadSuccess++, r(!0);
         }, n.onerror = () => {
-          lr.cssLoadFailed++, r(!1);
+          ur.cssLoadFailed++, r(!1);
         }, document.head.appendChild(n);
       }),
-      Ua.cssTimeout,
+      qa.cssTimeout,
       "CSS load timeout"
     );
   } catch {
-    return lr.cssLoadFailed++, !1;
+    return ur.cssLoadFailed++, !1;
   }
 }
-function Md(e) {
+function Pu(e) {
   return e ? e.replace(/^[#/]+/, "").toLowerCase() : "";
 }
-const _n = "sidebar-router-sync", Cr = "7.1.0-ES6", N = { initialized: !1, ctx: null, syncs: 0, reloads: 0, errors: 0, cleanups: [] }, gt = v({ moduleId: _n });
-function xu() {
-  gt.init();
+const Sn = "sidebar-router-sync", Mr = "7.1.0-ES6", N = { initialized: !1, ctx: null, syncs: 0, reloads: 0, errors: 0, cleanups: [] }, mt = v({ moduleId: Sn });
+function Vd() {
+  mt.init();
 }
-function yn(e) {
-  return gt.get(e);
+function Cn(e) {
+  return mt.get(e);
 }
-function A_(e) {
-  return gt.inject(e);
+function j_(e) {
+  return mt.inject(e);
 }
-function M_() {
-  return gt.snapshot();
+function F_() {
+  return mt.snapshot();
 }
-function Pu() {
-  const e = yn("routerGlobal");
+function qd() {
+  const e = Cn("routerGlobal");
   if (e && e.getCurrentRoute)
     try {
       const t = e.getCurrentRoute();
@@ -1122,53 +1122,53 @@ function Pu() {
     }
   return typeof window < "u" && window.location && window.location.hash || "#/";
 }
-function gr(e, t, r) {
-  return { ok: e, data: t || null, meta: { moduleId: _n, version: Cr, timestamp: (/* @__PURE__ */ new Date()).toISOString() }, errors: r || [] };
+function pr(e, t, r) {
+  return { ok: e, data: t || null, meta: { moduleId: Sn, version: Mr, timestamp: (/* @__PURE__ */ new Date()).toISOString() }, errors: r || [] };
 }
-function si(e) {
+function ai(e) {
   return e.key || e.item_key || e.id;
 }
-function Ti(e, t) {
-  const r = Md(t);
+function Ni(e, t) {
+  const r = Pu(t);
   for (let n = 0; n < e.length; n++)
-    if (Md(e[n].route) === r) return e[n];
+    if (Pu(e[n].route) === r) return e[n];
   return null;
 }
-function Hu(e) {
+function Yd(e) {
   const t = e.routerAdapter, r = e.registry, n = e.onSetActiveItem;
   try {
-    const s = t && t.getCurrentRoute ? t.getCurrentRoute() : null, i = s && (s.path || s.hash) || Pu(), o = r && r.getItems ? r.getItems() : [], a = Ti(o, i);
+    const s = t && t.getCurrentRoute ? t.getCurrentRoute() : null, i = s && (s.path || s.hash) || qd(), o = r && r.getItems ? r.getItems() : [], a = Ni(o, i);
     if (a && n) {
-      const d = si(a);
-      n(d), N.syncs++;
+      const u = ai(a);
+      n(u), N.syncs++;
     }
-    const l = yn("eventBus");
+    const l = Cn("eventBus");
     return l && l.emit && l.emit(f.ROUTER_SYNCED, {
       path: i,
-      itemId: a ? si(a) : null,
+      itemId: a ? ai(a) : null,
       itemKey: a && (a.key || a.item_key) || null,
       numericId: a ? a.id : null
-    }), gr(!0, {
+    }), pr(!0, {
       synced: !0,
       path: i,
-      itemId: a ? si(a) : null,
+      itemId: a ? ai(a) : null,
       itemKey: a && (a.key || a.item_key) || null
     });
   } catch (s) {
-    return N.errors++, gr(!1, null, [{ code: "SYNC_ERROR", message: s.message }]);
+    return N.errors++, pr(!1, null, [{ code: "SYNC_ERROR", message: s.message }]);
   }
 }
-function Cl(e) {
+function wl(e) {
   e.routerAdapter;
   const t = e.registry, r = e.onSetActiveItem, n = e.onReloadNavigation, s = e.eventBus;
-  s && gt.inject({ eventBus: s }), xu(), Hu(e);
-  const i = yn("eventBus");
+  s && mt.inject({ eventBus: s }), Vd(), Yd(e);
+  const i = Cn("eventBus");
   if (i && i.on) {
-    const o = (d) => {
+    const o = (u) => {
       N.syncs++;
-      const u = t && t.getItems ? t.getItems() : [], h = d && d.path ? d.path : Pu(), g = Ti(u, h);
+      const d = t && t.getItems ? t.getItems() : [], h = u && u.path ? u.path : qd(), g = Ni(d, h);
       if (g && r) {
-        const m = si(g);
+        const m = ai(g);
         r(m);
       }
     }, a = i.on(pe.NAVIGATED, o);
@@ -1195,39 +1195,39 @@ function Cl(e) {
     );
   }
   return () => {
-    Di();
+    Ri();
   };
 }
-function Al(e, t) {
-  const r = yn("eventBus");
+function Nl(e, t) {
+  const r = Cn("eventBus");
   r && r.emit && r.emit(f.NAVIGATION_RELOADED, { sectionsCount: e, itemsCount: t, timestamp: Date.now() });
 }
-function zu(e) {
-  if (N.initialized) return gr(!0, { alreadyInitialized: !0 });
+function Kd(e) {
+  if (N.initialized) return pr(!0, { alreadyInitialized: !0 });
   try {
-    N.ctx = e, e && e.ports && gt.inject(e.ports), xu(), N.initialized = !0;
-    const t = yn("eventBus");
-    return t && t.emit && t.emit(f.ROUTER_SYNC_INITIALIZED, { version: Cr }), gr(!0, { initialized: !0, version: Cr });
+    N.ctx = e, e && e.ports && mt.inject(e.ports), Vd(), N.initialized = !0;
+    const t = Cn("eventBus");
+    return t && t.emit && t.emit(f.ROUTER_SYNC_INITIALIZED, { version: Mr }), pr(!0, { initialized: !0, version: Mr });
   } catch (t) {
-    return N.errors++, gr(!1, null, [{ code: "INIT_ERROR", message: t.message }]);
+    return N.errors++, pr(!1, null, [{ code: "INIT_ERROR", message: t.message }]);
   }
 }
-function Di() {
+function Ri() {
   for (let e = 0; e < N.cleanups.length; e++)
     try {
       N.cleanups[e]();
     } catch {
     }
-  return N.cleanups = [], N.initialized = !1, N.ctx = null, gr(!0, { cleanedUp: !0 });
+  return N.cleanups = [], N.initialized = !1, N.ctx = null, pr(!0, { cleanedUp: !0 });
 }
-function Ml() {
-  return Di();
+function Rl() {
+  return Ri();
 }
-function Bu() {
+function Wd() {
   const e = {
     initialized: N.initialized,
-    hasEventBus: !!yn("eventBus"),
-    portsInitialized: gt.isInitialized(),
+    hasEventBus: !!Cn("eventBus"),
+    portsInitialized: mt.isInitialized(),
     lowErrorRate: N.syncs === 0 || N.errors < N.syncs * 0.2,
     noOrphanListeners: !0
   }, t = Object.values(e).filter(Boolean).length, r = Object.keys(e).length;
@@ -1235,55 +1235,55 @@ function Bu() {
   return N.initialized ? t < r && (n = "DEGRADED") : n = "NOT_INITIALIZED", {
     status: n,
     score: { passed: t, total: r, percentage: Math.round(t / r * 100) },
-    moduleId: _n,
-    version: Cr,
+    moduleId: Sn,
+    version: Mr,
     checks: e,
     metrics: { syncs: N.syncs, reloads: N.reloads, errors: N.errors, cleanups: N.cleanups.length },
-    portsInitialized: gt.isInitialized(),
+    portsInitialized: mt.isInitialized(),
     p24Compliant: !0,
     timestamp: Date.now()
   };
 }
-function Uu() {
-  return gr(!0, {
-    moduleId: _n,
-    version: Cr,
+function Xd() {
+  return pr(!0, {
+    moduleId: Sn,
+    version: Mr,
     initialized: N.initialized,
     syncs: N.syncs,
     reloads: N.reloads,
     errors: N.errors,
     cleanups: N.cleanups.length,
-    portsInitialized: gt.isInitialized(),
+    portsInitialized: mt.isInitialized(),
     p24Compliant: !0
   });
 }
-function ju() {
+function Zd() {
   return { syncs: N.syncs, reloads: N.reloads, errors: N.errors, cleanups: N.cleanups.length };
 }
-const Fu = { singleton: !0, critical: !0, rendersUI: !1, category: "navigation", priority: "high" };
-function O_(e) {
+const Jd = { singleton: !0, critical: !0, rendersUI: !1, category: "navigation", priority: "high" };
+function G_(e) {
 }
-var T_ = { id: _n, version: Cr, capabilities: Fu, init: zu, cleanup: Di, destroy: Ml, healthCheck: Bu, info: Uu, getMetrics: ju, setupRouterSync: Cl, emitReloaded: Al };
-const D_ = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var V_ = { id: Sn, version: Mr, capabilities: Jd, init: Kd, cleanup: Ri, destroy: Rl, healthCheck: Wd, info: Xd, getMetrics: Zd, setupRouterSync: wl, emitReloaded: Nl };
+const q_ = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: _n,
-  VERSION: Cr,
-  capabilities: Fu,
-  cleanup: Di,
-  default: T_,
-  destroy: Ml,
-  emitReloaded: Al,
-  findItemByRoute: Ti,
-  getMetrics: ju,
-  getPorts: M_,
-  healthCheck: Bu,
-  info: Uu,
-  init: zu,
-  injectPorts: A_,
-  setLogger: O_,
-  setupRouterSync: Cl,
-  syncWithRouter: Hu
-}, Symbol.toStringTag, { value: "Module" })), ce = "navigation-model-loader", Ol = "2.3.0-FIX", fe = {
+  MODULE_ID: Sn,
+  VERSION: Mr,
+  capabilities: Jd,
+  cleanup: Ri,
+  default: V_,
+  destroy: Rl,
+  emitReloaded: Nl,
+  findItemByRoute: Ni,
+  getMetrics: Zd,
+  getPorts: F_,
+  healthCheck: Wd,
+  info: Xd,
+  init: Kd,
+  injectPorts: j_,
+  setLogger: G_,
+  setupRouterSync: wl,
+  syncWithRouter: Yd
+}, Symbol.toStringTag, { value: "Module" })), ue = "navigation-model-loader", xl = "2.3.0-FIX", se = {
   CACHE_KEY: "dshow_nav_model_v3",
   SESSION_KEY: "dshow_nav_session_v3",
   CACHE_TTL: 5 * 60 * 1e3,
@@ -1291,56 +1291,56 @@ const D_ = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   API_TIMEOUT: 8e3,
   RETRY_ATTEMPTS: 2,
   RETRY_DELAY: 1e3
-}, Od = {
+}, Hu = {
   NAVIGATION_MODEL: "/api/ui/navigation.php?action=manifest"
-}, nr = {
-  LOAD_START: `${ce}:load:start`,
-  LOAD_SUCCESS: `${ce}:load:success`,
-  LOAD_ERROR: `${ce}:load:error`,
-  LOAD_FALLBACK: `${ce}:load:fallback`,
-  CACHE_HIT: `${ce}:cache:hit`,
-  CACHE_MISS: `${ce}:cache:miss`,
-  CACHE_INVALIDATE: `${ce}:cache:invalidate`,
-  MODEL_READY: `${ce}:model:ready`
-}, Ye = {
+}, sr = {
+  LOAD_START: `${ue}:load:start`,
+  LOAD_SUCCESS: `${ue}:load:success`,
+  LOAD_ERROR: `${ue}:load:error`,
+  LOAD_FALLBACK: `${ue}:load:fallback`,
+  CACHE_HIT: `${ue}:cache:hit`,
+  CACHE_MISS: `${ue}:cache:miss`,
+  CACHE_INVALIDATE: `${ue}:cache:invalidate`,
+  MODEL_READY: `${ue}:model:ready`
+}, De = {
   IDLE: "idle",
   LOADING: "loading",
   LOADED: "loaded",
   ERROR: "error",
   FALLBACK: "fallback"
-}, Js = {
+}, ti = {
   NETWORK: "NETWORK_ERROR",
   TIMEOUT: "TIMEOUT_ERROR",
   PARSE: "PARSE_ERROR",
   AUTH: "AUTH_ERROR",
   UNKNOWN: "UNKNOWN_ERROR"
-}, se = {
-  status: Ye.IDLE,
+}, oe = {
+  status: De.IDLE,
   model: null,
   lastLoad: null,
   lastError: null,
   source: null,
   loadCount: 0
-}, Gu = () => ({ ...se }), L_ = () => se.status, hi = () => se.model, wn = (e) => {
-  se.status = e;
-}, Ta = (e, t = "unknown") => {
-  se.model = e, se.source = t, se.lastLoad = Date.now(), se.loadCount++;
-}, $_ = (e) => {
-  se.lastError = {
+}, Qd = () => ({ ...oe }), Y_ = () => oe.status, Or = () => oe.model, cr = (e) => {
+  oe.status = e;
+}, li = (e, t = "unknown") => {
+  oe.model = e, oe.source = t, oe.lastLoad = Date.now(), oe.loadCount++;
+}, K_ = (e) => {
+  oe.lastError = {
     message: e == null ? void 0 : e.message,
     timestamp: Date.now()
   };
-}, k_ = () => {
-  se.status = Ye.IDLE, se.model = null, se.lastLoad = null, se.lastError = null, se.source = null;
-}, Vu = () => se.status === Ye.LOADED, w_ = () => se.status === Ye.LOADING, N_ = () => {
+}, xi = () => {
+  oe.status = De.IDLE, oe.model = null, oe.lastLoad = null, oe.lastError = null, oe.source = null;
+}, eh = () => oe.status === De.LOADED, W_ = () => oe.status === De.LOADING, X_ = () => {
   var e;
   return ((e = window.DShow) == null ? void 0 : e.telemetry) || window.telemetry || null;
-}, ae = (e, t = {}) => {
+}, z = (e, t = {}) => {
   var s;
-  const r = N_(), n = {
-    module: ce,
-    version: Ol,
-    event: `${ce}:${e}`,
+  const r = X_(), n = {
+    module: ue,
+    version: xl,
+    event: `${ue}:${e}`,
     timestamp: Date.now(),
     ...t
   };
@@ -1349,81 +1349,83 @@ const D_ = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
       r.track(n.event, n);
     } catch {
     }
-  ((s = window.DShow) != null && s.debug || window.DEBUG_NAV_LOADER) && console.debug(`[${ce}]`, e, t);
-}, Da = (e, t, r = !0) => {
-  ae("load:complete", {
+  ((s = window.DShow) != null && s.debug || window.DEBUG_NAV_LOADER) && console.debug(`[${ue}]`, e, t);
+}, Ra = (e, t, r = !0) => {
+  z("load:complete", {
     source: e,
     duration: t,
     success: r
   });
-}, qu = (e) => {
+}, th = (e) => {
   try {
     const t = window[e], r = "__storage_test__";
     return t.setItem(r, r), t.removeItem(r), !0;
   } catch {
     return !1;
   }
-}, Tl = qu("localStorage"), Dl = qu("sessionStorage"), R_ = () => {
-  if (!Dl) return null;
+}, Pl = th("localStorage"), Hl = th("sessionStorage"), rh = (e, t) => !!t && e && e.owner === t, Z_ = (e = null) => {
+  if (!Hl) return null;
   try {
-    const e = sessionStorage.getItem(fe.SESSION_KEY);
-    if (!e) return null;
-    const t = JSON.parse(e);
-    return !(t != null && t.data) || !(t != null && t.timestamp) ? null : Date.now() - t.timestamp > fe.SESSION_TTL ? (sessionStorage.removeItem(fe.SESSION_KEY), null) : t.data;
-  } catch (e) {
-    return ae("cache:session:error", { error: e.message }), null;
-  }
-}, x_ = (e) => {
-  if (!Dl || !e) return !1;
-  try {
-    const t = {
-      data: e,
-      timestamp: Date.now(),
-      version: fe.SESSION_KEY
-    };
-    return sessionStorage.setItem(fe.SESSION_KEY, JSON.stringify(t)), !0;
+    const t = sessionStorage.getItem(se.SESSION_KEY);
+    if (!t) return null;
+    const r = JSON.parse(t);
+    return !(r != null && r.data) || !(r != null && r.timestamp) ? null : rh(r, e) ? Date.now() - r.timestamp > se.SESSION_TTL ? (sessionStorage.removeItem(se.SESSION_KEY), null) : r.data : (sessionStorage.removeItem(se.SESSION_KEY), z("cache:session:owner-mismatch"), null);
   } catch (t) {
-    return ae("cache:session:save-error", { error: t.message }), !1;
+    return z("cache:session:error", { error: t.message }), null;
   }
-}, P_ = () => {
-  if (!Tl) return null;
+}, J_ = (e, t = null) => {
+  if (!Hl || !e || !t) return !1;
   try {
-    const e = localStorage.getItem(fe.CACHE_KEY);
-    if (!e) return null;
-    const t = JSON.parse(e);
-    return !(t != null && t.data) || !(t != null && t.timestamp) ? null : Date.now() - t.timestamp > fe.CACHE_TTL ? (localStorage.removeItem(fe.CACHE_KEY), null) : t.data;
-  } catch (e) {
-    return ae("cache:local:error", { error: e.message }), null;
-  }
-}, H_ = (e) => {
-  if (!Tl || !e) return !1;
-  try {
-    const t = {
+    const r = {
       data: e,
+      owner: t,
       timestamp: Date.now(),
-      version: fe.CACHE_KEY
+      version: se.SESSION_KEY
     };
-    return localStorage.setItem(fe.CACHE_KEY, JSON.stringify(t)), !0;
-  } catch (t) {
-    return ae("cache:local:save-error", { error: t.message }), !1;
+    return sessionStorage.setItem(se.SESSION_KEY, JSON.stringify(r)), !0;
+  } catch (r) {
+    return z("cache:session:save-error", { error: r.message }), !1;
   }
-}, z_ = () => {
+}, Q_ = (e = null) => {
+  if (!Pl) return null;
   try {
-    return Dl && sessionStorage.removeItem(fe.SESSION_KEY), Tl && localStorage.removeItem(fe.CACHE_KEY), ae("cache:invalidate:all"), !0;
+    const t = localStorage.getItem(se.CACHE_KEY);
+    if (!t) return null;
+    const r = JSON.parse(t);
+    return !(r != null && r.data) || !(r != null && r.timestamp) ? null : rh(r, e) ? Date.now() - r.timestamp > se.CACHE_TTL ? (localStorage.removeItem(se.CACHE_KEY), null) : r.data : (localStorage.removeItem(se.CACHE_KEY), z("cache:local:owner-mismatch"), null);
+  } catch (t) {
+    return z("cache:local:error", { error: t.message }), null;
+  }
+}, ey = (e, t = null) => {
+  if (!Pl || !e || !t) return !1;
+  try {
+    const r = {
+      data: e,
+      owner: t,
+      timestamp: Date.now(),
+      version: se.CACHE_KEY
+    };
+    return localStorage.setItem(se.CACHE_KEY, JSON.stringify(r)), !0;
+  } catch (r) {
+    return z("cache:local:save-error", { error: r.message }), !1;
+  }
+}, zl = () => {
+  try {
+    return Hl && sessionStorage.removeItem(se.SESSION_KEY), Pl && localStorage.removeItem(se.CACHE_KEY), z("cache:invalidate:all"), !0;
   } catch {
     return !1;
   }
-}, B_ = () => {
-  const e = R_();
-  if (e) return { data: e, source: "session" };
-  const t = P_();
-  return t ? { data: t, source: "local" } : null;
-}, U_ = (e) => {
-  x_(e), H_(e);
-}, j_ = (e) => new Promise((t) => setTimeout(t, e)), F_ = async (e = {}) => {
+}, ty = (e = null) => {
+  const t = Z_(e);
+  if (t) return { data: t, source: "session" };
+  const r = Q_(e);
+  return r ? { data: r, source: "local" } : null;
+}, nh = (e, t = null) => {
+  J_(e, t), ey(e, t);
+}, ry = (e) => new Promise((t) => setTimeout(t, e)), sh = async (e = {}) => {
   const {
-    timeout: t = fe.API_TIMEOUT,
-    retries: r = fe.RETRY_ATTEMPTS,
+    timeout: t = se.API_TIMEOUT,
+    retries: r = se.RETRY_ATTEMPTS,
     signal: n = null
   } = e;
   let s = null, i = 0;
@@ -1431,8 +1433,8 @@ const D_ = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
     i++;
     const o = new AbortController(), a = setTimeout(() => o.abort(), t);
     try {
-      ae("api:attempt", { attempt: i, endpoint: Od.NAVIGATION_MODEL });
-      const l = await fetch(Od.NAVIGATION_MODEL, {
+      z("api:attempt", { attempt: i, endpoint: Hu.NAVIGATION_MODEL });
+      const l = await fetch(Hu.NAVIGATION_MODEL, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -1442,50 +1444,52 @@ const D_ = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
         signal: n || o.signal
       });
       if (clearTimeout(a), l.status === 401 || l.status === 403)
-        return ae("api:auth-required", { status: l.status }), {
+        return z("api:auth-required", { status: l.status }), {
           success: !1,
-          error: Js.AUTH,
+          error: ti.AUTH,
           status: l.status,
           authRequired: !0
         };
       if (!l.ok)
         throw new Error(`HTTP ${l.status}`);
-      const d = await l.json();
-      if (!d || typeof d != "object")
+      const u = await l.json();
+      if (!u || typeof u != "object")
         throw new Error("Invalid response format");
-      if (d.ok === !1)
-        throw new Error(d.error || "API returned error");
-      const u = d.data || d;
-      return ae("api:success", { attempt: i, hasItems: !!u.items, hasTree: !!u.tree }), {
+      if (u.ok === !1)
+        throw new Error(u.error || "API returned error");
+      const d = u.data || u;
+      return z("api:success", { attempt: i, hasItems: !!d.items, hasTree: !!d.tree }), {
         success: !0,
-        data: u,
+        data: d,
+        // INTEGRADO-01 · item 8 (ROXO 27/11): a identidade do menu publicada pelo servidor (meta.menu: revisão/geração/checksum), quando existir
+        meta: u && typeof u.meta == "object" ? u.meta : null,
         source: "api",
         attempt: i
       };
     } catch (l) {
       clearTimeout(a), s = l;
-      const u = l.name === "AbortError" || l.message && l.message.includes("timeout");
-      if (ae("api:error", {
+      const d = l.name === "AbortError" || l.message && l.message.includes("timeout");
+      if (z("api:error", {
         attempt: i,
         error: l.message,
-        isTimeout: u,
+        isTimeout: d,
         willRetry: i <= r
       }), n && n.aborted)
         return {
           success: !1,
-          error: Js.TIMEOUT,
+          error: ti.TIMEOUT,
           aborted: !0
         };
-      i <= r && await j_(fe.RETRY_DELAY * i);
+      i <= r && await ry(se.RETRY_DELAY * i);
     }
   }
   return {
     success: !1,
-    error: s && s.message && s.message.includes("timeout") ? Js.TIMEOUT : Js.NETWORK,
+    error: s && s.message && s.message.includes("timeout") ? ti.TIMEOUT : ti.NETWORK,
     message: s ? s.message : "Unknown error",
     attempts: i
   };
-}, Td = {
+}, zu = {
   version: "fallback-1.0",
   generated: null,
   sections: [
@@ -1522,49 +1526,64 @@ const D_ = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
     isFallback: !0,
     reason: "api-unavailable"
   }
-}, G_ = (e = "unknown") => (ae("fallback:used", { reason: e }), {
-  ...Td,
+}, ny = (e = "unknown") => (z("fallback:used", { reason: e }), {
+  ...zu,
   generated: Date.now(),
   metadata: {
-    ...Td.metadata,
+    ...zu.metadata,
     reason: e,
     generatedAt: (/* @__PURE__ */ new Date()).toISOString()
   }
-}), Ll = (e) => {
+}), Ei = (e) => {
   var t;
   return ((t = e == null ? void 0 : e.metadata) == null ? void 0 : t.isFallback) === !0;
-}, Yu = v({ moduleId: ce });
-function V_() {
-  Yu.init();
+}, Bl = v({ moduleId: ue });
+function sy() {
+  Bl.init();
 }
-function q_(e) {
-  return Yu.get(e);
+function iy(e) {
+  return Bl.get(e);
 }
-const Y_ = () => (V_(), q_("eventBus")), sr = (e, t) => {
+function ih() {
+  return Bl.snapshot();
+}
+const oh = () => (sy(), iy("eventBus")), ir = (e, t) => {
   t || (t = {});
-  const r = Y_();
+  const r = oh();
   if (!r || !r.emit) return !1;
   try {
     return r.emit(e, Object.assign({
-      source: ce,
+      source: ue,
       timestamp: Date.now()
     }, t)), !0;
   } catch {
     return !1;
   }
-}, K_ = () => sr(nr.LOAD_START), Dd = (e, t) => sr(nr.LOAD_SUCCESS, { model: e, source: t }), W_ = (e) => sr(nr.LOAD_ERROR, { error: e }), X_ = (e) => sr(nr.LOAD_FALLBACK, { reason: e }), La = (e) => sr(nr.MODEL_READY, { model: e }), Z_ = (e) => sr(nr.CACHE_HIT, { source: e }), J_ = () => sr(nr.CACHE_MISS), Q_ = () => sr(nr.CACHE_INVALIDATE), Ld = (e) => !e || typeof e != "object" ? !1 : !!(Array.isArray(e.items) && e.items.length > 0 || Array.isArray(e.tree) && e.tree.length > 0 || Array.isArray(e.sections) && e.sections.length > 0), ey = (e) => {
+}, oy = (e, t) => {
+  const r = oh();
+  if (!r || !r.on) return () => {
+  };
+  try {
+    return r.on(e, t), () => {
+      r.off && r.off(e, t);
+    };
+  } catch {
+    return () => {
+    };
+  }
+}, ay = () => ir(sr.LOAD_START), Qa = (e, t) => ir(sr.LOAD_SUCCESS, { model: e, source: t }), ah = (e) => ir(sr.LOAD_ERROR, { error: e }), ly = (e) => ir(sr.LOAD_FALLBACK, { reason: e }), ci = (e) => ir(sr.MODEL_READY, { model: e }), cy = (e) => ir(sr.CACHE_HIT, { source: e }), uy = () => ir(sr.CACHE_MISS), dy = () => ir(sr.CACHE_INVALIDATE), el = (e) => !e || typeof e != "object" ? !1 : !!(Array.isArray(e.items) && e.items.length > 0 || Array.isArray(e.tree) && e.tree.length > 0 || Array.isArray(e.sections) && e.sections.length > 0), hy = (e) => {
   if (!e) return [];
   if (Array.isArray(e.sections) && e.sections.length > 0)
     return e.sections;
   if (Array.isArray(e.items) && e.items.length > 0)
-    return ty(e.items);
+    return fy(e.items);
   if (Array.isArray(e.tree) && e.tree.length > 0) {
-    const t = ry(e.tree);
+    const t = gy(e.tree);
     if (t.length > 0) return t;
   }
   return [];
 };
-function ty(e) {
+function fy(e) {
   const t = {};
   return e.forEach((r) => {
     r.item_type === "group" && r.is_active === 1 && r.is_visible === 1 && (t[r.item_key] = {
@@ -1601,7 +1620,7 @@ function ty(e) {
     r.items.sort((n, s) => n.order - s.order);
   }), Object.values(t).filter((r) => r.items.length > 0).sort((r, n) => r.order - n.order);
 }
-function ry(e) {
+function gy(e) {
   return e.filter((t) => t.item_type === "group" && t.is_active === 1 && t.is_visible === 1).filter((t) => t.children && t.children.length > 0).map((t) => ({
     id: t.item_key || t.id,
     label: t.label || t.item_key || "Section",
@@ -1631,9 +1650,9 @@ function ry(e) {
     })).sort((r, n) => r.order - n.order)
   })).filter((t) => t.items.length > 0).sort((t, r) => t.order - r.order);
 }
-const $d = (e) => {
+const tl = (e) => {
   if (!e) return null;
-  const t = ey(e);
+  const t = hy(e);
   return {
     version: e.version || "api",
     generated: e.generated || Date.now(),
@@ -1642,67 +1661,182 @@ const $d = (e) => {
     metadata: e.metadata || {}
   };
 };
-let tn = null;
-const Ku = async (e = {}) => {
-  const { force: t = !1, skipCache: r = !1 } = e, n = Date.now();
-  if (w_())
-    return ae("load:already-loading"), { success: !1, reason: "already-loading" };
-  if (!t && Vu()) {
-    const o = hi();
-    if (o && !Ll(o))
-      return ae("load:already-loaded"), { success: !0, model: o, source: "memory" };
+let ut = null, sn = 0;
+const bi = () => {
+  var e, t, r;
+  try {
+    const n = (e = ih()) == null ? void 0 : e.auth, s = ((t = n == null ? void 0 : n.getUser) == null ? void 0 : t.call(n)) ?? ((r = n == null ? void 0 : n.getCurrentUser) == null ? void 0 : r.call(n)) ?? null, i = (s == null ? void 0 : s.id) ?? (s == null ? void 0 : s.user_id) ?? (s == null ? void 0 : s.userId) ?? null;
+    return i != null && String(i) !== "" ? String(i) : null;
+  } catch {
+    return null;
   }
-  if (wn(Ye.LOADING), K_(), !r && !t) {
-    const o = B_();
-    if (o && Ld(o.data)) {
-      const a = $d(o.data);
-      return Ta(a, o.source), wn(Ye.LOADED), Z_(o.source), Dd(a, o.source), La(a), Da(o.source, Date.now() - n), { success: !0, model: a, source: o.source };
+};
+let Bu = !1;
+const my = async () => {
+  try {
+    const e = globalThis.caches;
+    if (!e || !e.keys) return 0;
+    let t = 0;
+    for (const r of await e.keys()) {
+      const n = await e.open(r);
+      for (const s of await n.keys())
+        try {
+          new URL(s.url).pathname.startsWith("/api/") && (await n.delete(s), t++);
+        } catch {
+        }
     }
-    J_();
+    return z("cache:sw-api-clear", { n: t }), t;
+  } catch {
+    return 0;
   }
-  tn = new AbortController();
-  const s = await F_({ signal: tn.signal });
-  if (tn = null, s.success && Ld(s.data)) {
-    const o = $d(s.data);
-    return Ta(o, "api"), wn(Ye.LOADED), U_(o), Dd(o, "api"), La(o), Da("api", Date.now() - n), { success: !0, model: o, source: "api" };
+}, Ul = () => {
+  sn++;
+  try {
+    ut && ut.abort();
+  } catch {
   }
-  if (s.authRequired)
-    return wn(Ye.ERROR), $_({ message: "Auth required" }), W_({ type: "auth", status: s.status }), ae("load:auth-required"), { success: !1, authRequired: !0, status: s.status };
-  ae("load:using-fallback", { reason: s.error });
-  const i = G_(s.error || "api-error");
-  return Ta(i, "fallback"), wn(Ye.FALLBACK), X_(s.error), La(i), Da("fallback", Date.now() - n, !1), { success: !0, model: i, source: "fallback", degraded: !0 };
-}, ny = async (e) => (z_(), Q_(), k_(), Ku({ force: !0, skipCache: !0 })), sy = () => {
-  tn && (tn.abort(), tn = null, ae("load:aborted"));
-}, iy = () => hi(), oy = () => L_(), ay = () => Vu(), ly = () => ({
-  moduleId: ce,
-  version: Ol,
-  state: Gu(),
-  hasModel: !!hi(),
-  isFallback: Ll(hi())
-}), cy = () => {
-  const e = Gu();
+  ut = null, zl(), my(), xi(), on(null, "sessao-encerrada"), z("cache:auth-clear");
+}, py = ["auth.logout", "auth.logout.success", "auth.logout.completed", "auth.logout.detected", "auth:logout", "header.logout.requested", "auth.login.success"], Ey = () => {
+  var e, t;
+  if (!Bu)
+    try {
+      if (!((t = (e = ih()) == null ? void 0 : e.eventBus) != null && t.on)) return;
+      for (const r of py) oy(r, Ul);
+      Bu = !0;
+    } catch {
+    }
+}, lh = (e) => {
+  const t = e && typeof e == "object" ? e.menu ?? null : null;
+  if (!t || t.generation === void 0 || t.generation === null) return null;
+  const r = Number(t.generation);
+  return Number.isFinite(r) ? { revision: String(t.revision ?? ""), generation: r, checksum: String(t.checksum ?? "") } : null;
+}, rl = (e) => e && e.metadata && e.metadata.menuConsumido || null, on = (e, t) => {
+  try {
+    const r = globalThis;
+    r.__dshowMenuConsumido = e ? { ...e, source: t, at: Date.now() } : { revision: null, generation: null, checksum: null, source: t, at: Date.now() };
+    const n = typeof document < "u" ? document.documentElement : null;
+    if (!n) return;
+    e ? (n.setAttribute("data-menu-revision", e.revision), n.setAttribute("data-menu-generation", String(e.generation)), n.setAttribute("data-menu-checksum", e.checksum)) : (n.removeAttribute("data-menu-revision"), n.removeAttribute("data-menu-generation"), n.removeAttribute("data-menu-checksum")), n.setAttribute("data-menu-source", t);
+  } catch {
+  }
+}, ch = async (e = {}) => {
+  const { force: t = !1, skipCache: r = !1 } = e, n = Date.now();
+  if (W_())
+    return z("load:already-loading"), { success: !1, reason: "already-loading" };
+  if (!t && eh()) {
+    const l = Or();
+    if (l && !Ei(l))
+      return z("load:already-loaded"), { success: !0, model: l, source: "memory" };
+  }
+  cr(De.LOADING), ay(), Ey();
+  const s = bi();
+  if (!r && !t) {
+    const l = ty(s);
+    if (l && el(l.data)) {
+      const u = tl(l.data);
+      return u && l.data && l.data.metadata && l.data.metadata.menuConsumido && (u.metadata = { ...u.metadata || {}, menuConsumido: l.data.metadata.menuConsumido }), li(u, l.source), on(rl(u), String(l.source || "cache")), cr(De.LOADED), cy(l.source), Qa(u, l.source), ci(u), Ra(l.source, Date.now() - n), yy(s), { success: !0, model: u, source: l.source };
+    }
+    uy();
+  }
+  const i = ++sn;
+  ut = new AbortController();
+  const o = await sh({ signal: ut.signal });
+  if (i !== sn)
+    return z("load:superseded", { meuPedido: i, atual: sn }), { success: !1, reason: "superseded" };
+  if (bi() !== s)
+    return xi(), z("load:owner-changed", { inicio: s }), { success: !1, reason: "owner-changed" };
+  if (ut = null, o.success && el(o.data)) {
+    const l = lh(o.meta), u = Or(), d = rl(u);
+    if (l && d && l.generation < d.generation && u && !Ei(u))
+      return cr(De.LOADED), z("load:stale-rejected", { recebida: l.generation, consumida: d.generation }), on(d, "api-stale-rejected"), { success: !0, model: u, source: "memory", staleRejected: !0, rejected: l };
+    const h = tl(o.data);
+    return h && (h.metadata = { ...h.metadata || {}, menuConsumido: l, dono: s }), li(h, "api"), on(l, "api"), cr(De.LOADED), nh(h, s), Qa(h, "api"), ci(h), Ra("api", Date.now() - n), { success: !0, model: h, source: "api" };
+  }
+  if (o.authRequired)
+    return cr(De.ERROR), K_({ message: "Auth required" }), ah({ type: "auth", status: o.status }), z("load:auth-required"), { success: !1, authRequired: !0, status: o.status };
+  z("load:using-fallback", { reason: o.error });
+  const a = ny(o.error || "api-error");
+  return li(a, "fallback"), cr(De.FALLBACK), ly(o.error), ci(a), Ra("fallback", Date.now() - n, !1), { success: !0, model: a, source: "fallback", degraded: !0 };
+}, uh = (e) => {
+  const t = Or();
+  if (!t) return;
+  const r = bi(), n = t && t.metadata ? t.metadata.dono ?? null : null;
+  (!r || r !== n) && (Ul(), z("cache:owner-check-clear", { motivo: e, trocou: !!r }), dh());
+}, by = (e) => {
+  e && e.persisted && uh("bfcache");
+}, _y = () => {
+  try {
+    typeof document < "u" && document.visibilityState === "visible" && uh("visivel");
+  } catch {
+  }
+};
+try {
+  typeof window < "u" && window.addEventListener && window.addEventListener("pageshow", by), typeof document < "u" && document.addEventListener && document.addEventListener("visibilitychange", _y), typeof document < "u" && document.addEventListener && document.addEventListener("click", (e) => {
+    try {
+      const t = e && e.target;
+      t && t.closest && t.closest('[data-action="logout"], [data-intent$=".logout"], .logout[data-action]') && (Ul(), z("cache:logout-click-clear"));
+    } catch {
+    }
+  }, !0);
+} catch {
+}
+const yy = async (e) => {
+  const t = ++sn;
+  let r;
+  try {
+    r = await sh({});
+  } catch {
+    return;
+  }
+  if (t !== sn) return;
+  if (bi() !== e) {
+    z("revalidate:owner-changed", { inicio: e });
+    return;
+  }
+  if (r && r.authRequired) {
+    zl(), xi(), on(null, "auth-required"), ah({ type: "auth", status: r.status }), z("revalidate:auth-cleared", { status: r.status });
+    return;
+  }
+  if (!r || !r.success || !el(r.data)) return;
+  const n = lh(r.meta), s = Or(), i = rl(s);
+  if (i && n && n.generation < i.generation) {
+    z("revalidate:older-rejected", { nova: n.generation, vigente: i.generation });
+    return;
+  }
+  const o = tl(r.data);
+  o && (o.metadata = { ...o.metadata || {}, menuConsumido: n, dono: e }, li(o, "api"), cr(De.LOADED), nh(o, e), on(n, "api-revalidate"), Qa(o, "api"), ci(o), z("revalidate:updated", { de: i && i.generation, para: n && n.generation }));
+}, dh = async (e) => (zl(), dy(), xi(), ch({ force: !0, skipCache: !0 })), vy = () => {
+  ut && (ut.abort(), ut = null, z("load:aborted"));
+}, Iy = () => Or(), Sy = () => Y_(), Cy = () => eh(), Ay = () => ({
+  moduleId: ue,
+  version: xl,
+  state: Qd(),
+  hasModel: !!Or(),
+  isFallback: Ei(Or())
+}), My = () => {
+  const e = Qd();
   return {
-    healthy: e.status === Ye.LOADED && !!e.model,
+    healthy: e.status === De.LOADED && !!e.model,
     status: e.status,
     lastLoad: e.lastLoad,
     source: e.source,
-    isFallback: Ll(e.model)
+    isFallback: Ei(e.model)
   };
 };
 var k = {
-  load: Ku,
-  reload: ny,
-  abort: sy,
-  getModel: iy,
-  getStatus: oy,
-  isReady: ay,
-  info: ly,
-  healthCheck: cy,
-  MODULE_ID: ce,
-  VERSION: Ol
+  load: ch,
+  reload: dh,
+  abort: vy,
+  getModel: Iy,
+  getStatus: Sy,
+  isReady: Cy,
+  info: Ay,
+  healthCheck: My,
+  MODULE_ID: ue,
+  VERSION: xl
 };
-async function dy(e) {
-  var d, u, h;
+async function Oy(e) {
+  var u, d, h;
   const { engine: t, renderer: r, registry: n, adapters: s, logger: i, metrics: o, modelLoaderInitialized: a, getCurrentHash: l } = e;
   try {
     if (i.info("Reloading navigation..."), a)
@@ -1712,21 +1846,21 @@ async function dy(e) {
       } catch (x) {
         i.warn("P24: NavigationModel reload failed", { error: x.message });
       }
-    (d = n.invalidateCache) == null || d.call(n);
+    (u = n.invalidateCache) == null || u.call(n);
     const g = await n.loadFromAPI();
     if (!g.success)
       return i.warn("Failed to reload navigation:", g.error), { success: !1, error: g.error };
     n.applyPermissionFilter(), t.loadSections(n.getSections()), t.loadItems(n.getItems()), r.renderNavigation();
-    const m = (h = (u = s.router) == null ? void 0 : u.getCurrentRoute) == null ? void 0 : h.call(u), y = (m == null ? void 0 : m.path) || (m == null ? void 0 : m.hash) || l(), S = Ti(n.getItems(), y);
-    return S && (t.setActiveItem(S.id), r.setActiveItem(S.id)), i.info("Navigation reloaded successfully"), Al(n.getSections().length, n.getItems().length), { success: !0, sections: n.getSections().length, items: n.getItems().length };
+    const m = (h = (d = s.router) == null ? void 0 : d.getCurrentRoute) == null ? void 0 : h.call(d), y = (m == null ? void 0 : m.path) || (m == null ? void 0 : m.hash) || l(), S = Ni(n.getItems(), y);
+    return S && (t.setActiveItem(S.id), r.setActiveItem(S.id)), i.info("Navigation reloaded successfully"), Nl(n.getSections().length, n.getItems().length), { success: !0, sections: n.getSections().length, items: n.getItems().length };
   } catch (g) {
     return i.error("Reload navigation error:", g), { success: !1, error: g.message };
   }
 }
-const Qs = "5.7.0-DUAL-LOOKUP", kd = "sidebar-engine";
-class uy {
+const ri = "5.7.0-DUAL-LOOKUP", Uu = "sidebar-engine";
+class Ty {
   constructor(t = {}) {
-    this._options = t, this._stateMachine = new jb({
+    this._options = t, this._stateMachine = new i_({
       collapsed: t.defaultCollapsed ?? !1,
       accordion: t.accordion ?? {}
     }), this._items = [], this._sections = [], this._badges = /* @__PURE__ */ new Map(), this._eventHandlers = /* @__PURE__ */ new Map(), this._ports = null, this._metrics = {
@@ -1751,7 +1885,7 @@ class uy {
   async init() {
     this._metrics.inits++;
     const t = this._stateMachine.transitionTo(L.INITIALIZING);
-    return t.success ? (this._emit(f.INITIALIZED, { version: Qs }), { success: !0, state: this._stateMachine.lifecycle }) : t;
+    return t.success ? (this._emit(f.INITIALIZED, { version: ri }), { success: !0, state: this._stateMachine.lifecycle }) : t;
   }
   async mount() {
     this._metrics.mounts++;
@@ -1761,7 +1895,7 @@ class uy {
   async ready() {
     this._metrics.readys++, this._stateMachine.lifecycle === L.MOUNTING && this._stateMachine.transitionTo(L.MOUNTED);
     const t = this._stateMachine.transitionTo(L.READY);
-    return t.success ? (this._autoExpandNonCollapsibleSections(), this._emit(f.READY, { version: Qs }), { success: !0, state: this._stateMachine.lifecycle }) : t;
+    return t.success ? (this._autoExpandNonCollapsibleSections(), this._emit(f.READY, { version: ri }), { success: !0, state: this._stateMachine.lifecycle }) : t;
   }
   async destroy() {
     this._metrics.destroys++;
@@ -1993,92 +2127,92 @@ class uy {
       expandedSectionsCount: this._stateMachine.expandedSections.size,
       portsConnected: this._ports !== null,
       stateMachineHealth: t,
-      version: Qs,
-      moduleId: kd,
+      version: ri,
+      moduleId: Uu,
       timestamp: Date.now(),
       metrics: this.getMetrics()
     };
   }
   info() {
-    return { version: Qs, moduleId: kd, state: this.getState(), metrics: this.getMetrics(), healthCheck: this.healthCheck() };
+    return { version: ri, moduleId: Uu, state: this.getState(), metrics: this.getMetrics(), healthCheck: this.healthCheck() };
   }
 }
-function hy(e) {
-  return new uy(e);
+function Dy(e) {
+  return new Ty(e);
 }
-const Wu = "5.8.0-ES6", $l = "sidebar-logger", fy = "[sidebar]", Zn = v({ moduleId: $l });
-function gy() {
-  Zn.init();
+const hh = "5.8.0-ES6", jl = "sidebar-logger", Ly = "[sidebar]", es = v({ moduleId: jl });
+function $y() {
+  es.init();
 }
-function my(e) {
-  return Zn.get(e);
+function ky(e) {
+  return es.get(e);
 }
-function Re(e = {}) {
-  this._debug = e.debug !== void 0 ? e.debug : !1, this._prefix = e.prefix || fy, this._metrics = { debug: 0, info: 0, warn: 0, error: 0, total: 0 }, gy();
+function xe(e = {}) {
+  this._debug = e.debug !== void 0 ? e.debug : !1, this._prefix = e.prefix || Ly, this._metrics = { debug: 0, info: 0, warn: 0, error: 0, total: 0 }, $y();
 }
-Re.prototype._getLogger = () => my("logger");
-Re.prototype.setDebug = function(e) {
+xe.prototype._getLogger = () => ky("logger");
+xe.prototype.setDebug = function(e) {
   this._debug = e;
 };
-Re.prototype.debug = function(...e) {
+xe.prototype.debug = function(...e) {
   if (!this._debug) return;
   const t = this._getLogger();
   t && t.debug && t.debug(...[this._prefix].concat(Array.prototype.slice.call(e))), this._metrics.debug++, this._metrics.total++;
 };
-Re.prototype.info = function(...e) {
+xe.prototype.info = function(...e) {
   const t = this._getLogger();
   t && t.info && t.info(...[this._prefix].concat(Array.prototype.slice.call(e))), this._metrics.info++, this._metrics.total++;
 };
-Re.prototype.warn = function(...e) {
+xe.prototype.warn = function(...e) {
   const t = this._getLogger();
   t && t.warn && t.warn(...[this._prefix].concat(Array.prototype.slice.call(e))), this._metrics.warn++, this._metrics.total++;
 };
-Re.prototype.error = function(...e) {
+xe.prototype.error = function(...e) {
   const t = this._getLogger();
   t && t.error && t.error(...[this._prefix].concat(Array.prototype.slice.call(e))), this._metrics.error++, this._metrics.total++;
 };
-Re.prototype.log = function(...e) {
+xe.prototype.log = function(...e) {
   const t = this._getLogger();
   t && t.info && t.info(...[this._prefix].concat(Array.prototype.slice.call(e))), this._metrics.total++;
 };
-Re.prototype.getMetrics = function() {
+xe.prototype.getMetrics = function() {
   return Object.assign({}, this._metrics);
 };
-Re.prototype.reset = function() {
+xe.prototype.reset = function() {
   this._metrics = { debug: 0, info: 0, warn: 0, error: 0, total: 0 };
 };
-Re.prototype.healthCheck = function() {
-  const t = { hasLogger: !!this._getLogger(), debugModeSet: typeof this._debug == "boolean", prefixSet: !!this._prefix, metricsTracking: this._metrics.total >= 0, portsInitialized: Zn.isInitialized() };
+xe.prototype.healthCheck = function() {
+  const t = { hasLogger: !!this._getLogger(), debugModeSet: typeof this._debug == "boolean", prefixSet: !!this._prefix, metricsTracking: this._metrics.total >= 0, portsInitialized: es.isInitialized() };
   let r = 0;
   for (const s in t)
     t[s] && r++;
   const n = Object.keys(t).length;
-  return { status: r >= 4 ? "HEALTHY" : "DEGRADED", score: r, maxScore: n, scoreDisplay: `${r}/${n}`, checks: t, debugEnabled: this._debug, metrics: this._metrics, version: Wu, moduleId: $l, portsInitialized: Zn.isInitialized(), timestamp: Date.now() };
+  return { status: r >= 4 ? "HEALTHY" : "DEGRADED", score: r, maxScore: n, scoreDisplay: `${r}/${n}`, checks: t, debugEnabled: this._debug, metrics: this._metrics, version: hh, moduleId: jl, portsInitialized: es.isInitialized(), timestamp: Date.now() };
 };
-Re.prototype.getInfo = function() {
-  return { moduleId: $l, version: Wu, debugEnabled: this._debug, prefix: this._prefix, portsInitialized: Zn.isInitialized(), metrics: this.getMetrics() };
+xe.prototype.getInfo = function() {
+  return { moduleId: jl, version: hh, debugEnabled: this._debug, prefix: this._prefix, portsInitialized: es.isInitialized(), metrics: this.getMetrics() };
 };
-function py(e) {
-  return new Re(e);
+function wy(e) {
+  return new xe(e);
 }
-const wd = "5.6.2-P22", ii = "sidebar.telemetry.tracker", fi = v({ moduleId: ii });
-function Ey() {
-  fi.init();
+const ju = "5.6.2-P22", ui = "sidebar.telemetry.tracker", _i = v({ moduleId: ui });
+function Ny() {
+  _i.init();
 }
-function Nd(e) {
-  return fi.get(e);
+function Fu(e) {
+  return _i.get(e);
 }
-class by {
+class Ry {
   constructor(t = {}) {
     this._enabled = t.enabled ?? !0, this._prefix = t.prefix ?? "sidebar:", this._metrics = { tracks: 0, navigations: 0, toggles: 0, sectionToggles: 0, searches: 0, errors: 0, lastTrack: null };
   }
   _getTelemetry() {
-    return Nd("telemetryCore") || Nd("telemetry");
+    return Fu("telemetryCore") || Fu("telemetry");
   }
   track(t, r = {}) {
     if (!this._enabled) return;
-    Ey();
-    const n = this._getTelemetry(), s = t.startsWith(this._prefix) ? t : `${this._prefix}${t}`, i = { source: ii, timestamp: Date.now(), ...r };
+    Ny();
+    const n = this._getTelemetry(), s = t.startsWith(this._prefix) ? t : `${this._prefix}${t}`, i = { source: ui, timestamp: Date.now(), ...r };
     n != null && n.track && n.track(s, i), this._metrics.tracks++, this._metrics.lastTrack = { event: s, timestamp: Date.now() };
   }
   trackNavigation(t, r) {
@@ -2110,21 +2244,21 @@ class by {
     this._metrics = { tracks: 0, navigations: 0, toggles: 0, sectionToggles: 0, searches: 0, errors: 0, lastTrack: null };
   }
   healthCheck() {
-    const t = !!this._getTelemetry(), r = { enabled: this._enabled, hasTelemetry: t, noErrors: this._metrics.errors === 0, trackingWorks: this._metrics.tracks >= 0, portsInitialized: fi.isInitialized() }, n = Object.values(r).filter(Boolean).length, s = Object.keys(r).length;
-    return { status: n >= 4 ? "HEALTHY" : "DEGRADED", score: n, maxScore: s, scoreDisplay: `${n}/${s}`, checks: r, metrics: this._metrics, version: wd, moduleId: ii, timestamp: Date.now() };
+    const t = !!this._getTelemetry(), r = { enabled: this._enabled, hasTelemetry: t, noErrors: this._metrics.errors === 0, trackingWorks: this._metrics.tracks >= 0, portsInitialized: _i.isInitialized() }, n = Object.values(r).filter(Boolean).length, s = Object.keys(r).length;
+    return { status: n >= 4 ? "HEALTHY" : "DEGRADED", score: n, maxScore: s, scoreDisplay: `${n}/${s}`, checks: r, metrics: this._metrics, version: ju, moduleId: ui, timestamp: Date.now() };
   }
   getInfo() {
-    return { moduleId: ii, version: wd, enabled: this._enabled, prefix: this._prefix, portsInitialized: fi.isInitialized(), metrics: this.getMetrics() };
+    return { moduleId: ui, version: ju, enabled: this._enabled, prefix: this._prefix, portsInitialized: _i.isInitialized(), metrics: this.getMetrics() };
   }
 }
-function _y(e) {
-  return new by(e);
+function xy(e) {
+  return new Ry(e);
 }
-const yy = "sidebar-api-ports", vy = v({ moduleId: yy });
-function Ct(e) {
-  return vy.get(e);
+const Py = "sidebar-api-ports", Hy = v({ moduleId: Py });
+function At(e) {
+  return Hy.get(e);
 }
-const mr = {
+const Er = {
   toggleAttempts: 0,
   toggleSuccess: 0,
   toggleBlocked: 0,
@@ -2133,22 +2267,22 @@ const mr = {
   atomicTransitions: 0,
   lastToggleAt: null
 };
-function dr(e) {
-  e in mr && typeof mr[e] == "number" && mr[e]++;
+function hr(e) {
+  e in Er && typeof Er[e] == "number" && Er[e]++;
 }
-function Iy(e, t) {
-  e in mr && (mr[e] = t);
+function zy(e, t) {
+  e in Er && (Er[e] = t);
 }
-function Sy(e) {
-  return mr[e];
+function By(e) {
+  return Er[e];
 }
-function Xu() {
-  return { ...mr };
+function fh() {
+  return { ...Er };
 }
-let rn = null;
-const Cy = 150;
-function ei(e, t) {
-  var l, d, u, h;
+let an = null;
+const Uy = 150;
+function ni(e, t) {
+  var l, u, d, h;
   const { engine: r, renderer: n, logger: s } = t, i = performance.now(), o = e, a = {
     engine: !1,
     renderer: !1,
@@ -2165,19 +2299,19 @@ function ei(e, t) {
       const x = g.querySelector(`.${c.TOGGLE}`);
       x && (x.setAttribute("aria-expanded", String(!o)), x.setAttribute("aria-label", o ? "Expandir menu" : "Recolher menu"), a.toggleButton = !0);
     }
-    const m = Ct("layoutManager"), y = Ct("eventBus");
-    m != null && m.setSidebarCollapsed ? (m.setSidebarCollapsed(o), a.body = !0) : y != null && y.emit ? (y.emit(ni.REQUEST_LAYOUT, {
+    const m = At("layoutManager"), y = At("eventBus");
+    m != null && m.setSidebarCollapsed ? (m.setSidebarCollapsed(o), a.body = !0) : y != null && y.emit ? (y.emit(oi.REQUEST_LAYOUT, {
       mode: o ? "sidebar-collapsed" : "sidebar-expanded",
       source: "sidebar-toggle"
-    }), a.body = !0) : (document.body.classList.toggle("sidebar-collapsed", o), a.body = !0, dr("fallbackUsed"));
+    }), a.body = !0) : (document.body.classList.toggle("sidebar-collapsed", o), a.body = !0, hr("fallbackUsed"));
     try {
       localStorage.setItem("dshowdash-layout-sidebarCollapsed", JSON.stringify(o)), localStorage.setItem("dsd-sidebar-collapsed", JSON.stringify(o)), a.localStorage = !0;
     } catch (x) {
-      (d = s == null ? void 0 : s.warn) == null || d.call(s, "Failed to persist collapsed state:", x.message);
+      (u = s == null ? void 0 : s.warn) == null || u.call(s, "Failed to persist collapsed state:", x.message);
     }
-    dr("atomicTransitions");
+    hr("atomicTransitions");
     const S = performance.now() - i;
-    return (u = s == null ? void 0 : s.debug) == null || u.call(s, "P24 Atomic transition complete", {
+    return (d = s == null ? void 0 : s.debug) == null || d.call(s, "P24 Atomic transition complete", {
       targetState: o,
       results: a,
       durationMs: S.toFixed(2)
@@ -2188,39 +2322,39 @@ function ei(e, t) {
       durationMs: S
     };
   } catch (g) {
-    return (h = s == null ? void 0 : s.error) == null || h.call(s, "P24 Atomic transition failed:", g), dr("syncFailures"), {
+    return (h = s == null ? void 0 : s.error) == null || h.call(s, "P24 Atomic transition failed:", g), hr("syncFailures"), {
       success: !1,
       error: g.message,
       results: a
     };
   }
 }
-function Ay(e) {
+function jy(e) {
   const { engine: t, renderer: r, tracker: n, logger: s } = e;
   return {
     toggle() {
-      var i, o, a, l, d;
-      if (dr("toggleAttempts"), rn) {
-        dr("toggleBlocked"), (i = s == null ? void 0 : s.debug) == null || i.call(s, "Toggle blocked by debounce");
+      var i, o, a, l, u;
+      if (hr("toggleAttempts"), an) {
+        hr("toggleBlocked"), (i = s == null ? void 0 : s.debug) == null || i.call(s, "Toggle blocked by debounce");
         return;
       }
-      rn = setTimeout(() => {
-        rn = null;
-      }, Cy);
+      an = setTimeout(() => {
+        an = null;
+      }, Uy);
       try {
-        const h = !t.collapsed, g = ei(h, { engine: t, renderer: r, logger: s });
-        g.success ? (dr("toggleSuccess"), Iy("lastToggleAt", Date.now()), (o = n == null ? void 0 : n.trackToggle) == null || o.call(n, h), (a = s == null ? void 0 : s.info) == null || a.call(s, "P24 Toggle complete (atomic)", {
+        const h = !t.collapsed, g = ni(h, { engine: t, renderer: r, logger: s });
+        g.success ? (hr("toggleSuccess"), zy("lastToggleAt", Date.now()), (o = n == null ? void 0 : n.trackToggle) == null || o.call(n, h), (a = s == null ? void 0 : s.info) == null || a.call(s, "P24 Toggle complete (atomic)", {
           collapsed: h,
-          atomicTransitions: Sy("atomicTransitions")
+          atomicTransitions: By("atomicTransitions")
         })) : (l = s == null ? void 0 : s.error) == null || l.call(s, "P24 Toggle atomic failed", { error: g.error });
-      } catch (u) {
-        (d = s == null ? void 0 : s.error) == null || d.call(s, "Toggle error:", u), dr("syncFailures");
+      } catch (d) {
+        (u = s == null ? void 0 : s.error) == null || u.call(s, "Toggle error:", d), hr("syncFailures");
       }
     },
     collapse() {
       var i, o;
       try {
-        const a = ei(!0, { engine: t, renderer: r, logger: s });
+        const a = ni(!0, { engine: t, renderer: r, logger: s });
         a.success || (i = s == null ? void 0 : s.error) == null || i.call(s, "Collapse atomic failed:", a.error);
       } catch (a) {
         (o = s == null ? void 0 : s.error) == null || o.call(s, "Collapse error:", a);
@@ -2229,7 +2363,7 @@ function Ay(e) {
     expand() {
       var i, o;
       try {
-        const a = ei(!1, { engine: t, renderer: r, logger: s });
+        const a = ni(!1, { engine: t, renderer: r, logger: s });
         a.success || (i = s == null ? void 0 : s.error) == null || i.call(s, "Expand atomic failed:", a.error);
       } catch (a) {
         (o = s == null ? void 0 : s.error) == null || o.call(s, "Expand error:", a);
@@ -2238,21 +2372,21 @@ function Ay(e) {
     forceSync() {
       var i;
       try {
-        const o = t.collapsed, a = ei(o, { engine: t, renderer: r, logger: s });
+        const o = t.collapsed, a = ni(o, { engine: t, renderer: r, logger: s });
         return { success: a.success, collapsed: o, atomicResult: a };
       } catch (o) {
         return (i = s == null ? void 0 : s.error) == null || i.call(s, "Force sync error:", o), { success: !1, error: o.message };
       }
     },
     getToggleMetrics() {
-      return Xu();
+      return fh();
     }
   };
 }
-function My() {
-  rn && (clearTimeout(rn), rn = null);
+function Fy() {
+  an && (clearTimeout(an), an = null);
 }
-function Oy(e) {
+function Gy(e) {
   const { engine: t, renderer: r, logger: n } = e;
   return {
     toggleSection(s) {
@@ -2316,15 +2450,15 @@ function Oy(e) {
     }
   };
 }
-function Ty(e) {
+function Vy(e) {
   const { engine: t, renderer: r, logger: n } = e;
   return {
     openMobile() {
       var s;
       try {
         t.openMobile(), r.setMobileOpen(!0);
-        const i = Ct("layoutManager"), o = Ct("eventBus");
-        i != null && i.setSidebarMobileOpen ? i.setSidebarMobileOpen(!0) : o != null && o.emit && o.emit(ni.REQUEST_LAYOUT, { mode: "sidebar-mobile-open", source: "sidebar" });
+        const i = At("layoutManager"), o = At("eventBus");
+        i != null && i.setSidebarMobileOpen ? i.setSidebarMobileOpen(!0) : o != null && o.emit && o.emit(oi.REQUEST_LAYOUT, { mode: "sidebar-mobile-open", source: "sidebar" });
       } catch (i) {
         (s = n == null ? void 0 : n.error) == null || s.call(n, "OpenMobile error:", i);
       }
@@ -2333,8 +2467,8 @@ function Ty(e) {
       var s;
       try {
         t.closeMobile(), r.setMobileOpen(!1);
-        const i = Ct("layoutManager"), o = Ct("eventBus");
-        i != null && i.setSidebarMobileOpen ? i.setSidebarMobileOpen(!1) : o != null && o.emit && o.emit(ni.REQUEST_LAYOUT, { mode: "sidebar-mobile-closed", source: "sidebar" });
+        const i = At("layoutManager"), o = At("eventBus");
+        i != null && i.setSidebarMobileOpen ? i.setSidebarMobileOpen(!1) : o != null && o.emit && o.emit(oi.REQUEST_LAYOUT, { mode: "sidebar-mobile-closed", source: "sidebar" });
       } catch (i) {
         (s = n == null ? void 0 : n.error) == null || s.call(n, "CloseMobile error:", i);
       }
@@ -2343,15 +2477,15 @@ function Ty(e) {
       var s;
       try {
         t.toggleMobile(), r.setMobileOpen(t.mobileOpen);
-        const i = t.mobileOpen ? "sidebar-mobile-open" : "sidebar-mobile-closed", o = Ct("layoutManager"), a = Ct("eventBus");
-        o != null && o.setSidebarMobileOpen ? o.setSidebarMobileOpen(t.mobileOpen) : a != null && a.emit && a.emit(ni.REQUEST_LAYOUT, { mode: i, source: "sidebar" });
+        const i = t.mobileOpen ? "sidebar-mobile-open" : "sidebar-mobile-closed", o = At("layoutManager"), a = At("eventBus");
+        o != null && o.setSidebarMobileOpen ? o.setSidebarMobileOpen(t.mobileOpen) : a != null && a.emit && a.emit(oi.REQUEST_LAYOUT, { mode: i, source: "sidebar" });
       } catch (i) {
         (s = n == null ? void 0 : n.error) == null || s.call(n, "ToggleMobile error:", i);
       }
     }
   };
 }
-function Dy(e) {
+function qy(e) {
   const { engine: t, renderer: r, registry: n, routerAdapter: s, logger: i } = e;
   return {
     navigate(o) {
@@ -2367,8 +2501,8 @@ function Dy(e) {
       var l;
       try {
         n.setBadge(o, a), r.renderNavigation();
-      } catch (d) {
-        (l = i == null ? void 0 : i.error) == null || l.call(i, "SetBadge error:", d);
+      } catch (u) {
+        (l = i == null ? void 0 : i.error) == null || l.call(i, "SetBadge error:", u);
       }
     },
     refresh() {
@@ -2389,17 +2523,17 @@ function Dy(e) {
     }
   };
 }
-const Zu = Xu;
-function Ly(e) {
+const gh = fh;
+function Yy(e) {
   return {
-    ...Ay(e),
-    ...Oy(e),
-    ...Ty(e),
-    ...Dy(e)
+    ...jy(e),
+    ...Gy(e),
+    ...Vy(e),
+    ...qy(e)
   };
 }
-let Ot = null, Ka = { loads: 0, merges: 0, errors: 0 };
-const Rd = {
+let Tt = null, nl = { loads: 0, merges: 0, errors: 0 };
+const Gu = {
   collapsed: !1,
   mobileBreakpoint: 1024,
   animationDuration: 200,
@@ -2409,36 +2543,36 @@ const Rd = {
   accordion: { allowMultipleOpen: !0, persistState: !0 },
   header: { title: "DshowDash" }
 };
-function kl(e = {}) {
+function Fl(e = {}) {
   try {
-    return Ot = { ...Rd, ...e }, Ka.loads++, Ot;
+    return Tt = { ...Gu, ...e }, nl.loads++, Tt;
   } catch {
-    return Ka.errors++, Ot = { ...Rd }, Ot;
+    return nl.errors++, Tt = { ...Gu }, Tt;
   }
 }
-function Ju() {
-  return Ot || kl(), { ...Ot };
+function mh() {
+  return Tt || Fl(), { ...Tt };
 }
-function $y(e = {}) {
-  return Ka.merges++, Ot || kl(), { ...Ot, ...e };
+function Ky(e = {}) {
+  return nl.merges++, Tt || Fl(), { ...Tt, ...e };
 }
-function ky(e) {
+function Wy(e) {
   return function() {
     return (e == null ? void 0 : e.getState()) || null;
   };
 }
-const xd = "7.1.0-P2-HARDNAV", Zr = "sidebar-router-adapter", gi = v({ moduleId: Zr });
-function wy() {
-  gi.init();
+const Vu = "7.1.0-P2-HARDNAV", en = "sidebar-router-adapter", yi = v({ moduleId: en });
+function Xy() {
+  yi.init();
 }
 function rt(e) {
-  return gi.get(e);
+  return yi.get(e);
 }
-function Nn() {
+function Pn() {
   return rt("eventBus") || rt("eventBusGlobal");
 }
-function Ny() {
-  wy();
+function Zy() {
+  Xy();
   let e = [], t = {
     navigations: 0,
     routeChanges: 0,
@@ -2449,7 +2583,7 @@ function Ny() {
     busSource: null
   };
   function r(s, i, o) {
-    const a = Nn();
+    const a = Pn();
     a && a.emit && (t.busSource = rt("eventBus") ? "eventBus" : "eventBusGlobal", a.emit(pe.NAVIGATE, {
       path: s,
       options: { source: i, ...o },
@@ -2458,11 +2592,11 @@ function Ny() {
     }));
   }
   function n(s, i) {
-    const o = Nn();
-    o && o.emit && o.emit(cl.HARD_NAV, {
+    const o = Pn();
+    o && o.emit && o.emit(bl.HARD_NAV, {
       path: s,
       reason: i,
-      source: Zr,
+      source: en,
       timestamp: Date.now()
     }), t.hardNavs++;
   }
@@ -2471,9 +2605,9 @@ function Ny() {
       try {
         const o = rt("routerGlobal");
         if (o && o.navigate)
-          return o.navigate(s, { source: Zr, ...i }), t.navigations++, t.lastNavigation = { route: s, timestamp: Date.now() }, { success: !0, method: "router-global" };
-        const a = Nn();
-        return a && a.emit ? (r(s, Zr, i), t.navigations++, t.lastNavigation = { route: s, timestamp: Date.now() }, { success: !0, method: "event-bus-navigate" }) : s && typeof window < "u" && window.location ? (n(s, "No RouterGlobal or EventBus available"), window.location.hash = s.startsWith("#") ? s : `#${s}`, t.navigations++, t.lastNavigation = { route: s, timestamp: Date.now() }, { success: !0, method: "hash-fallback" }) : (t.errors++, { success: !1, error: "no-route" });
+          return o.navigate(s, { source: en, ...i }), t.navigations++, t.lastNavigation = { route: s, timestamp: Date.now() }, { success: !0, method: "router-global" };
+        const a = Pn();
+        return a && a.emit ? (r(s, en, i), t.navigations++, t.lastNavigation = { route: s, timestamp: Date.now() }, { success: !0, method: "event-bus-navigate" }) : s && typeof window < "u" && window.location ? (n(s, "No RouterGlobal or EventBus available"), window.location.hash = s.startsWith("#") ? s : `#${s}`, t.navigations++, t.lastNavigation = { route: s, timestamp: Date.now() }, { success: !0, method: "hash-fallback" }) : (t.errors++, { success: !1, error: "no-route" });
       } catch (o) {
         return t.errors++, { success: !1, error: o.message };
       }
@@ -2494,31 +2628,31 @@ function Ny() {
       if (typeof s != "function") return () => {
       };
       try {
-        const i = Nn();
+        const i = Pn();
         if (i && i.on) {
-          const d = (h) => {
+          const u = (h) => {
             t.routeChanges++, t.lastRouteChange = Date.now(), s(h);
-          }, u = i.on(pe.ROUTE_CHANGED, d);
-          if (typeof u == "function")
-            return e.push(u), u;
+          }, d = i.on(pe.ROUTE_CHANGED, u);
+          if (typeof d == "function")
+            return e.push(d), d;
           {
             const h = () => {
-              i.off && i.off(pe.ROUTE_CHANGED, d);
+              i.off && i.off(pe.ROUTE_CHANGED, u);
             };
             return e.push(h), h;
           }
         }
         const o = rt("routerGlobal");
         if (o != null && o.on) {
-          const d = (h) => {
+          const u = (h) => {
             t.routeChanges++, t.lastRouteChange = Date.now(), s(h);
           };
-          o.on(pe.ROUTE_CHANGED, d);
-          const u = () => {
+          o.on(pe.ROUTE_CHANGED, u);
+          const d = () => {
             var h;
-            (h = o.off) == null || h.call(o, pe.ROUTE_CHANGED, d);
+            (h = o.off) == null || h.call(o, pe.ROUTE_CHANGED, u);
           };
-          return e.push(u), u;
+          return e.push(d), d;
         }
         const a = () => {
           t.routeChanges++, t.lastRouteChange = Date.now(), s({
@@ -2560,11 +2694,11 @@ function Ny() {
     },
     info() {
       return {
-        moduleId: Zr,
-        version: xd,
+        moduleId: en,
+        version: Vu,
         p0Compliant: !0,
         p2Compliant: !0,
-        portsInitialized: gi.isInitialized(),
+        portsInitialized: yi.isInitialized(),
         currentRoute: this.getCurrentRoute(),
         cleanupCount: e.length,
         metrics: this.getMetrics(),
@@ -2572,7 +2706,7 @@ function Ny() {
       };
     },
     healthCheck() {
-      const i = !!Nn(), o = !!rt("routerGlobal"), a = this.getCurrentRoute(), l = a && !a.error, d = {
+      const i = !!Pn(), o = !!rt("routerGlobal"), a = this.getCurrentRoute(), l = a && !a.error, u = {
         hasEventBus: i,
         hasRouterGlobal: o,
         hasValidRoute: l,
@@ -2580,37 +2714,37 @@ function Ny() {
         cleanupSetup: e.length >= 0,
         p0Compliant: !0,
         p2Compliant: !0
-      }, u = Object.values(d).filter(Boolean).length, h = Object.keys(d).length;
+      }, d = Object.values(u).filter(Boolean).length, h = Object.keys(u).length;
       let g = "HEALTHY";
       return !i && !o && (g = "DEGRADED"), t.errors > 5 && (g = "DEGRADED"), {
         status: g,
-        score: u,
+        score: d,
         maxScore: h,
-        scoreDisplay: `${u}/${h}`,
-        checks: d,
+        scoreDisplay: `${d}/${h}`,
+        checks: u,
         currentRoute: a,
         metrics: t,
         cleanupCount: e.length,
-        version: xd,
-        moduleId: Zr,
-        portsInitialized: gi.isInitialized(),
+        version: Vu,
+        moduleId: en,
+        portsInitialized: yi.isInitialized(),
         busSource: rt("eventBus") ? "eventBus" : rt("eventBusGlobal") ? "eventBusGlobal" : "none",
         timestamp: Date.now()
       };
     }
   };
 }
-const Pd = "6.0.0-ES6", oi = "sidebar-telemetry-adapter", Ry = "[sidebar]", Wa = v({ moduleId: oi });
-function Rn(e) {
-  return Wa.get(e);
+const qu = "6.0.0-ES6", di = "sidebar-telemetry-adapter", Jy = "[sidebar]", sl = v({ moduleId: di });
+function Hn(e) {
+  return sl.get(e);
 }
-function xy() {
+function Qy() {
   let e = { logs: { debug: 0, info: 0, warn: 0, error: 0 }, tracks: 0, errors: 0, lastLog: null, lastTrack: null };
-  const t = () => Rn("logger"), r = () => Rn("telemetryCore") || Rn("telemetry");
+  const t = () => Hn("logger"), r = () => Hn("telemetryCore") || Hn("telemetry");
   return {
     log(n, s, i = {}) {
       try {
-        const o = t(), a = `${Ry} ${s}`, l = Object.assign({ timestamp: Date.now() }, i);
+        const o = t(), a = `${Jy} ${s}`, l = Object.assign({ timestamp: Date.now() }, i);
         if (!o) return;
         switch (n) {
           case "debug":
@@ -2635,7 +2769,7 @@ function xy() {
     },
     track(n, s = {}) {
       try {
-        const i = r(), o = Object.assign({ source: oi, timestamp: Date.now() }, s);
+        const i = r(), o = Object.assign({ source: di, timestamp: Date.now() }, s);
         i && i.track && i.track(n, o), e.tracks++, e.lastTrack = { event: n, timestamp: Date.now() };
       } catch {
         e.errors++;
@@ -2675,26 +2809,26 @@ function xy() {
       e = { logs: { debug: 0, info: 0, warn: 0, error: 0 }, tracks: 0, errors: 0, lastLog: null, lastTrack: null };
     },
     getInfo() {
-      return { moduleId: oi, version: Pd, portsInitialized: Wa.isInitialized(), hasLogger: !!t(), hasTelemetry: !!r(), metrics: this.getMetrics() };
+      return { moduleId: di, version: qu, portsInitialized: sl.isInitialized(), hasLogger: !!t(), hasTelemetry: !!r(), metrics: this.getMetrics() };
     },
     healthCheck() {
-      const n = !!t(), s = !!Rn("telemetryCore"), i = !!Rn("eventBus"), o = e.logs.debug + e.logs.info + e.logs.warn + e.logs.error, a = { hasLogger: n, hasTelemetry: s, hasEventBus: i, noErrors: e.errors === 0, logsWorking: o > 0 || e.errors === 0 }, l = Object.values(a).filter(Boolean).length, d = Object.keys(a).length;
-      return { status: l >= 3 ? "HEALTHY" : "DEGRADED", score: l, maxScore: d, scoreDisplay: `${l}/${d}`, checks: a, metrics: e, version: Pd, moduleId: oi, portsInitialized: Wa.isInitialized(), timestamp: Date.now() };
+      const n = !!t(), s = !!Hn("telemetryCore"), i = !!Hn("eventBus"), o = e.logs.debug + e.logs.info + e.logs.warn + e.logs.error, a = { hasLogger: n, hasTelemetry: s, hasEventBus: i, noErrors: e.errors === 0, logsWorking: o > 0 || e.errors === 0 }, l = Object.values(a).filter(Boolean).length, u = Object.keys(a).length;
+      return { status: l >= 3 ? "HEALTHY" : "DEGRADED", score: l, maxScore: u, scoreDisplay: `${l}/${u}`, checks: a, metrics: e, version: qu, moduleId: di, portsInitialized: sl.isInitialized(), timestamp: Date.now() };
     }
   };
 }
-const Hd = "5.9.0-ES6", Xa = "sidebar-permissions-adapter", Gn = v({ moduleId: Xa });
-function Kr() {
-  Gn.init();
+const Yu = "5.9.0-ES6", il = "sidebar-permissions-adapter", Yn = v({ moduleId: il });
+function Zr() {
+  Yn.init();
 }
-function Py(e) {
-  return Gn.get(e);
+function ev(e) {
+  return Yn.get(e);
 }
-function Wr() {
-  const e = Py("auth");
+function Jr() {
+  const e = ev("auth");
   return e || typeof window < "u" && (window.AuthAdapter || window.CoreAuthAdapter) || null;
 }
-function Hy() {
+function tv() {
   let e = {
     levelChecks: 0,
     permissionChecks: 0,
@@ -2709,11 +2843,11 @@ function Hy() {
   return {
     getUserLevel() {
       var s;
-      Kr();
+      Zr();
       try {
         if (r() && t.level !== null)
           return e.cacheHits++, t.level;
-        const i = Wr(), o = ((s = i == null ? void 0 : i.getLevel) == null ? void 0 : s.call(i)) ?? 0;
+        const i = Jr(), o = ((s = i == null ? void 0 : i.getLevel) == null ? void 0 : s.call(i)) ?? 0;
         return t.level = o, t.timestamp = Date.now(), e.levelChecks++, e.lastCheck = Date.now(), o;
       } catch {
         return e.errors++, 0;
@@ -2721,21 +2855,21 @@ function Hy() {
     },
     getUserPermissions() {
       var s, i;
-      Kr();
+      Zr();
       try {
         if (r() && t.permissions !== null)
           return e.cacheHits++, t.permissions;
-        const o = Wr(), a = ((s = o == null ? void 0 : o.getRoles) == null ? void 0 : s.call(o)) ?? [], l = ((i = o == null ? void 0 : o.getCapabilities) == null ? void 0 : i.call(o)) ?? [], d = [...a, ...l];
-        return t.permissions = d, t.timestamp = Date.now(), e.permissionChecks++, d;
+        const o = Jr(), a = ((s = o == null ? void 0 : o.getRoles) == null ? void 0 : s.call(o)) ?? [], l = ((i = o == null ? void 0 : o.getCapabilities) == null ? void 0 : i.call(o)) ?? [], u = [...a, ...l];
+        return t.permissions = u, t.timestamp = Date.now(), e.permissionChecks++, u;
       } catch {
         return e.errors++, [];
       }
     },
     canAccess(s) {
       var i;
-      Kr();
+      Zr();
       try {
-        const o = Wr();
+        const o = Jr();
         return (i = o == null ? void 0 : o.isReady) != null && i.call(o) ? o.can ? o.can(s) === !0 : this.getUserPermissions().includes(s) : !1;
       } catch {
         return e.errors++, !1;
@@ -2745,7 +2879,7 @@ function Hy() {
       try {
         if (!Array.isArray(s)) return [];
         const i = this.getUserPermissions(), o = s.filter((a) => !(a.permissions && a.permissions.length > 0 && !a.permissions.some(
-          (d) => i.includes(d) || this.canAccess(d)
+          (u) => i.includes(u) || this.canAccess(u)
         )));
         return e.filterOperations++, o;
       } catch {
@@ -2754,9 +2888,9 @@ function Hy() {
     },
     isAuthenticated() {
       var s;
-      Kr();
+      Zr();
       try {
-        const i = Wr();
+        const i = Jr();
         return ((s = i == null ? void 0 : i.isAuthenticated) == null ? void 0 : s.call(i)) ?? !1;
       } catch {
         return e.errors++, !1;
@@ -2764,9 +2898,9 @@ function Hy() {
     },
     getUser() {
       var s;
-      Kr();
+      Zr();
       try {
-        const i = Wr();
+        const i = Jr();
         return ((s = i == null ? void 0 : i.getUser) == null ? void 0 : s.call(i)) ?? null;
       } catch {
         return e.errors++, null;
@@ -2788,9 +2922,9 @@ function Hy() {
     },
     info() {
       return {
-        moduleId: Xa,
-        version: Hd,
-        portsInitialized: Gn.isInitialized(),
+        moduleId: il,
+        version: Yu,
+        portsInitialized: Yn.isInitialized(),
         isAuthenticated: this.isAuthenticated(),
         cacheValid: r(),
         metrics: this.getMetrics()
@@ -2798,37 +2932,37 @@ function Hy() {
     },
     healthCheck() {
       var m, y;
-      Kr();
-      const s = Wr(), i = ((m = s == null ? void 0 : s.isReady) == null ? void 0 : m.call(s)) ?? !1, o = ((y = s == null ? void 0 : s.healthCheck) == null ? void 0 : y.call(s)) ?? { status: "UNKNOWN" }, a = this.getUser(), l = this.isAuthenticated(), d = {
+      Zr();
+      const s = Jr(), i = ((m = s == null ? void 0 : s.isReady) == null ? void 0 : m.call(s)) ?? !1, o = ((y = s == null ? void 0 : s.healthCheck) == null ? void 0 : y.call(s)) ?? { status: "UNKNOWN" }, a = this.getUser(), l = this.isAuthenticated(), u = {
         authReady: i,
         hasUser: !!a,
         isAuthenticated: l,
         authHealthy: o.status === "HEALTHY",
         noErrors: e.errors === 0,
-        portsInitialized: Gn.isInitialized()
-      }, u = Object.values(d).filter(Boolean).length, h = Object.keys(d).length;
+        portsInitialized: Yn.isInitialized()
+      }, d = Object.values(u).filter(Boolean).length, h = Object.keys(u).length;
       let g = "HEALTHY";
       return i ? (!l || e.errors > 0) && (g = "DEGRADED") : g = "UNHEALTHY", {
         status: g,
-        score: u,
+        score: d,
         maxScore: h,
-        scoreDisplay: `${u}/${h}`,
-        checks: d,
+        scoreDisplay: `${d}/${h}`,
+        checks: u,
         isAuthenticated: l,
         authSource: "ports:auth",
         authHealth: o.status,
         metrics: e,
         cacheValid: r(),
-        version: Hd,
-        moduleId: Xa,
-        portsInitialized: Gn.isInitialized(),
+        version: Yu,
+        moduleId: il,
+        portsInitialized: Yn.isInitialized(),
         timestamp: Date.now()
       };
     }
   };
 }
-const zd = "5.5.0-ENTERPRISE-FULL", Bd = "sidebar-ui-adapter";
-function zy(e = {}) {
+const Ku = "5.5.0-ENTERPRISE-FULL", Wu = "sidebar-ui-adapter";
+function rv(e = {}) {
   const t = [e.containerSelector, '[data-shell-region="sidebar"]', '[data-region="sidebar"]', "#shell-sidebar-region", "#sidebar-root", ".dsd-sidebar", ".app-sidebar", "#sidebar"].filter(Boolean);
   let r = null, n = { containerLookups: 0, renders: 0, updates: 0, classOperations: 0, errors: 0, lastOperation: null };
   function s() {
@@ -2853,10 +2987,10 @@ function zy(e = {}) {
   }
   function o(_, A) {
     try {
-      const le = s();
-      if (!le) return !1;
-      const Yr = le.querySelector(_);
-      return Yr ? (Yr.innerHTML = A, n.updates++, n.lastOperation = { type: "update", selector: _, timestamp: Date.now() }, !0) : !1;
+      const ce = s();
+      if (!ce) return !1;
+      const Xr = ce.querySelector(_);
+      return Xr ? (Xr.innerHTML = A, n.updates++, n.lastOperation = { type: "update", selector: _, timestamp: Date.now() }, !0) : !1;
     } catch {
       return n.errors++, !1;
     }
@@ -2877,18 +3011,18 @@ function zy(e = {}) {
       return n.errors++, !1;
     }
   }
-  function d(_, A) {
+  function u(_, A) {
     try {
-      const le = s();
-      return le ? (le.classList.toggle(_, A), n.classOperations++, !0) : !1;
+      const ce = s();
+      return ce ? (ce.classList.toggle(_, A), n.classOperations++, !0) : !1;
     } catch {
       return n.errors++, !1;
     }
   }
-  function u(_, A) {
+  function d(_, A) {
     try {
-      const le = s();
-      return le ? (le.setAttribute(_, A), !0) : !1;
+      const ce = s();
+      return ce ? (ce.setAttribute(_, A), !0) : !1;
     } catch {
       return n.errors++, !1;
     }
@@ -2928,35 +3062,35 @@ function zy(e = {}) {
   }
   function Ae() {
     const _ = s();
-    return { moduleId: Bd, version: zd, hasContainer: !!_, containerId: (_ == null ? void 0 : _.id) || null, metrics: S() };
+    return { moduleId: Wu, version: Ku, hasContainer: !!_, containerId: (_ == null ? void 0 : _.id) || null, metrics: S() };
   }
   function Me() {
-    const _ = s(), A = _ && document.contains(_), le = (_ == null ? void 0 : _.querySelector(".dsd-sidebar")) !== null || (_ == null ? void 0 : _.classList.contains("dsd-sidebar")), Yr = { containerFound: !!_, containerInDOM: A, hasSidebarElement: le, noErrors: n.errors === 0, cacheValid: r !== null }, yd = Object.values(Yr).filter(Boolean).length, vd = Object.keys(Yr).length;
-    let Aa = "HEALTHY";
-    return _ ? (!A || n.errors > 0) && (Aa = "DEGRADED") : Aa = "UNHEALTHY", { status: Aa, score: yd, maxScore: vd, scoreDisplay: `${yd}/${vd}`, checks: Yr, containerId: (_ == null ? void 0 : _.id) || null, containerSelector: _ ? t.find((Rb) => {
+    const _ = s(), A = _ && document.contains(_), ce = (_ == null ? void 0 : _.querySelector(".dsd-sidebar")) !== null || (_ == null ? void 0 : _.classList.contains("dsd-sidebar")), Xr = { containerFound: !!_, containerInDOM: A, hasSidebarElement: ce, noErrors: n.errors === 0, cacheValid: r !== null }, $u = Object.values(Xr).filter(Boolean).length, ku = Object.keys(Xr).length;
+    let ka = "HEALTHY";
+    return _ ? (!A || n.errors > 0) && (ka = "DEGRADED") : ka = "UNHEALTHY", { status: ka, score: $u, maxScore: ku, scoreDisplay: `${$u}/${ku}`, checks: Xr, containerId: (_ == null ? void 0 : _.id) || null, containerSelector: _ ? t.find((Jb) => {
       try {
-        return document.querySelector(Rb) === _;
+        return document.querySelector(Jb) === _;
       } catch {
         return !1;
       }
-    }) : null, metrics: n, version: zd, moduleId: Bd, timestamp: Date.now() };
+    }) : null, metrics: n, version: Ku, moduleId: Wu, timestamp: Date.now() };
   }
-  return { getContainer: s, render: i, update: o, addClass: a, removeClass: l, toggleClass: d, setAttribute: u, getAttribute: h, querySelector: g, querySelectorAll: m, invalidateCache: y, getMetrics: S, reset: x, info: Ae, healthCheck: Me };
+  return { getContainer: s, render: i, update: o, addClass: a, removeClass: l, toggleClass: u, setAttribute: d, getAttribute: h, querySelector: g, querySelectorAll: m, invalidateCache: y, getMetrics: S, reset: x, info: Ae, healthCheck: Me };
 }
-const By = "sidebar-adapters-factory", Uy = v({ moduleId: By });
-function ur(e) {
-  return Uy.get(e);
+const nv = "sidebar-adapters-factory", sv = v({ moduleId: nv });
+function fr(e) {
+  return sv.get(e);
 }
-function jy() {
+function iv() {
   return {
     navigate(e) {
-      const t = ur("router"), r = ur("eventBus");
+      const t = fr("router"), r = fr("eventBus");
       if (t && t.navigate) {
         t.navigate(e, { source: "sidebar-fallback" });
         return;
       }
       if (r && r.emit) {
-        r.emit(Pb.NAVIGATE, {
+        r.emit(e_.NAVIGATE, {
           intentId: "NAVIGATE",
           target: { type: "route", value: e },
           meta: { source: "sidebar-fallback", reason: "fallback-navigation", timestamp: Date.now() },
@@ -2964,7 +3098,7 @@ function jy() {
         });
         return;
       }
-      typeof window < "u" && window.location && (r && r.emit && r.emit(cl.HARD_NAV, {
+      typeof window < "u" && window.location && (r && r.emit && r.emit(bl.HARD_NAV, {
         path: e,
         reason: "No RouterGlobal or EventBus pipeline",
         source: "sidebar-fallback",
@@ -2972,7 +3106,7 @@ function jy() {
       }), window.location.hash = e);
     },
     getCurrentRoute() {
-      const e = ur("router");
+      const e = fr("router");
       if (e && e.getCurrentRoute) return e.getCurrentRoute();
       if (e && e.current) return e.current;
       if (typeof window < "u" && window.location) {
@@ -2982,7 +3116,7 @@ function jy() {
       return { path: "#/", hash: "#/" };
     },
     onRouteChange(e) {
-      const t = ur("eventBus");
+      const t = fr("eventBus");
       if (t && t.on) {
         const r = (o) => {
           const a = o && o.path ? o.path : typeof window < "u" && window.location ? window.location.hash : "#/";
@@ -3009,7 +3143,7 @@ function jy() {
     }
   };
 }
-function Fy() {
+function ov() {
   return {
     getContainer() {
       return document.querySelector('[data-shell-region="sidebar"]') || document.getElementById("sidebar");
@@ -3019,7 +3153,7 @@ function Fy() {
     }
   };
 }
-function Gy() {
+function av() {
   return {
     log() {
     },
@@ -3032,7 +3166,7 @@ function Gy() {
     }
   };
 }
-function Vy() {
+function lv() {
   return {
     getUserLevel() {
       return 0;
@@ -3054,51 +3188,51 @@ function Vy() {
     }
   };
 }
-function qy(e = {}) {
+function cv(e = {}) {
   const t = {};
   try {
-    t.router = Ny();
+    t.router = Zy();
   } catch (r) {
-    _e("router-adapter", r.message), t.router = jy();
+    _e("router-adapter", r.message), t.router = iv();
   }
   try {
-    t.telemetry = xy();
+    t.telemetry = Qy();
   } catch (r) {
-    _e("telemetry-adapter", r.message), t.telemetry = Gy();
+    _e("telemetry-adapter", r.message), t.telemetry = av();
   }
   try {
-    t.permissions = Hy();
+    t.permissions = tv();
   } catch (r) {
-    _e("permissions-adapter", r.message), t.permissions = Vy();
+    _e("permissions-adapter", r.message), t.permissions = lv();
   }
   try {
-    t.ui = zy({ containerSelector: e.containerSelector || '[data-shell-region="sidebar"]' });
+    t.ui = rv({ containerSelector: e.containerSelector || '[data-shell-region="sidebar"]' });
   } catch (r) {
-    _e("ui-adapter", r.message), t.ui = Fy();
+    _e("ui-adapter", r.message), t.ui = ov();
   }
   return t;
 }
-function Yy(e) {
+function uv(e) {
   return {
     navigation: e.router,
     telemetry: e.telemetry,
     permissions: e.permissions,
     ui: e.ui,
-    events: Ky()
+    events: dv()
   };
 }
-function Ky() {
+function dv() {
   return {
     emit(e, t) {
       try {
-        const r = ur("eventBus");
+        const r = fr("eventBus");
         r && r.emit && r.emit(e, Object.assign({ source: "sidebar", timestamp: Date.now() }, t || {}));
       } catch {
       }
     },
     on(e, t) {
       try {
-        const r = ur("eventBus");
+        const r = fr("eventBus");
         if (r && r.on) {
           const n = r.on(e, t);
           return typeof n == "function" ? n : () => {
@@ -3112,35 +3246,35 @@ function Ky() {
     },
     off(e, t) {
       try {
-        const r = ur("eventBus");
+        const r = fr("eventBus");
         r && r.off && r.off(e, t);
       } catch {
       }
     }
   };
 }
-const $a = { dashboard: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>', grid: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>', users: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', team: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', people: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', "users-cog": '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><circle cx="19" cy="11" r="2"/><path d="M19 8v1"/><path d="M19 13v1"/><path d="M16.5 9.5l.7.7"/><path d="M20.8 13.8l.7.7"/><path d="M16.5 12.5l.7-.7"/><path d="M20.8 8.2l.7-.7"/><path d="M16 11h1"/><path d="M21 11h1"/></svg>', shield: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>', "shield-check": '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>', key: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>', lock: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>', clipboard: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>', "clipboard-list": '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="8" y1="10" x2="8" y2="10.01"/><line x1="12" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14.01"/><line x1="12" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="8" y2="18.01"/><line x1="12" y1="18" x2="16" y2="18"/></svg>', settings: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>', cog: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>', money: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>', chart: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>', box: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>', package: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>', document: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>', file: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>', nav: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>', menu: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>', globe: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>', server: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>', automation: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg>', cart: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>', supplier: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>', ads: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>', instagram: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>', drive: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>', pipeline: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>', calculator: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10.01"/><line x1="12" y1="10" x2="12" y2="10.01"/><line x1="16" y1="10" x2="16" y2="10.01"/><line x1="8" y1="14" x2="8" y2="14.01"/><line x1="12" y1="14" x2="12" y2="14.01"/><line x1="16" y1="14" x2="16" y2="14.01"/><line x1="8" y1="18" x2="8" y2="18.01"/><line x1="12" y1="18" x2="12" y2="18.01"/><line x1="16" y1="18" x2="16" y2="18.01"/></svg>', folder: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>', home: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>', default: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>' };
-function Qu(e) {
-  if ($a[e]) return $a[e];
+const xa = { dashboard: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>', grid: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>', users: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', team: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', people: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', "users-cog": '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><circle cx="19" cy="11" r="2"/><path d="M19 8v1"/><path d="M19 13v1"/><path d="M16.5 9.5l.7.7"/><path d="M20.8 13.8l.7.7"/><path d="M16.5 12.5l.7-.7"/><path d="M20.8 8.2l.7-.7"/><path d="M16 11h1"/><path d="M21 11h1"/></svg>', shield: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>', "shield-check": '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>', key: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>', lock: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>', clipboard: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>', "clipboard-list": '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="8" y1="10" x2="8" y2="10.01"/><line x1="12" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14.01"/><line x1="12" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="8" y2="18.01"/><line x1="12" y1="18" x2="16" y2="18"/></svg>', settings: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>', cog: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>', money: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>', chart: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>', box: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>', package: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>', document: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>', file: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>', nav: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>', menu: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>', globe: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>', server: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>', automation: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg>', cart: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>', supplier: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>', ads: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>', instagram: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>', drive: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>', pipeline: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>', calculator: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10.01"/><line x1="12" y1="10" x2="12" y2="10.01"/><line x1="16" y1="10" x2="16" y2="10.01"/><line x1="8" y1="14" x2="8" y2="14.01"/><line x1="12" y1="14" x2="12" y2="14.01"/><line x1="16" y1="14" x2="16" y2="14.01"/><line x1="8" y1="18" x2="8" y2="18.01"/><line x1="12" y1="18" x2="12" y2="18.01"/><line x1="16" y1="18" x2="16" y2="18.01"/></svg>', folder: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>', home: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>', default: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>' };
+function ph(e) {
+  if (xa[e]) return xa[e];
   if (e.includes(":")) {
-    const r = Wy(e);
+    const r = hv(e);
     if (r) return r;
   }
-  const t = Xy(e);
-  return t || $a.default;
+  const t = fv(e);
+  return t || xa.default;
 }
-function Wy(e) {
+function hv(e) {
   try {
-    return Eu(e);
+    return Md(e);
   } catch {
     return null;
   }
 }
-function Xy(e) {
+function fv(e) {
   try {
-    const t = Hb();
+    const t = t_();
     for (const r of t) {
-      const n = Eu(r + ":" + e);
+      const n = Md(r + ":" + e);
       if (n) return n;
     }
   } catch {
@@ -3153,77 +3287,77 @@ function Oe(e, t = {}) {
     r.setAttribute(n, t.attributes[n]);
   }), t.textContent && (r.textContent = t.textContent), r;
 }
-function Zy(e = {}) {
+function gv(e = {}) {
   return '<aside class="dsd-sidebar" id="sidebar" role="navigation" aria-label="Menu principal"><div class="dsd-sidebar__header dsd-sidebar__header--with-search"><div class="dsd-sidebar__search" role="search"><div class="dsd-sidebar__search-wrapper"><span class="dsd-sidebar__search-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span><input type="text" class="dsd-sidebar__search-input" placeholder="Buscar..." aria-label="Buscar página"/><span class="dsd-sidebar__search-clear" role="button" aria-label="Limpar busca" tabindex="0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span></div></div><button class="dsd-sidebar__toggle" type="button" aria-label="Recolher menu" aria-expanded="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button></div><nav class="dsd-sidebar__nav"><div class="dsd-sidebar__nav-content" data-slot="nav-items"></div></nav><div class="dsd-sidebar__keyboard-hints sr-only">Use setas para navegar. Enter para selecionar. Ctrl+B para alternar sidebar.</div><div class="dsd-sidebar__announce sr-only" role="status" aria-live="polite" aria-atomic="true"></div></aside>';
 }
-function Ud(e = {}) {
+function Xu(e = {}) {
   const t = Oe("aside", { className: "dsd-sidebar", id: "sidebar", attributes: { role: "navigation", "aria-label": "Menu principal" } }), r = Oe("div", { className: "dsd-sidebar__header dsd-sidebar__header--with-search" }), n = Oe("div", { className: "dsd-sidebar__search", attributes: { role: "search" } }), s = Oe("div", { className: "dsd-sidebar__search-wrapper" }), i = Oe("span", { className: "dsd-sidebar__search-icon" });
   i.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>';
   const o = Oe("input", { className: "dsd-sidebar__search-input", attributes: { type: "text", placeholder: "Buscar...", "aria-label": "Buscar página" } }), a = Oe("span", { className: "dsd-sidebar__search-clear", attributes: { role: "button", "aria-label": "Limpar busca", tabindex: "0" } });
   a.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>', s.appendChild(i), s.appendChild(o), s.appendChild(a), n.appendChild(s);
   const l = Oe("button", { className: "dsd-sidebar__toggle", attributes: { type: "button", "aria-label": "Recolher menu", "aria-expanded": "true" } });
   l.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>', r.appendChild(n), r.appendChild(l);
-  const d = Oe("nav", { className: "dsd-sidebar__nav" }), u = Oe("div", { className: "dsd-sidebar__nav-content", attributes: { "data-slot": "nav-items" } });
-  d.appendChild(u);
+  const u = Oe("nav", { className: "dsd-sidebar__nav" }), d = Oe("div", { className: "dsd-sidebar__nav-content", attributes: { "data-slot": "nav-items" } });
+  u.appendChild(d);
   const h = Oe("div", { className: "dsd-sidebar__keyboard-hints sr-only", textContent: "Use setas para navegar. Enter para selecionar. Ctrl+B para alternar sidebar." }), g = Oe("div", { className: "dsd-sidebar__announce sr-only", attributes: { role: "status", "aria-live": "polite", "aria-atomic": "true" } });
-  return t.appendChild(r), t.appendChild(d), t.appendChild(h), t.appendChild(g), t;
+  return t.appendChild(r), t.appendChild(u), t.appendChild(h), t.appendChild(g), t;
 }
-let St = null, Te = null, Jn = { shows: 0, hides: 0, errors: 0 };
-function eh(e, t = {}) {
+let Ct = null, Te = null, ts = { shows: 0, hides: 0, errors: 0 };
+function Eh(e, t = {}) {
   const r = document.createElement(e);
   return t.id && (r.id = t.id), t.className && (r.className = t.className), t.attributes && Object.entries(t.attributes).forEach(([n, s]) => r.setAttribute(n, s)), t.style && (r.style.cssText = t.style), r;
 }
-function th(e) {
+function bh(e) {
   return document.querySelector(e);
 }
-function jd(e) {
+function Zu(e) {
   return document.getElementById(e);
 }
-function Jy() {
+function mv() {
   try {
-    return St && document.contains(St) || (St = jd("app-overlay-root"), St || (St = eh("div", { id: "app-overlay-root", attributes: { "data-overlay-root": "true" }, style: "position:fixed;top:0;left:0;width:0;height:0;z-index:9000;pointer-events:none;" }), (jd("app-shell") || document.documentElement).appendChild(St))), St;
+    return Ct && document.contains(Ct) || (Ct = Zu("app-overlay-root"), Ct || (Ct = Eh("div", { id: "app-overlay-root", attributes: { "data-overlay-root": "true" }, style: "position:fixed;top:0;left:0;width:0;height:0;z-index:9000;pointer-events:none;" }), (Zu("app-shell") || document.documentElement).appendChild(Ct))), Ct;
   } catch {
-    return Jn.errors++, null;
+    return ts.errors++, null;
   }
 }
-function Qy() {
+function pv() {
   try {
-    if ((!Te || !document.contains(Te)) && (Te = th(".dsd-sidebar-overlay")), !Te) {
-      Te = eh("div", { className: "dsd-sidebar-overlay", attributes: { "aria-hidden": "true" }, style: "pointer-events:auto;" });
-      const e = Jy();
+    if ((!Te || !document.contains(Te)) && (Te = bh(".dsd-sidebar-overlay")), !Te) {
+      Te = Eh("div", { className: "dsd-sidebar-overlay", attributes: { "aria-hidden": "true" }, style: "pointer-events:auto;" });
+      const e = mv();
       e && e.appendChild(Te);
     }
-    return Te.classList.add("dsd-sidebar-overlay--visible"), Jn.shows++, { success: !0 };
+    return Te.classList.add("dsd-sidebar-overlay--visible"), ts.shows++, { success: !0 };
   } catch (e) {
-    return Jn.errors++, { success: !1, error: e.message };
+    return ts.errors++, { success: !1, error: e.message };
   }
 }
-function ev() {
+function Ev() {
   try {
-    return Te || (Te = th(".dsd-sidebar-overlay")), Te == null || Te.classList.remove("dsd-sidebar-overlay--visible"), Jn.hides++, { success: !0 };
+    return Te || (Te = bh(".dsd-sidebar-overlay")), Te == null || Te.classList.remove("dsd-sidebar-overlay--visible"), ts.hides++, { success: !0 };
   } catch (e) {
-    return Jn.errors++, { success: !1, error: e.message };
+    return ts.errors++, { success: !1, error: e.message };
   }
 }
-const rh = v({ moduleId: El });
-function tv() {
-  rh.init();
+const _h = v({ moduleId: Ml });
+function bv() {
+  _h.init();
 }
-function rv(e) {
-  return rh.get(e);
+function _v(e) {
+  return _h.get(e);
 }
-let pr = { renders: 0, fallbacks: 0, errors: 0, modelLoaderRenders: 0, registryFallbacks: 0 };
-function nh(e) {
+let br = { renders: 0, fallbacks: 0, errors: 0, modelLoaderRenders: 0, registryFallbacks: 0 };
+function yh(e) {
   return `trigger:navigation:item-${e}`;
 }
-function nv(e) {
+function yv(e) {
   return `trigger:navigation:section-${e}`;
 }
-function Ar(e, t, r) {
+function Tr(e, t, r) {
   try {
     r.includes(e) || r.push(e);
-    const n = rv("eventBus");
-    n != null && n.emit && n.emit(f.DEGRADED, { source: El, component: e, error: t, degradedComponents: r, timestamp: Date.now() });
+    const n = _v("eventBus");
+    n != null && n.emit && n.emit(f.DEGRADED, { source: Ml, component: e, error: t, degradedComponents: r, timestamp: Date.now() });
   } catch {
   }
 }
@@ -3233,16 +3367,16 @@ function ye(e, t = {}) {
     s != null && r.setAttribute(n, s);
   }), t.style && (r.style.cssText = t.style), t.textContent && (r.textContent = t.textContent), r;
 }
-function sv(e) {
+function vv(e) {
   const t = ye("span", { className: c.GROUP_ICON });
-  return t.innerHTML = Qu(e), t;
+  return t.innerHTML = ph(e), t;
 }
-function iv() {
+function Iv() {
   const e = ye("span", { className: c.GROUP_CHEVRON });
   return e.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>', e;
 }
-function sh(e, t, r, n) {
-  const s = e.id.replace(/^sec-/, ""), i = nv(s), o = ye("button", {
+function vh(e, t, r, n) {
+  const s = e.id.replace(/^sec-/, ""), i = yv(s), o = ye("button", {
     className: c.GROUP_BUTTON + (t ? ` ${c.GROUP_BUTTON_COLLAPSIBLE}` : ""),
     attributes: {
       type: "button",
@@ -3252,13 +3386,13 @@ function sh(e, t, r, n) {
       ...t && { "aria-controls": `section-items-${s}` }
     }
   });
-  o.appendChild(sv(n));
+  o.appendChild(vv(n));
   const a = ye("span", { className: c.GROUP_TITLE, textContent: e.label || e.title || e.id });
-  return o.appendChild(a), t && o.appendChild(iv()), o;
+  return o.appendChild(a), t && o.appendChild(Iv()), o;
 }
-function ih(e, t, r) {
-  var u, h, g;
-  const n = e.label || e.title || e.id, s = ((u = e.uarps) == null ? void 0 : u.trigger_id) || nh(e.id), i = e.route || `#${e.id}`, o = ye("li", {
+function Ih(e, t, r) {
+  var d, h, g;
+  const n = e.label || e.title || e.id, s = ((d = e.uarps) == null ? void 0 : d.trigger_id) || yh(e.id), i = e.route || `#${e.id}`, o = ye("li", {
     className: c.ITEM + (t ? ` ${c.ITEM_ACTIVE}` : "") + ((h = e.state) != null && h.disabled ? ` ${c.ITEM_DISABLED}` : ""),
     attributes: {
       "data-item-id": e.id,
@@ -3278,9 +3412,9 @@ function ih(e, t, r) {
       ...((g = e.state) == null ? void 0 : g.disabled) && { "aria-disabled": "true", tabindex: "-1" }
     }
   }), l = ye("span", { className: c.ITEM_ICON });
-  l.innerHTML = Qu(e.icon || "file"), a.appendChild(l);
-  const d = ye("span", { className: c.ITEM_TEXT, textContent: n });
-  if (a.appendChild(d), r) {
+  l.innerHTML = ph(e.icon || "file"), a.appendChild(l);
+  const u = ye("span", { className: c.ITEM_TEXT, textContent: n });
+  if (a.appendChild(u), r) {
     const m = r.type || "count", y = r.value ?? r.text ?? r.count ?? "", S = r.pulse === !0, x = ye("span", {
       className: `${c.BADGE} ${c.BADGE}--${m}${S ? ` ${c.BADGE_PULSE}` : ""}`,
       attributes: {
@@ -3293,9 +3427,9 @@ function ih(e, t, r) {
   }
   return o.appendChild(a), o;
 }
-function ov(e, t, r, n) {
+function Sv(e, t, r, n) {
   var h, g;
-  const s = e.id.replace(/^sec-/, ""), i = ((h = e.accordion) == null ? void 0 : h.collapsible) !== !1, o = !i || t.has(s) || ((g = e.accordion) == null ? void 0 : g.default_open) === !0, a = e.icon || ui[s] || ui.default, l = ye("div", {
+  const s = e.id.replace(/^sec-/, ""), i = ((h = e.accordion) == null ? void 0 : h.collapsible) !== !1, o = !i || t.has(s) || ((g = e.accordion) == null ? void 0 : g.default_open) === !0, a = e.icon || pi[s] || pi.default, l = ye("div", {
     className: c.SECTION + (i ? ` ${c.SECTION_COLLAPSIBLE}` : "") + (o ? ` ${c.SECTION_EXPANDED}` : ""),
     attributes: {
       "data-section-id": s,
@@ -3303,8 +3437,8 @@ function ov(e, t, r, n) {
       "data-source": "navigation-model-v1"
     }
   });
-  e.label && l.appendChild(sh(e, i, o, a));
-  const d = ye("ul", {
+  e.label && l.appendChild(vh(e, i, o, a));
+  const u = ye("ul", {
     className: c.SECTION_ITEMS,
     id: `section-items-${s}`,
     attributes: { role: "list" },
@@ -3315,14 +3449,14 @@ function ov(e, t, r, n) {
     try {
       if ((y = m.state) != null && y.hidden) return;
       const S = m.id === r;
-      d.appendChild(ih(m, S, m.badge));
+      u.appendChild(Ih(m, S, m.badge));
     } catch (S) {
-      Ar(`item:${m.id}`, S.message, n);
+      Tr(`item:${m.id}`, S.message, n);
     }
-  }), l.appendChild(d), l;
+  }), l.appendChild(u), l;
 }
-function av(e, t, r, n, s) {
-  const i = e.collapsible !== !1, o = !i || r.has(e.id), a = e.icon || ui[e.id] || ui.default, l = ye("div", {
+function Cv(e, t, r, n, s) {
+  const i = e.collapsible !== !1, o = !i || r.has(e.id), a = e.icon || pi[e.id] || pi.default, l = ye("div", {
     className: c.SECTION + (i ? ` ${c.SECTION_COLLAPSIBLE}` : "") + (o ? ` ${c.SECTION_EXPANDED}` : ""),
     attributes: {
       "data-section-id": e.id,
@@ -3330,8 +3464,8 @@ function av(e, t, r, n, s) {
       "data-source": "sidebar-registry"
     }
   });
-  (e.label || e.title) && l.appendChild(sh(e, i, o, a));
-  const u = ye("ul", {
+  (e.label || e.title) && l.appendChild(vh(e, i, o, a));
+  const d = ye("ul", {
     className: c.SECTION_ITEMS,
     id: `section-items-${e.id}`,
     attributes: { role: "list" },
@@ -3346,15 +3480,15 @@ function av(e, t, r, n, s) {
         route: h.route,
         panelId: h.panelId || null,
         state: { disabled: h.disabled || !1 },
-        uarps: { trigger_id: nh(h.id) }
+        uarps: { trigger_id: yh(h.id) }
       };
-      u.appendChild(ih(y, m, g));
+      d.appendChild(Ih(y, m, g));
     } catch (g) {
-      Ar(`item:${h.id}`, g.message, s);
+      Tr(`item:${h.id}`, g.message, s);
     }
-  }), l.appendChild(u), l;
+  }), l.appendChild(d), l;
 }
-function lv(e, t, r, n) {
+function Av(e, t, r, n) {
   const s = k.getModel();
   if (!s || !s.sections || s.sections.length === 0)
     return null;
@@ -3363,24 +3497,24 @@ function lv(e, t, r, n) {
   return s.sections.forEach((o) => {
     try {
       if (o.visible === !1) return;
-      const l = (o.items || []).filter((u) => {
+      const l = (o.items || []).filter((d) => {
         var h;
-        return ((h = u.state) == null ? void 0 : h.hidden) !== !0;
+        return ((h = d.state) == null ? void 0 : h.hidden) !== !0;
       });
       if (l.length === 0) return;
-      const d = ov(o, t, r, n);
-      e.appendChild(d), i += l.length;
+      const u = Sv(o, t, r, n);
+      e.appendChild(u), i += l.length;
     } catch (a) {
-      Ar(`section:${o.id}`, a.message, n);
+      Tr(`section:${o.id}`, a.message, n);
     }
-  }), i === 0 ? null : (pr.modelLoaderRenders++, { success: !0, itemsRendered: i, source: "navigation-model-v1" });
+  }), i === 0 ? null : (br.modelLoaderRenders++, { success: !0, itemsRendered: i, source: "navigation-model-v1" });
 }
-function cv(e, t, r, n) {
+function Mv(e, t, r, n) {
   let s = [];
   try {
     s = w.getSections();
   } catch (o) {
-    return Ar("registry", o.message, n), null;
+    return Tr("registry", o.message, n), null;
   }
   if (!s || s.length === 0)
     return null;
@@ -3390,41 +3524,41 @@ function cv(e, t, r, n) {
     try {
       const a = w.getItemsBySection(o.id);
       if (a.length === 0) return;
-      const l = av(o, a, t, r, n);
+      const l = Cv(o, a, t, r, n);
       e.appendChild(l), i += a.length;
     } catch (a) {
-      Ar(`section:${o.id}`, a.message, n);
+      Tr(`section:${o.id}`, a.message, n);
     }
-  }), i === 0 ? null : (pr.registryFallbacks++, { success: !0, itemsRendered: i, source: "sidebar-registry" });
+  }), i === 0 ? null : (br.registryFallbacks++, { success: !0, itemsRendered: i, source: "sidebar-registry" });
 }
-function dv(e, t, r, n) {
-  tv();
+function Ov(e, t, r, n) {
+  bv();
   try {
     const s = e == null ? void 0 : e.querySelector('[data-slot="nav-items"]');
     if (!s)
-      return Ar("nav-slot", "Nav slot not found", n), { success: !1, error: "Nav slot not found" };
-    let i = lv(s, t, r, n);
-    return i || (console.info(`[${El}] Model not available, falling back to Registry`), i = cv(s, t, r, n)), i ? (pr.renders++, {
+      return Tr("nav-slot", "Nav slot not found", n), { success: !1, error: "Nav slot not found" };
+    let i = Av(s, t, r, n);
+    return i || (console.info(`[${Ml}] Model not available, falling back to Registry`), i = Mv(s, t, r, n)), i ? (br.renders++, {
       success: !0,
       itemsRendered: i.itemsRendered,
       source: i.source,
       triggerPattern: "trigger:navigation:item-{id}"
-    }) : (pr.fallbacks++, s.innerHTML = Ya, { success: !0, empty: !0, fallback: !0 });
+    }) : (br.fallbacks++, s.innerHTML = Ja, { success: !0, empty: !0, fallback: !0 });
   } catch (s) {
-    pr.errors++, Ar("renderNavigation", s.message, n);
+    br.errors++, Tr("renderNavigation", s.message, n);
     const i = e == null ? void 0 : e.querySelector('[data-slot="nav-items"]');
-    return i && (i.innerHTML = Ya), { success: !1, error: s.message, fallback: !0 };
+    return i && (i.innerHTML = Ja), { success: !1, error: s.message, fallback: !0 };
   }
 }
-function uv(e) {
+function Tv(e) {
   try {
-    return e ? (pr.fallbacks++, e.innerHTML = b_, e.querySelector(`.${c.ROOT}`)) : null;
+    return e ? (br.fallbacks++, e.innerHTML = R_, e.querySelector(`.${c.ROOT}`)) : null;
   } catch {
-    return pr.errors++, null;
+    return br.errors++, null;
   }
 }
-let qe = { updates: 0, errors: 0 };
-function hv(e, t, r) {
+let Ye = { updates: 0, errors: 0 };
+function Dv(e, t, r) {
   var n;
   try {
     if (!e) return !1;
@@ -3443,134 +3577,134 @@ function hv(e, t, r) {
         a && (a.style.height = "");
       }
     }
-    return qe.updates++, !0;
+    return Ye.updates++, !0;
   } catch {
-    return qe.errors++, !1;
+    return Ye.errors++, !1;
   }
 }
-function fv(e, t) {
+function Lv(e, t) {
   try {
     if (!e) return !1;
     e.classList.toggle(c.MOD_COLLAPSED, t);
     const r = e.querySelector(`.${c.TOGGLE}`);
-    return r == null || r.setAttribute("aria-expanded", String(!t)), r == null || r.setAttribute("aria-label", t ? "Expandir menu" : "Recolher menu"), qe.updates++, !0;
+    return r == null || r.setAttribute("aria-expanded", String(!t)), r == null || r.setAttribute("aria-label", t ? "Expandir menu" : "Recolher menu"), Ye.updates++, !0;
   } catch {
-    return qe.errors++, !1;
+    return Ye.errors++, !1;
   }
 }
-function gv(e, t) {
+function $v(e, t) {
   try {
-    return e ? (e.classList.toggle(c.MOD_MOBILE_OPEN, t), qe.updates++, !0) : !1;
+    return e ? (e.classList.toggle(c.MOD_MOBILE_OPEN, t), Ye.updates++, !0) : !1;
   } catch {
-    return qe.errors++, !1;
+    return Ye.errors++, !1;
   }
 }
-function mv(e, t) {
+function kv(e, t) {
   try {
     const r = e == null ? void 0 : e.querySelector(`.${c.ANNOUNCE}`);
     return r && (r.textContent = t), !0;
   } catch {
-    return qe.errors++, !1;
+    return Ye.errors++, !1;
   }
 }
-function pv(e, t) {
+function wv(e, t) {
   if (!t) return e;
   const r = new RegExp(`(${t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
   return e.replace(r, '<mark class="highlight">$1</mark>');
 }
-function oh(e) {
+function Sh(e) {
   e.querySelectorAll(`.${c.ITEM_TEXT} mark`).forEach((t) => {
     const r = t.parentNode;
     r.replaceChild(document.createTextNode(t.textContent), t), r.normalize();
   });
 }
-function Ev(e, t, r) {
+function Nv(e, t, r) {
   var n;
   try {
     if (!e) return { visible: 0, hidden: 0 };
     const s = t.toLowerCase().trim();
     let i = 0, o = 0;
-    oh(e), e.classList.toggle(c.MOD_SEARCHING, !!s), e.querySelectorAll(`.${c.ITEM}`).forEach((l) => {
-      const d = l.querySelector(`.${c.ITEM_TEXT}`), u = (d == null ? void 0 : d.textContent) || "", h = u.toLowerCase(), g = !s || h.includes(s);
-      l.style.display = g ? "" : "none", l.classList.toggle(c.ITEM_MATCH, g && !!s), g && s && d && (d.innerHTML = pv(u, s)), g ? i++ : o++;
+    Sh(e), e.classList.toggle(c.MOD_SEARCHING, !!s), e.querySelectorAll(`.${c.ITEM}`).forEach((l) => {
+      const u = l.querySelector(`.${c.ITEM_TEXT}`), d = (u == null ? void 0 : u.textContent) || "", h = d.toLowerCase(), g = !s || h.includes(s);
+      l.style.display = g ? "" : "none", l.classList.toggle(c.ITEM_MATCH, g && !!s), g && s && u && (u.innerHTML = wv(d, s)), g ? i++ : o++;
     }), s && e.querySelectorAll("[data-section-id]").forEach((l) => {
-      const d = l.getAttribute("data-section-id");
-      r == null || r.add(d), l.classList.add(c.SECTION_EXPANDED);
-      const u = l.querySelector(`.${c.SECTION_ITEMS}`);
-      u && (u.style.height = "");
+      const u = l.getAttribute("data-section-id");
+      r == null || r.add(u), l.classList.add(c.SECTION_EXPANDED);
+      const d = l.querySelector(`.${c.SECTION_ITEMS}`);
+      d && (d.style.height = "");
     });
     let a = e.querySelector(`.${c.SEARCH_EMPTY}`);
-    return s && i === 0 ? (a || (a = document.createElement("div"), a.className = c.SEARCH_EMPTY, a.innerHTML = `<span class="${c.SEARCH_EMPTY_ICON}">🔍</span><span class="${c.SEARCH_EMPTY_TEXT}">Nenhum resultado encontrado</span>`, (n = e.querySelector(`.${c.NAV_CONTENT}`)) == null || n.appendChild(a)), a.style.display = "") : a && (a.style.display = "none"), qe.updates++, { visible: i, hidden: o };
+    return s && i === 0 ? (a || (a = document.createElement("div"), a.className = c.SEARCH_EMPTY, a.innerHTML = `<span class="${c.SEARCH_EMPTY_ICON}">🔍</span><span class="${c.SEARCH_EMPTY_TEXT}">Nenhum resultado encontrado</span>`, (n = e.querySelector(`.${c.NAV_CONTENT}`)) == null || n.appendChild(a)), a.style.display = "") : a && (a.style.display = "none"), Ye.updates++, { visible: i, hidden: o };
   } catch {
-    return qe.errors++, { visible: 0, hidden: 0 };
+    return Ye.errors++, { visible: 0, hidden: 0 };
   }
 }
-function bv(e, t) {
+function Rv(e, t) {
   try {
     if (!e) return !1;
-    oh(e), e.classList.remove(c.MOD_SEARCHING), e.querySelectorAll(`.${c.ITEM}`).forEach((s) => {
+    Sh(e), e.classList.remove(c.MOD_SEARCHING), e.querySelectorAll(`.${c.ITEM}`).forEach((s) => {
       s.style.display = "", s.classList.remove(c.ITEM_MATCH);
     });
     const r = e.querySelector(`.${c.SEARCH_EMPTY}`);
     r && (r.style.display = "none");
     const n = e.querySelector(`.${c.SEARCH_INPUT}`);
-    return n && (n.value = ""), qe.updates++, !0;
+    return n && (n.value = ""), Ye.updates++, !0;
   } catch {
-    return qe.errors++, !1;
+    return Ye.errors++, !1;
   }
 }
-const ah = "5.5.0-ENTERPRISE-FULL", lh = "sidebar-ui-health";
-function _v(e) {
+const Ch = "5.5.0-ENTERPRISE-FULL", Ah = "sidebar-ui-health";
+function xv(e) {
   return function() {
-    const { container: r, sidebar: n, initialized: s, activeItemId: i, mobileOpen: o, expandedSections: a, degradedComponents: l, lastError: d, sectionClickHandler: u } = e(), h = !!r, g = !!n, m = h && document.contains(r), y = g && document.contains(n), S = (n == null ? void 0 : n.querySelector("[data-fallback]")) !== null, x = !!u, Ae = { hasContainer: h, hasSidebar: g, containerInDOM: m, sidebarInDOM: y, noFallback: !S, noDegradedComponents: l.length === 0, accordionHandlersSet: x }, Me = Object.values(Ae).filter(Boolean).length, _ = Object.keys(Ae).length;
+    const { container: r, sidebar: n, initialized: s, activeItemId: i, mobileOpen: o, expandedSections: a, degradedComponents: l, lastError: u, sectionClickHandler: d } = e(), h = !!r, g = !!n, m = h && document.contains(r), y = g && document.contains(n), S = (n == null ? void 0 : n.querySelector("[data-fallback]")) !== null, x = !!d, Ae = { hasContainer: h, hasSidebar: g, containerInDOM: m, sidebarInDOM: y, noFallback: !S, noDegradedComponents: l.length === 0, accordionHandlersSet: x }, Me = Object.values(Ae).filter(Boolean).length, _ = Object.keys(Ae).length;
     let A = "HEALTHY";
-    return !h || !g ? A = "UNHEALTHY" : (!m || !y || l.length > 0 || S) && (A = "DEGRADED"), { status: A, score: Me, maxScore: _, scoreDisplay: `${Me}/${_}`, checks: Ae, initialized: s, activeItemId: i, mobileOpen: o, expandedSectionsCount: a.size, expandedSections: Array.from(a), degradedComponents: l, lastError: d, capabilities: Tu, compliance: "AAA", noBodyAppend: !0, version: ah, moduleId: lh, timestamp: Date.now() };
+    return !h || !g ? A = "UNHEALTHY" : (!m || !y || l.length > 0 || S) && (A = "DEGRADED"), { status: A, score: Me, maxScore: _, scoreDisplay: `${Me}/${_}`, checks: Ae, initialized: s, activeItemId: i, mobileOpen: o, expandedSectionsCount: a.size, expandedSections: Array.from(a), degradedComponents: l, lastError: u, capabilities: Pd, compliance: "AAA", noBodyAppend: !0, version: Ch, moduleId: Ah, timestamp: Date.now() };
   };
 }
-function yv(e, t) {
+function Pv(e, t) {
   return function() {
     const { activeItemId: n, mobileOpen: s, expandedSections: i, degradedComponents: o, status: a } = e();
-    return { version: ah, moduleId: lh, status: a, activeItemId: n, mobileOpen: s, expandedSections: Array.from(i), degradedComponents: o, capabilities: Tu, healthCheck: t() };
+    return { version: Ch, moduleId: Ah, status: a, activeItemId: n, mobileOpen: s, expandedSections: Array.from(i), degradedComponents: o, capabilities: Pd, healthCheck: t() };
   };
 }
-let Pt = { skeletonShows: 0, skeletonHides: 0, rippleSetups: 0, loadingChanges: 0, errors: 0 };
-function Fd(e = !1) {
+let Ht = { skeletonShows: 0, skeletonHides: 0, rippleSetups: 0, loadingChanges: 0, errors: 0 };
+function Ju(e = !1) {
   const t = document.createElement("div");
   return t.className = c.SKELETON_ITEM, t.innerHTML = `<div class="${c.SKELETON_ICON}"></div><div class="${c.SKELETON_TEXT}${e ? ` ${c.SKELETON_TEXT_SHORT}` : ""}"></div>`, t;
 }
-function Gd() {
+function Qu() {
   const e = document.createElement("div");
   return e.className = c.SKELETON_GROUP, e.innerHTML = `<div class="${c.SKELETON_ICON}"></div><div class="${c.SKELETON_TEXT}"></div>`, e;
 }
-function vv(e, t = 8) {
+function Hv(e, t = 8) {
   try {
     if (!e) return !1;
     const r = e.querySelector(`.${c.NAV_CONTENT}, [data-slot="nav-items"]`);
     if (!r) return !1;
     r.dataset.originalContent = r.innerHTML;
     const n = document.createElement("div");
-    n.className = c.SKELETON, n.setAttribute("aria-hidden", "true"), n.setAttribute("role", "presentation"), n.appendChild(Gd());
-    for (let s = 0; s < 3; s++) n.appendChild(Fd(s === 2));
-    n.appendChild(Gd());
-    for (let s = 0; s < Math.min(t - 3, 5); s++) n.appendChild(Fd(s === 4));
-    return r.innerHTML = "", r.appendChild(n), e.classList.add(c.MOD_LOADING_SKELETON), Pt.skeletonShows++, !0;
+    n.className = c.SKELETON, n.setAttribute("aria-hidden", "true"), n.setAttribute("role", "presentation"), n.appendChild(Qu());
+    for (let s = 0; s < 3; s++) n.appendChild(Ju(s === 2));
+    n.appendChild(Qu());
+    for (let s = 0; s < Math.min(t - 3, 5); s++) n.appendChild(Ju(s === 4));
+    return r.innerHTML = "", r.appendChild(n), e.classList.add(c.MOD_LOADING_SKELETON), Ht.skeletonShows++, !0;
   } catch {
-    return Pt.errors++, !1;
+    return Ht.errors++, !1;
   }
 }
-function Iv(e) {
+function zv(e) {
   try {
     if (!e) return !1;
     const t = e.querySelector(`.${c.NAV_CONTENT}, [data-slot="nav-items"]`);
     if (!t) return !1;
     t.dataset.originalContent && (t.innerHTML = t.dataset.originalContent, delete t.dataset.originalContent);
     const r = t.querySelector(`.${c.SKELETON}`);
-    return r && r.remove(), e.classList.remove(c.MOD_LOADING_SKELETON), Pt.skeletonHides++, !0;
+    return r && r.remove(), e.classList.remove(c.MOD_LOADING_SKELETON), Ht.skeletonHides++, !0;
   } catch {
-    return Pt.errors++, !1;
+    return Ht.errors++, !1;
   }
 }
-function Vd(e) {
+function ed(e) {
   const t = e.currentTarget;
   t.querySelectorAll(`.${c.RIPPLE}`).forEach((a) => a.remove());
   const r = document.createElement("span");
@@ -3578,33 +3712,33 @@ function Vd(e) {
   const n = t.getBoundingClientRect(), s = Math.max(n.width, n.height), i = e.clientX - n.left - s / 2, o = e.clientY - n.top - s / 2;
   r.style.width = r.style.height = `${s}px`, r.style.left = `${i}px`, r.style.top = `${o}px`, t.appendChild(r), r.addEventListener("animationend", () => r.remove());
 }
-function Sv(e) {
+function Bv(e) {
   try {
     if (!e) return null;
     const t = e.querySelectorAll(`.${c.LINK}`);
-    return t.forEach((r) => r.addEventListener("click", Vd)), Pt.rippleSetups++, () => {
-      t.forEach((r) => r.removeEventListener("click", Vd));
+    return t.forEach((r) => r.addEventListener("click", ed)), Ht.rippleSetups++, () => {
+      t.forEach((r) => r.removeEventListener("click", ed));
     };
   } catch {
-    return Pt.errors++, null;
+    return Ht.errors++, null;
   }
 }
-function Cv(e, t) {
+function Uv(e, t) {
   try {
-    return e ? (e.classList.toggle(c.MOD_LOADING, t), Pt.loadingChanges++, !0) : !1;
+    return e ? (e.classList.toggle(c.MOD_LOADING, t), Ht.loadingChanges++, !0) : !1;
   } catch {
-    return Pt.errors++, !1;
+    return Ht.errors++, !1;
   }
 }
-const mi = v({ moduleId: Ou });
-let ka = { instancesCreated: 0, activeInstances: 0 }, Za = null;
-function Av() {
-  mi.init();
+const vi = v({ moduleId: xd });
+let Pa = { instancesCreated: 0, activeInstances: 0 }, ol = null;
+function jv() {
+  vi.init();
 }
-function Mv(e) {
-  return mi.get(e);
+function Fv(e) {
+  return vi.get(e);
 }
-function wl(e, t, r) {
+function Gl(e, t, r) {
   try {
     const n = e == null ? void 0 : e.querySelector(`[data-section-id="${t}"]`);
     if (!n) return !1;
@@ -3617,7 +3751,7 @@ function wl(e, t, r) {
     return !1;
   }
 }
-function ch(e, t, r) {
+function Mh(e, t, r) {
   try {
     const n = e == null ? void 0 : e.querySelector(`[data-section-id="${t}"]`);
     if (!n) return !1;
@@ -3630,19 +3764,19 @@ function ch(e, t, r) {
     return !1;
   }
 }
-function Ov(e, t, r) {
-  return r != null && r.has(t) ? ch(e, t, r) : wl(e, t, r);
+function Gv(e, t, r) {
+  return r != null && r.has(t) ? Mh(e, t, r) : Gl(e, t, r);
 }
-function Tv(e, t, r) {
+function Vv(e, t, r) {
   try {
     return r == null || r.clear(), t == null || t.forEach((n) => {
-      wl(e, n, r);
+      Gl(e, n, r);
     }), !0;
   } catch {
     return !1;
   }
 }
-function Dv(e, t) {
+function qv(e, t) {
   try {
     return t == null || t.clear(), Array.isArray(e) && e.forEach((r) => {
       t == null || t.add(r);
@@ -3651,7 +3785,7 @@ function Dv(e, t) {
     return !1;
   }
 }
-function Lv(e, t, r) {
+function Yv(e, t, r) {
   if (!e) return null;
   const n = (s) => {
     const i = s.target.closest("[data-section-toggle]");
@@ -3662,19 +3796,19 @@ function Lv(e, t, r) {
   };
   return e.addEventListener("click", n), n;
 }
-function qd(e, t) {
+function td(e, t) {
   e && t && e.removeEventListener("click", t);
 }
-class $v {
+class Kv {
   constructor(t = {}) {
-    this._container = null, this._sidebar = null, this._options = t, this._activeItemId = null, this._mobileOpen = !1, this._status = "healthy", this._lastError = null, this._degradedComponents = [], this._initialized = !1, this._metrics = { renders: 0, errors: 0 }, this._expandedSections = /* @__PURE__ */ new Set(), this._sectionClickHandler = null, this._rippleCleanup = null, this._itemsChangedCallback = null, ka.instancesCreated++, ka.activeInstances++;
+    this._container = null, this._sidebar = null, this._options = t, this._activeItemId = null, this._mobileOpen = !1, this._status = "healthy", this._lastError = null, this._degradedComponents = [], this._initialized = !1, this._metrics = { renders: 0, errors: 0 }, this._expandedSections = /* @__PURE__ */ new Set(), this._sectionClickHandler = null, this._rippleCleanup = null, this._itemsChangedCallback = null, Pa.instancesCreated++, Pa.activeInstances++;
   }
   get status() {
     return this._status;
   }
   init() {
     try {
-      return Av(), this._initialized = !0, this._status = "healthy", this._navIconsHandler = () => {
+      return jv(), this._initialized = !0, this._status = "healthy", this._navIconsHandler = () => {
         this.renderNavigation();
       }, window.addEventListener("navigation:icons:updated", this._navIconsHandler), this._navItemsChangedHandler = () => {
         this._itemsChangedCallback ? this._itemsChangedCallback() : this.renderNavigation();
@@ -3686,9 +3820,9 @@ class $v {
   _emitDegraded(t, r) {
     try {
       this._degradedComponents.includes(t) || this._degradedComponents.push(t), this._status = "degraded", this._lastError = r;
-      const n = Mv("eventBus");
+      const n = Fv("eventBus");
       n != null && n.emit && n.emit(f.DEGRADED, {
-        source: Ou,
+        source: xd,
         component: t,
         error: r,
         degradedComponents: this._degradedComponents,
@@ -3707,11 +3841,11 @@ class $v {
     try {
       if (!this._container)
         return this._emitDegraded("container", "No container provided"), { success: !1, error: "No container" };
-      if (typeof Ud == "function") {
-        const t = Ud({ title: this._options.title || "DshowDash" });
+      if (typeof Xu == "function") {
+        const t = Xu({ title: this._options.title || "DshowDash" });
         this._container.textContent = "", this._container.appendChild(t), this._sidebar = t;
       } else {
-        const t = Zy({ title: this._options.title || "DshowDash" });
+        const t = gv({ title: this._options.title || "DshowDash" });
         this._container.innerHTML = t, this._sidebar = this._container.querySelector(`.${c.ROOT}`);
       }
       return this._sidebar ? (this.renderNavigation(), this._setupRipple(), this._metrics.renders++, this._status = this._degradedComponents.length > 0 ? "degraded" : "healthy", { success: !0 }) : (this._emitDegraded("sidebar", "Sidebar element not created"), { success: !1, error: "Sidebar element not created" });
@@ -3720,68 +3854,68 @@ class $v {
     }
   }
   renderNavigation() {
-    const t = dv(this._sidebar, this._expandedSections, this._activeItemId, this._degradedComponents);
+    const t = Ov(this._sidebar, this._expandedSections, this._activeItemId, this._degradedComponents);
     return (t.success || t.fallback) && this._setupRipple(), t;
   }
   _renderFallback() {
-    this._sidebar = uv(this._container);
+    this._sidebar = Tv(this._container);
   }
   _setupAccordionHandlers() {
     const t = this;
-    this._sectionClickHandler && qd(this._sidebar, this._sectionClickHandler), this._sectionClickHandler = Lv(this._sidebar, this._expandedSections, (r) => t.toggleSectionUI(r));
+    this._sectionClickHandler && td(this._sidebar, this._sectionClickHandler), this._sectionClickHandler = Yv(this._sidebar, this._expandedSections, (r) => t.toggleSectionUI(r));
   }
   toggleSectionUI(t) {
-    return Ov(this._sidebar, t, this._expandedSections);
+    return Gv(this._sidebar, t, this._expandedSections);
   }
   expandSectionUI(t) {
-    return wl(this._sidebar, t, this._expandedSections);
+    return Gl(this._sidebar, t, this._expandedSections);
   }
   collapseSectionUI(t) {
-    return ch(this._sidebar, t, this._expandedSections);
+    return Mh(this._sidebar, t, this._expandedSections);
   }
   syncExpandedSections(t) {
-    return Tv(this._sidebar, t, this._expandedSections);
+    return Vv(this._sidebar, t, this._expandedSections);
   }
   preloadExpandedSections(t) {
-    return Dv(t, this._expandedSections);
+    return qv(t, this._expandedSections);
   }
   setActiveItem(t) {
-    return this._activeItemId = t, hv(this._sidebar, t, this._expandedSections);
+    return this._activeItemId = t, Dv(this._sidebar, t, this._expandedSections);
   }
   setCollapsed(t) {
-    return fv(this._sidebar, t);
+    return Lv(this._sidebar, t);
   }
   setMobileOpen(t) {
-    return this._mobileOpen = t, gv(this._sidebar, t);
+    return this._mobileOpen = t, $v(this._sidebar, t);
   }
   announce(t) {
-    return mv(this._sidebar, t);
+    return kv(this._sidebar, t);
   }
   filterItems(t) {
-    const r = Ev(this._sidebar, t, this._expandedSections);
+    const r = Nv(this._sidebar, t, this._expandedSections);
     return this._setupRipple(), r;
   }
   clearSearch() {
-    return bv(this._sidebar, this._expandedSections);
+    return Rv(this._sidebar, this._expandedSections);
   }
   showSkeleton(t = 8) {
-    return vv(this._sidebar, t);
+    return Hv(this._sidebar, t);
   }
   hideSkeleton() {
-    const t = Iv(this._sidebar);
+    const t = zv(this._sidebar);
     return t && this.renderNavigation(), t;
   }
   setLoading(t) {
-    return Cv(this._sidebar, t);
+    return Uv(this._sidebar, t);
   }
   _setupRipple() {
-    this._rippleCleanup && this._rippleCleanup(), this._rippleCleanup = Sv(this._sidebar);
+    this._rippleCleanup && this._rippleCleanup(), this._rippleCleanup = Bv(this._sidebar);
   }
   showOverlay() {
-    return Qy();
+    return pv();
   }
   hideOverlay() {
-    return ev();
+    return Ev();
   }
   getSidebar() {
     return this._sidebar;
@@ -3800,14 +3934,14 @@ class $v {
   }
   destroy() {
     try {
-      return this._sectionClickHandler && (qd(this._sidebar, this._sectionClickHandler), this._sectionClickHandler = null), this._rippleCleanup && (this._rippleCleanup(), this._rippleCleanup = null), this._navIconsHandler && (window.removeEventListener("navigation:icons:updated", this._navIconsHandler), this._navIconsHandler = null), this._navItemsChangedHandler && (window.removeEventListener("navigation:items:changed", this._navItemsChangedHandler), this._navItemsChangedHandler = null), this._container && (this._container.textContent = ""), this._sidebar = null, this._container = null, this._initialized = !1, this.reset(), ka.activeInstances--, Za === this && (Za = null), { success: !0 };
+      return this._sectionClickHandler && (td(this._sidebar, this._sectionClickHandler), this._sectionClickHandler = null), this._rippleCleanup && (this._rippleCleanup(), this._rippleCleanup = null), this._navIconsHandler && (window.removeEventListener("navigation:icons:updated", this._navIconsHandler), this._navIconsHandler = null), this._navItemsChangedHandler && (window.removeEventListener("navigation:items:changed", this._navItemsChangedHandler), this._navItemsChangedHandler = null), this._container && (this._container.textContent = ""), this._sidebar = null, this._container = null, this._initialized = !1, this.reset(), Pa.activeInstances--, ol === this && (ol = null), { success: !0 };
     } catch (t) {
       return { success: !1, error: t.message };
     }
   }
   healthCheck() {
     const t = this;
-    return _v(() => ({
+    return xv(() => ({
       container: t._container,
       sidebar: t._sidebar,
       initialized: t._initialized,
@@ -3820,52 +3954,52 @@ class $v {
       rippleCleanup: !!t._rippleCleanup,
       status: t._status,
       metrics: t._metrics,
-      portsInitialized: mi.isInitialized()
+      portsInitialized: vi.isInitialized()
     }))();
   }
   info() {
     const t = this;
-    return yv(() => ({
+    return Pv(() => ({
       activeItemId: t._activeItemId,
       mobileOpen: t._mobileOpen,
       expandedSections: t._expandedSections,
       degradedComponents: t._degradedComponents,
       status: t._status,
       metrics: t._metrics,
-      portsInitialized: mi.isInitialized(),
+      portsInitialized: vi.isInitialized(),
       features: { skeleton: !0, ripple: !!t._rippleCleanup, loading: !0 }
     }), () => t.healthCheck())();
   }
 }
-function kv(e) {
-  const t = new $v(e);
-  return t.init(), Za = t, t;
+function Wv(e) {
+  const t = new Kv(e);
+  return t.init(), ol = t, t;
 }
-function wv(e) {
+function Xv(e) {
   e === void 0 && (e = {});
   const t = e.logger;
   e.tracker;
   const r = e.metricsManager;
   return {
     async execute(n, s) {
-      var i, o, a, l, d, u;
-      n === void 0 && (n = {}), r.incrementInits(), pl("initializing");
+      var i, o, a, l, u, d;
+      n === void 0 && (n = {}), r.incrementInits(), Al("initializing");
       try {
-        t.info("Initializing Sidebar V6.9 ES6..."), await C_() || _e("css", "CSS failed to load");
+        t.info("Initializing Sidebar V6.9 ES6..."), await U_() || _e("css", "CSS failed to load");
         try {
-          await kl();
+          await Fl();
         } catch (m) {
           _e("config", m.message);
         }
-        const g = $y(n);
-        s.config = g, s.safeMode = g.safeMode === !0 || n.safeMode === !0, s.safeMode && (r.incrementSafeModeBoots(), t.info("SafeMode ACTIVE - minimal boot")), s.adapters = qy({ containerSelector: g.containerSelector }), s.ports = Yy(s.adapters);
+        const g = Ky(n);
+        s.config = g, s.safeMode = g.safeMode === !0 || n.safeMode === !0, s.safeMode && (r.incrementSafeModeBoots(), t.info("SafeMode ACTIVE - minimal boot")), s.adapters = cv({ containerSelector: g.containerSelector }), s.ports = uv(s.adapters);
         try {
-          s.engine = hy({
+          s.engine = Dy({
             defaultCollapsed: ((i = g.settings) == null ? void 0 : i.defaultCollapsed) ?? !1,
             accordion: g.accordion ?? { allowMultipleOpen: !0, persistState: !0 }
           }), s.engine.setPorts(s.ports), await s.engine.init();
         } catch (m) {
-          return r.incrementErrors(), Zs(m, { phase: "engine-init" }), { success: !1, error: m.message };
+          return r.incrementErrors(), ei(m, { phase: "engine-init" }), { success: !1, error: m.message };
         }
         if (!s.safeMode)
           try {
@@ -3883,10 +4017,10 @@ function wv(e) {
             });
           }
         try {
-          await S_(
+          await B_(
             () => w.loadFromAPI(),
-            Ua.maxRetries,
-            Ua.retryDelay
+            qa.maxRetries,
+            qa.retryDelay
           );
         } catch (m) {
           _e("registry", m.message);
@@ -3907,12 +4041,12 @@ function wv(e) {
           _e("engine-mount", m.message);
         }
         try {
-          s.renderer = kv({ title: (l = g.header) == null ? void 0 : l.title });
+          s.renderer = Wv({ title: (l = g.header) == null ? void 0 : l.title });
         } catch (m) {
-          return r.incrementErrors(), Zs(m, { phase: "renderer-create" }), { success: !1, error: m.message };
+          return r.incrementErrors(), ei(m, { phase: "renderer-create" }), { success: !1, error: m.message };
         }
         try {
-          const m = (u = (d = s.adapters.ui).getContainer) == null ? void 0 : u.call(d);
+          const m = (d = (u = s.adapters.ui).getContainer) == null ? void 0 : d.call(u);
           if (!m) throw new Error("Container not found");
           s.renderer.setContainer(m);
           const y = s.engine.getExpandedSections();
@@ -3920,28 +4054,28 @@ function wv(e) {
             sectionIds: y
           })), s.renderer.render();
         } catch (m) {
-          return r.incrementErrors(), Zs(m, { phase: "render" }), { success: !1, error: m.message };
+          return r.incrementErrors(), ei(m, { phase: "render" }), { success: !1, error: m.message };
         }
         return { success: !0, config: g };
       } catch (h) {
-        return r.incrementErrors(), Zs(h, { phase: "init" }), t.error("Init failed:", h), { success: !1, error: h.message };
+        return r.incrementErrors(), ei(h, { phase: "init" }), t.error("Init failed:", h), { success: !1, error: h.message };
       }
     }
   };
 }
-function Nv(e) {
+function Zv(e) {
   const { engine: t, renderer: r, logger: n, getPort: s } = e, i = s("layoutManager");
   let o = !1, a = "default";
   i && typeof i.isSidebarCollapsed == "function" ? (o = i.isSidebarCollapsed(), a = "LayoutManager", n.info("Collapsed state from LayoutManager", { collapsed: o })) : (o = document.body.classList.contains("sidebar-collapsed"), a = "body-class", n.warn("LayoutManager not available, using body class as fallback", { collapsed: o })), o ? t.collapse() : t.expand(), r.setCollapsed(o);
   const l = r.getSidebar();
   if (l) {
     l.classList.toggle(c.MOD_COLLAPSED, o);
-    const u = l.querySelector(`.${c.TOGGLE}`);
-    u && (u.setAttribute("aria-expanded", String(!o)), u.setAttribute("aria-label", o ? "Expandir menu" : "Recolher menu"));
+    const d = l.querySelector(`.${c.TOGGLE}`);
+    d && (d.setAttribute("aria-expanded", String(!o)), d.setAttribute("aria-label", o ? "Expandir menu" : "Recolher menu"));
   }
-  const d = document.body.classList.contains("sidebar-collapsed");
-  return d !== o && i && typeof i.setSidebarCollapsed == "function" && (n.warn("Body class mismatch, requesting LayoutManager sync", {
-    bodyHasClass: d,
+  const u = document.body.classList.contains("sidebar-collapsed");
+  return u !== o && i && typeof i.setSidebarCollapsed == "function" && (n.warn("Body class mismatch, requesting LayoutManager sync", {
+    bodyHasClass: u,
     shouldBeCollapsed: o
   }), i.setSidebarCollapsed(o)), n.info("Initial state synced (LayoutManager-Driven)", {
     shouldBeCollapsed: o,
@@ -3949,15 +4083,15 @@ function Nv(e) {
     bodyClassMatch: document.body.classList.contains("sidebar-collapsed") === o
   }), { shouldBeCollapsed: o, source: a };
 }
-let xn = null, wa = 0;
-function Rv(e) {
+let zn = null, Ha = 0;
+function Jv(e) {
   const { engine: t, renderer: r, tracker: n, logger: s, getPort: i } = e, o = i("eventBus");
   if (!o)
     return s.warn("EventBus not available for layout listener"), null;
-  xn && (xn(), xn = null), wa = 0;
+  zn && (zn(), zn = null), Ha = 0;
   const a = (h) => {
     if (t.collapsed === h) return;
-    wa++, s.info("External collapse change received", { collapsed: h }), h ? t.collapse() : t.expand(), r.setCollapsed(h);
+    Ha++, s.info("External collapse change received", { collapsed: h }), h ? t.collapse() : t.expand(), r.setCollapsed(h);
     const g = r.getSidebar();
     if (g) {
       g.classList.toggle(c.MOD_COLLAPSED, h);
@@ -3969,82 +4103,82 @@ function Rv(e) {
     if (!h || h.source === "sidebar" || h.source === "sidebar-toggle") return;
     const g = h.mode;
     g === "sidebar-collapsed" ? a(!0) : g === "sidebar-expanded" && a(!1);
-  }, d = o.on(Xs.REQUEST, l), u = o.on(Xs.SIDEBAR_CHANGED, l);
-  return s.info("Layout listener connected (bidirectional sync)"), xn = () => {
-    typeof d == "function" ? d() : o.off && o.off(Xs.REQUEST, l), typeof u == "function" ? u() : o.off && o.off(Xs.SIDEBAR_CHANGED, l);
+  }, u = o.on(Qs.REQUEST, l), d = o.on(Qs.SIDEBAR_CHANGED, l);
+  return s.info("Layout listener connected (bidirectional sync)"), zn = () => {
+    typeof u == "function" ? u() : o.off && o.off(Qs.REQUEST, l), typeof d == "function" ? d() : o.off && o.off(Qs.SIDEBAR_CHANGED, l);
   }, {
-    cleanup: xn,
-    getExternalCollapseCount: () => wa
+    cleanup: zn,
+    getExternalCollapseCount: () => Ha
   };
 }
-const Li = "6.1.0-ES6", as = "sidebar-keyboard-navigation";
-let Mr = { keystrokes: 0, shortcuts: 0, navigations: 0, errors: 0 }, cn = [], ls = -1;
-const mt = v({ moduleId: as });
-function dh() {
-  mt.init();
+const Pi = "6.1.0-ES6", us = "sidebar-keyboard-navigation";
+let Dr = { keystrokes: 0, shortcuts: 0, navigations: 0, errors: 0 }, fn = [], ds = -1;
+const pt = v({ moduleId: us });
+function Oh() {
+  pt.init();
 }
-function Ja(e) {
-  return mt.get(e);
+function al(e) {
+  return pt.get(e);
 }
-function uh(e) {
-  return mt.inject(e);
+function Th(e) {
+  return pt.inject(e);
 }
-function hh() {
-  return mt.snapshot();
+function Dh() {
+  return pt.snapshot();
 }
-function xv(e) {
+function Qv(e) {
   return Array.from(e.querySelectorAll(`.${c.LINK}:not([aria-disabled="true"])`));
 }
-function Xr(e, t) {
-  t < 0 || t >= e.length || (e[t] && e[t].focus(), ls = t, Mr.navigations++);
+function Qr(e, t) {
+  t < 0 || t >= e.length || (e[t] && e[t].focus(), ds = t, Dr.navigations++);
 }
-function fh(e) {
-  e && mt.inject({ eventBus: e }), dh();
-  const t = Ja("eventBus");
+function Lh(e) {
+  e && pt.inject({ eventBus: e }), Oh();
+  const t = al("eventBus");
   t && t.emit && t.emit(f.KEYBOARD_INITIALIZED);
 }
-function Nl(e) {
+function Vl(e) {
   const { container: t, eventBus: r, onNavigate: n, onToggleSection: s } = e || {};
   if (!t) return () => {
   };
-  r && mt.inject({ eventBus: r }), dh();
+  r && pt.inject({ eventBus: r }), Oh();
   const i = (a) => {
-    Mr.keystrokes++;
+    Dr.keystrokes++;
     try {
-      const l = xv(t), d = document.activeElement;
-      let u = l.indexOf(d);
-      switch (u === -1 && (u = ls), a.key) {
+      const l = Qv(t), u = document.activeElement;
+      let d = l.indexOf(u);
+      switch (d === -1 && (d = ds), a.key) {
         case "ArrowDown":
-          a.preventDefault(), Xr(l, Math.min(u + 1, l.length - 1));
+          a.preventDefault(), Qr(l, Math.min(d + 1, l.length - 1));
           break;
         case "ArrowUp":
-          a.preventDefault(), Xr(l, Math.max(u - 1, 0));
+          a.preventDefault(), Qr(l, Math.max(d - 1, 0));
           break;
         case "Home":
-          a.preventDefault(), Xr(l, 0);
+          a.preventDefault(), Qr(l, 0);
           break;
         case "End":
-          a.preventDefault(), Xr(l, l.length - 1);
+          a.preventDefault(), Qr(l, l.length - 1);
           break;
         case "PageDown":
-          a.preventDefault(), Xr(l, Math.min(u + 5, l.length - 1));
+          a.preventDefault(), Qr(l, Math.min(d + 5, l.length - 1));
           break;
         case "PageUp":
-          a.preventDefault(), Xr(l, Math.max(u - 5, 0));
+          a.preventDefault(), Qr(l, Math.max(d - 5, 0));
           break;
         case "Enter":
         case " ":
-          if (d && d.classList.contains(c.LINK)) {
-            const h = d.closest(`.${c.ITEM}`), g = h ? h.dataset.itemId : null;
-            g && (a.preventDefault(), n && n(g), d.click());
-          } else if (d && d.classList.contains(c.GROUP_BUTTON)) {
-            const h = d.closest(`.${c.SECTION}`), g = h ? h.dataset.sectionId : null;
+          if (u && u.classList.contains(c.LINK)) {
+            const h = u.closest(`.${c.ITEM}`), g = h ? h.dataset.itemId : null;
+            g && (a.preventDefault(), n && n(g), u.click());
+          } else if (u && u.classList.contains(c.GROUP_BUTTON)) {
+            const h = u.closest(`.${c.SECTION}`), g = h ? h.dataset.sectionId : null;
             g && (a.preventDefault(), s && s(g));
           }
           break;
         case "ArrowRight":
-          if (d) {
-            const h = d.closest(`.${c.SECTION}`);
+          if (u) {
+            const h = u.closest(`.${c.SECTION}`);
             if (h && h.classList.contains(c.SECTION_COLLAPSIBLE) && !h.classList.contains(c.SECTION_EXPANDED)) {
               a.preventDefault();
               const g = h.dataset.sectionId;
@@ -4053,8 +4187,8 @@ function Nl(e) {
           }
           break;
         case "ArrowLeft":
-          if (d) {
-            const h = d.closest(`.${c.SECTION}`);
+          if (u) {
+            const h = u.closest(`.${c.SECTION}`);
             if (h && h.classList.contains(c.SECTION_EXPANDED)) {
               a.preventDefault();
               const g = h.dataset.sectionId;
@@ -4070,125 +4204,125 @@ function Nl(e) {
           break;
       }
     } catch {
-      Mr.errors++;
+      Dr.errors++;
     }
   };
   t.addEventListener("keydown", i), t.hasAttribute("tabindex") || t.setAttribute("tabindex", "-1");
   const o = () => t.removeEventListener("keydown", i);
-  return cn.push(o), o;
+  return fn.push(o), o;
 }
-function Rl(e) {
+function ql(e) {
   const { eventBus: t, shortcut: r = "b", modifier: n = "ctrl", onToggle: s } = e || {}, i = (a) => {
     if ((n === "ctrl" ? a.ctrlKey : n === "alt" ? a.altKey : n === "meta" ? a.metaKey : n === "shift" ? a.shiftKey : !1) && a.key.toLowerCase() === r.toLowerCase())
-      if (a.preventDefault(), Mr.shortcuts++, s)
+      if (a.preventDefault(), Dr.shortcuts++, s)
         s();
       else {
-        const d = Ja("sidebar");
-        if (d && d.toggle)
-          d.toggle();
+        const u = al("sidebar");
+        if (u && u.toggle)
+          u.toggle();
         else {
-          const u = Ja("eventBus");
-          u && u.emit && u.emit(f.TOGGLE, { source: "keyboard-shortcut" });
+          const d = al("eventBus");
+          d && d.emit && d.emit(f.TOGGLE, { source: "keyboard-shortcut" });
         }
       }
   };
   document.addEventListener("keydown", i);
   const o = () => document.removeEventListener("keydown", i);
-  return cn.push(o), o;
+  return fn.push(o), o;
 }
-function xl() {
-  cn.forEach((e) => {
+function Yl() {
+  fn.forEach((e) => {
     try {
       e();
     } catch {
     }
-  }), cn = [], ls = -1;
+  }), fn = [], ds = -1;
 }
-function $i() {
-  return { ...Mr };
+function Hi() {
+  return { ...Dr };
 }
-function gh() {
-  return { moduleId: as, version: Li, focusedIndex: ls, cleanupCount: cn.length, metrics: $i(), portsInitialized: mt.isInitialized() };
+function $h() {
+  return { moduleId: us, version: Pi, focusedIndex: ds, cleanupCount: fn.length, metrics: Hi(), portsInitialized: pt.isInitialized() };
 }
-function mh() {
-  return { status: Mr.errors === 0 ? "HEALTHY" : "DEGRADED", version: Li, moduleId: as, checks: { noErrors: Mr.errors === 0, cleanupCount: cn.length, focusedIndex: ls, portsInitialized: mt.isInitialized() }, portsInitialized: mt.isInitialized(), metrics: $i() };
+function kh() {
+  return { status: Dr.errors === 0 ? "HEALTHY" : "DEGRADED", version: Pi, moduleId: us, checks: { noErrors: Dr.errors === 0, cleanupCount: fn.length, focusedIndex: ds, portsInitialized: pt.isInitialized() }, portsInitialized: pt.isInitialized(), metrics: Hi() };
 }
-var Pv = { init: fh, setupKeyboardNavigation: Nl, setupGlobalShortcut: Rl, destroy: xl, injectPorts: uh, getPorts: hh, getMetrics: $i, info: gh, healthCheck: mh, VERSION: Li, MODULE_ID: as };
-const Hv = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var eI = { init: Lh, setupKeyboardNavigation: Vl, setupGlobalShortcut: ql, destroy: Yl, injectPorts: Th, getPorts: Dh, getMetrics: Hi, info: $h, healthCheck: kh, VERSION: Pi, MODULE_ID: us };
+const tI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: as,
-  VERSION: Li,
-  default: Pv,
-  destroy: xl,
-  getMetrics: $i,
-  getPorts: hh,
-  healthCheck: mh,
-  info: gh,
-  init: fh,
-  injectPorts: uh,
-  setupGlobalShortcut: Rl,
-  setupKeyboardNavigation: Nl
-}, Symbol.toStringTag, { value: "Module" })), ki = "6.1.0-ES6", cs = "sidebar-mobile-handler";
-let nt = !1, ve = !1, ot = [], ir = { toggles: 0, detects: 0, overlayClicks: 0, swipes: 0, errors: 0 };
-const zv = 50, Bv = 0.3, pt = v({ moduleId: cs });
-function ph() {
-  pt.init();
+  MODULE_ID: us,
+  VERSION: Pi,
+  default: eI,
+  destroy: Yl,
+  getMetrics: Hi,
+  getPorts: Dh,
+  healthCheck: kh,
+  info: $h,
+  init: Lh,
+  injectPorts: Th,
+  setupGlobalShortcut: ql,
+  setupKeyboardNavigation: Vl
+}, Symbol.toStringTag, { value: "Module" })), zi = "6.1.0-ES6", hs = "sidebar-mobile-handler";
+let nt = !1, ve = !1, ot = [], or = { toggles: 0, detects: 0, overlayClicks: 0, swipes: 0, errors: 0 };
+const rI = 50, nI = 0.3, Et = v({ moduleId: hs });
+function wh() {
+  Et.init();
 }
-function wi(e) {
-  return pt.get(e);
+function Bi(e) {
+  return Et.get(e);
 }
-function Eh(e) {
-  return pt.inject(e);
+function Nh(e) {
+  return Et.inject(e);
 }
-function bh() {
-  return pt.snapshot();
+function Rh() {
+  return Et.snapshot();
 }
-function _h(e, t) {
-  e && pt.inject({ eventBus: e }), ph();
-  const r = wi("eventBus");
+function xh(e, t) {
+  e && Et.inject({ eventBus: e }), wh();
+  const r = Bi("eventBus");
   r && r.emit && r.emit(f.MOBILE_HANDLER_INITIALIZED);
 }
-function Pl(e) {
+function Kl(e) {
   const { container: t, eventBus: r, breakpoint: n = 768 } = e || {};
-  r && pt.inject({ eventBus: r }), ph();
+  r && Et.inject({ eventBus: r }), wh();
   const s = () => {
     const i = nt;
-    if (nt = window.innerWidth < n, ir.detects++, i !== nt) {
-      const o = wi("eventBus");
+    if (nt = window.innerWidth < n, or.detects++, i !== nt) {
+      const o = Bi("eventBus");
       o && o.emit && o.emit(f.MOBILE_CHANGED, { isMobile: nt }), nt ? (t && t.classList.add(c.MOD_MOBILE), document.body.classList.add("has-mobile-sidebar")) : (t && t.classList.remove(c.MOD_MOBILE, c.MOD_MOBILE_OPEN), document.body.classList.remove("has-mobile-sidebar", "sidebar-mobile-open"), ve = !1);
     }
   };
-  return s(), window.addEventListener("resize", s), ot.push(() => window.removeEventListener("resize", s)), () => ds();
+  return s(), window.addEventListener("resize", s), ot.push(() => window.removeEventListener("resize", s)), () => fs();
 }
-function Hl(e) {
-  return Pl(e);
+function Wl(e) {
+  return Kl(e);
 }
-function yh(e) {
+function Ph(e) {
   const { container: t, eventBus: r, onOpen: n, onClose: s } = e || {};
   if (!t) return () => {
   };
   let i = 0, o = 0, a = 0, l = !1;
-  const d = (y) => {
+  const u = (y) => {
     i = y.touches[0].clientX, o = y.touches[0].clientY, a = Date.now(), l = !1;
-  }, u = (y) => {
+  }, d = (y) => {
     if (!i) return;
     const S = y.touches[0].clientX - i, x = y.touches[0].clientY - o;
     Math.abs(S) > Math.abs(x) && Math.abs(S) > 10 && (l = !0);
   }, h = (y) => {
     if (!l) return;
     const x = y.changedTouches[0].clientX - i, Ae = Date.now() - a, Me = Math.abs(x) / Ae;
-    (Math.abs(x) > zv || Me > Bv) && (ir.swipes++, x > 0 && !ve ? Uv(t, n) : x < 0 && ve && vh(t, s)), i = 0, o = 0, l = !1;
+    (Math.abs(x) > rI || Me > nI) && (or.swipes++, x > 0 && !ve ? sI(t, n) : x < 0 && ve && Hh(t, s)), i = 0, o = 0, l = !1;
   }, g = 20, m = (y) => {
-    y.touches[0].clientX < g && !ve && d(y);
+    y.touches[0].clientX < g && !ve && u(y);
   };
-  return document.addEventListener("touchstart", m, { passive: !0 }), t.addEventListener("touchstart", d, { passive: !0 }), t.addEventListener("touchmove", u, { passive: !0 }), t.addEventListener("touchend", h, { passive: !0 }), ot.push(() => document.removeEventListener("touchstart", m)), ot.push(() => t.removeEventListener("touchstart", d)), ot.push(() => t.removeEventListener("touchmove", u)), ot.push(() => t.removeEventListener("touchend", h)), () => ds();
+  return document.addEventListener("touchstart", m, { passive: !0 }), t.addEventListener("touchstart", u, { passive: !0 }), t.addEventListener("touchmove", d, { passive: !0 }), t.addEventListener("touchend", h, { passive: !0 }), ot.push(() => document.removeEventListener("touchstart", m)), ot.push(() => t.removeEventListener("touchstart", u)), ot.push(() => t.removeEventListener("touchmove", d)), ot.push(() => t.removeEventListener("touchend", h)), () => fs();
 }
-function zl(e) {
+function Xl(e) {
   const { container: t, eventBus: r, onClose: n } = e || {};
   let s = document.querySelector(".dsd-sidebar-overlay");
   s || (s = document.createElement("div"), s.className = "dsd-sidebar-overlay", s.setAttribute("aria-hidden", "true"), document.body.appendChild(s));
   const i = () => {
-    ir.overlayClicks++, vh(t, n);
+    or.overlayClicks++, Hh(t, n);
   };
   return s.addEventListener("click", i), ot.push(() => s.removeEventListener("click", i)), {
     show: () => {
@@ -4200,33 +4334,33 @@ function zl(e) {
     destroy: () => s.remove()
   };
 }
-function Uv(e, t) {
-  ve = !0, ir.toggles++, e && e.classList.add(c.MOD_MOBILE_OPEN), document.body.classList.add("sidebar-mobile-open");
+function sI(e, t) {
+  ve = !0, or.toggles++, e && e.classList.add(c.MOD_MOBILE_OPEN), document.body.classList.add("sidebar-mobile-open");
   const r = document.querySelector(".dsd-sidebar-overlay");
   r && r.classList.add("dsd-sidebar-overlay--visible");
-  const n = wi("eventBus");
+  const n = Bi("eventBus");
   n && n.emit && n.emit(f.MOBILE_OPENED, { source: "swipe" }), t && t();
 }
-function vh(e, t) {
-  ve = !1, ir.toggles++, e && e.classList.remove(c.MOD_MOBILE_OPEN), document.body.classList.remove("sidebar-mobile-open");
+function Hh(e, t) {
+  ve = !1, or.toggles++, e && e.classList.remove(c.MOD_MOBILE_OPEN), document.body.classList.remove("sidebar-mobile-open");
   const r = document.querySelector(".dsd-sidebar-overlay");
   r && r.classList.remove("dsd-sidebar-overlay--visible");
-  const n = wi("eventBus");
+  const n = Bi("eventBus");
   n && n.emit && n.emit(f.MOBILE_CLOSED, { source: "swipe" }), t && t();
 }
-function Ih(e) {
-  return ve = e ?? !ve, ir.toggles++, ve;
+function zh(e) {
+  return ve = e ?? !ve, or.toggles++, ve;
 }
-function Sh() {
+function Bh() {
   return nt;
 }
-function Ch() {
+function Uh() {
   return ve;
 }
-function Ni() {
-  return { ...ir };
+function Ui() {
+  return { ...or };
 }
-function ds() {
+function fs() {
   ot.forEach((t) => {
     try {
       t();
@@ -4236,44 +4370,44 @@ function ds() {
   const e = document.querySelector(".dsd-sidebar-overlay");
   e && e.remove();
 }
-function Ah() {
-  return { moduleId: cs, version: ki, isMobile: nt, isOpen: ve, cleanups: ot.length, metrics: Ni(), portsInitialized: pt.isInitialized() };
+function jh() {
+  return { moduleId: hs, version: zi, isMobile: nt, isOpen: ve, cleanups: ot.length, metrics: Ui(), portsInitialized: Et.isInitialized() };
 }
-function Mh() {
-  return { status: "HEALTHY", version: ki, moduleId: cs, checks: { isMobile: nt, isOpen: ve, noErrors: ir.errors === 0, noOrphanListeners: !0, portsInitialized: pt.isInitialized() }, portsInitialized: pt.isInitialized(), metrics: Ni() };
+function Fh() {
+  return { status: "HEALTHY", version: zi, moduleId: hs, checks: { isMobile: nt, isOpen: ve, noErrors: or.errors === 0, noOrphanListeners: !0, portsInitialized: Et.isInitialized() }, portsInitialized: Et.isInitialized(), metrics: Ui() };
 }
-var jv = { init: _h, setupMobileHandler: Pl, setupMobileDetect: Hl, setupSwipeGestures: yh, setupOverlayClick: zl, toggleMobile: Ih, isMobile: Sh, isOpen: Ch, destroy: ds, injectPorts: Eh, getPorts: bh, getMetrics: Ni, info: Ah, healthCheck: Mh, VERSION: ki, MODULE_ID: cs };
-const Fv = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var iI = { init: xh, setupMobileHandler: Kl, setupMobileDetect: Wl, setupSwipeGestures: Ph, setupOverlayClick: Xl, toggleMobile: zh, isMobile: Bh, isOpen: Uh, destroy: fs, injectPorts: Nh, getPorts: Rh, getMetrics: Ui, info: jh, healthCheck: Fh, VERSION: zi, MODULE_ID: hs };
+const oI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: cs,
-  VERSION: ki,
-  default: jv,
-  destroy: ds,
-  getMetrics: Ni,
-  getPorts: bh,
-  healthCheck: Mh,
-  info: Ah,
-  init: _h,
-  injectPorts: Eh,
-  isMobile: Sh,
-  isOpen: Ch,
-  setupMobileDetect: Hl,
-  setupMobileHandler: Pl,
-  setupOverlayClick: zl,
-  setupSwipeGestures: yh,
-  toggleMobile: Ih
+  MODULE_ID: hs,
+  VERSION: zi,
+  default: iI,
+  destroy: fs,
+  getMetrics: Ui,
+  getPorts: Rh,
+  healthCheck: Fh,
+  info: jh,
+  init: xh,
+  injectPorts: Nh,
+  isMobile: Bh,
+  isOpen: Uh,
+  setupMobileDetect: Wl,
+  setupMobileHandler: Kl,
+  setupOverlayClick: Xl,
+  setupSwipeGestures: Ph,
+  toggleMobile: zh
 }, Symbol.toStringTag, { value: "Module" }));
-function Gv(e) {
+function aI(e) {
   e === void 0 && (e = {});
   const t = e.logger, r = e.tracker, n = e.getPort, s = e.emitDegraded;
   let i = null, o = [];
   return {
     setupCore(a) {
-      const l = a.engine, d = a.renderer, u = a.registry, h = a.adapters, g = a.onToggle, m = a.onSetActiveItem, y = a.onToggleSection;
+      const l = a.engine, u = a.renderer, d = a.registry, h = a.adapters, g = a.onToggle, m = a.onSetActiveItem, y = a.onToggleSection;
       try {
-        Nv({
+        Zv({
           engine: l,
-          renderer: d,
+          renderer: u,
           logger: t,
           getPort: n
         });
@@ -4281,9 +4415,9 @@ function Gv(e) {
         s("restore-state", S.message);
       }
       try {
-        i = Rv({
+        i = Jv({
           engine: l,
-          renderer: d,
+          renderer: u,
           tracker: r,
           logger: t,
           getPort: n
@@ -4292,12 +4426,12 @@ function Gv(e) {
         s("layout-listener", S.message);
       }
       try {
-        const S = d.getSidebar();
-        S && Sl(S, {
-          registry: u,
+        const S = u.getSidebar();
+        S && kl(S, {
+          registry: d,
           routerAdapter: h.router,
           engine: l,
-          renderer: d,
+          renderer: u,
           onToggle: g,
           onSetActiveItem: m,
           onToggleSection: y
@@ -4307,37 +4441,37 @@ function Gv(e) {
       }
     },
     setupPostReady(a) {
-      const l = a.engine, d = a.renderer, u = a.registry, h = a.adapters, g = a.onToggle, m = a.onSetActiveItem, y = a.onExpandSection, S = a.onCollapseSection, x = a.onCloseMobile, Ae = a.onReloadNavigation, Me = d.getSidebar();
+      const l = a.engine, u = a.renderer, d = a.registry, h = a.adapters, g = a.onToggle, m = a.onSetActiveItem, y = a.onExpandSection, S = a.onCollapseSection, x = a.onCloseMobile, Ae = a.onReloadNavigation, Me = u.getSidebar();
       try {
         if (Me) {
-          const _ = Nl(Me, {
+          const _ = Vl(Me, {
             onExpandSection: y,
             onCollapseSection: S
           });
           o.push(_);
-          const A = Rl(g);
+          const A = ql(g);
           o.push(A);
         }
       } catch (_) {
         s("keyboard-nav", _.message);
       }
       try {
-        const _ = Hl({
-          onMobileChange(le) {
-            l.setMobile(le);
+        const _ = Wl({
+          onMobileChange(ce) {
+            l.setMobile(ce);
           },
           onCloseMobile: x
         });
         o.push(_);
-        const A = zl(x);
+        const A = Xl(x);
         o.push(A);
       } catch (_) {
         s("mobile-detect", _.message);
       }
       try {
-        const _ = Cl({
+        const _ = wl({
           routerAdapter: h.router,
-          registry: u,
+          registry: d,
           onSetActiveItem: m,
           onReloadNavigation: Ae
         });
@@ -4365,20 +4499,20 @@ function Gv(e) {
     }
   };
 }
-function Vv(e) {
+function lI(e) {
   e === void 0 && (e = {});
   const t = e.logger;
   return {
     execute(r, n) {
       try {
-        return n && n.cleanup(), xl(), ds(), Ml(), Xn(), r.engine && (r.engine.destroy(), r.engine = null), r.renderer && (r.renderer.destroy(), r.renderer = null), r.adapters && r.adapters.router && r.adapters.router.destroy && r.adapters.router.destroy(), k.abort && k.abort(), E_(), r.initialized = !1, r.initAt = null, r.safeMode = !1, r.modelLoaderInitialized = !1, pl("destroyed"), t.info("Sidebar destroyed"), { success: !0 };
+        return n && n.cleanup(), Yl(), fs(), Rl(), Qn(), r.engine && (r.engine.destroy(), r.engine = null), r.renderer && (r.renderer.destroy(), r.renderer = null), r.adapters && r.adapters.router && r.adapters.router.destroy && r.adapters.router.destroy(), k.abort && k.abort(), N_(), r.initialized = !1, r.initAt = null, r.safeMode = !1, r.modelLoaderInitialized = !1, Al("destroyed"), t.info("Sidebar destroyed"), { success: !0 };
       } catch (s) {
         return t.error("Destroy error:", s), { success: !1, error: s.message };
       }
     }
   };
 }
-function qv() {
+function cI() {
   const e = {
     inits: 0,
     toggles: 0,
@@ -4427,32 +4561,32 @@ function qv() {
     }
   };
 }
-function Yv(e = {}) {
+function uI(e = {}) {
   const t = e.getContext, r = e.metricsManager, n = e.setupCoordinator, s = e.portsManager;
   return {
     healthCheck() {
-      var u, h;
+      var d, h;
       const i = t(), o = {
         initialized: i.initialized,
         engineReady: !!i.engine,
         rendererReady: !!i.renderer,
-        registryLoaded: ((u = w.getItems()) == null ? void 0 : u.length) > 0,
+        registryLoaded: ((d = w.getItems()) == null ? void 0 : d.length) > 0,
         portsInitialized: s.isInitialized(),
         layoutListenerConnected: !!n.getLayoutListener(),
         modelLoaderInitialized: i.modelLoaderInitialized
       }, a = Object.values(o).filter(Boolean).length, l = Object.keys(o).length;
-      let d = "HEALTHY";
-      return a < l && a >= Math.floor(l * 0.6) && (d = "DEGRADED"), a < Math.floor(l * 0.6) && (d = "UNHEALTHY"), {
-        status: d,
+      let u = "HEALTHY";
+      return a < l && a >= Math.floor(l * 0.6) && (u = "DEGRADED"), a < Math.floor(l * 0.6) && (u = "UNHEALTHY"), {
+        status: u,
         score: { passed: a, total: l, percentage: Math.round(a / l * 100) },
         checks: o,
-        issues: Mu().map((g) => ({
+        issues: Rd().map((g) => ({
           code: g,
           severity: "warn",
           message: `Component degraded: ${g}`
         })),
-        moduleId: oe,
-        version: fr,
+        moduleId: le,
+        version: mr,
         safeMode: i.safeMode,
         metrics: this.getMetrics(),
         ports: { initialized: s.isInitialized(), missing: [] },
@@ -4461,16 +4595,16 @@ function Yv(e = {}) {
       };
     },
     info() {
-      var a, l, d, u;
+      var a, l, u, d;
       const i = t(), o = ((a = k.info) == null ? void 0 : a.call(k)) ?? {};
       return {
-        moduleId: oe,
-        version: fr,
+        moduleId: le,
+        version: mr,
         initialized: i.initialized,
-        status: qa(),
+        status: Za(),
         safeMode: i.safeMode,
         collapsed: ((l = i.engine) == null ? void 0 : l.collapsed) || !1,
-        expandedSections: ((u = (d = i.engine) == null ? void 0 : d.getExpandedSections) == null ? void 0 : u.call(d)) ?? [],
+        expandedSections: ((d = (u = i.engine) == null ? void 0 : u.getExpandedSections) == null ? void 0 : d.call(u)) ?? [],
         keyboardNavEnabled: i.keyboardNavEnabled,
         metrics: this.getMetrics(),
         portsInitialized: s.isInitialized(),
@@ -4481,11 +4615,11 @@ function Yv(e = {}) {
       };
     },
     getManifest() {
-      var d, u, h, g;
-      const i = t(), o = ((d = w.getSections) == null ? void 0 : d.call(w)) || [], a = ((u = w.getItems) == null ? void 0 : u.call(w)) || [], l = ((h = k.info) == null ? void 0 : h.call(k)) ?? {};
+      var u, d, h, g;
+      const i = t(), o = ((u = w.getSections) == null ? void 0 : u.call(w)) || [], a = ((d = w.getItems) == null ? void 0 : d.call(w)) || [], l = ((h = k.info) == null ? void 0 : h.call(k)) ?? {};
       return {
-        registryId: oe,
-        version: fr,
+        registryId: le,
+        version: mr,
         loadedAt: i.initAt,
         itemCount: o.length + a.length,
         sections: o.map((m) => m.id),
@@ -4502,18 +4636,18 @@ function Yv(e = {}) {
       };
     },
     getMetrics() {
-      var u, h, g, m, y, S, x, Ae, Me, _;
-      const i = t(), o = n.getLayoutListener(), a = ((u = o == null ? void 0 : o.getExternalCollapseCount) == null ? void 0 : u.call(o)) || r.get("externalCollapses"), l = ((h = k.info) == null ? void 0 : h.call(k)) ?? {}, d = r.getAll();
-      return Object.assign({}, d, {
+      var d, h, g, m, y, S, x, Ae, Me, _;
+      const i = t(), o = n.getLayoutListener(), a = ((d = o == null ? void 0 : o.getExternalCollapseCount) == null ? void 0 : d.call(o)) || r.get("externalCollapses"), l = ((h = k.info) == null ? void 0 : h.call(k)) ?? {}, u = r.getAll();
+      return Object.assign({}, u, {
         externalCollapses: a,
-        status: qa(),
+        status: Za(),
         initialized: i.initialized,
         safeMode: i.safeMode,
         sectionsCount: ((m = (g = w.getSections) == null ? void 0 : g.call(w)) == null ? void 0 : m.length) || 0,
         itemsCount: ((S = (y = w.getItems) == null ? void 0 : y.call(w)) == null ? void 0 : S.length) || 0,
         expandedSections: ((Me = (Ae = (x = i.engine) == null ? void 0 : x.getExpandedSections) == null ? void 0 : Ae.call(x)) == null ? void 0 : Me.length) || 0,
         collapsed: ((_ = i.engine) == null ? void 0 : _.collapsed) || !1,
-        toggleMetrics: Zu(),
+        toggleMetrics: gh(),
         portsInitialized: s.isInitialized(),
         modelLoaderInitialized: i.modelLoaderInitialized,
         // @ts-expect-error strict migration — TS2339
@@ -4522,18 +4656,18 @@ function Yv(e = {}) {
     }
   };
 }
-const ti = "6.5.1-IMPORT-FIX", Bl = v({ moduleId: oe });
-function Kv() {
-  Bl.init();
+const si = "6.5.1-IMPORT-FIX", Zl = v({ moduleId: le });
+function dI() {
+  Zl.init();
 }
-function pi(e) {
-  return Bl.get(e);
+function Ii(e) {
+  return Zl.get(e);
 }
-function Wv() {
-  return pi("eventBus") || pi("eventBusGlobal");
+function hI() {
+  return Ii("eventBus") || Ii("eventBusGlobal");
 }
-function Xv() {
-  const e = pi("routerGlobal");
+function fI() {
+  const e = Ii("routerGlobal");
   if (e && e.getCurrentRoute)
     try {
       const t = e.getCurrentRoute();
@@ -4542,9 +4676,9 @@ function Xv() {
     }
   return typeof window < "u" && window.location && window.location.hash || "#/";
 }
-class Zv {
+class gI {
   constructor() {
-    this._logger = py({ debug: !1 }), this._tracker = _y({ enabled: !0 }), this._keyboardNavEnabled = zb.enabled, this._context = {
+    this._logger = wy({ debug: !1 }), this._tracker = xy({ enabled: !0 }), this._keyboardNavEnabled = r_.enabled, this._context = {
       engine: null,
       renderer: null,
       adapters: {},
@@ -4555,26 +4689,26 @@ class Zv {
       safeMode: !1,
       modelLoaderInitialized: !1,
       keyboardNavEnabled: this._keyboardNavEnabled
-    }, this._metricsManager = qv(), this._setupCoordinator = Gv({
+    }, this._metricsManager = cI(), this._setupCoordinator = aI({
       logger: this._logger,
       tracker: this._tracker,
-      getPort: pi,
+      getPort: Ii,
       emitDegraded: _e
-    }), this._initializer = wv({
+    }), this._initializer = Xv({
       logger: this._logger,
       tracker: this._tracker,
       metricsManager: this._metricsManager
-    }), this._destroyer = Vv({
+    }), this._destroyer = lI({
       logger: this._logger
-    }), this._healthReporter = Yv({
+    }), this._healthReporter = uI({
       getContext: () => this._context,
       metricsManager: this._metricsManager,
       setupCoordinator: this._setupCoordinator,
-      portsManager: Bl
-    }), p_(this._logger, this._tracker), bl(this._logger, this._tracker), this._logger, Kv();
+      portsManager: Zl
+    }), w_(this._logger, this._tracker), Ol(this._logger, this._tracker), this._logger, dI();
   }
   get status() {
-    return qa();
+    return Za();
   }
   async init(t) {
     var s;
@@ -4609,22 +4743,22 @@ class Zv {
       _e("engine-ready", i.message);
     }
     (s = this._context.renderer) != null && s.setItemsChangedCallback && this._context.renderer.setItemsChangedCallback(() => this._reloadNavigation()), this._bindPublicMethods(), this._context.initialized = !0, this._context.initAt = Date.now();
-    const n = Mu();
-    return pl(n.length > 0 ? "degraded" : "healthy"), this._emitReadyEvent(), this._logger.info(`Sidebar V6.5 ES6 initialized (${this.status})`, {
-      version: ti,
+    const n = Rd();
+    return Al(n.length > 0 ? "degraded" : "healthy"), this._emitReadyEvent(), this._logger.info(`Sidebar V6.5 ES6 initialized (${this.status})`, {
+      version: si,
       safeMode: this._context.safeMode,
       degradedComponents: n,
       modelLoaderInitialized: this._context.modelLoaderInitialized
     }), this._tracker.track("initialized", {
-      version: ti,
+      version: si,
       status: this.status,
       safeMode: this._context.safeMode
-    }), { success: !0, version: ti, status: this.status, safeMode: this._context.safeMode };
+    }), { success: !0, version: si, status: this.status, safeMode: this._context.safeMode };
   }
   _emitReadyEvent() {
-    const t = Wv();
+    const t = hI();
     t && t.emit && (t.emit(f.READY, {
-      version: ti,
+      version: si,
       status: this.status,
       safeMode: this._context.safeMode,
       timestamp: Date.now()
@@ -4638,7 +4772,7 @@ class Zv {
     }
   }
   async _reloadNavigation() {
-    return dy({
+    return Oy({
       engine: this._context.engine,
       renderer: this._context.renderer,
       registry: w,
@@ -4646,7 +4780,7 @@ class Zv {
       logger: this._logger,
       metrics: this._metricsManager.getAll(),
       modelLoaderInitialized: this._context.modelLoaderInitialized,
-      getCurrentHash: Xv
+      getCurrentHash: fI
     });
   }
   _bindPublicMethods() {
@@ -4659,27 +4793,27 @@ class Zv {
       permissionsAdapter: this._context.adapters.permissions,
       tracker: this._tracker,
       logger: this._logger
-    }, n = Ly(r);
-    this.toggle = () => (t._metricsManager.incrementToggles(), n.toggle.call(t)), this.collapse = n.collapse.bind(this), this.expand = n.expand.bind(this), this.forceSync = (s = n.forceSync) == null ? void 0 : s.bind(this), this.getToggleMetrics = (i = n.getToggleMetrics) == null ? void 0 : i.bind(this), this.toggleSection = n.toggleSection.bind(this), this.expandSection = n.expandSection.bind(this), this.collapseSection = n.collapseSection.bind(this), this.expandAllSections = n.expandAllSections.bind(this), this.collapseAllSections = n.collapseAllSections.bind(this), this.isSectionExpanded = n.isSectionExpanded.bind(this), this.getExpandedSections = n.getExpandedSections.bind(this), this.setAccordionMode = n.setAccordionMode.bind(this), this.openMobile = n.openMobile.bind(this), this.closeMobile = n.closeMobile.bind(this), this.toggleMobile = n.toggleMobile.bind(this), this.navigate = (o) => (t._metricsManager.incrementNavigations(), n.navigate.call(t, o)), this.setBadge = n.setBadge.bind(this), this.refresh = n.refresh.bind(this), this.getState = ky(this._context.engine), this.healthCheck = () => t._healthReporter.healthCheck(), this.info = () => t._healthReporter.info(), this.getManifest = () => t._healthReporter.getManifest(), this.getMetrics = () => t._healthReporter.getMetrics();
+    }, n = Yy(r);
+    this.toggle = () => (t._metricsManager.incrementToggles(), n.toggle.call(t)), this.collapse = n.collapse.bind(this), this.expand = n.expand.bind(this), this.forceSync = (s = n.forceSync) == null ? void 0 : s.bind(this), this.getToggleMetrics = (i = n.getToggleMetrics) == null ? void 0 : i.bind(this), this.toggleSection = n.toggleSection.bind(this), this.expandSection = n.expandSection.bind(this), this.collapseSection = n.collapseSection.bind(this), this.expandAllSections = n.expandAllSections.bind(this), this.collapseAllSections = n.collapseAllSections.bind(this), this.isSectionExpanded = n.isSectionExpanded.bind(this), this.getExpandedSections = n.getExpandedSections.bind(this), this.setAccordionMode = n.setAccordionMode.bind(this), this.openMobile = n.openMobile.bind(this), this.closeMobile = n.closeMobile.bind(this), this.toggleMobile = n.toggleMobile.bind(this), this.navigate = (o) => (t._metricsManager.incrementNavigations(), n.navigate.call(t, o)), this.setBadge = n.setBadge.bind(this), this.refresh = n.refresh.bind(this), this.getState = Wy(this._context.engine), this.healthCheck = () => t._healthReporter.healthCheck(), this.info = () => t._healthReporter.info(), this.getManifest = () => t._healthReporter.getManifest(), this.getMetrics = () => t._healthReporter.getMetrics();
   }
   destroy() {
     this._destroyer.execute(this._context, this._setupCoordinator), this._metricsManager.reset();
   }
 }
-const et = "sidebar-kernel", Ue = "3.1.0-ES6", Ee = Object.freeze({
+const et = "sidebar-kernel", je = "3.1.0-ES6", Ee = Object.freeze({
   IDLE: "idle",
   INITIALIZING: "initializing",
   READY: "ready",
   DEGRADED: "degraded",
   SHUTDOWN: "shutdown",
   ERROR: "error"
-}), q = Object.freeze({
+}), Y = Object.freeze({
   REGISTERED: "registered",
   ENABLED: "enabled",
   DISABLED: "disabled",
   DEGRADED: "degraded",
   ERROR: "error"
-}), Fe = Object.freeze({
+}), Ge = Object.freeze({
   READY: "sidebar-kernel:ready",
   SHUTDOWN: "sidebar-kernel:shutdown",
   FEATURE_REGISTERED: "sidebar-kernel:feature:registered",
@@ -4687,18 +4821,18 @@ const et = "sidebar-kernel", Ue = "3.1.0-ES6", Ee = Object.freeze({
   FEATURE_DISABLED: "sidebar-kernel:feature:disabled",
   FEATURE_ERROR: "sidebar-kernel:feature:error",
   HEALTH_DEGRADED: "sidebar-kernel:health:degraded"
-}), Et = xb({ moduleId: et });
-function Jv() {
-  Et.init();
+}), bt = Qb({ moduleId: et });
+function mI() {
+  bt.init();
 }
-function Ul(e) {
-  return Et.get(e);
+function Jl(e) {
+  return bt.get(e);
 }
-function Oh(e) {
-  return Et.inject(e);
+function Gh(e) {
+  return bt.inject(e);
 }
-function Th() {
-  return Et.snapshot();
+function Vh() {
+  return bt.snapshot();
 }
 const b = {
   status: Ee.IDLE,
@@ -4724,34 +4858,34 @@ function R(e, t, r) {
     data: t || null,
     meta: {
       moduleId: et,
-      version: Ue,
+      version: je,
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       status: b.status
     },
     errors: r || []
   };
 }
-function us(e, t) {
+function gs(e, t) {
   try {
-    const r = Ul("telemetry");
+    const r = Jl("telemetry");
     r && r.track && r.track(e, Object.assign({ moduleId: et }, t || {}));
   } catch {
   }
 }
-function $e(e, t) {
+function ke(e, t) {
   try {
-    const r = Ul("eventBus");
+    const r = Jl("eventBus");
     r && r.emit && r.emit(e, Object.assign({ source: et, timestamp: Date.now() }, t || {}));
   } catch {
   }
 }
-function Dh(e) {
+function qh(e) {
   const t = [];
   return b.features.forEach((r, n) => {
     r.dependencies && r.dependencies.indexOf(e) > -1 && t.push(n);
   }), t;
 }
-function jl(e, t) {
+function Ql(e, t) {
   if (t || (t = /* @__PURE__ */ new Set()), t.has(e)) return { ok: !0, missing: [] };
   t.add(e);
   const r = b.features.get(e);
@@ -4762,60 +4896,60 @@ function jl(e, t) {
     const o = s[i], a = b.features.get(o);
     if (!a)
       n.push(`${o} (not registered)`);
-    else if (a.status !== q.ENABLED)
+    else if (a.status !== Y.ENABLED)
       n.push(`${o} (not enabled)`);
     else {
-      const l = jl(o, t);
+      const l = Ql(o, t);
       l.ok || (n = n.concat(l.missing));
     }
   }
   return b.metrics.dependencyChecks++, { ok: n.length === 0, missing: n };
 }
-function Fl(e, t) {
+function ec(e, t) {
   if (t || (t = /* @__PURE__ */ new Set()), t.has(e)) return [];
   t.add(e);
   let r = [];
-  const n = Dh(e);
+  const n = qh(e);
   for (let s = 0; s < n.length; s++) {
     const i = n[s], o = b.features.get(i);
-    if (o && o.status === q.ENABLED) {
+    if (o && o.status === Y.ENABLED) {
       r.push(i);
-      const a = Fl(i, t);
+      const a = ec(i, t);
       r = r.concat(a);
     }
   }
   return r;
 }
-function Gl(e) {
+function tc(e) {
   if (b.status === Ee.READY) return R(!0, { alreadyInitialized: !0 });
   if (b.status === Ee.INITIALIZING) return R(!1, null, [{ code: "INIT_IN_PROGRESS", message: "Initialization in progress" }]);
   b.status = Ee.INITIALIZING;
   try {
-    Jv(), e && e.ports && Et.inject(e.ports), b.initTime = Date.now(), b.shutdownTime = null, b.metrics.inits++;
-    const t = Ul("telemetry");
-    return t && t.register && t.register({ id: et, version: Ue, healthCheck: or, info: Pi }), b.status = Ee.READY, us("kernel:init", { version: Ue }), $e(Fe.READY, { version: Ue, featuresCount: b.features.size }), $e(f.KERNEL_READY, { version: Ue, featuresCount: b.features.size }), typeof window < "u" && (window.SidebarKernel = wh), R(!0, { initialized: !0, version: Ue, status: b.status });
+    mI(), e && e.ports && bt.inject(e.ports), b.initTime = Date.now(), b.shutdownTime = null, b.metrics.inits++;
+    const t = Jl("telemetry");
+    return t && t.register && t.register({ id: et, version: je, healthCheck: ar, info: Gi }), b.status = Ee.READY, gs("kernel:init", { version: je }), ke(Ge.READY, { version: je, featuresCount: b.features.size }), ke(f.KERNEL_READY, { version: je, featuresCount: b.features.size }), typeof window < "u" && (window.SidebarKernel = Xh), R(!0, { initialized: !0, version: je, status: b.status });
   } catch (t) {
     return b.status = Ee.ERROR, b.errors.push({ code: "INIT_ERROR", message: t.message, timestamp: Date.now() }), R(!1, null, [{ code: "INIT_ERROR", message: t.message }]);
   }
 }
-function Ri(e) {
+function ji(e) {
   if (b.status === Ee.SHUTDOWN) return R(!0, { alreadyShutdown: !0 });
   try {
     return b.features.forEach((t, r) => {
-      if (t.status === q.ENABLED)
+      if (t.status === Y.ENABLED)
         try {
-          vn(r, "kernel_shutdown");
+          An(r, "kernel_shutdown");
         } catch {
         }
-    }), b.shutdownTime = Date.now(), b.metrics.shutdowns++, b.status = Ee.SHUTDOWN, us("kernel:shutdown", { reason: e || "manual", uptime: b.shutdownTime - b.initTime }), $e(Fe.SHUTDOWN, { reason: e || "manual" }), $e(f.KERNEL_SHUTDOWN, { reason: e }), typeof window < "u" && window.SidebarKernel && delete window.SidebarKernel, R(!0, { shutdown: !0, reason: e || "manual", uptime: b.shutdownTime - b.initTime });
+    }), b.shutdownTime = Date.now(), b.metrics.shutdowns++, b.status = Ee.SHUTDOWN, gs("kernel:shutdown", { reason: e || "manual", uptime: b.shutdownTime - b.initTime }), ke(Ge.SHUTDOWN, { reason: e || "manual" }), ke(f.KERNEL_SHUTDOWN, { reason: e }), typeof window < "u" && window.SidebarKernel && delete window.SidebarKernel, R(!0, { shutdown: !0, reason: e || "manual", uptime: b.shutdownTime - b.initTime });
   } catch (t) {
     return b.errors.push({ code: "SHUTDOWN_ERROR", message: t.message, timestamp: Date.now() }), R(!1, null, [{ code: "SHUTDOWN_ERROR", message: t.message }]);
   }
 }
-function Lh() {
-  return Ri("cleanup");
+function Yh() {
+  return ji("cleanup");
 }
-function Vl(e) {
+function rc(e) {
   if (!e || !e.id) return R(!1, null, [{ code: "INVALID_FEATURE", message: "Feature must have id" }]);
   const t = e.id, r = b.features.get(t), n = {
     id: t,
@@ -4825,7 +4959,7 @@ function Vl(e) {
     dependencies: e.dependencies || [],
     capabilities: e.capabilities || {},
     instance: e,
-    status: q.REGISTERED,
+    status: Y.REGISTERED,
     registeredAt: r ? r.registeredAt : Date.now(),
     enabledAt: null,
     disabledAt: null,
@@ -4834,42 +4968,42 @@ function Vl(e) {
     errorCount: 0,
     initCount: 0
   };
-  return b.features.set(t, n), b.metrics.featureRegistrations++, us("feature:registered", { featureId: t, version: n.version }), $e(Fe.FEATURE_REGISTERED, { featureId: t, version: n.version }), R(!0, { featureId: t, registered: !0, status: n.status });
+  return b.features.set(t, n), b.metrics.featureRegistrations++, gs("feature:registered", { featureId: t, version: n.version }), ke(Ge.FEATURE_REGISTERED, { featureId: t, version: n.version }), R(!0, { featureId: t, registered: !0, status: n.status });
 }
-function hs(e, t) {
+function ms(e, t) {
   const r = b.features.get(e);
   if (!r) return R(!1, null, [{ code: "NOT_FOUND", message: `Feature not found: ${e}` }]);
-  if (r.status === q.ENABLED) return R(!0, { featureId: e, alreadyEnabled: !0 });
-  const n = jl(e);
+  if (r.status === Y.ENABLED) return R(!0, { featureId: e, alreadyEnabled: !0 });
+  const n = Ql(e);
   if (!n.ok)
     return R(!1, null, [{
       code: "DEPENDENCY_NOT_MET",
       message: `Dependencies not satisfied: ${n.missing.join(", ")}`
     }]);
   try {
-    const s = Date.now(), i = Object.assign({ ports: Et.snapshot() }, t || {});
+    const s = Date.now(), i = Object.assign({ ports: bt.snapshot() }, t || {});
     if (r.instance && typeof r.instance.init == "function") {
       const o = r.instance.init(i);
       if (o && !o.ok)
-        return r.status = q.ERROR, r.lastError = o.errors && o.errors[0] || { code: "INIT_FAILED", message: "Unknown error" }, r.errorCount++, b.metrics.featureErrors++, $e(Fe.FEATURE_ERROR, { featureId: e, error: r.lastError }), o;
+        return r.status = Y.ERROR, r.lastError = o.errors && o.errors[0] || { code: "INIT_FAILED", message: "Unknown error" }, r.errorCount++, b.metrics.featureErrors++, ke(Ge.FEATURE_ERROR, { featureId: e, error: r.lastError }), o;
     }
-    return r.status = q.ENABLED, r.enabledAt = Date.now(), r.initDurationMs = Date.now() - s, r.initCount++, b.metrics.featureEnables++, b.metrics.totalInitTimeMs += r.initDurationMs, us("feature:enabled", { featureId: e, initDurationMs: r.initDurationMs }), $e(Fe.FEATURE_ENABLED, { featureId: e, initDurationMs: r.initDurationMs }), R(!0, { featureId: e, enabled: !0, initDurationMs: r.initDurationMs });
+    return r.status = Y.ENABLED, r.enabledAt = Date.now(), r.initDurationMs = Date.now() - s, r.initCount++, b.metrics.featureEnables++, b.metrics.totalInitTimeMs += r.initDurationMs, gs("feature:enabled", { featureId: e, initDurationMs: r.initDurationMs }), ke(Ge.FEATURE_ENABLED, { featureId: e, initDurationMs: r.initDurationMs }), R(!0, { featureId: e, enabled: !0, initDurationMs: r.initDurationMs });
   } catch (s) {
-    return r.status = q.ERROR, r.lastError = { code: "ENABLE_ERROR", message: s.message }, r.errorCount++, b.metrics.featureErrors++, b.status = Ee.DEGRADED, $e(Fe.FEATURE_ERROR, { featureId: e, error: s.message }), R(!1, null, [{ code: "ENABLE_ERROR", message: s.message }]);
+    return r.status = Y.ERROR, r.lastError = { code: "ENABLE_ERROR", message: s.message }, r.errorCount++, b.metrics.featureErrors++, b.status = Ee.DEGRADED, ke(Ge.FEATURE_ERROR, { featureId: e, error: s.message }), R(!1, null, [{ code: "ENABLE_ERROR", message: s.message }]);
   }
 }
-function vn(e, t, r) {
+function An(e, t, r) {
   const n = b.features.get(e);
   if (!n) return R(!1, null, [{ code: "NOT_FOUND", message: `Feature not found: ${e}` }]);
-  if (n.status === q.DISABLED) return R(!0, { featureId: e, alreadyDisabled: !0 });
-  const s = r || {}, i = [], o = Fl(e);
+  if (n.status === Y.DISABLED) return R(!0, { featureId: e, alreadyDisabled: !0 });
+  const s = r || {}, i = [], o = ec(e);
   if (o.length > 0)
     if (s.cascade)
       for (let a = o.length - 1; a >= 0; a--) {
-        const l = o[a], d = b.features.get(l);
-        if (d && d.status === q.ENABLED)
+        const l = o[a], u = b.features.get(l);
+        if (u && u.status === Y.ENABLED)
           try {
-            d.instance && typeof d.instance.cleanup == "function" && d.instance.cleanup(), d.status = q.DISABLED, d.disabledAt = Date.now(), i.push(l), b.metrics.cascadeDisables++, $e(Fe.FEATURE_DISABLED, { featureId: l, reason: `cascade:${e}` });
+            u.instance && typeof u.instance.cleanup == "function" && u.instance.cleanup(), u.status = Y.DISABLED, u.disabledAt = Date.now(), i.push(l), b.metrics.cascadeDisables++, ke(Ge.FEATURE_DISABLED, { featureId: l, reason: `cascade:${e}` });
           } catch {
           }
       }
@@ -4880,35 +5014,35 @@ function vn(e, t, r) {
         dependents: o
       }]);
   try {
-    return n.instance && typeof n.instance.cleanup == "function" && n.instance.cleanup(), n.status = q.DISABLED, n.disabledAt = Date.now(), b.metrics.featureDisables++, us("feature:disabled", { featureId: e, reason: t }), $e(Fe.FEATURE_DISABLED, { featureId: e, reason: t || "manual" }), R(!0, { featureId: e, disabled: !0, reason: t, cascadeDisabled: i });
+    return n.instance && typeof n.instance.cleanup == "function" && n.instance.cleanup(), n.status = Y.DISABLED, n.disabledAt = Date.now(), b.metrics.featureDisables++, gs("feature:disabled", { featureId: e, reason: t }), ke(Ge.FEATURE_DISABLED, { featureId: e, reason: t || "manual" }), R(!0, { featureId: e, disabled: !0, reason: t, cascadeDisabled: i });
   } catch (a) {
     return n.lastError = { code: "DISABLE_ERROR", message: a.message }, R(!1, null, [{ code: "DISABLE_ERROR", message: a.message }]);
   }
 }
-function $h(e) {
+function Kh(e) {
   const t = b.features.get(e);
-  return t ? (t.status === q.ENABLED && vn(e, "unregister", { cascade: !0 }), b.features.delete(e), $e(f.KERNEL_FEATURE_UNREGISTERED, { featureId: e }), R(!0, { featureId: e, unregistered: !0 })) : R(!1, null, [{ code: "NOT_FOUND", message: `Feature not found: ${e}` }]);
+  return t ? (t.status === Y.ENABLED && An(e, "unregister", { cascade: !0 }), b.features.delete(e), ke(f.KERNEL_FEATURE_UNREGISTERED, { featureId: e }), R(!0, { featureId: e, unregistered: !0 })) : R(!1, null, [{ code: "NOT_FOUND", message: `Feature not found: ${e}` }]);
 }
-function ql(e) {
+function nc(e) {
   if (!b.features.get(e)) return R(!1, null, [{ code: "NOT_FOUND" }]);
-  const r = Fl(e);
+  const r = ec(e);
   return R(!0, { featureId: e, canDisable: r.length === 0, dependents: r });
 }
-function Yl(e) {
+function sc(e) {
   if (!b.features.get(e)) return R(!1, null, [{ code: "NOT_FOUND" }]);
-  const r = Dh(e), n = r.filter((s) => {
+  const r = qh(e), n = r.filter((s) => {
     const i = b.features.get(s);
-    return i && i.status === q.ENABLED;
+    return i && i.status === Y.ENABLED;
   });
   return R(!0, { featureId: e, dependents: r, enabledDependents: n });
 }
-function kh(e) {
+function Wh(e) {
   const t = b.features.get(e);
   if (!t) return R(!1, null, [{ code: "NOT_FOUND" }]);
-  const r = jl(e);
+  const r = Ql(e);
   return R(!0, { featureId: e, valid: r.ok, missing: r.missing, dependencies: t.dependencies });
 }
-function xi() {
+function Fi() {
   const e = [];
   return b.features.forEach((t) => {
     e.push({
@@ -4923,7 +5057,7 @@ function xi() {
     });
   }), R(!0, { features: e, count: e.length });
 }
-function Kl(e) {
+function ic(e) {
   const t = [];
   return b.features.forEach((r) => {
     r.status === e && t.push({
@@ -4935,7 +5069,7 @@ function Kl(e) {
     });
   }), R(!0, { status: e, features: t, count: t.length });
 }
-function fs(e) {
+function ps(e) {
   const t = b.features.get(e);
   if (!t) return R(!1, null, [{ code: "NOT_FOUND", message: `Feature not found: ${e}` }]);
   let r = null;
@@ -4960,13 +5094,13 @@ function fs(e) {
     health: r
   });
 }
-function Wl(e) {
-  return fs(e);
+function oc(e) {
+  return ps(e);
 }
-function Xl() {
+function ac() {
   const e = {}, t = { registered: 0, enabled: 0, disabled: 0, error: 0 };
   return b.features.forEach((r, n) => {
-    if (r.status === q.REGISTERED ? t.registered++ : r.status === q.ENABLED ? t.enabled++ : r.status === q.DISABLED ? t.disabled++ : r.status === q.ERROR && t.error++, r.instance && typeof r.instance.getMetrics == "function")
+    if (r.status === Y.REGISTERED ? t.registered++ : r.status === Y.ENABLED ? t.enabled++ : r.status === Y.DISABLED ? t.disabled++ : r.status === Y.ERROR && t.error++, r.instance && typeof r.instance.getMetrics == "function")
       try {
         e[n] = r.instance.getMetrics();
       } catch (s) {
@@ -4976,10 +5110,10 @@ function Xl() {
       e[n] = { initDurationMs: r.initDurationMs };
   }), R(!0, { kernel: Object.assign({}, b.metrics), features: e, totals: t });
 }
-function In() {
+function Mn() {
   let e = 0, t = 0, r = 0;
   return b.features.forEach((n) => {
-    n.status === q.ENABLED ? e++ : n.status === q.DISABLED ? t++ : n.status === q.ERROR && r++;
+    n.status === Y.ENABLED ? e++ : n.status === Y.DISABLED ? t++ : n.status === Y.ERROR && r++;
   }), R(!0, {
     kernelStatus: b.status,
     uptime: b.initTime ? Date.now() - b.initTime : 0,
@@ -4991,45 +5125,45 @@ function In() {
     errorsRecorded: b.errors.length
   });
 }
-function or() {
-  const e = In().data, t = {
+function ar() {
+  const e = Mn().data, t = {
     initialized: b.status === Ee.READY,
     notInError: b.status !== Ee.ERROR,
     hasFeatures: b.features.size > 0,
-    portsInitialized: Et.isInitialized()
+    portsInitialized: bt.isInitialized()
   }, r = {};
   let n = 0;
-  b.features.forEach((l, d) => {
+  b.features.forEach((l, u) => {
     if (l.instance && typeof l.instance.healthCheck == "function")
       try {
-        r[d] = l.instance.healthCheck(), r[d].status === "DEGRADED" && n++;
-      } catch (u) {
-        r[d] = { status: "ERROR", error: u.message }, n++;
+        r[u] = l.instance.healthCheck(), r[u].status === "DEGRADED" && n++;
+      } catch (d) {
+        r[u] = { status: "ERROR", error: d.message }, n++;
       }
     else
-      r[d] = { status: l.status === q.ERROR ? "UNHEALTHY" : "UNKNOWN" };
+      r[u] = { status: l.status === Y.ERROR ? "UNHEALTHY" : "UNKNOWN" };
   });
   const s = Object.values(t).filter(Boolean).length, i = Object.keys(t).length, o = Math.round(s / i * 100);
   let a = "HEALTHY";
-  return b.status === Ee.ERROR ? a = "UNHEALTHY" : (s < i || n > 0 || e.featuresError > 0) && (a = "DEGRADED", $e(Fe.HEALTH_DEGRADED, { degradedFeatures: n })), {
+  return b.status === Ee.ERROR ? a = "UNHEALTHY" : (s < i || n > 0 || e.featuresError > 0) && (a = "DEGRADED", ke(Ge.HEALTH_DEGRADED, { degradedFeatures: n })), {
     status: a,
     score: o,
     moduleId: et,
-    version: Ue,
+    version: je,
     checks: t,
     features: r,
     uptime: b.initTime ? Date.now() - b.initTime : 0,
-    portsInitialized: Et.isInitialized(),
+    portsInitialized: bt.isInitialized(),
     issues: e.featuresError > 0 ? [{ code: "FEATURES_ERROR", message: `${e.featuresError} features in error state` }] : [],
     timestamp: Date.now()
   };
 }
-function Pi() {
+function Gi() {
   return R(!0, {
     moduleId: et,
-    version: Ue,
+    version: je,
     status: b.status,
-    portsInitialized: Et.isInitialized(),
+    portsInitialized: bt.isInitialized(),
     capabilities: {
       supportsFeatures: !0,
       supportsAdapters: !1,
@@ -5042,7 +5176,7 @@ function Pi() {
     uptime: b.initTime ? Date.now() - b.initTime : 0
   });
 }
-function Zl() {
+function lc() {
   const e = {};
   return b.features.forEach((t, r) => {
     let n = null, s = null;
@@ -5078,7 +5212,7 @@ function Zl() {
     exportedAt: (/* @__PURE__ */ new Date()).toISOString(),
     kernel: {
       moduleId: et,
-      version: Ue,
+      version: je,
       status: b.status,
       initTime: b.initTime ? new Date(b.initTime).toISOString() : null,
       uptime: b.initTime ? Date.now() - b.initTime : 0,
@@ -5086,81 +5220,81 @@ function Zl() {
       errors: b.errors.slice()
     },
     features: e,
-    healthCheck: or()
+    healthCheck: ar()
   };
 }
-const wh = {
+const Xh = {
   MODULE_ID: et,
-  VERSION: Ue,
+  VERSION: je,
   STATUS: Ee,
-  FEATURE_STATUS: q,
-  KERNEL_EVENTS: Fe,
-  init: Gl,
-  shutdown: Ri,
-  cleanup: Lh,
-  registerFeature: Vl,
-  unregisterFeature: $h,
-  enableFeature: hs,
-  disableFeature: vn,
-  canDisable: ql,
-  getDependents: Yl,
-  validateDependencies: kh,
-  listFeatures: xi,
-  getFeaturesByStatus: Kl,
-  getFeatureStatus: fs,
-  getFeature: Wl,
-  getFeatureMetrics: Xl,
-  metrics: In,
-  healthCheck: or,
-  info: Pi,
-  exportDiagnostics: Zl,
-  injectPorts: Oh,
-  getPorts: Th
+  FEATURE_STATUS: Y,
+  KERNEL_EVENTS: Ge,
+  init: tc,
+  shutdown: ji,
+  cleanup: Yh,
+  registerFeature: rc,
+  unregisterFeature: Kh,
+  enableFeature: ms,
+  disableFeature: An,
+  canDisable: nc,
+  getDependents: sc,
+  validateDependencies: Wh,
+  listFeatures: Fi,
+  getFeaturesByStatus: ic,
+  getFeatureStatus: ps,
+  getFeature: oc,
+  getFeatureMetrics: ac,
+  metrics: Mn,
+  healthCheck: ar,
+  info: Gi,
+  exportDiagnostics: lc,
+  injectPorts: Gh,
+  getPorts: Vh
 };
-var Qv = wh;
-const Qa = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var pI = Xh;
+const ll = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  FEATURE_STATUS: q,
-  KERNEL_EVENTS: Fe,
+  FEATURE_STATUS: Y,
+  KERNEL_EVENTS: Ge,
   MODULE_ID: et,
   STATUS: Ee,
-  VERSION: Ue,
-  canDisable: ql,
-  cleanup: Lh,
-  default: Qv,
-  disableFeature: vn,
-  enableFeature: hs,
-  exportDiagnostics: Zl,
-  getDependents: Yl,
-  getFeature: Wl,
-  getFeatureMetrics: Xl,
-  getFeatureStatus: fs,
-  getFeaturesByStatus: Kl,
-  getPorts: Th,
-  healthCheck: or,
-  info: Pi,
-  init: Gl,
-  injectPorts: Oh,
-  listFeatures: xi,
-  metrics: In,
-  registerFeature: Vl,
-  shutdown: Ri,
-  unregisterFeature: $h,
-  validateDependencies: kh
-}, Symbol.toStringTag, { value: "Module" })), Or = "1.1.0-P2-ENTERPRISE", wr = "sidebar-metrics-hub", Ht = v({ moduleId: wr });
-function eI() {
-  Ht.init();
+  VERSION: je,
+  canDisable: nc,
+  cleanup: Yh,
+  default: pI,
+  disableFeature: An,
+  enableFeature: ms,
+  exportDiagnostics: lc,
+  getDependents: sc,
+  getFeature: oc,
+  getFeatureMetrics: ac,
+  getFeatureStatus: ps,
+  getFeaturesByStatus: ic,
+  getPorts: Vh,
+  healthCheck: ar,
+  info: Gi,
+  init: tc,
+  injectPorts: Gh,
+  listFeatures: Fi,
+  metrics: Mn,
+  registerFeature: rc,
+  shutdown: ji,
+  unregisterFeature: Kh,
+  validateDependencies: Wh
+}, Symbol.toStringTag, { value: "Module" })), Lr = "1.1.0-P2-ENTERPRISE", xr = "sidebar-metrics-hub", zt = v({ moduleId: xr });
+function EI() {
+  zt.init();
 }
-function tI(e) {
-  return Ht.get(e);
+function bI(e) {
+  return zt.get(e);
 }
-function Nh(e) {
-  return Ht.inject(e);
+function Zh(e) {
+  return zt.inject(e);
 }
-function Rh() {
-  return Ht.snapshot();
+function Jh() {
+  return zt.snapshot();
 }
-const Hi = Object.freeze({
+const Vi = Object.freeze({
   CORE: "core",
   FEATURE: "feature",
   UI: "ui",
@@ -5176,7 +5310,7 @@ const Hi = Object.freeze({
   subscribers: /* @__PURE__ */ new Set(),
   aggregationInterval: null,
   lastAggregation: null
-}, te = {
+}, re = {
   hubInits: 0,
   registrations: 0,
   unregistrations: 0,
@@ -5185,53 +5319,53 @@ const Hi = Object.freeze({
   errors: 0,
   lastError: null
 };
-function X(e, t, r) {
+function Z(e, t, r) {
   return {
     ok: e,
     data: t || null,
-    meta: { moduleId: wr, version: Or, timestamp: Date.now() },
+    meta: { moduleId: xr, version: Lr, timestamp: Date.now() },
     errors: r || []
   };
 }
-function rI(e, t) {
+function _I(e, t) {
   try {
-    const r = tI("eventBus");
-    r != null && r.emit && r.emit(e, { source: wr, timestamp: Date.now(), ...t });
+    const r = bI("eventBus");
+    r != null && r.emit && r.emit(e, { source: xr, timestamp: Date.now(), ...t });
   } catch (r) {
-    te.errors++, te.lastError = { event: e, message: r.message, timestamp: Date.now() };
+    re.errors++, re.lastError = { event: e, message: r.message, timestamp: Date.now() };
   }
 }
-function xh(e, t) {
+function Qh(e, t) {
   const r = { action: e, data: t, timestamp: Date.now() };
   I.subscribers.forEach((n) => {
     try {
       n(r);
     } catch {
-      te.errors++;
+      re.errors++;
     }
   });
 }
-function Jl(e = {}) {
+function cc(e = {}) {
   if (I.initialized)
-    return X(!0, { alreadyInitialized: !0 });
+    return Z(!0, { alreadyInitialized: !0 });
   try {
-    return eI(), e.ports && Ht.inject(e.ports), I.initialized = !0, I.initAt = Date.now(), te.hubInits++, e.aggregationInterval && e.aggregationInterval > 0 && (I.aggregationInterval = setInterval(() => {
+    return EI(), e.ports && zt.inject(e.ports), I.initialized = !0, I.initAt = Date.now(), re.hubInits++, e.aggregationInterval && e.aggregationInterval > 0 && (I.aggregationInterval = setInterval(() => {
       Je();
-    }, e.aggregationInterval)), rI(f.MEMORY_INITIALIZED, { version: Or }), X(!0, {
+    }, e.aggregationInterval)), _I(f.MEMORY_INITIALIZED, { version: Lr }), Z(!0, {
       initialized: !0,
-      version: Or,
+      version: Lr,
       sourcesCount: I.sources.size
     });
   } catch (t) {
-    return te.errors++, te.lastError = { phase: "init", message: t.message, timestamp: Date.now() }, X(!1, null, [{ code: "INIT_ERROR", message: t.message }]);
+    return re.errors++, re.lastError = { phase: "init", message: t.message, timestamp: Date.now() }, Z(!1, null, [{ code: "INIT_ERROR", message: t.message }]);
   }
 }
-function zi(e, t = {}) {
+function qi(e, t = {}) {
   if (!e)
-    return X(!1, null, [{ code: "INVALID_SOURCE", message: "sourceId is required" }]);
+    return Z(!1, null, [{ code: "INVALID_SOURCE", message: "sourceId is required" }]);
   const r = {
     id: e,
-    category: t.category || Hi.FEATURE,
+    category: t.category || Vi.FEATURE,
     version: t.version || "0.0.0",
     getMetrics: t.getMetrics || null,
     healthCheck: t.healthCheck || null,
@@ -5240,20 +5374,20 @@ function zi(e, t = {}) {
     updateCount: 0,
     errors: 0
   };
-  return I.sources.set(e, r), te.registrations++, xh("source:registered", { sourceId: e, category: r.category }), X(!0, { sourceId: e, registered: !0 });
+  return I.sources.set(e, r), re.registrations++, Qh("source:registered", { sourceId: e, category: r.category }), Z(!0, { sourceId: e, registered: !0 });
 }
-function Ph(e) {
-  return I.sources.has(e) ? (I.sources.delete(e), te.unregistrations++, xh("source:unregistered", { sourceId: e }), X(!0, { sourceId: e, unregistered: !0 })) : X(!1, null, [{ code: "NOT_FOUND", message: `Source not found: ${e}` }]);
+function ef(e) {
+  return I.sources.has(e) ? (I.sources.delete(e), re.unregistrations++, Qh("source:unregistered", { sourceId: e }), Z(!0, { sourceId: e, unregistered: !0 })) : Z(!1, null, [{ code: "NOT_FOUND", message: `Source not found: ${e}` }]);
 }
-function Hh(e, t) {
+function tf(e, t) {
   const r = I.sources.get(e);
-  return r ? (r.lastMetrics = t, r.lastUpdate = Date.now(), r.updateCount++, X(!0, { sourceId: e, updated: !0 })) : X(!1, null, [{ code: "NOT_FOUND", message: `Source not found: ${e}` }]);
+  return r ? (r.lastMetrics = t, r.lastUpdate = Date.now(), r.updateCount++, Z(!0, { sourceId: e, updated: !0 })) : Z(!1, null, [{ code: "NOT_FOUND", message: `Source not found: ${e}` }]);
 }
 function Je() {
-  te.aggregations++, I.lastAggregation = Date.now();
+  re.aggregations++, I.lastAggregation = Date.now();
   const e = {
     timestamp: Date.now(),
-    hub: { ...te },
+    hub: { ...re },
     sources: {},
     byCategory: {},
     summary: {
@@ -5274,22 +5408,22 @@ function Je() {
         updateCount: t.updateCount
       }, e.summary.activeSources++, e.byCategory[t.category] || (e.byCategory[t.category] = {}), e.byCategory[t.category][r] = n, e.summary.categories[t.category] = (e.summary.categories[t.category] || 0) + 1);
     } catch {
-      t.errors++, e.summary.errorSources++, te.errors++;
+      t.errors++, e.summary.errorSources++, re.errors++;
     }
-  }), X(!0, e);
+  }), Z(!0, e);
 }
-function Bi(e) {
+function Yi(e) {
   const t = I.sources.get(e);
   if (!t)
-    return X(!1, null, [{ code: "NOT_FOUND", message: `Source not found: ${e}` }]);
+    return Z(!1, null, [{ code: "NOT_FOUND", message: `Source not found: ${e}` }]);
   let r = t.lastMetrics;
   if (!r && typeof t.getMetrics == "function")
     try {
       r = t.getMetrics(), t.lastMetrics = r, t.lastUpdate = Date.now();
     } catch (n) {
-      return t.errors++, X(!1, null, [{ code: "FETCH_ERROR", message: n.message }]);
+      return t.errors++, Z(!1, null, [{ code: "FETCH_ERROR", message: n.message }]);
     }
-  return X(!0, {
+  return Z(!0, {
     sourceId: e,
     category: t.category,
     version: t.version,
@@ -5297,7 +5431,7 @@ function Bi(e) {
     lastUpdate: t.lastUpdate
   });
 }
-function Ql(e) {
+function uc(e) {
   const t = {};
   return I.sources.forEach((r, n) => {
     if (r.category === e) {
@@ -5309,27 +5443,27 @@ function Ql(e) {
         }
       s && (t[n] = s);
     }
-  }), X(!0, { category: e, sources: t, count: Object.keys(t).length });
+  }), Z(!0, { category: e, sources: t, count: Object.keys(t).length });
 }
-function Ui(e = "") {
+function Ki(e = "") {
   const t = {
     id: `snap_${Date.now()}`,
     label: e,
     timestamp: Date.now(),
     data: Je().data
   };
-  for (I.snapshots.push(t), te.snapshotsTaken++; I.snapshots.length > I.maxSnapshots; )
+  for (I.snapshots.push(t), re.snapshotsTaken++; I.snapshots.length > I.maxSnapshots; )
     I.snapshots.shift();
-  return X(!0, { snapshotId: t.id, label: e });
+  return Z(!0, { snapshotId: t.id, label: e });
 }
-function ji(e = 10) {
+function Wi(e = 10) {
   const t = I.snapshots.slice(-e);
-  return X(!0, { snapshots: t, total: I.snapshots.length });
+  return Z(!0, { snapshots: t, total: I.snapshots.length });
 }
-function ec(e, t) {
+function dc(e, t) {
   const r = I.snapshots.find((o) => o.id === e), n = I.snapshots.find((o) => o.id === t);
   if (!r || !n)
-    return X(!1, null, [{ code: "NOT_FOUND", message: "One or both snapshots not found" }]);
+    return Z(!1, null, [{ code: "NOT_FOUND", message: "One or both snapshots not found" }]);
   const s = {
     timeDelta: n.timestamp - r.timestamp,
     sourcesDelta: n.data.summary.totalSources - r.data.summary.totalSources,
@@ -5339,16 +5473,16 @@ function ec(e, t) {
     ...Object.keys(r.data.sources || {}),
     ...Object.keys(n.data.sources || {})
   ])).forEach((o) => {
-    var d, u, h, g;
-    const a = (u = (d = r.data.sources) == null ? void 0 : d[o]) == null ? void 0 : u.metrics, l = (g = (h = n.data.sources) == null ? void 0 : h[o]) == null ? void 0 : g.metrics;
+    var u, d, h, g;
+    const a = (d = (u = r.data.sources) == null ? void 0 : u[o]) == null ? void 0 : d.metrics, l = (g = (h = n.data.sources) == null ? void 0 : h[o]) == null ? void 0 : g.metrics;
     !a && l ? s.changes[o] = { status: "added" } : a && !l ? s.changes[o] = { status: "removed" } : a && l && JSON.stringify(a) !== JSON.stringify(l) && (s.changes[o] = { status: "changed", before: a, after: l });
-  }), X(!0, s);
+  }), Z(!0, s);
 }
-function zh(e) {
+function rf(e) {
   return typeof e != "function" ? () => {
   } : (I.subscribers.add(e), () => I.subscribers.delete(e));
 }
-function Fi() {
+function Xi() {
   const e = [];
   return I.sources.forEach((t, r) => {
     e.push({
@@ -5360,104 +5494,104 @@ function Fi() {
       updateCount: t.updateCount,
       errors: t.errors
     });
-  }), X(!0, { sources: e, count: e.length });
+  }), Z(!0, { sources: e, count: e.length });
 }
-function tc() {
-  return I.aggregationInterval && (clearInterval(I.aggregationInterval), I.aggregationInterval = null), I.sources.clear(), I.snapshots = [], I.subscribers.clear(), I.initialized = !1, X(!0, { cleanedUp: !0 });
+function hc() {
+  return I.aggregationInterval && (clearInterval(I.aggregationInterval), I.aggregationInterval = null), I.sources.clear(), I.snapshots = [], I.subscribers.clear(), I.initialized = !1, Z(!0, { cleanedUp: !0 });
 }
-function rc() {
+function fc() {
   const e = {
     initialized: { ok: I.initialized, severity: "crit" },
     hasSources: { ok: I.sources.size > 0, severity: "warn" },
-    noErrors: { ok: te.errors === 0, severity: "warn" },
-    portsInitialized: { ok: Ht.isInitialized(), severity: "warn" },
+    noErrors: { ok: re.errors === 0, severity: "warn" },
+    portsInitialized: { ok: zt.isInitialized(), severity: "warn" },
     recentAggregation: {
       ok: I.lastAggregation && Date.now() - I.lastAggregation < 6e4,
       severity: "info"
     }
   }, t = [];
   let r = 100;
-  return I.initialized || (t.push({ code: "NOT_INIT", severity: "crit", message: "Hub not initialized" }), r -= 50), I.sources.size === 0 && (t.push({ code: "NO_SOURCES", severity: "warn", message: "No metric sources registered" }), r -= 10), te.errors > 0 && (t.push({ code: "HAS_ERRORS", severity: "warn", message: `${te.errors} errors recorded` }), r -= 5 * Math.min(te.errors, 10)), {
+  return I.initialized || (t.push({ code: "NOT_INIT", severity: "crit", message: "Hub not initialized" }), r -= 50), I.sources.size === 0 && (t.push({ code: "NO_SOURCES", severity: "warn", message: "No metric sources registered" }), r -= 10), re.errors > 0 && (t.push({ code: "HAS_ERRORS", severity: "warn", message: `${re.errors} errors recorded` }), r -= 5 * Math.min(re.errors, 10)), {
     status: r >= 80 ? "HEALTHY" : r >= 50 ? "DEGRADED" : "UNHEALTHY",
     score: r,
-    moduleId: wr,
-    version: Or,
+    moduleId: xr,
+    version: Lr,
     checks: e,
     issues: t,
-    metrics: { ...te },
+    metrics: { ...re },
     sourcesCount: I.sources.size,
     snapshotsCount: I.snapshots.length,
     subscribersCount: I.subscribers.size,
-    portsInitialized: Ht.isInitialized(),
+    portsInitialized: zt.isInitialized(),
     timestamp: Date.now()
   };
 }
-function Gi() {
-  return X(!0, {
-    moduleId: wr,
-    version: Or,
+function Zi() {
+  return Z(!0, {
+    moduleId: xr,
+    version: Lr,
     initialized: I.initialized,
     initAt: I.initAt,
-    portsInitialized: Ht.isInitialized(),
+    portsInitialized: zt.isInitialized(),
     sourcesCount: I.sources.size,
     snapshotsCount: I.snapshots.length,
     subscribersCount: I.subscribers.size,
-    categories: Object.values(Hi),
-    metrics: { ...te },
+    categories: Object.values(Vi),
+    metrics: { ...re },
     lastAggregation: I.lastAggregation
   });
 }
-function Bh() {
+function nf() {
   return Je().data;
 }
-var nI = {
-  VERSION: Or,
-  MODULE_ID: wr,
-  METRIC_CATEGORIES: Hi,
-  init: Jl,
-  cleanup: tc,
-  registerSource: zi,
-  unregisterSource: Ph,
-  updateMetrics: Hh,
+var yI = {
+  VERSION: Lr,
+  MODULE_ID: xr,
+  METRIC_CATEGORIES: Vi,
+  init: cc,
+  cleanup: hc,
+  registerSource: qi,
+  unregisterSource: ef,
+  updateMetrics: tf,
   aggregate: Je,
-  getMetrics: Bh,
-  getSourceMetrics: Bi,
-  getMetricsByCategory: Ql,
-  takeSnapshot: Ui,
-  getSnapshots: ji,
-  compareSnapshots: ec,
-  subscribe: zh,
-  listSources: Fi,
-  healthCheck: rc,
-  info: Gi,
-  injectPorts: Nh,
-  getPorts: Rh
+  getMetrics: nf,
+  getSourceMetrics: Yi,
+  getMetricsByCategory: uc,
+  takeSnapshot: Ki,
+  getSnapshots: Wi,
+  compareSnapshots: dc,
+  subscribe: rf,
+  listSources: Xi,
+  healthCheck: fc,
+  info: Zi,
+  injectPorts: Zh,
+  getPorts: Jh
 };
-const sI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const vI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  METRIC_CATEGORIES: Hi,
-  MODULE_ID: wr,
-  VERSION: Or,
+  METRIC_CATEGORIES: Vi,
+  MODULE_ID: xr,
+  VERSION: Lr,
   aggregate: Je,
-  cleanup: tc,
-  compareSnapshots: ec,
-  default: nI,
-  getMetrics: Bh,
-  getMetricsByCategory: Ql,
-  getPorts: Rh,
-  getSnapshots: ji,
-  getSourceMetrics: Bi,
-  healthCheck: rc,
-  info: Gi,
-  init: Jl,
-  injectPorts: Nh,
-  listSources: Fi,
-  registerSource: zi,
-  subscribe: zh,
-  takeSnapshot: Ui,
-  unregisterSource: Ph,
-  updateMetrics: Hh
-}, Symbol.toStringTag, { value: "Module" })), J = Object.freeze({
+  cleanup: hc,
+  compareSnapshots: dc,
+  default: yI,
+  getMetrics: nf,
+  getMetricsByCategory: uc,
+  getPorts: Jh,
+  getSnapshots: Wi,
+  getSourceMetrics: Yi,
+  healthCheck: fc,
+  info: Zi,
+  init: cc,
+  injectPorts: Zh,
+  listSources: Xi,
+  registerSource: qi,
+  subscribe: rf,
+  takeSnapshot: Ki,
+  unregisterSource: ef,
+  updateMetrics: tf
+}, Symbol.toStringTag, { value: "Module" })), Q = Object.freeze({
   CORE: "core",
   UI: "ui",
   SEARCH: "search",
@@ -5467,11 +5601,11 @@ const sI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   VISUAL: "visual",
   PERFORMANCE: "performance",
   DEBUG: "debug"
-}), iI = {
+}), II = {
   favorites: {
     module: "favorites-handler",
     version: "5.8.0",
-    category: J.CORE,
+    category: Q.CORE,
     methods: {
       add: { original: "addFavorite", args: ["itemId"], returns: "boolean" },
       remove: { original: "removeFavorite", args: ["itemId"], returns: "boolean" },
@@ -5494,7 +5628,7 @@ const sI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   config: {
     module: "config-manager",
     version: "5.0.0",
-    category: J.CORE,
+    category: Q.CORE,
     methods: {
       export: { original: "exportConfig", args: [], returns: "object" },
       import: { original: "importConfig", args: ["config"], returns: "boolean" },
@@ -5511,7 +5645,7 @@ const sI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   flags: {
     module: "feature-flags",
     version: "5.0.0",
-    category: J.CORE,
+    category: Q.CORE,
     methods: {
       isEnabled: { original: "isEnabled", args: ["key"], returns: "boolean" },
       enable: { original: "enable", args: ["key"], returns: "void" },
@@ -5529,11 +5663,11 @@ const sI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
       resetFeatures: "reset"
     }
   }
-}, oI = {
+}, SI = {
   theme: {
     module: "theme-handler",
     version: "5.0.0",
-    category: J.UI,
+    category: Q.UI,
     methods: {
       set: { original: "setTheme", args: ["theme", "container?"], returns: "void", requiresEl: !0 },
       get: { original: "getTheme", args: [], returns: "string" },
@@ -5554,7 +5688,7 @@ const sI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   layout: {
     module: "compact-mode",
     version: "5.0.0",
-    category: J.UI,
+    category: Q.UI,
     methods: {
       compact: { original: "enable", args: ["container?"], returns: "void", requiresEl: !0 },
       disableCompact: { original: "disable", args: ["container?"], returns: "void", requiresEl: !0 },
@@ -5575,7 +5709,7 @@ const sI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   resize: {
     module: "resize-handler",
     version: "5.0.0",
-    category: J.UI,
+    category: Q.UI,
     methods: {
       setWidth: { original: "setWidth", args: ["container", "width"], returns: "void", requiresEl: !0 },
       resetWidth: { original: "resetWidth", args: ["container?"], returns: "void", requiresEl: !0 },
@@ -5586,7 +5720,7 @@ const sI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   context: {
     module: "context-menu",
     version: "5.0.0",
-    category: J.UI,
+    category: Q.UI,
     methods: {
       show: { original: "showMenu", args: ["x", "y", "itemId", "actions?"], returns: "void" },
       hide: { original: "hideMenu", args: [], returns: "void" }
@@ -5596,18 +5730,18 @@ const sI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   submenu: {
     module: "submenu-handler",
     version: "5.0.0",
-    category: J.UI,
+    category: Q.UI,
     methods: {
       toggle: { original: "toggleSubmenu", args: ["element"], returns: "void" },
       closeAll: { original: "closeAllSubmenus", args: ["container?"], returns: "void", requiresEl: !0 }
     },
     legacyMethods: { toggleSubmenu: "toggle", closeAllSubmenus: "closeAll" }
   }
-}, aI = {
+}, CI = {
   search: {
     module: "fuzzy-search",
     version: "5.0.0",
-    category: J.SEARCH,
+    category: Q.SEARCH,
     methods: {
       fuzzy: { original: "applyFuzzySearch", args: ["container", "query"], returns: "array", requiresEl: !0 },
       highlight: { original: "highlightMatches", altModule: "highlight-matches", args: ["query"], returns: "number" },
@@ -5626,7 +5760,7 @@ const sI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   commands: {
     module: "command-palette",
     version: "5.0.0",
-    category: J.SEARCH,
+    category: Q.SEARCH,
     methods: {
       show: { original: "show", args: [], returns: "void" },
       hide: { original: "hide", args: [], returns: "void" },
@@ -5640,11 +5774,11 @@ const sI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
       registerCommand: "register"
     }
   }
-}, lI = {}, cI = {
+}, AI = {}, MI = {
   badges: {
     module: "dynamic-badges",
     version: "5.0.0",
-    category: J.DATA,
+    category: Q.DATA,
     methods: {
       set: { original: "setBadge", args: ["itemId", "options"], returns: "void" },
       get: { original: "getBadge", args: ["itemId"], returns: "object" },
@@ -5671,7 +5805,7 @@ const sI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   notifications: {
     module: "notification-dots",
     version: "5.0.0",
-    category: J.DATA,
+    category: Q.DATA,
     methods: {
       show: { original: "showDot", args: ["itemId", "variant?", "count?"], returns: "void" },
       hide: { original: "hideDot", args: ["itemId"], returns: "void" },
@@ -5687,11 +5821,11 @@ const sI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
       clearAllNotifications: "clearAll"
     }
   }
-}, dI = {
+}, OI = {
   a11y: {
     module: "screen-reader",
     version: "5.0.0",
-    category: J.ACCESSIBILITY,
+    category: Q.ACCESSIBILITY,
     methods: {
       announce: { original: "announce", args: ["message", "priority?"], returns: "void" },
       enhance: { original: "enhance", args: ["container?"], returns: "void", requiresEl: !0 },
@@ -5712,7 +5846,7 @@ const sI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   landmarks: {
     module: "accessibility-landmarks",
     version: "5.0.0",
-    category: J.ACCESSIBILITY,
+    category: Q.ACCESSIBILITY,
     methods: {
       apply: { original: "applyLandmarks", args: ["container?"], returns: "void", requiresEl: !0 },
       updateActive: { original: "updateActiveItem", args: ["itemId"], returns: "void" },
@@ -5727,7 +5861,7 @@ const sI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   shortcuts: {
     module: "keyboard-shortcuts-extended",
     version: "5.0.0",
-    category: J.ACCESSIBILITY,
+    category: Q.ACCESSIBILITY,
     methods: {
       register: { original: "register", args: ["id", "shortcut"], returns: "void" },
       unregister: { original: "unregister", args: ["id"], returns: "void" },
@@ -5745,11 +5879,11 @@ const sI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
       showShortcutsHelp: "showHelp"
     }
   }
-}, uI = {
+}, TI = {
   effects: {
     module: "parallax",
     version: "5.0.0",
-    category: J.VISUAL,
+    category: Q.VISUAL,
     methods: {
       parallax: { original: "enable", args: ["container?"], returns: "void", requiresEl: !0 },
       disableParallax: { original: "disable", args: [], returns: "void" }
@@ -5762,7 +5896,7 @@ const sI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   transitions: {
     module: "animated-transitions",
     version: "5.0.0",
-    category: J.VISUAL,
+    category: Q.VISUAL,
     methods: {
       animate: { original: "animateElement", args: ["element", "direction", "type?"], returns: "void" },
       expand: { original: "animateSectionExpand", args: ["sectionEl"], returns: "void" },
@@ -5778,11 +5912,11 @@ const sI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
       disableAnimations: "disable"
     }
   }
-}, hI = {
+}, DI = {
   virtual: {
     module: "virtual-list",
     version: "5.0.0",
-    category: J.PERFORMANCE,
+    category: Q.PERFORMANCE,
     methods: {
       enable: { original: "enable", args: ["items"], returns: "void" },
       disable: { original: "disable", args: [], returns: "void" },
@@ -5798,11 +5932,11 @@ const sI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
       scrollToVirtualItem: "scrollTo"
     }
   }
-}, fI = {
+}, LI = {
   debug: {
     module: "debug-panel",
     version: "5.0.0",
-    category: J.DEBUG,
+    category: Q.DEBUG,
     methods: {
       open: { original: "open", args: [], returns: "void" },
       close: { original: "close", args: [], returns: "void" },
@@ -5810,21 +5944,21 @@ const sI = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
     },
     legacyMethods: { openDebugPanel: "open", closeDebugPanel: "close", toggleDebugPanel: "toggle" }
   }
-}, Qn = Object.freeze(Object.assign(
+}, rs = Object.freeze(Object.assign(
   {},
-  iI,
-  oI,
-  aI,
-  lI,
-  cI,
-  dI,
-  uI,
-  hI,
-  fI
-)), Vi = "sidebar:feature-proxy", gI = "1.4.0-P2-ENTERPRISE", Uh = v({ moduleId: Vi }), mI = (e) => Uh.get(e);
-function pI() {
+  II,
+  SI,
+  CI,
+  AI,
+  MI,
+  OI,
+  TI,
+  DI,
+  LI
+)), Ji = "sidebar:feature-proxy", $I = "1.4.0-P2-ENTERPRISE", sf = v({ moduleId: Ji }), kI = (e) => sf.get(e);
+function wI() {
   var t, r;
-  const e = mI("logger");
+  const e = kI("logger");
   if (e) return e;
   if (typeof window < "u" && ((r = (t = window.Core) == null ? void 0 : t.windowAdapter) != null && r.get)) {
     const n = window.Core.windowAdapter.get("Logger");
@@ -5832,11 +5966,11 @@ function pI() {
   }
   return null;
 }
-const nn = (e, ...t) => {
-  const r = `[${Vi}]`, n = pI();
-  n != null && n[e] ? n[e](r, ...t) : !vt() && (e === "error" || e === "warn") && console.debug(r, ...t);
-}, Jr = /* @__PURE__ */ new Map(), Vn = /* @__PURE__ */ new Map(), He = { calls: /* @__PURE__ */ new Map(), errors: /* @__PURE__ */ new Map(), loadTimes: /* @__PURE__ */ new Map() };
-class Yd {
+const ln = (e, ...t) => {
+  const r = `[${Ji}]`, n = wI();
+  n != null && n[e] ? n[e](r, ...t) : !It() && (e === "error" || e === "warn") && console.debug(r, ...t);
+}, tn = /* @__PURE__ */ new Map(), Kn = /* @__PURE__ */ new Map(), ze = { calls: /* @__PURE__ */ new Map(), errors: /* @__PURE__ */ new Map(), loadTimes: /* @__PURE__ */ new Map() };
+class rd {
   constructor(t, r, n) {
     this._featureName = t, this._contract = r, this._resolver = n, this._module = null, this._loaded = !1, this._loading = null, this._createMethods();
   }
@@ -5852,18 +5986,18 @@ class Yd {
   async _invoke(t, r = []) {
     const n = performance.now(), s = `${this._featureName}.${t}`;
     try {
-      He.calls.set(s, (He.calls.get(s) || 0) + 1), this._loaded || await this._load();
+      ze.calls.set(s, (ze.calls.get(s) || 0) + 1), this._loaded || await this._load();
       const i = this._resolveMethodName(t);
       if (!this._module || typeof this._module[i] != "function") {
         const a = this._tryFallback(t, r);
         if (a !== void 0) return a;
-        nn("warn", `Método não encontrado: ${s}`);
+        ln("warn", `Método não encontrado: ${s}`);
         return;
       }
       const o = await Promise.resolve(this._module[i](...r));
-      return He.loadTimes.set(s, performance.now() - n), o;
+      return ze.loadTimes.set(s, performance.now() - n), o;
     } catch (i) {
-      He.errors.set(s, (He.errors.get(s) || 0) + 1), nn("error", `Erro ao invocar ${s}:`, i.message);
+      ze.errors.set(s, (ze.errors.get(s) || 0) + 1), ln("error", `Erro ao invocar ${s}:`, i.message);
       return;
     }
   }
@@ -5871,9 +6005,9 @@ class Yd {
     return this._loading ? this._loading : this._loaded && this._module ? this._module : (this._loading = (async () => {
       try {
         const t = performance.now();
-        return Vn.has(this._featureName) ? (this._module = Vn.get(this._featureName), this._loaded = !0, this._module) : (this._resolver && typeof this._resolver == "function" && (this._module = await Promise.resolve(this._resolver(this._featureName, this._contract)), this._module && (Vn.set(this._featureName, this._module), this._loaded = !0, He.loadTimes.set(`${this._featureName}:load`, performance.now() - t))), this._module);
+        return Kn.has(this._featureName) ? (this._module = Kn.get(this._featureName), this._loaded = !0, this._module) : (this._resolver && typeof this._resolver == "function" && (this._module = await Promise.resolve(this._resolver(this._featureName, this._contract)), this._module && (Kn.set(this._featureName, this._module), this._loaded = !0, ze.loadTimes.set(`${this._featureName}:load`, performance.now() - t))), this._module);
       } catch (t) {
-        return nn("error", `Erro ao carregar feature ${this._featureName}:`, t.message), this._module = null, this._loaded = !1, null;
+        return ln("error", `Erro ao carregar feature ${this._featureName}:`, t.message), this._module = null, this._loaded = !1, null;
       } finally {
         this._loading = null;
       }
@@ -5889,10 +6023,10 @@ class Yd {
     return t;
   }
   _tryFallback(t, r) {
-    if (!vt())
+    if (!It())
       try {
         if (typeof window < "u" && window.SidebarKernel) {
-          zn("WINDOW_SIDEBARKERNEL_FALLBACK", { module: Vi, method: t });
+          jn("WINDOW_SIDEBARKERNEL_FALLBACK", { module: Ji, method: t });
           const n = window.SidebarKernel;
           if (typeof n._invokeFeature == "function") return n._invokeFeature(this._featureName, t, ...r);
         }
@@ -5917,51 +6051,51 @@ class Yd {
     return { feature: this._featureName, loaded: this._loaded, methods: this.getMethods(), contract: this._contract ? { module: this._contract.module, version: this._contract.version, category: this._contract.category } : null };
   }
 }
-function jh(e, t, r) {
+function of(e, t, r) {
   if (!e || typeof e != "string")
-    return nn("warn", "Nome de feature inválido:", e), null;
+    return ln("warn", "Nome de feature inválido:", e), null;
   const n = e.toLowerCase();
-  if (Jr.has(n)) return Jr.get(n);
+  if (tn.has(n)) return tn.get(n);
   const s = t ? t[n] || t[e] : null;
   if (!s) {
-    nn("warn", `Contrato não encontrado para feature: ${e}`);
-    const o = new Yd(e, { methods: [] }, r);
-    return Jr.set(n, o), o;
+    ln("warn", `Contrato não encontrado para feature: ${e}`);
+    const o = new rd(e, { methods: [] }, r);
+    return tn.set(n, o), o;
   }
-  const i = new Yd(e, s, r);
-  return Jr.set(n, i), i;
+  const i = new rd(e, s, r);
+  return tn.set(n, i), i;
 }
-function qi() {
-  return { calls: Object.fromEntries(He.calls), errors: Object.fromEntries(He.errors), loadTimes: Object.fromEntries(He.loadTimes), cachedProxies: Jr.size, cachedModules: Vn.size };
+function Qi() {
+  return { calls: Object.fromEntries(ze.calls), errors: Object.fromEntries(ze.errors), loadTimes: Object.fromEntries(ze.loadTimes), cachedProxies: tn.size, cachedModules: Kn.size };
 }
-async function EI(e, t, r) {
+async function NI(e, t, r) {
   if (!Array.isArray(e)) return;
   const n = e.map(async (s) => {
     try {
-      const i = jh(s, t, r);
+      const i = of(s, t, r);
       i && await i._load();
     } catch (i) {
-      nn("warn", `Falha no preload de ${s}:`, i.message);
+      ln("warn", `Falha no preload de ${s}:`, i.message);
     }
   });
   await Promise.allSettled(n);
 }
-function bI() {
-  qi();
-  const e = Array.from(He.errors.values()).reduce((n, s) => n + s, 0), t = Array.from(He.calls.values()).reduce((n, s) => n + s, 0), r = t > 0 ? e / t * 100 : 0;
+function RI() {
+  Qi();
+  const e = Array.from(ze.errors.values()).reduce((n, s) => n + s, 0), t = Array.from(ze.calls.values()).reduce((n, s) => n + s, 0), r = t > 0 ? e / t * 100 : 0;
   return {
     status: r < 5 ? "HEALTHY" : r < 20 ? "DEGRADED" : "UNHEALTHY",
-    module: Vi,
-    version: gI,
-    portsInitialized: Uh.isInitialized(),
-    strictMode: vt(),
-    metrics: { cachedProxies: Jr.size, cachedModules: Vn.size, totalCalls: t, totalErrors: e, errorRate: `${r.toFixed(2)}%` }
+    module: Ji,
+    version: $I,
+    portsInitialized: sf.isInitialized(),
+    strictMode: It(),
+    metrics: { cachedProxies: tn.size, cachedModules: Kn.size, totalCalls: t, totalErrors: e, errorRate: `${r.toFixed(2)}%` }
   };
 }
-const Fh = "sidebar:legacy-bridge", _I = v({ moduleId: Fh }), yI = (e) => _I.get(e);
-function vI() {
+const af = "sidebar:legacy-bridge", xI = v({ moduleId: af }), PI = (e) => xI.get(e);
+function HI() {
   var t, r;
-  const e = yI("logger");
+  const e = PI("logger");
   if (e) return e;
   if (typeof window < "u" && ((r = (t = window.Core) == null ? void 0 : t.windowAdapter) != null && r.get)) {
     const n = window.Core.windowAdapter.get("Logger");
@@ -5969,73 +6103,73 @@ function vI() {
   }
   return null;
 }
-const Ei = (e, ...t) => {
-  const r = `[${Fh}]`, n = vI();
-  n != null && n[e] ? n[e](r, ...t) : !vt() && (e === "error" || e === "warn" || e === "info") && console.debug(r, ...t);
-}, el = /* @__PURE__ */ new Map(), tl = {
+const Si = (e, ...t) => {
+  const r = `[${af}]`, n = HI();
+  n != null && n[e] ? n[e](r, ...t) : !It() && (e === "error" || e === "warn" || e === "info") && console.debug(r, ...t);
+}, cl = /* @__PURE__ */ new Map(), ul = {
   setBadge: { feature: "badges", method: "set", removeIn: "v6.0.0" },
   getBadge: { feature: "badges", method: "get", removeIn: "v6.0.0" },
   removeBadge: { feature: "badges", method: "remove", removeIn: "v6.0.0" }
 };
-function II(e, t) {
+function zI(e, t) {
   const r = `Sidebar.feature('${t.feature}').${t.method}()`, n = `DEPRECATED: ${e}() → Use: ${r} (removing in ${t.removeIn})`;
-  Ei("warn", n);
+  Si("warn", n);
   {
-    const s = el.get(e) || 0;
-    el.set(e, s + 1);
+    const s = cl.get(e) || 0;
+    cl.set(e, s + 1);
   }
 }
-function SI(e, t, r) {
+function BI(e, t, r) {
   return (...n) => {
-    II(e, t);
+    zI(e, t);
     const s = r(t.feature);
     if (!s) {
-      Ei("error", `Feature not found: ${t.feature}`);
+      Si("error", `Feature not found: ${t.feature}`);
       return;
     }
     const i = t.args ? [...t.args, ...n] : n, o = s[t.method];
     if (typeof o == "function")
       return o.apply(s, i);
-    Ei("warn", `Method not found: ${t.feature}.${t.method}`);
+    Si("warn", `Method not found: ${t.feature}.${t.method}`);
   };
 }
-function CI(e, t) {
-  return Ei("info", "Legacy bridge DISABLED - use Sidebar.feature('x').method() API"), e;
+function UI(e, t) {
+  return Si("info", "Legacy bridge DISABLED - use Sidebar.feature('x').method() API"), e;
 }
-function Na() {
-  const e = Array.from(el.entries()).map(([t, r]) => ({ method: t, count: r, mapping: tl[t] })).sort((t, r) => r.count - t.count);
+function za() {
+  const e = Array.from(cl.entries()).map(([t, r]) => ({ method: t, count: r, mapping: ul[t] })).sort((t, r) => r.count - t.count);
   return { totalCalls: e.reduce((t, r) => t + r.count, 0), uniqueMethods: e.length, methods: e };
 }
-const Yi = "6.1.0-ES6", gs = "sidebar-accessibility-landmarks", Nr = v({ moduleId: gs });
-function AI() {
-  Nr.init();
+const eo = "6.1.0-ES6", Es = "sidebar-accessibility-landmarks", Pr = v({ moduleId: Es });
+function jI() {
+  Pr.init();
 }
-function MI(e) {
-  return Nr.get(e);
+function FI(e) {
+  return Pr.get(e);
 }
-function Gh(e) {
-  return Nr.inject(e);
+function lf(e) {
+  return Pr.inject(e);
 }
-function Vh() {
-  return Nr.snapshot();
+function cf() {
+  return Pr.snapshot();
 }
-let O = null, Ki = { applies: 0, updates: 0, errors: 0 };
-const Kd = { sidebar: "navigation", search: "search" };
-function qh(e, t) {
-  e && Nr.inject({ eventBus: e }), AI(), O = t, t && nc(t);
-  const r = MI("eventBus");
+let O = null, to = { applies: 0, updates: 0, errors: 0 };
+const nd = { sidebar: "navigation", search: "search" };
+function uf(e, t) {
+  e && Pr.inject({ eventBus: e }), jI(), O = t, t && gc(t);
+  const r = FI("eventBus");
   r && r.emit && r.emit(f.A11Y_INITIALIZED);
 }
-function nc(e) {
+function gc(e) {
   if (!e) return;
-  Ki.applies++, e.setAttribute("role", Kd.sidebar), e.setAttribute("aria-label", "Menu de navegação principal");
+  to.applies++, e.setAttribute("role", nd.sidebar), e.setAttribute("aria-label", "Menu de navegação principal");
   const t = e.querySelector(`.${c.HEADER}`);
   t && (t.setAttribute("role", "banner"), t.setAttribute("aria-label", "Cabeçalho do menu"));
   const r = e.querySelector(`.${c.LOGO}`);
   r && (r.setAttribute("role", "img"), r.setAttribute("aria-label", "Logo da aplicação"));
   const n = e.querySelector(`.${c.SEARCH}`);
   if (n) {
-    n.setAttribute("role", Kd.search), n.setAttribute("aria-label", "Buscar no menu");
+    n.setAttribute("role", nd.search), n.setAttribute("aria-label", "Buscar no menu");
     const o = n.querySelector("input");
     if (o && (o.setAttribute("aria-label", "Campo de busca"), o.setAttribute("aria-describedby", "search-hint"), !n.querySelector("#search-hint"))) {
       const a = document.createElement("span");
@@ -6043,44 +6177,44 @@ function nc(e) {
     }
   }
   const s = e.querySelector(`.${c.NAV}, .${c.NAV_CONTENT}`);
-  s && (s.setAttribute("role", "tree"), s.setAttribute("aria-label", "Itens do menu"), s.setAttribute("aria-multiselectable", "false")), OI(e), TI(e);
+  s && (s.setAttribute("role", "tree"), s.setAttribute("aria-label", "Itens do menu"), s.setAttribute("aria-multiselectable", "false")), GI(e), VI(e);
   const i = e.querySelector(`.${c.FOOTER}`);
   return i && (i.setAttribute("role", "contentinfo"), i.setAttribute("aria-label", "Rodapé do menu")), e;
 }
-function OI(e) {
+function GI(e) {
   e.querySelectorAll(`.${c.SECTION}`).forEach((t, r) => {
     var l;
     const n = t.dataset.sectionId || `section-${r}`, s = t.querySelector(`.${c.GROUP_TITLE}, .${c.SECTION_TITLE}`), i = ((l = s == null ? void 0 : s.textContent) == null ? void 0 : l.trim()) || `Seção ${r + 1}`;
     t.setAttribute("role", "group"), t.setAttribute("aria-labelledby", `${n}-title`), s && (s.id = `${n}-title`);
     const o = t.querySelector(`.${c.GROUP_BUTTON}, .${c.SECTION_TOGGLE}`);
     if (o) {
-      const d = t.classList.contains(c.SECTION_EXPANDED);
-      o.setAttribute("role", "button"), o.setAttribute("aria-expanded", String(d)), o.setAttribute("aria-controls", `${n}-content`), o.setAttribute("aria-label", `${d ? "Colapsar" : "Expandir"} ${i}`);
+      const u = t.classList.contains(c.SECTION_EXPANDED);
+      o.setAttribute("role", "button"), o.setAttribute("aria-expanded", String(u)), o.setAttribute("aria-controls", `${n}-content`), o.setAttribute("aria-label", `${u ? "Colapsar" : "Expandir"} ${i}`);
     }
     const a = t.querySelector(`.${c.SECTION_CONTENT}, .${c.GROUP_ITEMS}`);
     a && (a.id = `${n}-content`, a.setAttribute("role", "group"));
   });
 }
-function TI(e) {
+function VI(e) {
   e.querySelectorAll(`.${c.ITEM}`).forEach((t) => {
     var h, g;
-    const r = t.querySelector(`.${c.LINK}`), n = t.querySelector(`.${c.ITEM_LABEL}, .${c.ITEM_TEXT}`), s = ((h = n == null ? void 0 : n.textContent) == null ? void 0 : h.trim()) || "", i = t.querySelector(`.${c.BADGE}, .dsd-badge`), o = (g = i == null ? void 0 : i.textContent) == null ? void 0 : g.trim(), a = t.querySelector(`.${c.SUBMENU}, .${c.CHILDREN}`), l = t.classList.contains(c.ITEM_ACTIVE), d = t.classList.contains(c.ITEM_DISABLED);
-    if (t.setAttribute("role", "treeitem"), t.setAttribute("aria-selected", String(l)), d && t.setAttribute("aria-disabled", "true"), a) {
+    const r = t.querySelector(`.${c.LINK}`), n = t.querySelector(`.${c.ITEM_LABEL}, .${c.ITEM_TEXT}`), s = ((h = n == null ? void 0 : n.textContent) == null ? void 0 : h.trim()) || "", i = t.querySelector(`.${c.BADGE}, .dsd-badge`), o = (g = i == null ? void 0 : i.textContent) == null ? void 0 : g.trim(), a = t.querySelector(`.${c.SUBMENU}, .${c.CHILDREN}`), l = t.classList.contains(c.ITEM_ACTIVE), u = t.classList.contains(c.ITEM_DISABLED);
+    if (t.setAttribute("role", "treeitem"), t.setAttribute("aria-selected", String(l)), u && t.setAttribute("aria-disabled", "true"), a) {
       const m = t.classList.contains(c.ITEM_EXPANDED);
       t.setAttribute("aria-expanded", String(m));
     }
     if (r) {
       r.setAttribute("tabindex", l ? "0" : "-1");
       let m = s;
-      o && (m += `, ${o} notificações`), l && (m += ", página atual"), d && (m += ", desabilitado"), r.setAttribute("aria-label", m), l ? r.setAttribute("aria-current", "page") : r.removeAttribute("aria-current");
+      o && (m += `, ${o} notificações`), l && (m += ", página atual"), u && (m += ", desabilitado"), r.setAttribute("aria-label", m), l ? r.setAttribute("aria-current", "page") : r.removeAttribute("aria-current");
     }
-    const u = t.querySelector(`.${c.ITEM_ICON}`);
-    u && u.setAttribute("aria-hidden", "true"), i && (i.setAttribute("role", "status"), i.setAttribute("aria-label", `${o} notificações`));
+    const d = t.querySelector(`.${c.ITEM_ICON}`);
+    d && d.setAttribute("aria-hidden", "true"), i && (i.setAttribute("role", "status"), i.setAttribute("aria-label", `${o} notificações`));
   });
 }
-function Yh(e, t) {
+function df(e, t) {
   var s;
-  Ki.updates++;
+  to.updates++;
   const r = O == null ? void 0 : O.querySelector(`[data-section-id="${e}"]`);
   if (!r) return;
   const n = r.querySelector(`.${c.GROUP_BUTTON}, .${c.SECTION_TOGGLE}`);
@@ -6090,8 +6224,8 @@ function Yh(e, t) {
     n.setAttribute("aria-label", `${t ? "Colapsar" : "Expandir"} ${i}`);
   }
 }
-function Kh(e) {
-  if (Ki.updates++, !O) return;
+function hf(e) {
+  if (to.updates++, !O) return;
   O.querySelectorAll('[aria-current="page"]').forEach((r) => {
     var n;
     r.removeAttribute("aria-current"), r.setAttribute("tabindex", "-1"), (n = r.closest(`.${c.ITEM}`)) == null || n.setAttribute("aria-selected", "false");
@@ -6102,7 +6236,7 @@ function Kh(e) {
     r && (r.setAttribute("aria-current", "page"), r.setAttribute("tabindex", "0")), t.setAttribute("aria-selected", "true");
   }
 }
-function Wh(e, t, r) {
+function ff(e, t, r) {
   var i;
   if (!O) return;
   const n = O.querySelector(`#${e}, [data-item-id="${e}"]`);
@@ -6110,7 +6244,7 @@ function Wh(e, t, r) {
   let s = O.querySelector(`#${t}`);
   s || (s = document.createElement("span"), s.id = t, s.className = "sr-only", (i = n.parentNode) == null || i.insertBefore(s, n.nextSibling)), s.textContent = r, n.setAttribute("aria-describedby", t);
 }
-function Xh(e, t) {
+function gf(e, t) {
   var r;
   if (O)
     if (t = t || "Carregando menu...", O.setAttribute("aria-busy", String(e)), e) {
@@ -6120,57 +6254,57 @@ function Xh(e, t) {
     } else
       O.removeAttribute("aria-describedby"), (r = O.querySelector("#sidebar-loading-msg")) == null || r.remove();
 }
-function Zh() {
+function mf() {
   var e, t;
   (e = O == null ? void 0 : O.querySelector("#search-hint")) == null || e.remove(), (t = O == null ? void 0 : O.querySelector("#sidebar-loading-msg")) == null || t.remove(), O = null;
 }
-function Wi() {
-  return { ...Ki };
+function ro() {
+  return { ...to };
 }
-function Jh() {
-  return { moduleId: gs, version: Yi, portsInitialized: Nr.isInitialized(), hasContainer: !!O, sectionsCount: (O == null ? void 0 : O.querySelectorAll('[role="group"]').length) || 0, itemsCount: (O == null ? void 0 : O.querySelectorAll('[role="treeitem"]').length) || 0, metrics: Wi() };
+function pf() {
+  return { moduleId: Es, version: eo, portsInitialized: Pr.isInitialized(), hasContainer: !!O, sectionsCount: (O == null ? void 0 : O.querySelectorAll('[role="group"]').length) || 0, itemsCount: (O == null ? void 0 : O.querySelectorAll('[role="treeitem"]').length) || 0, metrics: ro() };
 }
-function Qh() {
+function Ef() {
   const e = O == null ? void 0 : O.hasAttribute("role"), t = O == null ? void 0 : O.hasAttribute("aria-label");
-  return { status: e && t ? "HEALTHY" : O ? "DEGRADED" : "NOT_INITIALIZED", version: Yi, moduleId: gs, portsInitialized: Nr.isInitialized(), checks: { hasContainer: !!O, hasRole: e, hasLabel: t }, metrics: Wi() };
+  return { status: e && t ? "HEALTHY" : O ? "DEGRADED" : "NOT_INITIALIZED", version: eo, moduleId: Es, portsInitialized: Pr.isInitialized(), checks: { hasContainer: !!O, hasRole: e, hasLabel: t }, metrics: ro() };
 }
-var DI = { init: qh, applyLandmarks: nc, updateExpansionState: Yh, updateActiveItem: Kh, addDescribedBy: Wh, setLoadingState: Xh, destroy: Zh, injectPorts: Gh, getPorts: Vh, getMetrics: Wi, info: Jh, healthCheck: Qh, VERSION: Yi, MODULE_ID: gs };
-const ef = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var qI = { init: uf, applyLandmarks: gc, updateExpansionState: df, updateActiveItem: hf, addDescribedBy: ff, setLoadingState: gf, destroy: mf, injectPorts: lf, getPorts: cf, getMetrics: ro, info: pf, healthCheck: Ef, VERSION: eo, MODULE_ID: Es };
+const bf = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: gs,
-  VERSION: Yi,
-  addDescribedBy: Wh,
-  applyLandmarks: nc,
-  default: DI,
-  destroy: Zh,
-  getMetrics: Wi,
-  getPorts: Vh,
-  healthCheck: Qh,
-  info: Jh,
-  init: qh,
-  injectPorts: Gh,
-  setLoadingState: Xh,
-  updateActiveItem: Kh,
-  updateExpansionState: Yh
-}, Symbol.toStringTag, { value: "Module" })), Xi = "3.4.0-ES6", Zi = "sidebar-feature-accordion-ncs", tf = "sidebar.accordion.ncs.enabled", dt = "sidebar-accordion-root", Er = "region:app:accordion-ncs", ms = v({ moduleId: Zi });
-function rf() {
-  ms.init();
+  MODULE_ID: Es,
+  VERSION: eo,
+  addDescribedBy: ff,
+  applyLandmarks: gc,
+  default: qI,
+  destroy: mf,
+  getMetrics: ro,
+  getPorts: cf,
+  healthCheck: Ef,
+  info: pf,
+  init: uf,
+  injectPorts: lf,
+  setLoadingState: gf,
+  updateActiveItem: hf,
+  updateExpansionState: df
+}, Symbol.toStringTag, { value: "Module" })), no = "3.4.0-ES6", so = "sidebar-feature-accordion-ncs", _f = "sidebar.accordion.ncs.enabled", dt = "sidebar-accordion-root", _r = "region:app:accordion-ncs", bs = v({ moduleId: so });
+function yf() {
+  bs.init();
 }
-function LI(e) {
-  return ms.get(e);
+function YI(e) {
+  return bs.get(e);
 }
-function sc(e) {
-  return ms.inject(e);
+function mc(e) {
+  return bs.inject(e);
 }
-function nf() {
-  return ms.snapshot();
+function vf() {
+  return bs.snapshot();
 }
-function sf() {
-  return ms.isInitialized();
+function If() {
+  return bs.isInitialized();
 }
-function G(e, t, r) {
-  const n = LI("logger");
-  n && n[e] && n[e](`[${Zi}] ${t}`, r || "");
+function V(e, t, r) {
+  const n = YI("logger");
+  n && n[e] && n[e](`[${so}] ${t}`, r || "");
 }
 const $ = {
   initialized: !1,
@@ -6181,7 +6315,7 @@ const $ = {
   modelLoaderReady: !1,
   cleanups: []
 };
-function of() {
+function Sf() {
   try {
     const e = localStorage.getItem("dshowdash:featureFlags");
     return e ? JSON.parse(e) : {};
@@ -6189,31 +6323,31 @@ function of() {
     return {};
   }
 }
-function af(e, t) {
+function Cf(e, t) {
   try {
-    const r = of();
+    const r = Sf();
     return r[e] = t, localStorage.setItem("dshowdash:featureFlags", JSON.stringify(r)), !0;
   } catch {
     return !1;
   }
 }
-function ut() {
-  return of()[tf] === !0;
+function ht() {
+  return Sf()[_f] === !0;
 }
-function lf() {
+function Af() {
   if (document.getElementById(dt))
     return document.getElementById(dt);
   const e = document.querySelector(`.${c.NAV_CONTENT}`);
   if (!e)
     return null;
   const t = document.createElement("div");
-  return t.id = dt, t.className = c.ACCORDION_CONTAINER, t.setAttribute("data-accordion-ncs-active", "true"), t.setAttribute("data-uarps-region", Er), e.insertBefore(t, e.firstChild), $.container = t, t;
+  return t.id = dt, t.className = c.ACCORDION_CONTAINER, t.setAttribute("data-accordion-ncs-active", "true"), t.setAttribute("data-uarps-region", _r), e.insertBefore(t, e.firstChild), $.container = t, t;
 }
-function cf() {
+function Mf() {
   const e = document.getElementById(dt);
   e && e.remove(), $.container = null;
 }
-async function df(e = 10, t = 100) {
+async function Of(e = 10, t = 100) {
   for (let r = 0; r < e; r++) {
     if (document.querySelector(`.${c.NAV_CONTENT}`)) return !0;
     await new Promise((s) => {
@@ -6222,7 +6356,7 @@ async function df(e = 10, t = 100) {
   }
   return !1;
 }
-function uf() {
+function Tf() {
   const e = document.querySelector(`.${c.NAV_CONTENT}`);
   if (!e) return;
   const t = e.children;
@@ -6231,17 +6365,17 @@ function uf() {
     const s = t[n];
     s.id !== dt && (s.hasAttribute("data-accordion-ncs-active") || (s.classList.contains(c.SECTION) || s.classList.contains(c.NAV_SECTION)) && (s.style.display = "none", s.setAttribute("data-ncs-hidden", "true"), r++));
   }
-  G("info", `Legacy navigation hidden (${r} elements)`);
+  V("info", `Legacy navigation hidden (${r} elements)`);
 }
-function $I() {
+function KI() {
   document.querySelectorAll('[data-ncs-hidden="true"]').forEach((t) => {
     t.style.display = "", t.removeAttribute("data-ncs-hidden");
-  }), G("info", "Legacy navigation restored");
+  }), V("info", "Legacy navigation restored");
 }
-function hf() {
+function Df() {
   return document.querySelectorAll('[data-ncs-hidden="true"]').length;
 }
-function kI(e) {
+function WI(e) {
   var t, r;
   return !e || !e.sections ? null : {
     version: e.version || "1.0.0",
@@ -6259,10 +6393,10 @@ function kI(e) {
         visible: n.visible !== !1,
         uarps: n.uarps || {
           trigger_id: `trigger:navigation:section-${n.id}`,
-          region_id: Er
+          region_id: _r
         },
         items: (n.items || []).map((o) => {
-          var a, l, d, u;
+          var a, l, u, d;
           return {
             id: o.id,
             label: o.label,
@@ -6270,15 +6404,15 @@ function kI(e) {
             order: o.order || 0,
             type: ((a = o.navigation) == null ? void 0 : a.mode) === "action" ? "panel" : "route",
             target: {
-              panelId: ((d = (l = o.navigation) == null ? void 0 : l.action) == null ? void 0 : d.replace("panel:", "")) || null,
+              panelId: ((u = (l = o.navigation) == null ? void 0 : l.action) == null ? void 0 : u.replace("panel:", "")) || null,
               route: o.route || null,
               path: o.route || null
             },
-            disabled: ((u = o.state) == null ? void 0 : u.disabled) || !1,
+            disabled: ((d = o.state) == null ? void 0 : d.disabled) || !1,
             badge: o.badge || null,
             uarps: o.uarps || {
               trigger_id: `trigger:navigation:item-${o.id}`,
-              region_id: Er
+              region_id: _r
             }
           };
         })
@@ -6290,63 +6424,63 @@ function kI(e) {
     },
     meta: {
       triggerPattern: ((t = e.meta) == null ? void 0 : t.trigger_pattern) || "trigger:navigation:item-{id}",
-      region: Er,
+      region: _r,
       phase: ((r = e.meta) == null ? void 0 : r.phase) || "P0",
       loaderSource: e.source
     }
   };
 }
-const Bn = "accordion-ncs-navigation-handler", ff = v({ moduleId: Bn });
-function wI() {
-  ff.init();
+const Fn = "accordion-ncs-navigation-handler", Lf = v({ moduleId: Fn });
+function XI() {
+  Lf.init();
 }
-function Ra(e) {
-  return ff.get(e);
+function Ba(e) {
+  return Lf.get(e);
 }
-function gf(e) {
+function $f(e) {
   var s;
-  wI();
-  const t = ((s = e == null ? void 0 : e.view) == null ? void 0 : s._eventBus) || $.eventBus || Ra("eventBus");
+  XI();
+  const t = ((s = e == null ? void 0 : e.view) == null ? void 0 : s._eventBus) || $.eventBus || Ba("eventBus");
   if (!t) {
-    G("warn", "No eventBus available for navigation handler");
+    V("warn", "No eventBus available for navigation handler");
     return;
   }
   const r = (i) => {
     const o = i.item;
     if (!o || !o.target) {
-      G("warn", "Item selected without target:", i);
+      V("warn", "Item selected without target:", i);
       return;
     }
     const a = o.target;
     if (a.route || a.path) {
-      const l = a.route || a.path, d = Ra("routerGlobal");
-      if (d && d.navigate) {
-        d.navigate(l, { source: Bn }), G("info", `Navigating via Ports router: ${l}`);
+      const l = a.route || a.path, u = Ba("routerGlobal");
+      if (u && u.navigate) {
+        u.navigate(l, { source: Fn }), V("info", `Navigating via Ports router: ${l}`);
         return;
       }
-      const u = Ra("eventBus") || t;
-      if (u && u.emit) {
-        u.emit(pe.NAVIGATE, {
+      const d = Ba("eventBus") || t;
+      if (d && d.emit) {
+        d.emit(pe.NAVIGATE, {
           path: l,
-          options: { source: Bn },
-          source: Bn,
+          options: { source: Fn },
+          source: Fn,
           timestamp: Date.now()
-        }), G("info", `Navigating via EventBus NAVIGATE: ${l}`);
+        }), V("info", `Navigating via EventBus NAVIGATE: ${l}`);
         return;
       }
-      t && t.emit && t.emit(cl.HARD_NAV, {
+      t && t.emit && t.emit(bl.HARD_NAV, {
         path: l,
         reason: "No router or EventBus via Ports",
-        source: Bn,
+        source: Fn,
         timestamp: Date.now()
-      }), window.location.hash = l, G("info", `Fallback navigation to: ${l}`);
+      }), window.location.hash = l, V("info", `Fallback navigation to: ${l}`);
     }
-  }, n = Ba.SELECT_ITEM;
-  t.on(n, r), G("info", `Navigation handler listening to: ${n}`), $.cleanups.push(() => {
+  }, n = Va.SELECT_ITEM;
+  t.on(n, r), V("info", `Navigation handler listening to: ${n}`), $.cleanups.push(() => {
     t.off(n, r);
   });
 }
-async function NI(e = 20, t = 150) {
+async function ZI(e = 20, t = 150) {
   for (let r = 0; r < e; r++) {
     const n = k.getModel();
     if (n && n.sections && n.sections.length > 0)
@@ -6361,44 +6495,44 @@ async function NI(e = 20, t = 150) {
   }
   return { success: !1, reason: "timeout" };
 }
-async function Pn() {
+async function Bn() {
   try {
-    if (G("warn", "Using mock fallback"), !await df(15, 100))
-      return G("warn", "Nav content still not available, skipping accordion"), { success: !1, error: "Nav content not available" };
+    if (V("warn", "Using mock fallback"), !await Of(15, 100))
+      return V("warn", "Nav content still not available, skipping accordion"), { success: !1, error: "Nav content not available" };
     const t = await import("/components/accordion/index.js");
-    if (!lf())
-      return G("warn", "Container creation failed, skipping accordion"), { success: !1, error: "Container creation failed" };
+    if (!Af())
+      return V("warn", "Container creation failed, skipping accordion"), { success: !1, error: "Container creation failed" };
     const n = await t.mountAccordionWithMock(`#${dt}`);
     if (n.success)
-      return $.accordion = n, $.accordion.source = "mock", $.enabled = !0, uf(), gf(n), G("info", "Accordion NCS loaded with MOCK fallback"), { success: !0, source: "mock", accordion: n };
+      return $.accordion = n, $.accordion.source = "mock", $.enabled = !0, Tf(), $f(n), V("info", "Accordion NCS loaded with MOCK fallback"), { success: !0, source: "mock", accordion: n };
     throw new Error(n.error || "Mock mount failed");
   } catch (e) {
-    return G("error", `Fallback also failed: ${e.message}`), cf(), { success: !1, error: e.message };
+    return V("error", `Fallback also failed: ${e.message}`), Mf(), { success: !1, error: e.message };
   }
 }
-async function ic() {
-  rf();
+async function pc() {
+  yf();
   try {
     const e = await k.load();
     let t = null, r = "unknown";
     if (!e.success && e.reason === "already-loading") {
-      G("info", "Model already loading, waiting for it...");
-      const l = await NI(20, 150);
+      V("info", "Model already loading, waiting for it...");
+      const l = await ZI(20, 150);
       if (l.success)
-        t = l.model, r = l.source, G("info", "Model obtained after waiting");
+        t = l.model, r = l.source, V("info", "Model obtained after waiting");
       else
-        return G("warn", "Timeout waiting for model, using fallback"), Pn();
+        return V("warn", "Timeout waiting for model, using fallback"), Bn();
     } else if (e.success)
       t = e.model || k.getModel(), r = e.source;
     else
-      return G("warn", `Model load failed: ${e.reason || e.error}`), Pn();
+      return V("warn", `Model load failed: ${e.reason || e.error}`), Bn();
     if ($.modelLoaderReady = !0, !t || !t.sections || t.sections.length === 0)
-      return G("warn", "Model empty, using fallback"), Pn();
-    const n = kI(t);
-    if (!await df(15, 100))
-      return G("warn", "Nav content not available, using fallback"), Pn();
+      return V("warn", "Model empty, using fallback"), Bn();
+    const n = WI(t);
+    if (!await Of(15, 100))
+      return V("warn", "Nav content not available, using fallback"), Bn();
     const i = await import("/components/accordion/index.js");
-    if (!lf())
+    if (!Af())
       throw new Error("Container creation failed");
     const a = await i.mountAccordion(`#${dt}`, {
       structure: n,
@@ -6406,7 +6540,7 @@ async function ic() {
       telemetry: !0
     });
     if (a.success)
-      return $.accordion = a, $.accordion.source = r, $.accordion.modelVersion = t.version, $.enabled = !0, uf(), gf(a), G("info", "Accordion NCS loaded via NavigationModelLoader"), G("info", `Source: ${r}, Sections: ${n.sections.length}`), {
+      return $.accordion = a, $.accordion.source = r, $.accordion.modelVersion = t.version, $.enabled = !0, Tf(), $f(a), V("info", "Accordion NCS loaded via NavigationModelLoader"), V("info", `Source: ${r}, Sections: ${n.sections.length}`), {
         success: !0,
         source: r,
         accordion: a,
@@ -6415,10 +6549,10 @@ async function ic() {
       };
     throw new Error(a.error || "Mount failed");
   } catch (e) {
-    return G("error", `Failed to load Accordion NCS: ${e.message}`), Pn();
+    return V("error", `Failed to load Accordion NCS: ${e.message}`), Bn();
   }
 }
-function oc() {
+function Ec() {
   if ($.cleanups.forEach((e) => {
     try {
       e();
@@ -6429,9 +6563,9 @@ function oc() {
       $.accordion.instance.destroy();
     } catch {
     }
-  cf(), $I(), $.accordion = null, $.enabled = !1, G("info", "Accordion NCS unloaded");
+  Mf(), KI(), $.accordion = null, $.enabled = !1, V("info", "Accordion NCS unloaded");
 }
-function ac() {
+function bc() {
   let e = null;
   try {
     e = k.healthCheck ? k.healthCheck() : { healthy: !1 };
@@ -6440,14 +6574,14 @@ function ac() {
   }
   const t = {
     initialized: $.initialized,
-    featureFlagEnabled: ut(),
+    featureFlagEnabled: ht(),
     modelLoaderReady: $.modelLoaderReady || e && (e.healthy || e.status === "HEALTHY"),
-    portsInitialized: sf()
+    portsInitialized: If()
   }, r = Object.values(t).filter(Boolean).length, n = Object.keys(t).length, s = {
     accordionLoaded: $.accordion !== null,
     containerExists: typeof document < "u" && document.getElementById(dt) !== null,
-    legacyHidden: hf() > 0,
-    uarpsRegionSet: typeof document < "u" && document.querySelector(`[data-uarps-region="${Er}"]`) !== null
+    legacyHidden: Df() > 0,
+    uarpsRegionSet: typeof document < "u" && document.querySelector(`[data-uarps-region="${_r}"]`) !== null
   };
   let i = "HEALTHY";
   return $.initialized ? r < n && (i = "DEGRADED") : i = "NOT_INITIALIZED", {
@@ -6456,14 +6590,14 @@ function ac() {
     checks: t,
     domInfo: s,
     modelLoader: e,
-    moduleId: Zi,
-    version: Xi,
+    moduleId: so,
+    version: no,
     triggerPattern: "trigger:navigation:item-{id}",
-    region: Er,
+    region: _r,
     timestamp: Date.now()
   };
 }
-function lc() {
+function _c() {
   let e = null;
   try {
     e = k.info ? k.info() : {};
@@ -6471,136 +6605,136 @@ function lc() {
     e = { error: t.message };
   }
   return {
-    moduleId: Zi,
-    version: Xi,
+    moduleId: so,
+    version: no,
     initialized: $.initialized,
     enabled: $.enabled,
-    featureFlagKey: tf,
+    featureFlagKey: _f,
     containerId: dt,
     accordionLoaded: $.accordion !== null,
     dataSource: e && e.source || "none",
     modelVersion: e && e.version || null,
     hasModel: e && e.hasModel || !1,
     isFallback: e && e.isFallback || !1,
-    legacyHiddenCount: hf(),
-    navigationEventName: Ba && Ba.SELECT_ITEM || "unknown",
+    legacyHiddenCount: Df(),
+    navigationEventName: Va && Va.SELECT_ITEM || "unknown",
     triggerPattern: "trigger:navigation:item-{id}",
     sectionTriggerPattern: "trigger:navigation:section-{id}",
-    region: Er,
+    region: _r,
     phase: "P0 - Compatibility (3-segment compliant)",
-    portsInitialized: sf(),
+    portsInitialized: If(),
     modelLoader: e
   };
 }
-const cc = "3.4.0-KERNEL-CTX";
-function mf(e) {
+const yc = "3.4.0-KERNEL-CTX";
+function kf(e) {
   if ($.initialized)
     return { ok: !0, message: "Already initialized" };
   const t = (e == null ? void 0 : e.eventBus) || e, r = e == null ? void 0 : e.ports;
-  return $.eventBus = t, $.initialized = !0, r && sc(r), rf(), ut() && setTimeout(() => {
-    ic();
-  }, 500), G("info", `Initialized (enabled: ${ut()})`), { ok: !0, enabled: ut() };
+  return $.eventBus = t, $.initialized = !0, r && mc(r), yf(), ht() && setTimeout(() => {
+    pc();
+  }, 500), V("info", `Initialized (enabled: ${ht()})`), { ok: !0, enabled: ht() };
 }
-function Ji() {
-  return af("sidebar.accordion.ncs.enabled", !0), $.initialized && !$.enabled && ic(), { ok: !0, message: "Accordion NCS enabled. Reload for full effect." };
+function io() {
+  return Cf("sidebar.accordion.ncs.enabled", !0), $.initialized && !$.enabled && pc(), { ok: !0, message: "Accordion NCS enabled. Reload for full effect." };
 }
-function Qi() {
-  return af("sidebar.accordion.ncs.enabled", !1), $.enabled && oc(), { ok: !0, message: "Accordion NCS disabled." };
+function oo() {
+  return Cf("sidebar.accordion.ncs.enabled", !1), $.enabled && Ec(), { ok: !0, message: "Accordion NCS disabled." };
 }
-function dc() {
-  return ut() ? Qi() : Ji();
+function vc() {
+  return ht() ? oo() : io();
 }
-function uc() {
+function Ic() {
   return $.accordion;
 }
-async function hc(e = !1) {
-  return $.enabled && oc(), e && k.reload && await k.reload(), ut() ? ic() : Promise.resolve({ ok: !1, message: "Feature flag not enabled" });
+async function Sc(e = !1) {
+  return $.enabled && Ec(), e && k.reload && await k.reload(), ht() ? pc() : Promise.resolve({ ok: !1, message: "Feature flag not enabled" });
 }
-function fc() {
-  oc(), k.abort && k.abort(), $.initialized = !1, $.eventBus = null, $.modelLoaderReady = !1;
+function Cc() {
+  Ec(), k.abort && k.abort(), $.initialized = !1, $.eventBus = null, $.modelLoaderReady = !1;
 }
-function pf() {
-  fc();
+function wf() {
+  Cc();
 }
-function gc() {
+function Ac() {
   return k.getModel();
 }
-function mc() {
+function Mc() {
   return k.info ? k.info() : null;
 }
-function pc() {
+function Oc() {
   return k.reload ? k.reload() : null;
 }
 typeof window < "u" && (window.AccordionNCS = {
-  VERSION: cc,
-  enable: Ji,
-  disable: Qi,
-  toggle: dc,
-  isEnabled: ut,
-  reload: hc,
-  getAccordion: uc,
-  getNavigationModel: gc,
-  getNavigationSnapshot: mc,
-  invalidateNavigationCache: pc,
-  healthCheck: ac,
-  info: lc
+  VERSION: yc,
+  enable: io,
+  disable: oo,
+  toggle: vc,
+  isEnabled: ht,
+  reload: Sc,
+  getAccordion: Ic,
+  getNavigationModel: Ac,
+  getNavigationSnapshot: Mc,
+  invalidateNavigationCache: Oc,
+  healthCheck: bc,
+  info: _c
 });
-var RI = {
-  VERSION: cc,
-  MODULE_ID: Xi,
-  init: mf,
-  cleanup: fc,
-  enable: Ji,
-  disable: Qi,
-  toggle: dc,
-  isEnabled: ut,
-  reload: hc,
-  getAccordion: uc,
-  getNavigationModel: gc,
-  getNavigationSnapshot: mc,
-  invalidateNavigationCache: pc,
-  destroy: pf,
-  healthCheck: ac,
-  info: lc,
-  injectPorts: sc,
-  getPorts: nf
+var JI = {
+  VERSION: yc,
+  MODULE_ID: no,
+  init: kf,
+  cleanup: Cc,
+  enable: io,
+  disable: oo,
+  toggle: vc,
+  isEnabled: ht,
+  reload: Sc,
+  getAccordion: Ic,
+  getNavigationModel: Ac,
+  getNavigationSnapshot: Mc,
+  invalidateNavigationCache: Oc,
+  destroy: wf,
+  healthCheck: bc,
+  info: _c,
+  injectPorts: mc,
+  getPorts: vf
 };
-const Ef = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const Nf = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: Xi,
-  VERSION: cc,
-  cleanup: fc,
-  default: RI,
-  destroy: pf,
-  disable: Qi,
-  enable: Ji,
-  getAccordion: uc,
-  getNavigationModel: gc,
-  getNavigationSnapshot: mc,
-  getPorts: nf,
-  healthCheck: ac,
-  info: lc,
-  init: mf,
-  injectPorts: sc,
-  invalidateNavigationCache: pc,
-  isEnabled: ut,
-  reload: hc,
-  toggle: dc
-}, Symbol.toStringTag, { value: "Module" })), eo = "7.1.0-ES6", ps = "sidebar-animated-transitions", zt = v({ moduleId: ps });
-function xI() {
-  zt.init();
+  MODULE_ID: no,
+  VERSION: yc,
+  cleanup: Cc,
+  default: JI,
+  destroy: wf,
+  disable: oo,
+  enable: io,
+  getAccordion: Ic,
+  getNavigationModel: Ac,
+  getNavigationSnapshot: Mc,
+  getPorts: vf,
+  healthCheck: bc,
+  info: _c,
+  init: kf,
+  injectPorts: mc,
+  invalidateNavigationCache: Oc,
+  isEnabled: ht,
+  reload: Sc,
+  toggle: vc
+}, Symbol.toStringTag, { value: "Module" })), ao = "7.1.0-ES6", _s = "sidebar-animated-transitions", Bt = v({ moduleId: _s });
+function QI() {
+  Bt.init();
 }
-function PI(e) {
-  return zt.get(e);
+function eS(e) {
+  return Bt.get(e);
 }
-function bf(e) {
-  return zt.inject(e);
+function Rf(e) {
+  return Bt.inject(e);
 }
-function _f() {
-  return zt.snapshot();
+function xf() {
+  return Bt.snapshot();
 }
-let Ie = null, Ce = !0, Ke = null, kt = [], dn = [], Rr = { animations: 0, groups: 0, sections: 0, timersCreated: 0, timersCleared: 0 };
-const ri = {
+let Ie = null, Ce = !0, Ke = null, wt = [], gn = [], Hr = { animations: 0, groups: 0, sections: 0, timersCreated: 0, timersCleared: 0 };
+const ii = {
   fadeIn: "dsd-anim--fade-in",
   fadeOut: "dsd-anim--fade-out",
   slideIn: "dsd-anim--slide-in",
@@ -6608,320 +6742,320 @@ const ri = {
   scaleIn: "dsd-anim--scale-in",
   scaleOut: "dsd-anim--scale-out",
   bounceIn: "dsd-anim--bounce-in"
-}, yf = { duration: 300, easing: "ease-out", stagger: 50, type: "slideIn" };
-let je = { ...yf };
-function xr(e, t) {
-  Rr.timersCreated++;
+}, Pf = { duration: 300, easing: "ease-out", stagger: 50, type: "slideIn" };
+let Fe = { ...Pf };
+function zr(e, t) {
+  Hr.timersCreated++;
   const r = setTimeout(() => {
-    kt = kt.filter((n) => n !== r), e();
+    wt = wt.filter((n) => n !== r), e();
   }, t);
-  return kt.push(r), r;
+  return wt.push(r), r;
 }
-function HI() {
-  kt.forEach((e) => {
-    clearTimeout(e), Rr.timersCleared++;
-  }), kt = [];
+function tS() {
+  wt.forEach((e) => {
+    clearTimeout(e), Hr.timersCleared++;
+  }), wt = [];
 }
-function Wd(e) {
+function sd(e) {
   if (!Ce) return;
   ((e == null ? void 0 : e.items) || []).forEach((r, n) => {
     const s = Ie == null ? void 0 : Ie.querySelector(`[data-item-id="${r.id}"]`);
-    s && xr(() => {
-      It(s, "in");
-    }, n * je.stagger);
+    s && zr(() => {
+      St(s, "in");
+    }, n * Fe.stagger);
   });
 }
-function Xd() {
+function id() {
   if (!Ce || !Ie) return;
   Ie.querySelectorAll(`.${C.ITEM}:not(.${C.ITEM_HIDDEN})`).forEach((t, r) => {
-    t.classList.add("dsd-anim--searching"), xr(() => {
-      t.classList.remove("dsd-anim--searching"), It(t, "in", "scaleIn");
+    t.classList.add("dsd-anim--searching"), zr(() => {
+      t.classList.remove("dsd-anim--searching"), St(t, "in", "scaleIn");
     }, r * 30);
   });
 }
-function vf(e, t, r) {
-  e && zt.inject({ eventBus: e }), xI(), Ie = t, je = { ...yf, ...r || {} }, Ie && (zI(), BI());
-  const n = PI("eventBus");
+function Hf(e, t, r) {
+  e && Bt.inject({ eventBus: e }), QI(), Ie = t, Fe = { ...Pf, ...r || {} }, Ie && (rS(), nS());
+  const n = eS("eventBus");
   if (n && n.on) {
-    const s = n.on(f.ITEMS_LOADED, Wd), i = n.on(f.SEARCH_RESULTS, Xd);
-    dn.push(
+    const s = n.on(f.ITEMS_LOADED, sd), i = n.on(f.SEARCH_RESULTS, id);
+    gn.push(
       typeof s == "function" ? s : () => {
-        n.off && n.off(f.ITEMS_LOADED, Wd);
+        n.off && n.off(f.ITEMS_LOADED, sd);
       }
-    ), dn.push(
+    ), gn.push(
       typeof i == "function" ? i : () => {
-        n.off && n.off(f.SEARCH_RESULTS, Xd);
+        n.off && n.off(f.SEARCH_RESULTS, id);
       }
     );
   }
   n && n.emit && n.emit(f.ANIMATED_TRANSITIONS_INITIALIZED);
 }
-function zI() {
+function rS() {
   Ke && Ke.disconnect(), Ke = new MutationObserver((t) => {
     Ce && t.forEach((r) => {
       r.addedNodes.forEach((n) => {
         var s;
-        n.nodeType === 1 && ((s = n.classList) != null && s.contains(C.ITEM)) && It(n, "in");
+        n.nodeType === 1 && ((s = n.classList) != null && s.contains(C.ITEM)) && St(n, "in");
       });
     });
   });
   const e = Ie == null ? void 0 : Ie.querySelector(`.${C.NAV_CONTENT}, .${C.NAV}`);
   e && Ke.observe(e, { childList: !0, subtree: !0 });
 }
-function BI() {
+function nS() {
   if (!Ce || !Ie) return;
   Ie.querySelectorAll(`.${C.ITEM}`).forEach((t, r) => {
-    t.style.opacity = "0", t.style.transform = "translateX(-10px)", xr(() => {
-      It(t, "in");
-    }, r * je.stagger);
+    t.style.opacity = "0", t.style.transform = "translateX(-10px)", zr(() => {
+      St(t, "in");
+    }, r * Fe.stagger);
   });
 }
-function It(e, t, r) {
+function St(e, t, r) {
   if (!e || !Ce) return Promise.resolve();
-  Rr.animations++, t = t || "in";
-  const n = r || je.type, s = t === "in" ? ri[n] || ri.slideIn : ri[n.replace("In", "Out")] || ri.slideOut;
+  Hr.animations++, t = t || "in";
+  const n = r || Fe.type, s = t === "in" ? ii[n] || ii.slideIn : ii[n.replace("In", "Out")] || ii.slideOut;
   return new Promise((i) => {
-    e.style.animationDuration = `${je.duration}ms`, e.style.animationTimingFunction = je.easing, e.classList.add(s);
+    e.style.animationDuration = `${Fe.duration}ms`, e.style.animationTimingFunction = Fe.easing, e.classList.add(s);
     let o = !1;
     const a = () => {
       o || (o = !0, e.classList.remove(s), e.style.opacity = t === "in" ? "1" : "0", e.style.transform = "", i());
     }, l = () => {
       e.removeEventListener("animationend", l), a();
     };
-    e.addEventListener("animationend", l), xr(a, je.duration + 50);
+    e.addEventListener("animationend", l), zr(a, Fe.duration + 50);
   });
 }
-function If(e, t, r) {
-  Rr.groups++;
+function zf(e, t, r) {
+  Hr.groups++;
   const n = Array.from(e);
   return Promise.all(n.map((s, i) => new Promise((o) => {
-    xr(() => {
-      It(s, t, r).then(o).catch(() => {
+    zr(() => {
+      St(s, t, r).then(o).catch(() => {
         o();
       });
-    }, i * je.stagger);
+    }, i * Fe.stagger);
   })));
 }
-function Sf(e) {
+function Bf(e) {
   if (!Ce || !e) return;
-  Rr.sections++, e.querySelectorAll(`.${C.ITEM}`).forEach((r, n) => {
-    r.style.opacity = "0", xr(() => {
-      It(r, "in", "slideIn");
+  Hr.sections++, e.querySelectorAll(`.${C.ITEM}`).forEach((r, n) => {
+    r.style.opacity = "0", zr(() => {
+      St(r, "in", "slideIn");
     }, n * 40);
   });
 }
-function Cf(e) {
+function Uf(e) {
   if (!Ce || !e) return Promise.resolve();
-  Rr.sections++;
+  Hr.sections++;
   const t = Array.from(e.querySelectorAll(`.${C.ITEM}`)).reverse();
   return Promise.all(t.map((r, n) => new Promise((s) => {
-    xr(() => {
-      It(r, "out", "slideOut").then(s).catch(() => {
+    zr(() => {
+      St(r, "out", "slideOut").then(s).catch(() => {
         s();
       });
     }, n * 20);
   })));
 }
-function Af(e) {
-  je = { ...je, ...e };
+function jf(e) {
+  Fe = { ...Fe, ...e };
 }
-function Mf() {
+function Ff() {
   Ce = !0;
 }
-function Of() {
+function Gf() {
   Ce = !1;
 }
-function Tf() {
+function Vf() {
   return Ce;
 }
-function Df() {
-  dn.forEach((e) => {
+function qf() {
+  gn.forEach((e) => {
     try {
       e();
     } catch {
     }
-  }), dn = [], HI(), Ke == null || Ke.disconnect(), Ke = null, Ce = !1, Ie = null;
+  }), gn = [], tS(), Ke == null || Ke.disconnect(), Ke = null, Ce = !1, Ie = null;
 }
-function to() {
-  return { ...Rr, activeTimers: kt.length, cleanups: dn.length };
+function lo() {
+  return { ...Hr, activeTimers: wt.length, cleanups: gn.length };
 }
-function Lf() {
+function Yf() {
   return {
-    moduleId: ps,
-    version: eo,
-    portsInitialized: zt.isInitialized(),
+    moduleId: _s,
+    version: ao,
+    portsInitialized: Bt.isInitialized(),
     enabled: Ce,
     hasObserver: !!Ke,
-    activeTimers: kt.length,
-    cleanups: dn.length,
-    config: { ...je },
-    metrics: to(),
+    activeTimers: wt.length,
+    cleanups: gn.length,
+    config: { ...Fe },
+    metrics: lo(),
     p24Compliant: !0
   };
 }
-function $f() {
+function Kf() {
   return {
-    status: zt.isInitialized() ? "HEALTHY" : "DEGRADED",
-    version: eo,
-    moduleId: ps,
-    portsInitialized: zt.isInitialized(),
-    checks: { enabled: Ce, hasObserver: !!Ke, noOrphanTimers: kt.length < 50, noOrphanListeners: !0 },
-    metrics: to(),
+    status: Bt.isInitialized() ? "HEALTHY" : "DEGRADED",
+    version: ao,
+    moduleId: _s,
+    portsInitialized: Bt.isInitialized(),
+    checks: { enabled: Ce, hasObserver: !!Ke, noOrphanTimers: wt.length < 50, noOrphanListeners: !0 },
+    metrics: lo(),
     p24Compliant: !0
   };
 }
-var UI = { init: vf, animateElement: It, animateGroup: If, animateSectionExpand: Sf, animateSectionCollapse: Cf, configure: Af, enable: Mf, disable: Of, isEnabled: Tf, destroy: Df, injectPorts: bf, getPorts: _f, getMetrics: to, info: Lf, healthCheck: $f, VERSION: eo, MODULE_ID: ps };
-const kf = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var sS = { init: Hf, animateElement: St, animateGroup: zf, animateSectionExpand: Bf, animateSectionCollapse: Uf, configure: jf, enable: Ff, disable: Gf, isEnabled: Vf, destroy: qf, injectPorts: Rf, getPorts: xf, getMetrics: lo, info: Yf, healthCheck: Kf, VERSION: ao, MODULE_ID: _s };
+const Wf = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: ps,
-  VERSION: eo,
-  animateElement: It,
-  animateGroup: If,
-  animateSectionCollapse: Cf,
-  animateSectionExpand: Sf,
-  configure: Af,
-  default: UI,
-  destroy: Df,
-  disable: Of,
-  enable: Mf,
-  getMetrics: to,
-  getPorts: _f,
-  healthCheck: $f,
-  info: Lf,
-  init: vf,
-  injectPorts: bf,
-  isEnabled: Tf
-}, Symbol.toStringTag, { value: "Module" })), ro = "6.1.0-ES6", Es = "sidebar-auto-theme", Bt = v({ moduleId: Es });
-function jI() {
-  Bt.init();
+  MODULE_ID: _s,
+  VERSION: ao,
+  animateElement: St,
+  animateGroup: zf,
+  animateSectionCollapse: Uf,
+  animateSectionExpand: Bf,
+  configure: jf,
+  default: sS,
+  destroy: qf,
+  disable: Gf,
+  enable: Ff,
+  getMetrics: lo,
+  getPorts: xf,
+  healthCheck: Kf,
+  info: Yf,
+  init: Hf,
+  injectPorts: Rf,
+  isEnabled: Vf
+}, Symbol.toStringTag, { value: "Module" })), co = "6.1.0-ES6", ys = "sidebar-auto-theme", Ut = v({ moduleId: ys });
+function iS() {
+  Ut.init();
 }
-function Zd(e) {
-  return Bt.get(e);
+function od(e) {
+  return Ut.get(e);
 }
-function wf(e) {
-  return Bt.inject(e);
+function Xf(e) {
+  return Ut.inject(e);
 }
-function Nf() {
-  return Bt.snapshot();
+function Zf() {
+  return Ut.snapshot();
 }
-const Rf = "dsd-sidebar-auto-theme", Jd = { dark: c.MOD_DARK, light: c.MOD_LIGHT, "high-contrast": c.MOD_HIGH_CONTRAST };
-let bi = null, Qe = !0, xa = null, ai = null, _i = [], no = "dark", so = { themeChanges: 0, toggles: 0, errors: 0 };
-function io() {
+const Jf = "dsd-sidebar-auto-theme", ad = { dark: c.MOD_DARK, light: c.MOD_LIGHT, "high-contrast": c.MOD_HIGH_CONTRAST };
+let Ci = null, Qe = !0, Ua = null, hi = null, Ai = [], uo = "dark", ho = { themeChanges: 0, toggles: 0, errors: 0 };
+function fo() {
   var e, t;
   return (e = window.matchMedia) != null && e.call(window, "(prefers-color-scheme: light)").matches ? "light" : ((t = window.matchMedia) != null && t.call(window, "(prefers-color-scheme: dark)").matches, "dark");
 }
-function FI() {
+function oS() {
   try {
-    Qe = localStorage.getItem(Rf) !== "false";
+    Qe = localStorage.getItem(Jf) !== "false";
   } catch {
     Qe = !0;
   }
 }
-function xf() {
+function Qf() {
   try {
-    localStorage.setItem(Rf, String(Qe));
+    localStorage.setItem(Jf, String(Qe));
   } catch {
   }
 }
-function rl(e, t) {
+function dl(e, t) {
   if (e) {
-    if (Object.values(Jd).forEach((r) => {
+    if (Object.values(ad).forEach((r) => {
       r && e.classList.remove(r);
     }), t !== "dark") {
-      const r = Jd[t];
+      const r = ad[t];
       r && e.classList.add(r);
     }
-    no = t, so.themeChanges++;
+    uo = t, ho.themeChanges++;
   }
 }
-function Ec(e, t) {
-  if (e && Bt.inject({ eventBus: e }), jI(), bi = t, FI(), !Qe) return;
-  const r = io();
-  rl(t, r), xa = window.matchMedia("(prefers-color-scheme: dark)"), ai = (s) => {
+function Tc(e, t) {
+  if (e && Ut.inject({ eventBus: e }), iS(), Ci = t, oS(), !Qe) return;
+  const r = fo();
+  dl(t, r), Ua = window.matchMedia("(prefers-color-scheme: dark)"), hi = (s) => {
     if (Qe) {
       const i = s.matches ? "dark" : "light";
-      rl(bi, i);
-      const o = Zd("eventBus");
+      dl(Ci, i);
+      const o = od("eventBus");
       o && o.emit && o.emit(f.THEME_CHANGED, { theme: i, auto: !0 });
     }
-  }, xa.addEventListener("change", ai), _i.push(() => {
-    xa.removeEventListener("change", ai);
+  }, Ua.addEventListener("change", hi), Ai.push(() => {
+    Ua.removeEventListener("change", hi);
   });
-  const n = Zd("eventBus");
+  const n = od("eventBus");
   n && n.emit && n.emit(f.AUTO_THEME_INITIALIZED);
 }
-function Pf(e, t) {
-  return Ec(t, e), () => {
-    bc();
+function eg(e, t) {
+  return Tc(t, e), () => {
+    Dc();
   };
 }
-function Hf(e) {
-  Qe = !0, so.toggles++, xf();
-  const t = io();
-  return rl(e || bi, t), t;
+function tg(e) {
+  Qe = !0, ho.toggles++, Qf();
+  const t = fo();
+  return dl(e || Ci, t), t;
 }
-function zf() {
-  Qe = !1, so.toggles++, xf();
+function rg() {
+  Qe = !1, ho.toggles++, Qf();
 }
-function Bf() {
+function ng() {
   return Qe;
 }
-function Uf() {
-  return no;
+function sg() {
+  return uo;
 }
-function jf() {
-  return io();
+function ig() {
+  return fo();
 }
-function bc() {
-  _i.forEach((e) => {
+function Dc() {
+  Ai.forEach((e) => {
     try {
       e();
     } catch {
     }
-  }), _i = [], ai = null, bi = null;
+  }), Ai = [], hi = null, Ci = null;
 }
-function oo() {
-  return { ...so };
+function go() {
+  return { ...ho };
 }
-function Ff() {
-  return { moduleId: Es, version: ro, portsInitialized: Bt.isInitialized(), autoEnabled: Qe, currentTheme: no, systemTheme: io(), cleanups: _i.length, metrics: oo() };
+function og() {
+  return { moduleId: ys, version: co, portsInitialized: Ut.isInitialized(), autoEnabled: Qe, currentTheme: uo, systemTheme: fo(), cleanups: Ai.length, metrics: go() };
 }
-function Gf() {
-  return { status: Bt.isInitialized() ? "HEALTHY" : "DEGRADED", version: ro, moduleId: Es, portsInitialized: Bt.isInitialized(), checks: { autoEnabled: Qe, currentTheme: no }, metrics: oo() };
+function ag() {
+  return { status: Ut.isInitialized() ? "HEALTHY" : "DEGRADED", version: co, moduleId: ys, portsInitialized: Ut.isInitialized(), checks: { autoEnabled: Qe, currentTheme: uo }, metrics: go() };
 }
-var GI = { init: Ec, setupAutoTheme: Pf, enable: Hf, disable: zf, isEnabled: Bf, getCurrentTheme: Uf, getSystemPreference: jf, destroy: bc, injectPorts: wf, getPorts: Nf, getMetrics: oo, info: Ff, healthCheck: Gf, VERSION: ro, MODULE_ID: Es };
-const Vf = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var aS = { init: Tc, setupAutoTheme: eg, enable: tg, disable: rg, isEnabled: ng, getCurrentTheme: sg, getSystemPreference: ig, destroy: Dc, injectPorts: Xf, getPorts: Zf, getMetrics: go, info: og, healthCheck: ag, VERSION: co, MODULE_ID: ys };
+const lg = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: Es,
-  VERSION: ro,
-  default: GI,
-  destroy: bc,
-  disable: zf,
-  enable: Hf,
-  getCurrentTheme: Uf,
-  getMetrics: oo,
-  getPorts: Nf,
-  getSystemPreference: jf,
-  healthCheck: Gf,
-  info: Ff,
-  init: Ec,
-  injectPorts: wf,
-  isEnabled: Bf,
-  setupAutoTheme: Pf
-}, Symbol.toStringTag, { value: "Module" })), Sn = "sidebar-command-palette", Cn = "6.6.0-ES6", Pr = v({ moduleId: Sn });
-function VI() {
-  Pr.init();
+  MODULE_ID: ys,
+  VERSION: co,
+  default: aS,
+  destroy: Dc,
+  disable: rg,
+  enable: tg,
+  getCurrentTheme: sg,
+  getMetrics: go,
+  getPorts: Zf,
+  getSystemPreference: ig,
+  healthCheck: ag,
+  info: og,
+  init: Tc,
+  injectPorts: Xf,
+  isEnabled: ng,
+  setupAutoTheme: eg
+}, Symbol.toStringTag, { value: "Module" })), On = "sidebar-command-palette", Tn = "6.6.0-ES6", Br = v({ moduleId: On });
+function lS() {
+  Br.init();
 }
 function st(e) {
-  return Pr.get(e);
+  return Br.get(e);
 }
-function qI(e) {
-  return Pr.inject(e);
+function cS(e) {
+  return Br.inject(e);
 }
-function YI() {
-  return Pr.snapshot();
+function uS() {
+  return Br.snapshot();
 }
-const cr = {
+const dr = {
   chevronLeft: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>',
   folder: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
   folderOpen: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M22 10H2"/></svg>',
@@ -6929,32 +7063,32 @@ const cr = {
   pin: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>',
   play: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>'
 }, E = { initialized: !1, ctx: null, modal: null, input: null, results: null, commands: [], registered: [], filtered: [], selectedIndex: 0, opens: 0, executions: 0, errors: 0, cleanups: [] };
-function br(e, t, r) {
-  return { ok: e, data: t || null, meta: { moduleId: Sn, version: Cn, timestamp: (/* @__PURE__ */ new Date()).toISOString() }, errors: r || [] };
+function yr(e, t, r) {
+  return { ok: e, data: t || null, meta: { moduleId: On, version: Tn, timestamp: (/* @__PURE__ */ new Date()).toISOString() }, errors: r || [] };
 }
-const qf = [
-  { id: "toggle-sidebar", label: "Alternar Barra Lateral", shortcut: "Ctrl+B", icon: cr.chevronLeft, keywords: ["toggle", "sidebar", "barra", "lateral", "menu", "recolher"], action() {
+const cg = [
+  { id: "toggle-sidebar", label: "Alternar Barra Lateral", shortcut: "Ctrl+B", icon: dr.chevronLeft, keywords: ["toggle", "sidebar", "barra", "lateral", "menu", "recolher"], action() {
     const e = st("sidebar");
     e && e.toggle && e.toggle();
   } },
-  { id: "collapse-all", label: "Recolher Todas as Seções", icon: cr.folder, keywords: ["collapse", "recolher", "fechar", "secoes", "grupos"], action() {
+  { id: "collapse-all", label: "Recolher Todas as Seções", icon: dr.folder, keywords: ["collapse", "recolher", "fechar", "secoes", "grupos"], action() {
     const e = st("sidebar");
     e && e.collapseAllSections && e.collapseAllSections();
   } },
-  { id: "expand-all", label: "Expandir Todas as Seções", icon: cr.folderOpen, keywords: ["expand", "expandir", "abrir", "secoes", "grupos"], action() {
+  { id: "expand-all", label: "Expandir Todas as Seções", icon: dr.folderOpen, keywords: ["expand", "expandir", "abrir", "secoes", "grupos"], action() {
     const e = st("sidebar");
     e && e.expandAllSections && e.expandAllSections();
   } },
-  { id: "toggle-theme", label: "Alternar Tema", icon: cr.palette, keywords: ["theme", "tema", "claro", "escuro", "dark", "light", "modo"], action() {
+  { id: "toggle-theme", label: "Alternar Tema", icon: dr.palette, keywords: ["theme", "tema", "claro", "escuro", "dark", "light", "modo"], action() {
     const e = st("sidebar");
     e && e.toggleTheme && e.toggleTheme();
   } },
-  { id: "mini-mode", label: "Alternar Modo Compacto", icon: cr.pin, keywords: ["mini", "compacto", "colapsar", "estreito"], action() {
+  { id: "mini-mode", label: "Alternar Modo Compacto", icon: dr.pin, keywords: ["mini", "compacto", "colapsar", "estreito"], action() {
     const e = st("sidebar");
     e && e.toggleMiniMode && e.toggleMiniMode();
   } }
 ];
-function KI() {
+function dS() {
   const e = [], t = {};
   try {
     document.querySelectorAll(".dsd-sidebar__link").forEach((n) => {
@@ -6968,7 +7102,7 @@ function KI() {
       e.push({
         id: o,
         label: i,
-        icon: cr.play,
+        icon: dr.play,
         shortcut: "",
         keywords: ["ir", "abrir", "navegar", "painel", "pagina", s.replace("#/", "")],
         action() {
@@ -6976,8 +7110,8 @@ function KI() {
             a.click();
             return;
           }
-          const d = document.querySelector('.dsd-sidebar__link[href="' + s + '"]');
-          d && d.click ? d.click() : window.location.href = s;
+          const u = document.querySelector('.dsd-sidebar__link[href="' + s + '"]');
+          u && u.click ? u.click() : window.location.href = s;
         }
       });
     });
@@ -6985,97 +7119,97 @@ function KI() {
   }
   return e;
 }
-function Qd(e) {
-  (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k" && (e.preventDefault(), yc());
+function ld(e) {
+  (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k" && (e.preventDefault(), $c());
 }
-function _c() {
-  E.opens++, WI(), E.modal && (E.modal.classList.add("dsd-command-palette--visible"), E.input && (E.input.value = "", E.input.focus()), E.commands = qf.concat(E.registered, KI()), E.selectedIndex = 0, Kf(E.commands));
+function Lc() {
+  E.opens++, hS(), E.modal && (E.modal.classList.add("dsd-command-palette--visible"), E.input && (E.input.value = "", E.input.focus()), E.commands = cg.concat(E.registered, dS()), E.selectedIndex = 0, dg(E.commands));
   const e = st("eventBus");
   e && e.emit && e.emit(f.COMMAND_PALETTE_OPENED);
 }
-function un() {
+function mn() {
   E.modal && E.modal.classList.remove("dsd-command-palette--visible");
   const e = st("eventBus");
   e && e.emit && e.emit(f.COMMAND_PALETTE_CLOSED);
 }
-function yc() {
-  E.modal && E.modal.classList.contains("dsd-command-palette--visible") ? un() : _c();
+function $c() {
+  E.modal && E.modal.classList.contains("dsd-command-palette--visible") ? mn() : Lc();
 }
-function WI() {
+function hS() {
   if (E.modal) return;
   E.modal = document.createElement("div"), E.modal.className = "dsd-command-palette", E.modal.innerHTML = '<div class="dsd-command-palette__backdrop"></div><div class="dsd-command-palette__container"><input type="text" class="dsd-command-palette__input" placeholder="Buscar comando ou painel..." /><div class="dsd-command-palette__results"></div></div>', document.body.appendChild(E.modal), E.input = E.modal.querySelector(".dsd-command-palette__input"), E.results = E.modal.querySelector(".dsd-command-palette__results");
   const e = E.modal.querySelector(".dsd-command-palette__backdrop"), t = () => {
-    un();
+    mn();
   };
   e.addEventListener("click", t), E.cleanups.push(() => {
     e.removeEventListener("click", t);
   });
   const r = () => {
-    Yf(E.input.value);
+    ug(E.input.value);
   };
   E.input.addEventListener("input", r), E.cleanups.push(() => {
     E.input.removeEventListener("input", r);
   });
   const n = (s) => {
     const i = E.results.querySelectorAll(".dsd-command-palette__item");
-    s.key === "ArrowDown" ? (s.preventDefault(), E.selectedIndex = Math.min(E.selectedIndex + 1, i.length - 1), eu(i)) : s.key === "ArrowUp" ? (s.preventDefault(), E.selectedIndex = Math.max(E.selectedIndex - 1, 0), eu(i)) : s.key === "Enter" ? (s.preventDefault(), Wf(E.selectedIndex)) : s.key === "Escape" && (s.preventDefault(), un());
+    s.key === "ArrowDown" ? (s.preventDefault(), E.selectedIndex = Math.min(E.selectedIndex + 1, i.length - 1), cd(i)) : s.key === "ArrowUp" ? (s.preventDefault(), E.selectedIndex = Math.max(E.selectedIndex - 1, 0), cd(i)) : s.key === "Enter" ? (s.preventDefault(), hg(E.selectedIndex)) : s.key === "Escape" && (s.preventDefault(), mn());
   };
   E.input.addEventListener("keydown", n), E.cleanups.push(() => {
     E.input.removeEventListener("keydown", n);
   });
 }
-function Yf(e) {
+function ug(e) {
   const t = e.toLowerCase(), r = E.commands.filter((n) => n.label.toLowerCase().indexOf(t) !== -1 || n.id.toLowerCase().indexOf(t) !== -1 || n.keywords && n.keywords.some((s) => (s || "").toLowerCase().indexOf(t) !== -1));
-  E.selectedIndex = 0, Kf(r);
+  E.selectedIndex = 0, dg(r);
 }
-function Kf(e) {
+function dg(e) {
   if (!E.results) return;
-  E.filtered = e, E.results.innerHTML = e.map((r, n) => `<div class="dsd-command-palette__item${n === E.selectedIndex ? " dsd-command-palette__item--selected" : ""}" data-index="${n}"><span class="dsd-command-palette__icon">${r.icon || cr.play}</span><span class="dsd-command-palette__label">${r.label}</span>${r.shortcut ? `<kbd class="dsd-command-palette__shortcut">${r.shortcut}</kbd>` : ""}</div>`).join(""), E.results.querySelectorAll(".dsd-command-palette__item").forEach((r, n) => {
+  E.filtered = e, E.results.innerHTML = e.map((r, n) => `<div class="dsd-command-palette__item${n === E.selectedIndex ? " dsd-command-palette__item--selected" : ""}" data-index="${n}"><span class="dsd-command-palette__icon">${r.icon || dr.play}</span><span class="dsd-command-palette__label">${r.label}</span>${r.shortcut ? `<kbd class="dsd-command-palette__shortcut">${r.shortcut}</kbd>` : ""}</div>`).join(""), E.results.querySelectorAll(".dsd-command-palette__item").forEach((r, n) => {
     r.addEventListener("click", () => {
-      Wf(n);
+      hg(n);
     });
   });
 }
-function eu(e) {
+function cd(e) {
   e.forEach((t, r) => {
     r === E.selectedIndex ? t.classList.add("dsd-command-palette__item--selected") : t.classList.remove("dsd-command-palette__item--selected");
   });
 }
-function Wf(e) {
+function hg(e) {
   const t = E.filtered && E.filtered.length ? E.filtered : E.commands;
   if (e >= 0 && e < t.length) {
     const r = t[e];
-    E.executions++, un(), r.action && r.action();
+    E.executions++, mn(), r.action && r.action();
     const n = st("eventBus");
     n && n.emit && n.emit(f.COMMAND_PALETTE_EXECUTED, { commandId: r.id });
   }
 }
-function Xf(e) {
-  if (!e || !e.id) return br(!1, null, [{ code: "INVALID", message: "Command must have id" }]);
+function fg(e) {
+  if (!e || !e.id) return yr(!1, null, [{ code: "INVALID", message: "Command must have id" }]);
   const t = E.registered.findIndex((r) => r.id === e.id);
-  return t >= 0 ? E.registered[t] = e : E.registered.push(e), br(!0, { commandId: e.id });
+  return t >= 0 ? E.registered[t] = e : E.registered.push(e), yr(!0, { commandId: e.id });
 }
-function Zf(e) {
-  if (E.initialized) return br(!0, { alreadyInitialized: !0 });
+function gg(e) {
+  if (E.initialized) return yr(!0, { alreadyInitialized: !0 });
   try {
-    E.ctx = e, e && e.ports && Pr.inject(e.ports), VI(), E.commands = qf.slice(), document.addEventListener("keydown", Qd), E.cleanups.push(() => {
-      document.removeEventListener("keydown", Qd);
+    E.ctx = e, e && e.ports && Br.inject(e.ports), lS(), E.commands = cg.slice(), document.addEventListener("keydown", ld), E.cleanups.push(() => {
+      document.removeEventListener("keydown", ld);
     }), E.initialized = !0;
     const t = st("eventBus");
-    return t && t.emit && t.emit(f.COMMAND_PALETTE_INITIALIZED, { version: Cn }), br(!0, { initialized: !0 });
+    return t && t.emit && t.emit(f.COMMAND_PALETTE_INITIALIZED, { version: Tn }), yr(!0, { initialized: !0 });
   } catch (t) {
-    return E.errors++, br(!1, null, [{ code: "INIT_ERROR", message: t.message }]);
+    return E.errors++, yr(!1, null, [{ code: "INIT_ERROR", message: t.message }]);
   }
 }
-function Jf() {
+function mg() {
   for (let e = 0; e < E.cleanups.length; e++)
     try {
       E.cleanups[e]();
     } catch {
     }
-  return E.cleanups = [], E.modal && E.modal.parentNode && E.modal.parentNode.removeChild(E.modal), E.modal = null, E.input = null, E.results = null, E.initialized = !1, br(!0, { cleanedUp: !0 });
+  return E.cleanups = [], E.modal && E.modal.parentNode && E.modal.parentNode.removeChild(E.modal), E.modal = null, E.input = null, E.results = null, E.initialized = !1, yr(!0, { cleanedUp: !0 });
 }
-function Qf() {
+function pg() {
   const e = {
     initialized: E.initialized,
     commandsRegistered: E.commands.length > 0,
@@ -7085,216 +7219,216 @@ function Qf() {
   return E.initialized ? t < r && (n = "DEGRADED") : n = "NOT_INITIALIZED", {
     status: n,
     score: { passed: t, total: r, percentage: Math.round(t / r * 100) },
-    moduleId: Sn,
-    version: Cn,
-    portsInitialized: Pr.isInitialized(),
+    moduleId: On,
+    version: Tn,
+    portsInitialized: Br.isInitialized(),
     checks: e,
     metrics: { opens: E.opens, executions: E.executions, commandsCount: E.commands.length, errors: E.errors },
     timestamp: Date.now()
   };
 }
-function eg() {
-  return br(!0, {
-    moduleId: Sn,
-    version: Cn,
-    portsInitialized: Pr.isInitialized(),
+function Eg() {
+  return yr(!0, {
+    moduleId: On,
+    version: Tn,
+    portsInitialized: Br.isInitialized(),
     initialized: E.initialized,
     commandsCount: E.commands.length,
     opens: E.opens,
     executions: E.executions
   });
 }
-function tg() {
+function bg() {
   return { opens: E.opens, executions: E.executions, commandsCount: E.commands.length, errors: E.errors };
 }
-const rg = { singleton: !0, critical: !1, rendersUI: !0, category: "search", priority: "high" };
-var XI = { id: Sn, version: Cn, capabilities: rg, init: Zf, cleanup: Jf, healthCheck: Qf, info: eg, getMetrics: tg, show: _c, hide: un, toggle: yc, registerCommand: Xf };
-const ng = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const _g = { singleton: !0, critical: !1, rendersUI: !0, category: "search", priority: "high" };
+var fS = { id: On, version: Tn, capabilities: _g, init: gg, cleanup: mg, healthCheck: pg, info: Eg, getMetrics: bg, show: Lc, hide: mn, toggle: $c, registerCommand: fg };
+const yg = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: Sn,
-  VERSION: Cn,
-  capabilities: rg,
-  cleanup: Jf,
-  default: XI,
-  getMetrics: tg,
-  getPorts: YI,
-  healthCheck: Qf,
-  hide: un,
-  info: eg,
-  init: Zf,
-  injectPorts: qI,
-  registerCommand: Xf,
-  search: Yf,
-  show: _c,
-  toggle: yc
-}, Symbol.toStringTag, { value: "Module" })), ao = "5.9.0-ES6", bs = "sidebar-compact-mode", Ut = v({ moduleId: bs });
-function ZI() {
-  Ut.init();
+  MODULE_ID: On,
+  VERSION: Tn,
+  capabilities: _g,
+  cleanup: mg,
+  default: fS,
+  getMetrics: bg,
+  getPorts: uS,
+  healthCheck: pg,
+  hide: mn,
+  info: Eg,
+  init: gg,
+  injectPorts: cS,
+  registerCommand: fg,
+  search: ug,
+  show: Lc,
+  toggle: $c
+}, Symbol.toStringTag, { value: "Module" })), mo = "5.9.0-ES6", vs = "sidebar-compact-mode", jt = v({ moduleId: vs });
+function gS() {
+  jt.init();
 }
-function vc(e) {
-  return Ut.get(e);
+function kc(e) {
+  return jt.get(e);
 }
-function sg(e) {
-  return Ut.inject(e);
+function vg(e) {
+  return jt.inject(e);
 }
-function ig() {
-  return Ut.snapshot();
+function Ig() {
+  return jt.snapshot();
 }
-const og = "dsd-sidebar-compact", Ic = "dsd-sidebar--compact";
-let Hr = !1, K = null, lo = { enables: 0, disables: 0, toggles: 0 };
-function JI() {
+const Sg = "dsd-sidebar-compact", wc = "dsd-sidebar--compact";
+let Ur = !1, W = null, po = { enables: 0, disables: 0, toggles: 0 };
+function mS() {
   try {
-    return localStorage.getItem(og) === "true";
+    return localStorage.getItem(Sg) === "true";
   } catch {
     return !1;
   }
 }
-function ag(e) {
+function Cg(e) {
   try {
-    localStorage.setItem(og, String(e));
+    localStorage.setItem(Sg, String(e));
   } catch {
   }
 }
-function lg(e, t) {
-  e && Ut.inject({ eventBus: e }), ZI(), K = t;
-  const r = JI();
-  r && t && co(t);
-  const n = vc("eventBus");
+function Ag(e, t) {
+  e && jt.inject({ eventBus: e }), gS(), W = t;
+  const r = mS();
+  r && t && Eo(t);
+  const n = kc("eventBus");
   return n && n.emit && n.emit(f.COMPACT_INITIALIZED), r;
 }
-function co(e) {
-  if (K = e || K, !K) return !1;
-  K.classList.add(Ic), K.setAttribute("data-compact", "true"), Hr = !0, lo.enables++, ag(!0);
-  const t = vc("eventBus");
+function Eo(e) {
+  if (W = e || W, !W) return !1;
+  W.classList.add(wc), W.setAttribute("data-compact", "true"), Ur = !0, po.enables++, Cg(!0);
+  const t = kc("eventBus");
   return t && t.emit && t.emit(f.COMPACT_ENABLED), !0;
 }
-function Sc(e) {
-  if (K = e || K, !K) return !1;
-  K.classList.remove(Ic), K.removeAttribute("data-compact"), Hr = !1, lo.disables++, ag(!1);
-  const t = vc("eventBus");
+function Nc(e) {
+  if (W = e || W, !W) return !1;
+  W.classList.remove(wc), W.removeAttribute("data-compact"), Ur = !1, po.disables++, Cg(!1);
+  const t = kc("eventBus");
   return t && t.emit && t.emit(f.COMPACT_DISABLED), !0;
 }
-function cg(e) {
-  return K = e || K, lo.toggles++, Hr ? (Sc(K), !1) : (co(K), !0);
+function Mg(e) {
+  return W = e || W, po.toggles++, Ur ? (Nc(W), !1) : (Eo(W), !0);
 }
-function dg() {
-  return Hr;
+function Og() {
+  return Ur;
 }
-function ug() {
-  return K;
+function Tg() {
+  return W;
 }
-function hg() {
-  K && (K.classList.remove(Ic), K.removeAttribute("data-compact")), K = null, Hr = !1;
+function Dg() {
+  W && (W.classList.remove(wc), W.removeAttribute("data-compact")), W = null, Ur = !1;
 }
-function uo() {
-  return { ...lo };
+function bo() {
+  return { ...po };
 }
-function fg() {
-  return { moduleId: bs, version: ao, portsInitialized: Ut.isInitialized(), enabled: Hr, hasContainer: !!K, metrics: uo() };
+function Lg() {
+  return { moduleId: vs, version: mo, portsInitialized: jt.isInitialized(), enabled: Ur, hasContainer: !!W, metrics: bo() };
 }
-function gg() {
-  return { status: Ut.isInitialized() ? "HEALTHY" : "DEGRADED", version: ao, moduleId: bs, portsInitialized: Ut.isInitialized(), checks: { enabled: Hr, hasContainer: !!K }, metrics: uo() };
+function $g() {
+  return { status: jt.isInitialized() ? "HEALTHY" : "DEGRADED", version: mo, moduleId: vs, portsInitialized: jt.isInitialized(), checks: { enabled: Ur, hasContainer: !!W }, metrics: bo() };
 }
-var QI = { init: lg, enable: co, disable: Sc, toggle: cg, isEnabled: dg, getContainer: ug, destroy: hg, injectPorts: sg, getPorts: ig, getMetrics: uo, info: fg, healthCheck: gg, VERSION: ao, MODULE_ID: bs };
-const mg = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var pS = { init: Ag, enable: Eo, disable: Nc, toggle: Mg, isEnabled: Og, getContainer: Tg, destroy: Dg, injectPorts: vg, getPorts: Ig, getMetrics: bo, info: Lg, healthCheck: $g, VERSION: mo, MODULE_ID: vs };
+const kg = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: bs,
-  VERSION: ao,
-  default: QI,
-  destroy: hg,
-  disable: Sc,
-  enable: co,
-  getContainer: ug,
-  getMetrics: uo,
-  getPorts: ig,
-  healthCheck: gg,
-  info: fg,
-  init: lg,
-  injectPorts: sg,
-  isEnabled: dg,
-  toggle: cg
-}, Symbol.toStringTag, { value: "Module" })), _s = "5.9.0-ES6", ys = "sidebar-config-manager", zr = v({ moduleId: ys });
-function eS() {
-  zr.init();
+  MODULE_ID: vs,
+  VERSION: mo,
+  default: pS,
+  destroy: Dg,
+  disable: Nc,
+  enable: Eo,
+  getContainer: Tg,
+  getMetrics: bo,
+  getPorts: Ig,
+  healthCheck: $g,
+  info: Lg,
+  init: Ag,
+  injectPorts: vg,
+  isEnabled: Og,
+  toggle: Mg
+}, Symbol.toStringTag, { value: "Module" })), Is = "5.9.0-ES6", Ss = "sidebar-config-manager", jr = v({ moduleId: Ss });
+function ES() {
+  jr.init();
 }
-function tS(e) {
-  return zr.get(e);
+function bS(e) {
+  return jr.get(e);
 }
-function pg(e) {
-  return zr.inject(e);
+function wg(e) {
+  return jr.inject(e);
 }
-function Eg() {
-  return zr.snapshot();
+function Ng() {
+  return jr.snapshot();
 }
-let ke = { exports: 0, imports: 0, resets: 0, errors: 0 };
-const Br = ["dsd-sidebar-collapsed", "dsd-sidebar-width", "dsd-sidebar-theme", "dsd-sidebar-auto-theme", "dsd-sidebar-favorites", "dsd-sidebar-recent", "dsd-sidebar-order", "dsd-sidebar-expanded-sections"];
-function bg(e) {
-  e && zr.inject({ eventBus: e }), eS();
-  const t = tS("eventBus");
+let we = { exports: 0, imports: 0, resets: 0, errors: 0 };
+const Fr = ["dsd-sidebar-collapsed", "dsd-sidebar-width", "dsd-sidebar-theme", "dsd-sidebar-auto-theme", "dsd-sidebar-favorites", "dsd-sidebar-recent", "dsd-sidebar-order", "dsd-sidebar-expanded-sections"];
+function Rg(e) {
+  e && jr.inject({ eventBus: e }), ES();
+  const t = bS("eventBus");
   t && t.emit && t.emit(f.CONFIG_INITIALIZED);
 }
-function Cc() {
-  const e = { version: _s, exportedAt: (/* @__PURE__ */ new Date()).toISOString(), settings: {} };
-  return Br.forEach((t) => {
+function Rc() {
+  const e = { version: Is, exportedAt: (/* @__PURE__ */ new Date()).toISOString(), settings: {} };
+  return Fr.forEach((t) => {
     try {
       const r = localStorage.getItem(t);
       r !== null && (e.settings[t] = r);
     } catch {
-      ke.errors++;
+      we.errors++;
     }
-  }), ke.exports++, e;
+  }), we.exports++, e;
 }
-function Ac() {
-  return JSON.stringify(Cc(), null, 2);
+function xc() {
+  return JSON.stringify(Rc(), null, 2);
 }
-function _g(e = "sidebar-config.json") {
-  const t = Ac(), r = new Blob([t], { type: "application/json" }), n = URL.createObjectURL(r), s = document.createElement("a");
+function xg(e = "sidebar-config.json") {
+  const t = xc(), r = new Blob([t], { type: "application/json" }), n = URL.createObjectURL(r), s = document.createElement("a");
   s.href = n, s.download = e, s.click(), URL.revokeObjectURL(n);
 }
-function Mc(e) {
+function Pc(e) {
   if (!(e != null && e.settings))
-    throw ke.errors++, new Error("Invalid config format");
+    throw we.errors++, new Error("Invalid config format");
   const t = [], r = [];
   return Object.entries(e.settings).forEach((n) => {
     const s = n[0], i = n[1];
     try {
-      Br.includes(s) && (localStorage.setItem(s, i), t.push(s));
+      Fr.includes(s) && (localStorage.setItem(s, i), t.push(s));
     } catch {
-      r.push(s), ke.errors++;
+      r.push(s), we.errors++;
     }
-  }), ke.imports++, { imported: t, failed: r, total: Object.keys(e.settings).length };
+  }), we.imports++, { imported: t, failed: r, total: Object.keys(e.settings).length };
 }
-function Oc(e) {
+function Hc(e) {
   const t = JSON.parse(e);
-  return Mc(t);
+  return Pc(t);
 }
-function yg(e) {
+function Pg(e) {
   return new Promise((t, r) => {
     const n = new FileReader();
     n.onload = (s) => {
       try {
-        const i = Oc(s.target.result);
+        const i = Hc(s.target.result);
         t(i);
       } catch (i) {
-        ke.errors++, r(i);
+        we.errors++, r(i);
       }
     }, n.onerror = () => {
-      ke.errors++, r(new Error("Failed to read file"));
+      we.errors++, r(new Error("Failed to read file"));
     }, n.readAsText(e);
   });
 }
-function vg() {
-  Br.forEach((e) => {
+function Hg() {
+  Fr.forEach((e) => {
     try {
       localStorage.removeItem(e);
     } catch {
-      ke.errors++;
+      we.errors++;
     }
-  }), ke.resets++;
+  }), we.resets++;
 }
-function Tc() {
+function zc() {
   const e = {};
-  return Br.forEach((t) => {
+  return Fr.forEach((t) => {
     try {
       const r = localStorage.getItem(t);
       e[t] = r !== null;
@@ -7303,132 +7437,132 @@ function Tc() {
     }
   }), e;
 }
-function Ig() {
+function zg() {
 }
-function ho() {
-  return { ...ke };
+function _o() {
+  return { ...we };
 }
-function Sg() {
-  return { moduleId: ys, version: _s, portsInitialized: zr.isInitialized(), configKeys: Br.length, summary: Tc(), metrics: ho() };
+function Bg() {
+  return { moduleId: Ss, version: Is, portsInitialized: jr.isInitialized(), configKeys: Fr.length, summary: zc(), metrics: _o() };
 }
-function Cg() {
-  return { status: ke.errors === 0 ? "HEALTHY" : "DEGRADED", version: _s, moduleId: ys, portsInitialized: zr.isInitialized(), checks: { configKeys: Br.length, noErrors: ke.errors === 0 }, metrics: ho() };
+function Ug() {
+  return { status: we.errors === 0 ? "HEALTHY" : "DEGRADED", version: Is, moduleId: Ss, portsInitialized: jr.isInitialized(), checks: { configKeys: Fr.length, noErrors: we.errors === 0 }, metrics: _o() };
 }
-var rS = { init: bg, exportConfig: Cc, exportConfigAsJSON: Ac, downloadConfig: _g, importConfig: Mc, importConfigFromJSON: Oc, importConfigFromFile: yg, resetConfig: vg, getConfigSummary: Tc, destroy: Ig, injectPorts: pg, getPorts: Eg, getMetrics: ho, info: Sg, healthCheck: Cg, VERSION: _s, MODULE_ID: ys, CONFIG_KEYS: Br };
-const Ag = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var _S = { init: Rg, exportConfig: Rc, exportConfigAsJSON: xc, downloadConfig: xg, importConfig: Pc, importConfigFromJSON: Hc, importConfigFromFile: Pg, resetConfig: Hg, getConfigSummary: zc, destroy: zg, injectPorts: wg, getPorts: Ng, getMetrics: _o, info: Bg, healthCheck: Ug, VERSION: Is, MODULE_ID: Ss, CONFIG_KEYS: Fr };
+const jg = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: ys,
-  VERSION: _s,
-  default: rS,
-  destroy: Ig,
-  downloadConfig: _g,
-  exportConfig: Cc,
-  exportConfigAsJSON: Ac,
-  getConfigSummary: Tc,
-  getMetrics: ho,
-  getPorts: Eg,
-  healthCheck: Cg,
-  importConfig: Mc,
-  importConfigFromFile: yg,
-  importConfigFromJSON: Oc,
-  info: Sg,
-  init: bg,
-  injectPorts: pg,
-  resetConfig: vg
-}, Symbol.toStringTag, { value: "Module" })), fo = "6.1.0-ES6", vs = "sidebar-context-menu", Ur = v({ moduleId: vs });
-function nS() {
-  Ur.init();
+  MODULE_ID: Ss,
+  VERSION: Is,
+  default: _S,
+  destroy: zg,
+  downloadConfig: xg,
+  exportConfig: Rc,
+  exportConfigAsJSON: xc,
+  getConfigSummary: zc,
+  getMetrics: _o,
+  getPorts: Ng,
+  healthCheck: Ug,
+  importConfig: Pc,
+  importConfigFromFile: Pg,
+  importConfigFromJSON: Hc,
+  info: Bg,
+  init: Rg,
+  injectPorts: wg,
+  resetConfig: Hg
+}, Symbol.toStringTag, { value: "Module" })), yo = "6.1.0-ES6", Cs = "sidebar-context-menu", Gr = v({ moduleId: Cs });
+function yS() {
+  Gr.init();
 }
-function sS(e) {
-  return Ur.get(e);
+function vS(e) {
+  return Gr.get(e);
 }
-function Mg(e) {
-  return Ur.inject(e);
+function Fg(e) {
+  return Gr.inject(e);
 }
-function Og() {
-  return Ur.snapshot();
+function Gg() {
+  return Gr.snapshot();
 }
-const Hn = {
+const Un = {
   star: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
   externalLink: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>',
   link: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
   eyeOff: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>',
   info: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
 };
-let B = null, go = null, hn = {}, _r = [], yi = [], hr = { opens: 0, closes: 0, actions: 0, errors: 0 };
-const Tg = [
-  { id: "favorite", label: "Adicionar aos favoritos", icon: Hn.star },
-  { id: "open-new", label: "Abrir em nova aba", icon: Hn.externalLink },
-  { id: "copy-link", label: "Copiar link", icon: Hn.link },
+let U = null, vo = null, pn = {}, vr = [], Mi = [], gr = { opens: 0, closes: 0, actions: 0, errors: 0 };
+const Vg = [
+  { id: "favorite", label: "Adicionar aos favoritos", icon: Un.star },
+  { id: "open-new", label: "Abrir em nova aba", icon: Un.externalLink },
+  { id: "copy-link", label: "Copiar link", icon: Un.link },
   { id: "separator", type: "separator" },
-  { id: "hide", label: "Ocultar item", icon: Hn.eyeOff },
-  { id: "info", label: "Informações", icon: Hn.info }
+  { id: "hide", label: "Ocultar item", icon: Un.eyeOff },
+  { id: "info", label: "Informações", icon: Un.info }
 ];
-function iS() {
-  if (B) return B;
-  B = document.createElement("div"), B.className = c.CONTEXT_MENU, B.setAttribute("role", "menu"), B.setAttribute("aria-hidden", "true"), document.body.appendChild(B);
+function IS() {
+  if (U) return U;
+  U = document.createElement("div"), U.className = c.CONTEXT_MENU, U.setAttribute("role", "menu"), U.setAttribute("aria-hidden", "true"), document.body.appendChild(U);
   const e = (n) => {
-    B.contains(n.target) || sn();
+    U.contains(n.target) || cn();
   };
-  document.addEventListener("click", e), _r.push(() => {
+  document.addEventListener("click", e), vr.push(() => {
     document.removeEventListener("click", e);
   });
   const t = (n) => {
-    B.contains(n.target) || sn();
+    U.contains(n.target) || cn();
   };
-  document.addEventListener("contextmenu", t), _r.push(() => {
+  document.addEventListener("contextmenu", t), vr.push(() => {
     document.removeEventListener("contextmenu", t);
   });
   const r = (n) => {
-    n.key === "Escape" && sn();
+    n.key === "Escape" && cn();
   };
-  return document.addEventListener("keydown", r), _r.push(() => {
+  return document.addEventListener("keydown", r), vr.push(() => {
     document.removeEventListener("keydown", r);
-  }), B;
+  }), U;
 }
-function Dg() {
-  yi.forEach((e) => {
+function qg() {
+  Mi.forEach((e) => {
     try {
       e();
     } catch {
     }
-  }), yi = [];
+  }), Mi = [];
 }
-function oS(e) {
-  Dg(), B.innerHTML = "", e.forEach((t) => {
+function SS(e) {
+  qg(), U.innerHTML = "", e.forEach((t) => {
     if (t.type === "separator") {
       const s = document.createElement("div");
-      s.className = c.CONTEXT_MENU_SEPARATOR, B.appendChild(s);
+      s.className = c.CONTEXT_MENU_SEPARATOR, U.appendChild(s);
       return;
     }
     const r = document.createElement("button");
     r.className = c.CONTEXT_MENU_ITEM, r.setAttribute("type", "button"), r.setAttribute("role", "menuitem"), r.setAttribute("data-action", t.id), r.innerHTML = `<span class="${c.CONTEXT_MENU_ICON}">${t.icon || ""}</span><span class="${c.CONTEXT_MENU_LABEL}">${t.label}</span>`;
     const n = () => {
-      hr.actions++, hn[t.id] && hn[t.id](go, t), sn();
+      gr.actions++, pn[t.id] && pn[t.id](vo, t), cn();
     };
-    r.addEventListener("click", n), yi.push(() => {
+    r.addEventListener("click", n), Mi.push(() => {
       r.removeEventListener("click", n);
-    }), B.appendChild(r);
+    }), U.appendChild(r);
   });
 }
-function Lg(e) {
-  e && Ur.inject({ eventBus: e }), nS();
-  const t = sS("eventBus");
+function Yg(e) {
+  e && Gr.inject({ eventBus: e }), yS();
+  const t = vS("eventBus");
   t && t.emit && t.emit(f.CONTEXT_INITIALIZED);
 }
-function Dc(e, t, r, n) {
-  iS(), go = r, hr.opens++, oS(n || Tg), B.style.left = `${e}px`, B.style.top = `${t}px`, B.classList.add(c.CONTEXT_MENU_VISIBLE), B.setAttribute("aria-hidden", "false"), requestAnimationFrame(() => {
-    const i = B.getBoundingClientRect();
-    i.right > window.innerWidth && (B.style.left = `${window.innerWidth - i.width - 10}px`), i.bottom > window.innerHeight && (B.style.top = `${window.innerHeight - i.height - 10}px`);
+function Bc(e, t, r, n) {
+  IS(), vo = r, gr.opens++, SS(n || Vg), U.style.left = `${e}px`, U.style.top = `${t}px`, U.classList.add(c.CONTEXT_MENU_VISIBLE), U.setAttribute("aria-hidden", "false"), requestAnimationFrame(() => {
+    const i = U.getBoundingClientRect();
+    i.right > window.innerWidth && (U.style.left = `${window.innerWidth - i.width - 10}px`), i.bottom > window.innerHeight && (U.style.top = `${window.innerHeight - i.height - 10}px`);
   });
 }
-function sn() {
-  B && (B.classList.remove(c.CONTEXT_MENU_VISIBLE), B.setAttribute("aria-hidden", "true"), hr.closes++), go = null;
+function cn() {
+  U && (U.classList.remove(c.CONTEXT_MENU_VISIBLE), U.setAttribute("aria-hidden", "true"), gr.closes++), vo = null;
 }
-function $g(e, t) {
-  hn[e] = t;
+function Kg(e, t) {
+  pn[e] = t;
 }
-function kg(e, t) {
+function Wg(e, t) {
   if (!e) return () => {
   };
   const r = (n) => {
@@ -7436,206 +7570,206 @@ function kg(e, t) {
     if (!s) return;
     n.preventDefault();
     const i = s.dataset.itemId;
-    Dc(n.clientX, n.clientY, i, t);
+    Bc(n.clientX, n.clientY, i, t);
   };
-  return e.addEventListener("contextmenu", r), _r.push(() => {
+  return e.addEventListener("contextmenu", r), vr.push(() => {
     e.removeEventListener("contextmenu", r);
   }), () => {
-    Lc();
+    Uc();
   };
 }
-function Lc() {
-  Dg(), _r.forEach((e) => {
+function Uc() {
+  qg(), vr.forEach((e) => {
     try {
       e();
     } catch {
     }
-  }), _r = [], B && (B.remove(), B = null), hn = {};
+  }), vr = [], U && (U.remove(), U = null), pn = {};
 }
-function mo() {
-  return { opens: hr.opens, closes: hr.closes, actions: hr.actions, errors: hr.errors };
+function Io() {
+  return { opens: gr.opens, closes: gr.closes, actions: gr.actions, errors: gr.errors };
 }
-function wg() {
-  return { moduleId: vs, version: fo, portsInitialized: Ur.isInitialized(), menuCreated: !!B, handlersCount: Object.keys(hn).length, currentItemId: go, cleanups: _r.length, itemCleanups: yi.length, metrics: mo() };
+function Xg() {
+  return { moduleId: Cs, version: yo, portsInitialized: Gr.isInitialized(), menuCreated: !!U, handlersCount: Object.keys(pn).length, currentItemId: vo, cleanups: vr.length, itemCleanups: Mi.length, metrics: Io() };
 }
-function Ng() {
-  return { status: "HEALTHY", version: fo, moduleId: vs, portsInitialized: Ur.isInitialized(), checks: { menuCreated: !!B, handlersCount: Object.keys(hn).length }, metrics: mo() };
+function Zg() {
+  return { status: "HEALTHY", version: yo, moduleId: Cs, portsInitialized: Gr.isInitialized(), checks: { menuCreated: !!U, handlersCount: Object.keys(pn).length }, metrics: Io() };
 }
-var aS = { init: Lg, showMenu: Dc, hideMenu: sn, onAction: $g, setupContextMenu: kg, destroy: Lc, injectPorts: Mg, getPorts: Og, getMetrics: mo, info: wg, healthCheck: Ng, VERSION: fo, MODULE_ID: vs, DEFAULT_ACTIONS: Tg };
-const Rg = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var CS = { init: Yg, showMenu: Bc, hideMenu: cn, onAction: Kg, setupContextMenu: Wg, destroy: Uc, injectPorts: Fg, getPorts: Gg, getMetrics: Io, info: Xg, healthCheck: Zg, VERSION: yo, MODULE_ID: Cs, DEFAULT_ACTIONS: Vg };
+const Jg = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: vs,
-  VERSION: fo,
-  default: aS,
-  destroy: Lc,
-  getMetrics: mo,
-  getPorts: Og,
-  healthCheck: Ng,
-  hideMenu: sn,
-  info: wg,
-  init: Lg,
-  injectPorts: Mg,
-  onAction: $g,
-  setupContextMenu: kg,
-  showMenu: Dc
-}, Symbol.toStringTag, { value: "Module" })), po = "5.9.0-ES6", Is = "sidebar-debug-panel", jt = v({ moduleId: Is });
-function lS() {
-  jt.init();
+  MODULE_ID: Cs,
+  VERSION: yo,
+  default: CS,
+  destroy: Uc,
+  getMetrics: Io,
+  getPorts: Gg,
+  healthCheck: Zg,
+  hideMenu: cn,
+  info: Xg,
+  init: Yg,
+  injectPorts: Fg,
+  onAction: Kg,
+  setupContextMenu: Wg,
+  showMenu: Bc
+}, Symbol.toStringTag, { value: "Module" })), So = "5.9.0-ES6", As = "sidebar-debug-panel", Ft = v({ moduleId: As });
+function AS() {
+  Ft.init();
 }
-function tu(e) {
-  return jt.get(e);
+function ud(e) {
+  return Ft.get(e);
 }
-function xg(e) {
-  return jt.inject(e);
+function Qg(e) {
+  return Ft.inject(e);
 }
-function Pg() {
-  return jt.snapshot();
+function em() {
+  return Ft.snapshot();
 }
-const Hg = {
+const tm = {
   close: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
   check: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
 };
-let At = null, wt = null, Ft = !1, We = [];
-const ru = 100;
-let on = { opens: 0, closes: 0, logsAdded: 0 }, fn = [];
-const cS = '.dsd-debug-panel{position:fixed;bottom:20px;right:20px;width:400px;max-height:500px;background:#1e1e2e;border:1px solid #3a3a5a;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,0.5);z-index:99999;font-family:"SF Mono","Fira Code",monospace;font-size:12px;color:#e0e0e0;display:flex;flex-direction:column;overflow:hidden;animation:debugPanelSlideIn 0.3s ease}@keyframes debugPanelSlideIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}.dsd-debug-panel__header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#2a2a4a;border-bottom:1px solid #3a3a5a;cursor:move}.dsd-debug-panel__title{font-weight:600;color:#a855f7}.dsd-debug-panel__actions{display:flex;gap:8px}.dsd-debug-panel__btn{background:transparent;border:1px solid #3a3a5a;color:#a0a0a0;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;transition:all 0.15s ease;display:flex;align-items:center;justify-content:center}.dsd-debug-panel__btn:hover{background:#3a3a5a;color:white}.dsd-debug-panel__tabs{display:flex;border-bottom:1px solid #3a3a5a}.dsd-debug-panel__tab{flex:1;padding:8px;background:transparent;border:none;color:#808080;cursor:pointer;font-size:11px;transition:all 0.15s ease}.dsd-debug-panel__tab--active{color:#a855f7;background:rgba(168,85,247,0.1);border-bottom:2px solid #a855f7}.dsd-debug-panel__content{flex:1;overflow-y:auto;padding:12px;max-height:350px}.dsd-debug-panel__section{margin-bottom:12px}.dsd-debug-panel__section-title{font-size:10px;text-transform:uppercase;color:#808080;margin-bottom:8px;letter-spacing:0.5px}.dsd-debug-panel__state-item{display:flex;justify-content:space-between;padding:4px 8px;background:#2a2a3a;border-radius:4px;margin-bottom:4px}.dsd-debug-panel__state-key{color:#7dd3fc}.dsd-debug-panel__state-value{color:#fbbf24;display:flex;align-items:center}.dsd-debug-panel__log{padding:6px 8px;border-left:3px solid #3a3a5a;margin-bottom:4px;font-size:11px}.dsd-debug-panel__log--info{border-color:#3b82f6}.dsd-debug-panel__log--warn{border-color:#f59e0b}.dsd-debug-panel__log--error{border-color:#ef4444}.dsd-debug-panel__log--event{border-color:#a855f7}.dsd-debug-panel__log-time{color:#808080;margin-right:8px}';
-function nu(e) {
-  e.ctrlKey && e.shiftKey && e.key === "D" && (e.preventDefault(), kc());
+let Mt = null, Nt = null, Gt = !1, We = [];
+const dd = 100;
+let un = { opens: 0, closes: 0, logsAdded: 0 }, En = [];
+const MS = '.dsd-debug-panel{position:fixed;bottom:20px;right:20px;width:400px;max-height:500px;background:#1e1e2e;border:1px solid #3a3a5a;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,0.5);z-index:99999;font-family:"SF Mono","Fira Code",monospace;font-size:12px;color:#e0e0e0;display:flex;flex-direction:column;overflow:hidden;animation:debugPanelSlideIn 0.3s ease}@keyframes debugPanelSlideIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}.dsd-debug-panel__header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#2a2a4a;border-bottom:1px solid #3a3a5a;cursor:move}.dsd-debug-panel__title{font-weight:600;color:#a855f7}.dsd-debug-panel__actions{display:flex;gap:8px}.dsd-debug-panel__btn{background:transparent;border:1px solid #3a3a5a;color:#a0a0a0;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;transition:all 0.15s ease;display:flex;align-items:center;justify-content:center}.dsd-debug-panel__btn:hover{background:#3a3a5a;color:white}.dsd-debug-panel__tabs{display:flex;border-bottom:1px solid #3a3a5a}.dsd-debug-panel__tab{flex:1;padding:8px;background:transparent;border:none;color:#808080;cursor:pointer;font-size:11px;transition:all 0.15s ease}.dsd-debug-panel__tab--active{color:#a855f7;background:rgba(168,85,247,0.1);border-bottom:2px solid #a855f7}.dsd-debug-panel__content{flex:1;overflow-y:auto;padding:12px;max-height:350px}.dsd-debug-panel__section{margin-bottom:12px}.dsd-debug-panel__section-title{font-size:10px;text-transform:uppercase;color:#808080;margin-bottom:8px;letter-spacing:0.5px}.dsd-debug-panel__state-item{display:flex;justify-content:space-between;padding:4px 8px;background:#2a2a3a;border-radius:4px;margin-bottom:4px}.dsd-debug-panel__state-key{color:#7dd3fc}.dsd-debug-panel__state-value{color:#fbbf24;display:flex;align-items:center}.dsd-debug-panel__log{padding:6px 8px;border-left:3px solid #3a3a5a;margin-bottom:4px;font-size:11px}.dsd-debug-panel__log--info{border-color:#3b82f6}.dsd-debug-panel__log--warn{border-color:#f59e0b}.dsd-debug-panel__log--error{border-color:#ef4444}.dsd-debug-panel__log--event{border-color:#a855f7}.dsd-debug-panel__log-time{color:#808080;margin-right:8px}';
+function hd(e) {
+  e.ctrlKey && e.shiftKey && e.key === "D" && (e.preventDefault(), Fc());
 }
-function zg(e, t) {
+function rm(e, t) {
   var n, s;
-  At = e, e && jt.inject({ eventBus: e }), lS(), dS(), uS(), document.addEventListener("keydown", nu), fn.push(() => {
-    document.removeEventListener("keydown", nu);
-  }), (s = (n = tu("logger")) == null ? void 0 : n.info) == null || s.call(n, "[DebugPanel] Initialized. Press Ctrl+Shift+D to open.");
-  const r = tu("eventBus");
+  Mt = e, e && Ft.inject({ eventBus: e }), AS(), OS(), TS(), document.addEventListener("keydown", hd), En.push(() => {
+    document.removeEventListener("keydown", hd);
+  }), (s = (n = ud("logger")) == null ? void 0 : n.info) == null || s.call(n, "[DebugPanel] Initialized. Press Ctrl+Shift+D to open.");
+  const r = ud("eventBus");
   r && r.emit && r.emit(f.DEBUG_PANEL_INITIALIZED);
 }
-function dS() {
+function OS() {
   if (document.getElementById("dsd-debug-panel-styles")) return;
   const e = document.createElement("style");
-  e.id = "dsd-debug-panel-styles", e.textContent = cS, document.head.appendChild(e);
+  e.id = "dsd-debug-panel-styles", e.textContent = MS, document.head.appendChild(e);
 }
-function uS() {
-  if (!At || !At.on) return;
-  const e = At.emit ? At.emit.bind(At) : null;
-  e && (At.emit = (t, r) => (wc("event", t, r), e(t, r)));
+function TS() {
+  if (!Mt || !Mt.on) return;
+  const e = Mt.emit ? Mt.emit.bind(Mt) : null;
+  e && (Mt.emit = (t, r) => (Gc("event", t, r), e(t, r)));
 }
-function su(e) {
+function fd(e) {
   const t = e.target.dataset.action, r = e.target.dataset.tab;
-  t === "close" && Ss(), t === "refresh" && es(), t === "clear" && ES(), r && (wt.querySelectorAll(".dsd-debug-panel__tab").forEach((n) => {
+  t === "close" && Ms(), t === "refresh" && ns(), t === "clear" && NS(), r && (Nt.querySelectorAll(".dsd-debug-panel__tab").forEach((n) => {
     n.classList.toggle("dsd-debug-panel__tab--active", n.dataset.tab === r);
-  }), es(r));
+  }), ns(r));
 }
-function $c() {
-  Ft || (wt = hS(), document.body.appendChild(wt), Ft = !0, on.opens++, es("state"));
+function jc() {
+  Gt || (Nt = DS(), document.body.appendChild(Nt), Gt = !0, un.opens++, ns("state"));
 }
-function Ss() {
-  !Ft || !wt || (wt.remove(), wt = null, Ft = !1, on.closes++);
+function Ms() {
+  !Gt || !Nt || (Nt.remove(), Nt = null, Gt = !1, un.closes++);
 }
-function kc() {
-  Ft ? Ss() : $c();
+function Fc() {
+  Gt ? Ms() : jc();
 }
-function hS() {
+function DS() {
   const e = document.createElement("div");
-  return e.className = "dsd-debug-panel", e.innerHTML = `<div class="dsd-debug-panel__header"><span class="dsd-debug-panel__title">🔧 Sidebar Debug</span><div class="dsd-debug-panel__actions"><button class="dsd-debug-panel__btn" data-action="refresh">↻</button><button class="dsd-debug-panel__btn" data-action="clear">Clear</button><button class="dsd-debug-panel__btn" data-action="close">${Hg.close}</button></div></div><div class="dsd-debug-panel__tabs"><button class="dsd-debug-panel__tab dsd-debug-panel__tab--active" data-tab="state">State</button><button class="dsd-debug-panel__tab" data-tab="events">Events</button><button class="dsd-debug-panel__tab" data-tab="perf">Perf</button><button class="dsd-debug-panel__tab" data-tab="features">Features</button></div><div class="dsd-debug-panel__content"></div>`, e.addEventListener("click", su), fn.push(() => {
-    e.removeEventListener("click", su);
-  }), bS(e), e;
+  return e.className = "dsd-debug-panel", e.innerHTML = `<div class="dsd-debug-panel__header"><span class="dsd-debug-panel__title">🔧 Sidebar Debug</span><div class="dsd-debug-panel__actions"><button class="dsd-debug-panel__btn" data-action="refresh">↻</button><button class="dsd-debug-panel__btn" data-action="clear">Clear</button><button class="dsd-debug-panel__btn" data-action="close">${tm.close}</button></div></div><div class="dsd-debug-panel__tabs"><button class="dsd-debug-panel__tab dsd-debug-panel__tab--active" data-tab="state">State</button><button class="dsd-debug-panel__tab" data-tab="events">Events</button><button class="dsd-debug-panel__tab" data-tab="perf">Perf</button><button class="dsd-debug-panel__tab" data-tab="features">Features</button></div><div class="dsd-debug-panel__content"></div>`, e.addEventListener("click", fd), En.push(() => {
+    e.removeEventListener("click", fd);
+  }), RS(e), e;
 }
-function es(e) {
-  const t = e || "state", r = wt ? wt.querySelector(".dsd-debug-panel__content") : null;
-  r && (t === "state" ? r.innerHTML = fS() : t === "events" ? r.innerHTML = gS() : t === "perf" ? r.innerHTML = mS() : t === "features" && (r.innerHTML = pS()));
+function ns(e) {
+  const t = e || "state", r = Nt ? Nt.querySelector(".dsd-debug-panel__content") : null;
+  r && (t === "state" ? r.innerHTML = LS() : t === "events" ? r.innerHTML = $S() : t === "perf" ? r.innerHTML = kS() : t === "features" && (r.innerHTML = wS()));
 }
-function fS() {
+function LS() {
   const e = window.Sidebar && window.Sidebar.getState ? window.Sidebar.getState() : {};
   return `<div class="dsd-debug-panel__section"><div class="dsd-debug-panel__section-title">Current State</div>${Object.keys(e).map((t) => `<div class="dsd-debug-panel__state-item"><span class="dsd-debug-panel__state-key">${t}</span><span class="dsd-debug-panel__state-value">${JSON.stringify(e[t])}</span></div>`).join("")}</div>`;
 }
-function gS() {
+function $S() {
   return `<div class="dsd-debug-panel__section"><div class="dsd-debug-panel__section-title">Recent Events (${We.length})</div>${We.slice(-50).reverse().map((e) => `<div class="dsd-debug-panel__log dsd-debug-panel__log--${e.type}"><span class="dsd-debug-panel__log-time">${e.time}</span>${e.message}</div>`).join("")}</div>`;
 }
-function mS() {
+function kS() {
   const e = window.Sidebar && window.Sidebar.getMetrics ? window.Sidebar.getMetrics() : {}, t = performance.memory || {};
-  return `<div class="dsd-debug-panel__section"><div class="dsd-debug-panel__section-title">Performance</div><div class="dsd-debug-panel__state-item"><span class="dsd-debug-panel__state-key">Render Count</span><span class="dsd-debug-panel__state-value">${e.renderCount || 0}</span></div><div class="dsd-debug-panel__state-item"><span class="dsd-debug-panel__state-key">JS Heap</span><span class="dsd-debug-panel__state-value">${_S(t.usedJSHeapSize || 0)}</span></div></div>`;
+  return `<div class="dsd-debug-panel__section"><div class="dsd-debug-panel__section-title">Performance</div><div class="dsd-debug-panel__state-item"><span class="dsd-debug-panel__state-key">Render Count</span><span class="dsd-debug-panel__state-value">${e.renderCount || 0}</span></div><div class="dsd-debug-panel__state-item"><span class="dsd-debug-panel__state-key">JS Heap</span><span class="dsd-debug-panel__state-value">${xS(t.usedJSHeapSize || 0)}</span></div></div>`;
 }
-function pS() {
+function wS() {
   const e = window.__dev && window.__dev.sidebar && window.__dev.sidebar.features ? window.__dev.sidebar.features : {};
-  return `<div class="dsd-debug-panel__section"><div class="dsd-debug-panel__section-title">Loaded Features</div>${Object.keys(e).map((t) => `<div class="dsd-debug-panel__state-item"><span class="dsd-debug-panel__state-key">${t}</span><span class="dsd-debug-panel__state-value">${Hg.check}</span></div>`).join("")}</div>`;
+  return `<div class="dsd-debug-panel__section"><div class="dsd-debug-panel__section-title">Loaded Features</div>${Object.keys(e).map((t) => `<div class="dsd-debug-panel__state-item"><span class="dsd-debug-panel__state-key">${t}</span><span class="dsd-debug-panel__state-value">${tm.check}</span></div>`).join("")}</div>`;
 }
-function wc(e, t, r) {
-  We.push({ type: e, message: t, data: r || null, time: (/* @__PURE__ */ new Date()).toLocaleTimeString() }), on.logsAdded++, We.length > ru && (We = We.slice(-ru)), Ft && es("events");
+function Gc(e, t, r) {
+  We.push({ type: e, message: t, data: r || null, time: (/* @__PURE__ */ new Date()).toLocaleTimeString() }), un.logsAdded++, We.length > dd && (We = We.slice(-dd)), Gt && ns("events");
 }
-function ES() {
-  We = [], es("events");
+function NS() {
+  We = [], ns("events");
 }
-function bS(e) {
+function RS(e) {
   const t = e.querySelector(".dsd-debug-panel__header");
   let r = !1, n, s, i, o;
-  const a = (u) => {
-    r = !0, n = u.clientX, s = u.clientY;
+  const a = (d) => {
+    r = !0, n = d.clientX, s = d.clientY;
     const h = e.getBoundingClientRect();
     i = h.left, o = h.top;
-  }, l = (u) => {
-    r && (e.style.left = `${i + u.clientX - n}px`, e.style.top = `${o + u.clientY - s}px`, e.style.right = "auto", e.style.bottom = "auto");
-  }, d = () => {
+  }, l = (d) => {
+    r && (e.style.left = `${i + d.clientX - n}px`, e.style.top = `${o + d.clientY - s}px`, e.style.right = "auto", e.style.bottom = "auto");
+  }, u = () => {
     r = !1;
   };
-  t.addEventListener("mousedown", a), document.addEventListener("mousemove", l), document.addEventListener("mouseup", d), fn.push(() => {
-    t.removeEventListener("mousedown", a), document.removeEventListener("mousemove", l), document.removeEventListener("mouseup", d);
+  t.addEventListener("mousedown", a), document.addEventListener("mousemove", l), document.addEventListener("mouseup", u), En.push(() => {
+    t.removeEventListener("mousedown", a), document.removeEventListener("mousemove", l), document.removeEventListener("mouseup", u);
   });
 }
-function _S(e) {
+function xS(e) {
   if (e === 0) return "0 B";
   const t = 1024, r = ["B", "KB", "MB", "GB"], n = Math.floor(Math.log(e) / Math.log(t));
   return `${parseFloat((e / Math.pow(t, n)).toFixed(2))} ${r[n]}`;
 }
-function Bg() {
-  Ss(), fn.forEach((e) => {
+function nm() {
+  Ms(), En.forEach((e) => {
     try {
       e();
     } catch {
     }
-  }), fn = [], At = null;
+  }), En = [], Mt = null;
 }
-function Eo() {
-  return { opens: on.opens, closes: on.closes, logsAdded: on.logsAdded, logCount: We.length };
+function Co() {
+  return { opens: un.opens, closes: un.closes, logsAdded: un.logsAdded, logCount: We.length };
 }
-function Ug() {
-  return { moduleId: Is, version: po, portsInitialized: jt.isInitialized(), isOpen: Ft, logCount: We.length, cleanups: fn.length, metrics: Eo() };
+function sm() {
+  return { moduleId: As, version: So, portsInitialized: Ft.isInitialized(), isOpen: Gt, logCount: We.length, cleanups: En.length, metrics: Co() };
 }
-function jg() {
-  return { status: jt.isInitialized() ? "HEALTHY" : "DEGRADED", version: po, moduleId: Is, portsInitialized: jt.isInitialized(), checks: { isOpen: Ft, logCount: We.length, noOrphanListeners: !0 }, metrics: Eo() };
+function im() {
+  return { status: Ft.isInitialized() ? "HEALTHY" : "DEGRADED", version: So, moduleId: As, portsInitialized: Ft.isInitialized(), checks: { isOpen: Gt, logCount: We.length, noOrphanListeners: !0 }, metrics: Co() };
 }
-var yS = { init: zg, open: $c, close: Ss, toggle: kc, log: wc, destroy: Bg, injectPorts: xg, getPorts: Pg, getMetrics: Eo, info: Ug, healthCheck: jg, VERSION: po, MODULE_ID: Is };
-const Fg = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var PS = { init: rm, open: jc, close: Ms, toggle: Fc, log: Gc, destroy: nm, injectPorts: Qg, getPorts: em, getMetrics: Co, info: sm, healthCheck: im, VERSION: So, MODULE_ID: As };
+const om = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: Is,
-  VERSION: po,
-  close: Ss,
-  default: yS,
-  destroy: Bg,
-  getMetrics: Eo,
-  getPorts: Pg,
-  healthCheck: jg,
-  info: Ug,
-  init: zg,
-  injectPorts: xg,
-  log: wc,
-  open: $c,
-  toggle: kc
-}, Symbol.toStringTag, { value: "Module" })), bo = "6.1.0-ES6", Cs = "sidebar-dynamic-badges", Gt = v({ moduleId: Cs });
-function vS() {
-  Gt.init();
+  MODULE_ID: As,
+  VERSION: So,
+  close: Ms,
+  default: PS,
+  destroy: nm,
+  getMetrics: Co,
+  getPorts: em,
+  healthCheck: im,
+  info: sm,
+  init: rm,
+  injectPorts: Qg,
+  log: Gc,
+  open: jc,
+  toggle: Fc
+}, Symbol.toStringTag, { value: "Module" })), Ao = "6.1.0-ES6", Os = "sidebar-dynamic-badges", Vt = v({ moduleId: Os });
+function HS() {
+  Vt.init();
 }
-function _o(e) {
-  return Gt.get(e);
+function Mo(e) {
+  return Vt.get(e);
 }
-function Gg(e) {
-  return Gt.inject(e);
+function am(e) {
+  return Vt.inject(e);
 }
-function Vg() {
-  return Gt.snapshot();
+function lm() {
+  return Vt.snapshot();
 }
-let we = /* @__PURE__ */ new Map(), Se = /* @__PURE__ */ new Map(), Qr = null, As = { sets: 0, removes: 0, increments: 0, decrements: 0 };
-const iu = {
+let Ne = /* @__PURE__ */ new Map(), Se = /* @__PURE__ */ new Map(), rn = null, Ts = { sets: 0, removes: 0, increments: 0, decrements: 0 };
+const gd = {
   count: { class: "dsd-badge--count", format: (e) => e > 99 ? "99+" : String(e) },
   dot: { class: "dsd-badge--dot", format: () => "" },
   new: { class: "dsd-badge--new", format: () => "NEW" },
@@ -7645,49 +7779,49 @@ const iu = {
   percent: { class: "dsd-badge--percent", format: (e) => `${e}%` },
   time: { class: "dsd-badge--time", format: (e) => e }
 };
-function qg(e, t) {
-  e && Gt.inject({ eventBus: e }), vS(), Qr = t;
-  const r = _o("eventBus");
+function cm(e, t) {
+  e && Vt.inject({ eventBus: e }), HS(), rn = t;
+  const r = Mo("eventBus");
   r && r.emit && r.emit(f.BADGES_INITIALIZED);
 }
-function gn(e, t = {}) {
+function bn(e, t = {}) {
   const { value: r = 0, type: n = "count", variant: s = "default", pulse: i = !1, animate: o = !0, tooltip: a = null, onClick: l = null } = t;
-  we.set(e, { value: r, type: n, variant: s, pulse: i, animate: o, tooltip: a, onClick: l, updatedAt: Date.now() }), As.sets++, Nc(e);
-  const d = _o("eventBus");
-  return d && d.emit && d.emit(f.BADGE_UPDATED, { itemId: e, value: r, type: n }), !0;
+  Ne.set(e, { value: r, type: n, variant: s, pulse: i, animate: o, tooltip: a, onClick: l, updatedAt: Date.now() }), Ts.sets++, Vc(e);
+  const u = Mo("eventBus");
+  return u && u.emit && u.emit(f.BADGE_UPDATED, { itemId: e, value: r, type: n }), !0;
 }
-function Yg(e) {
-  return we.get(e) || null;
+function um(e) {
+  return Ne.get(e) || null;
 }
-function yo(e) {
-  we.delete(e), clearInterval(Se.get(e)), Se.delete(e), As.removes++;
-  const t = Rc(e);
+function Oo(e) {
+  Ne.delete(e), clearInterval(Se.get(e)), Se.delete(e), Ts.removes++;
+  const t = qc(e);
   if (t) {
     const n = t.querySelector(".dsd-badge");
     n && n.remove();
   }
-  const r = _o("eventBus");
+  const r = Mo("eventBus");
   return r && r.emit && r.emit(f.BADGE_REMOVED, { itemId: e }), !0;
 }
-function Kg(e, t = 1) {
-  As.increments++;
-  const r = we.get(e);
-  if (!r) return gn(e, { value: t });
-  r.value = (r.value || 0) + t, r.updatedAt = Date.now(), Nc(e);
-  const n = _o("eventBus");
+function dm(e, t = 1) {
+  Ts.increments++;
+  const r = Ne.get(e);
+  if (!r) return bn(e, { value: t });
+  r.value = (r.value || 0) + t, r.updatedAt = Date.now(), Vc(e);
+  const n = Mo("eventBus");
   return n && n.emit && n.emit(f.BADGE_INCREMENTED, { itemId: e, value: r.value, amount: t }), r.value;
 }
-function Wg(e, t = 1) {
-  As.decrements++;
-  const r = we.get(e);
-  return r ? (r.value = Math.max(0, (r.value || 0) - t), r.updatedAt = Date.now(), r.value === 0 && r.type === "count" ? (yo(e), 0) : (Nc(e), r.value)) : 0;
+function hm(e, t = 1) {
+  Ts.decrements++;
+  const r = Ne.get(e);
+  return r ? (r.value = Math.max(0, (r.value || 0) - t), r.updatedAt = Date.now(), r.value === 0 && r.type === "count" ? (Oo(e), 0) : (Vc(e), r.value)) : 0;
 }
-function Xg(e, t, r = 3e4) {
+function fm(e, t, r = 3e4) {
   clearInterval(Se.get(e));
   const n = async () => {
     try {
       const i = await t();
-      gn(e, { value: i, type: "count", pulse: !0 });
+      bn(e, { value: i, type: "count", pulse: !0 });
     } catch {
     }
   };
@@ -7697,7 +7831,7 @@ function Xg(e, t, r = 3e4) {
     clearInterval(s), Se.delete(e);
   };
 }
-function Zg(e, t, r = null) {
+function gm(e, t, r = null) {
   let n = t;
   const s = (o) => {
     if (o >= 3600) {
@@ -7709,150 +7843,150 @@ function Zg(e, t, r = null) {
     }
     return `${o}s`;
   };
-  gn(e, { value: s(n), type: "time", pulse: !0 });
+  bn(e, { value: s(n), type: "time", pulse: !0 });
   const i = setInterval(() => {
     if (n--, n <= 0) {
-      clearInterval(i), Se.delete(e), yo(e), r && r();
+      clearInterval(i), Se.delete(e), Oo(e), r && r();
       return;
     }
-    gn(e, { value: s(n), type: "time", pulse: n <= 10 });
+    bn(e, { value: s(n), type: "time", pulse: n <= 10 });
   }, 1e3);
   return Se.set(e, i), () => {
     clearInterval(i), Se.delete(e);
   };
 }
-function Nc(e) {
-  const t = Rc(e);
+function Vc(e) {
+  const t = qc(e);
   if (!t) return;
-  const r = we.get(e);
+  const r = Ne.get(e);
   if (!r) return;
-  const { value: n, type: s, variant: i, pulse: o, animate: a, tooltip: l, onClick: d } = r, u = iu[s] || iu.count;
+  const { value: n, type: s, variant: i, pulse: o, animate: a, tooltip: l, onClick: u } = r, d = gd[s] || gd.count;
   let h = t.querySelector(".dsd-badge");
   if (!h) {
     h = document.createElement("span"), h.className = "dsd-badge";
     const g = t.querySelector(`.${c.ITEM_LABEL}`);
     g ? g.after(h) : t.appendChild(h);
   }
-  h.className = `dsd-badge ${u.class}`, i && i !== "default" && h.classList.add(`dsd-badge--${i}`), o && h.classList.add("dsd-badge--pulse"), a && h.classList.add("dsd-badge--animate"), h.textContent = u.format(n), l && (h.title = l), d && (h.style.cursor = "pointer", h.onclick = (g) => {
-    g.stopPropagation(), d(e, n);
+  h.className = `dsd-badge ${d.class}`, i && i !== "default" && h.classList.add(`dsd-badge--${i}`), o && h.classList.add("dsd-badge--pulse"), a && h.classList.add("dsd-badge--animate"), h.textContent = d.format(n), l && (h.title = l), u && (h.style.cursor = "pointer", h.onclick = (g) => {
+    g.stopPropagation(), u(e, n);
   });
 }
-function Rc(e) {
-  return Qr || (Qr = document.querySelector(`.${c.ROOT}`)), Qr ? Qr.querySelector(`[data-item-id="${e}"], [data-panel-id="${e}"]`) : null;
+function qc(e) {
+  return rn || (rn = document.querySelector(`.${c.ROOT}`)), rn ? rn.querySelector(`[data-item-id="${e}"], [data-panel-id="${e}"]`) : null;
 }
-function Jg() {
+function mm() {
   const e = {};
-  return we.forEach((t, r) => {
+  return Ne.forEach((t, r) => {
     e[r] = { ...t };
   }), e;
 }
-function xc() {
-  Se.forEach((e) => clearInterval(e)), Se.clear(), we.forEach((e, t) => {
-    const r = Rc(t);
+function Yc() {
+  Se.forEach((e) => clearInterval(e)), Se.clear(), Ne.forEach((e, t) => {
+    const r = qc(t);
     if (r) {
       const n = r.querySelector(".dsd-badge");
       n && n.remove();
     }
-  }), we.clear();
+  }), Ne.clear();
 }
-function Qg() {
-  xc(), Qr = null;
+function pm() {
+  Yc(), rn = null;
 }
-function vo() {
-  return { ...As, badgeCount: we.size, liveUpdates: Se.size };
+function To() {
+  return { ...Ts, badgeCount: Ne.size, liveUpdates: Se.size };
 }
-function em() {
-  return { moduleId: Cs, version: bo, portsInitialized: Gt.isInitialized(), badgeCount: we.size, liveUpdates: Se.size, metrics: vo() };
+function Em() {
+  return { moduleId: Os, version: Ao, portsInitialized: Vt.isInitialized(), badgeCount: Ne.size, liveUpdates: Se.size, metrics: To() };
 }
-function tm() {
-  return { status: Gt.isInitialized() ? "HEALTHY" : "DEGRADED", version: bo, moduleId: Cs, portsInitialized: Gt.isInitialized(), checks: { badgeCount: we.size, liveUpdates: Se.size }, metrics: vo() };
+function bm() {
+  return { status: Vt.isInitialized() ? "HEALTHY" : "DEGRADED", version: Ao, moduleId: Os, portsInitialized: Vt.isInitialized(), checks: { badgeCount: Ne.size, liveUpdates: Se.size }, metrics: To() };
 }
-var IS = { init: qg, setBadge: gn, getBadge: Yg, removeBadge: yo, incrementBadge: Kg, decrementBadge: Wg, setLiveBadge: Xg, setCountdownBadge: Zg, getAllBadges: Jg, clearAllBadges: xc, destroy: Qg, injectPorts: Gg, getPorts: Vg, getMetrics: vo, info: em, healthCheck: tm, VERSION: bo, MODULE_ID: Cs };
-const rm = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var zS = { init: cm, setBadge: bn, getBadge: um, removeBadge: Oo, incrementBadge: dm, decrementBadge: hm, setLiveBadge: fm, setCountdownBadge: gm, getAllBadges: mm, clearAllBadges: Yc, destroy: pm, injectPorts: am, getPorts: lm, getMetrics: To, info: Em, healthCheck: bm, VERSION: Ao, MODULE_ID: Os };
+const _m = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: Cs,
-  VERSION: bo,
-  clearAllBadges: xc,
-  decrementBadge: Wg,
-  default: IS,
-  destroy: Qg,
-  getAllBadges: Jg,
-  getBadge: Yg,
-  getMetrics: vo,
-  getPorts: Vg,
-  healthCheck: tm,
-  incrementBadge: Kg,
-  info: em,
-  init: qg,
-  injectPorts: Gg,
-  removeBadge: yo,
-  setBadge: gn,
-  setCountdownBadge: Zg,
-  setLiveBadge: Xg
-}, Symbol.toStringTag, { value: "Module" })), Io = "6.1.0-ES6", Ms = "sidebar-favorites", Vt = v({ moduleId: Ms });
-function SS() {
-  Vt.init();
+  MODULE_ID: Os,
+  VERSION: Ao,
+  clearAllBadges: Yc,
+  decrementBadge: hm,
+  default: zS,
+  destroy: pm,
+  getAllBadges: mm,
+  getBadge: um,
+  getMetrics: To,
+  getPorts: lm,
+  healthCheck: bm,
+  incrementBadge: dm,
+  info: Em,
+  init: cm,
+  injectPorts: am,
+  removeBadge: Oo,
+  setBadge: bn,
+  setCountdownBadge: gm,
+  setLiveBadge: fm
+}, Symbol.toStringTag, { value: "Module" })), Do = "6.1.0-ES6", Ds = "sidebar-favorites", qt = v({ moduleId: Ds });
+function BS() {
+  qt.init();
 }
-function So(e) {
-  return Vt.get(e);
+function Lo(e) {
+  return qt.get(e);
 }
-function nm(e) {
-  return Vt.inject(e);
+function ym(e) {
+  return qt.inject(e);
 }
-function sm() {
-  return Vt.snapshot();
+function vm() {
+  return qt.snapshot();
 }
-const im = "dsd-sidebar-favorites";
-let me = /* @__PURE__ */ new Set(), vi = [], Os = { adds: 0, removes: 0, toggles: 0, clears: 0 };
-function CS() {
+const Im = "dsd-sidebar-favorites";
+let me = /* @__PURE__ */ new Set(), Oi = [], Ls = { adds: 0, removes: 0, toggles: 0, clears: 0 };
+function US() {
   try {
-    const e = localStorage.getItem(im);
+    const e = localStorage.getItem(Im);
     me = new Set(e ? JSON.parse(e) : []);
   } catch {
     me = /* @__PURE__ */ new Set();
   }
 }
-function Pc() {
+function Kc() {
   try {
-    localStorage.setItem(im, JSON.stringify([...me]));
+    localStorage.setItem(Im, JSON.stringify([...me]));
   } catch {
   }
 }
-function om(e) {
-  e && Vt.inject({ eventBus: e }), SS(), CS();
-  const t = So("eventBus");
+function Sm(e) {
+  e && qt.inject({ eventBus: e }), BS(), US();
+  const t = Lo("eventBus");
   t && t.emit && t.emit(f.FAVORITES_INITIALIZED);
 }
-function Hc(e) {
+function Wc(e) {
   if (!e) return !1;
-  me.add(e), Os.adds++, Pc();
-  const t = So("eventBus");
+  me.add(e), Ls.adds++, Kc();
+  const t = Lo("eventBus");
   return t && t.emit && t.emit(f.FAVORITE_ADDED, { itemId: e }), !0;
 }
-function zc(e) {
+function Xc(e) {
   const t = me.delete(e);
   if (t) {
-    Os.removes++, Pc();
-    const r = So("eventBus");
+    Ls.removes++, Kc();
+    const r = Lo("eventBus");
     r && r.emit && r.emit(f.FAVORITE_REMOVED, { itemId: e });
   }
   return t;
 }
-function Bc(e) {
-  return Os.toggles++, me.has(e) ? zc(e) ? !1 : null : Hc(e) ? !0 : null;
+function Zc(e) {
+  return Ls.toggles++, me.has(e) ? Xc(e) ? !1 : null : Wc(e) ? !0 : null;
 }
-function am(e) {
+function Cm(e) {
   return me.has(e);
 }
-function Uc() {
+function Jc() {
   return [...me];
 }
-function lm() {
-  me.clear(), Os.clears++, Pc();
-  const e = So("eventBus");
+function Am() {
+  me.clear(), Ls.clears++, Kc();
+  const e = Lo("eventBus");
   e && e.emit && e.emit(f.FAVORITES_CLEARED);
 }
-function cm(e) {
+function Mm(e) {
   e && (e.querySelectorAll(`.${c.ITEM_FAVORITE}`).forEach((t) => {
     t.classList.remove(c.ITEM_FAVORITE);
   }), me.forEach((t) => {
@@ -7860,70 +7994,70 @@ function cm(e) {
     r && r.classList.add(c.ITEM_FAVORITE);
   }));
 }
-function dm(e) {
+function Om(e) {
   const t = document.createElement("button");
   t.className = c.FAVORITE_BTN, t.setAttribute("type", "button"), t.setAttribute("aria-label", "Adicionar aos favoritos"), t.setAttribute("data-item-id", e), t.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>', me.has(e) && t.classList.add(c.FAVORITE_BTN_ACTIVE);
   const r = (n) => {
     n.preventDefault(), n.stopPropagation();
-    const s = Bc(e);
+    const s = Zc(e);
     t.classList.toggle(c.FAVORITE_BTN_ACTIVE, s);
   };
-  return t.addEventListener("click", r), vi.push(() => t.removeEventListener("click", r)), t;
+  return t.addEventListener("click", r), Oi.push(() => t.removeEventListener("click", r)), t;
 }
-function um() {
-  vi.forEach((e) => {
+function Tm() {
+  Oi.forEach((e) => {
     try {
       e();
     } catch {
     }
-  }), vi = [], me.clear();
+  }), Oi = [], me.clear();
 }
-function Co() {
-  return { ...Os, favoritesCount: me.size };
+function $o() {
+  return { ...Ls, favoritesCount: me.size };
 }
-function hm() {
-  return { moduleId: Ms, version: Io, portsInitialized: Vt.isInitialized(), favoritesCount: me.size, favorites: Uc(), cleanups: vi.length, metrics: Co() };
+function Dm() {
+  return { moduleId: Ds, version: Do, portsInitialized: qt.isInitialized(), favoritesCount: me.size, favorites: Jc(), cleanups: Oi.length, metrics: $o() };
 }
-function fm() {
-  return { status: Vt.isInitialized() ? "HEALTHY" : "DEGRADED", version: Io, moduleId: Ms, portsInitialized: Vt.isInitialized(), checks: { favoritesCount: me.size, noOrphanListeners: !0 }, metrics: Co() };
+function Lm() {
+  return { status: qt.isInitialized() ? "HEALTHY" : "DEGRADED", version: Do, moduleId: Ds, portsInitialized: qt.isInitialized(), checks: { favoritesCount: me.size, noOrphanListeners: !0 }, metrics: $o() };
 }
-var AS = { init: om, addFavorite: Hc, removeFavorite: zc, toggleFavorite: Bc, isFavorite: am, getFavorites: Uc, clearFavorites: lm, markFavoriteItems: cm, createFavoriteButton: dm, destroy: um, injectPorts: nm, getPorts: sm, getMetrics: Co, info: hm, healthCheck: fm, VERSION: Io, MODULE_ID: Ms };
-const gm = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var jS = { init: Sm, addFavorite: Wc, removeFavorite: Xc, toggleFavorite: Zc, isFavorite: Cm, getFavorites: Jc, clearFavorites: Am, markFavoriteItems: Mm, createFavoriteButton: Om, destroy: Tm, injectPorts: ym, getPorts: vm, getMetrics: $o, info: Dm, healthCheck: Lm, VERSION: Do, MODULE_ID: Ds };
+const $m = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: Ms,
-  VERSION: Io,
-  addFavorite: Hc,
-  clearFavorites: lm,
-  createFavoriteButton: dm,
-  default: AS,
-  destroy: um,
-  getFavorites: Uc,
-  getMetrics: Co,
-  getPorts: sm,
-  healthCheck: fm,
-  info: hm,
-  init: om,
-  injectPorts: nm,
-  isFavorite: am,
-  markFavoriteItems: cm,
-  removeFavorite: zc,
-  toggleFavorite: Bc
-}, Symbol.toStringTag, { value: "Module" })), Ao = "6.0.0-ES6", Ts = "sidebar-feature-flags", qt = v({ moduleId: Ts });
-function MS() {
-  qt.init();
+  MODULE_ID: Ds,
+  VERSION: Do,
+  addFavorite: Wc,
+  clearFavorites: Am,
+  createFavoriteButton: Om,
+  default: jS,
+  destroy: Tm,
+  getFavorites: Jc,
+  getMetrics: $o,
+  getPorts: vm,
+  healthCheck: Lm,
+  info: Dm,
+  init: Sm,
+  injectPorts: ym,
+  isFavorite: Cm,
+  markFavoriteItems: Mm,
+  removeFavorite: Xc,
+  toggleFavorite: Zc
+}, Symbol.toStringTag, { value: "Module" })), ko = "6.0.0-ES6", $s = "sidebar-feature-flags", Yt = v({ moduleId: $s });
+function FS() {
+  Yt.init();
 }
-function An(e) {
-  return qt.get(e);
+function Dn(e) {
+  return Yt.get(e);
 }
-function mm(e) {
-  return qt.inject(e);
+function km(e) {
+  return Yt.inject(e);
 }
-function pm() {
-  return qt.snapshot();
+function wm() {
+  return Yt.snapshot();
 }
-const Em = "dsd-sidebar-feature-flags";
-let Ds = { enables: 0, disables: 0, toggles: 0, resets: 0 };
-const Ii = {
+const Nm = "dsd-sidebar-feature-flags";
+let ks = { enables: 0, disables: 0, toggles: 0, resets: 0 };
+const Ti = {
   parallax: { enabled: !0, label: "Parallax Scroll", category: "visual" },
   customCursors: { enabled: !1, label: "Custom Cursors", category: "visual" },
   compactMode: { enabled: !0, label: "Compact Mode", category: "layout" },
@@ -7936,125 +8070,125 @@ const Ii = {
   autoTheme: { enabled: !0, label: "Auto Theme Detection", category: "theme" },
   debugPanel: { enabled: !0, label: "Debug Panel", category: "debug" }
 };
-let F = {};
-function OS() {
+let G = {};
+function GS() {
   try {
-    const e = localStorage.getItem(Em), t = e ? JSON.parse(e) : {};
-    F = {}, Object.entries(Ii).forEach(([r, n]) => {
+    const e = localStorage.getItem(Nm), t = e ? JSON.parse(e) : {};
+    G = {}, Object.entries(Ti).forEach(([r, n]) => {
       var s;
-      F[r] = { ...n, enabled: ((s = t[r]) == null ? void 0 : s.enabled) ?? n.enabled };
+      G[r] = { ...n, enabled: ((s = t[r]) == null ? void 0 : s.enabled) ?? n.enabled };
     });
   } catch {
-    F = { ...Ii };
+    G = { ...Ti };
   }
 }
-function Ls() {
+function ws() {
   try {
-    localStorage.setItem(Em, JSON.stringify(F));
+    localStorage.setItem(Nm, JSON.stringify(G));
   } catch {
   }
 }
-function bm(e) {
-  e && qt.inject({ eventBus: e }), MS(), OS();
-  const t = An("eventBus");
+function Rm(e) {
+  e && Yt.inject({ eventBus: e }), FS(), GS();
+  const t = Dn("eventBus");
   t && t.emit && t.emit(f.FLAGS_INITIALIZED);
 }
-function _m(e) {
+function xm(e) {
   var t;
-  return ((t = F[e]) == null ? void 0 : t.enabled) ?? !1;
+  return ((t = G[e]) == null ? void 0 : t.enabled) ?? !1;
 }
-function ym(e) {
-  if (!F[e]) return !1;
-  F[e].enabled = !0, Ds.enables++, Ls();
-  const t = An("eventBus");
+function Pm(e) {
+  if (!G[e]) return !1;
+  G[e].enabled = !0, ks.enables++, ws();
+  const t = Dn("eventBus");
   return t && t.emit && t.emit(f.FEATURE_ENABLED, { feature: e }), !0;
 }
-function vm(e) {
-  if (!F[e]) return !1;
-  F[e].enabled = !1, Ds.disables++, Ls();
-  const t = An("eventBus");
+function Hm(e) {
+  if (!G[e]) return !1;
+  G[e].enabled = !1, ks.disables++, ws();
+  const t = Dn("eventBus");
   return t && t.emit && t.emit(f.FEATURE_DISABLED, { feature: e }), !0;
 }
-function Im(e) {
-  if (!F[e]) return null;
-  Ds.toggles++;
-  const t = !F[e].enabled;
-  F[e].enabled = t, Ls();
-  const r = An("eventBus");
+function zm(e) {
+  if (!G[e]) return null;
+  ks.toggles++;
+  const t = !G[e].enabled;
+  G[e].enabled = t, ws();
+  const r = Dn("eventBus");
   return r && r.emit && r.emit(f.FEATURE_TOGGLED, { feature: e, enabled: t }), t;
 }
-function Sm() {
-  return { ...F };
+function Bm() {
+  return { ...G };
 }
-function Cm(e) {
-  return Object.entries(F).filter(([t, r]) => r.category === e).map(([t, r]) => ({ key: t, ...r }));
+function Um(e) {
+  return Object.entries(G).filter(([t, r]) => r.category === e).map(([t, r]) => ({ key: t, ...r }));
 }
-function jc() {
-  return [...new Set(Object.values(F).map((t) => t.category))];
+function Qc() {
+  return [...new Set(Object.values(G).map((t) => t.category))];
 }
-function Am() {
-  F = { ...Ii }, Ds.resets++, Ls();
-  const e = An("eventBus");
+function jm() {
+  G = { ...Ti }, ks.resets++, ws();
+  const e = Dn("eventBus");
   e && e.emit && e.emit(f.FEATURES_RESET);
 }
-function Mm(e) {
+function Fm(e) {
   Object.entries(e).forEach(([r, n]) => {
-    F[r] && (F[r].enabled = n);
-  }), Ls();
-  const t = An("eventBus");
+    G[r] && (G[r].enabled = n);
+  }), ws();
+  const t = Dn("eventBus");
   t && t.emit && t.emit(f.FEATURES_BULK_UPDATED, { updates: e });
 }
-function Om() {
-  F = {};
+function Gm() {
+  G = {};
 }
-function Mo() {
-  const e = Object.values(F).filter((t) => t.enabled).length;
-  return { ...Ds, totalFeatures: Object.keys(F).length, enabledFeatures: e };
+function wo() {
+  const e = Object.values(G).filter((t) => t.enabled).length;
+  return { ...ks, totalFeatures: Object.keys(G).length, enabledFeatures: e };
 }
-function Tm() {
-  return { moduleId: Ts, version: Ao, portsInitialized: qt.isInitialized(), totalFeatures: Object.keys(F).length, enabledFeatures: Object.values(F).filter((e) => e.enabled).length, categories: jc(), metrics: Mo() };
+function Vm() {
+  return { moduleId: $s, version: ko, portsInitialized: Yt.isInitialized(), totalFeatures: Object.keys(G).length, enabledFeatures: Object.values(G).filter((e) => e.enabled).length, categories: Qc(), metrics: wo() };
 }
-function Dm() {
-  const e = Object.values(F).filter((t) => t.enabled).length;
-  return { status: qt.isInitialized() ? "HEALTHY" : "DEGRADED", version: Ao, moduleId: Ts, portsInitialized: qt.isInitialized(), checks: { totalFeatures: Object.keys(F).length, enabledFeatures: e }, metrics: Mo() };
+function qm() {
+  const e = Object.values(G).filter((t) => t.enabled).length;
+  return { status: Yt.isInitialized() ? "HEALTHY" : "DEGRADED", version: ko, moduleId: $s, portsInitialized: Yt.isInitialized(), checks: { totalFeatures: Object.keys(G).length, enabledFeatures: e }, metrics: wo() };
 }
-var TS = { init: bm, isEnabled: _m, enable: ym, disable: vm, toggle: Im, getAll: Sm, getByCategory: Cm, getCategories: jc, reset: Am, bulkUpdate: Mm, destroy: Om, injectPorts: mm, getPorts: pm, getMetrics: Mo, info: Tm, healthCheck: Dm, VERSION: Ao, MODULE_ID: Ts, DEFAULT_FLAGS: Ii };
-const Lm = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var VS = { init: Rm, isEnabled: xm, enable: Pm, disable: Hm, toggle: zm, getAll: Bm, getByCategory: Um, getCategories: Qc, reset: jm, bulkUpdate: Fm, destroy: Gm, injectPorts: km, getPorts: wm, getMetrics: wo, info: Vm, healthCheck: qm, VERSION: ko, MODULE_ID: $s, DEFAULT_FLAGS: Ti };
+const Ym = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: Ts,
-  VERSION: Ao,
-  bulkUpdate: Mm,
-  default: TS,
-  destroy: Om,
-  disable: vm,
-  enable: ym,
-  getAll: Sm,
-  getByCategory: Cm,
-  getCategories: jc,
-  getMetrics: Mo,
-  getPorts: pm,
-  healthCheck: Dm,
-  info: Tm,
-  init: bm,
-  injectPorts: mm,
-  isEnabled: _m,
-  reset: Am,
-  toggle: Im
-}, Symbol.toStringTag, { value: "Module" })), Oo = "6.1.0-ES6", $s = "sidebar-fuzzy-search", Yt = v({ moduleId: $s });
-function DS() {
-  Yt.init();
+  MODULE_ID: $s,
+  VERSION: ko,
+  bulkUpdate: Fm,
+  default: VS,
+  destroy: Gm,
+  disable: Hm,
+  enable: Pm,
+  getAll: Bm,
+  getByCategory: Um,
+  getCategories: Qc,
+  getMetrics: wo,
+  getPorts: wm,
+  healthCheck: qm,
+  info: Vm,
+  init: Rm,
+  injectPorts: km,
+  isEnabled: xm,
+  reset: jm,
+  toggle: zm
+}, Symbol.toStringTag, { value: "Module" })), No = "6.1.0-ES6", Ns = "sidebar-fuzzy-search", Kt = v({ moduleId: Ns });
+function qS() {
+  Kt.init();
 }
-function LS(e) {
-  return Yt.get(e);
+function YS(e) {
+  return Kt.get(e);
 }
-function $m(e) {
-  return Yt.inject(e);
+function Km(e) {
+  return Kt.inject(e);
 }
-function km() {
-  return Yt.snapshot();
+function Wm() {
+  return Kt.snapshot();
 }
-let qn = { searches: 0, matches: 0, misses: 0 };
-function $S(e, t) {
+let Wn = { searches: 0, matches: 0, misses: 0 };
+function KS(e, t) {
   const r = [];
   for (let n = 0; n <= t.length; n++) r[n] = [n];
   for (let n = 0; n <= e.length; n++) r[0][n] = n;
@@ -8063,373 +8197,373 @@ function $S(e, t) {
       t.charAt(n - 1) === e.charAt(s - 1) ? r[n][s] = r[n - 1][s - 1] : r[n][s] = Math.min(r[n - 1][s - 1] + 1, r[n][s - 1] + 1, r[n - 1][s] + 1);
   return r[t.length][e.length];
 }
-function Fc(e, t) {
+function eu(e, t) {
   const r = e.toLowerCase(), n = t.toLowerCase();
   if (n === r) return 100;
   if (n.startsWith(r)) return 90;
   if (n.includes(r)) return 80;
   if (n.split(/[\s-_]/).map((l) => l[0]).join("").includes(r)) return 70;
-  const i = $S(r, n.slice(0, r.length + 2));
+  const i = KS(r, n.slice(0, r.length + 2));
   if (i <= 2) return 60 - i * 10;
   let o = 0, a = -1;
   for (let l = 0; l < r.length; l++) {
-    const d = r[l], u = n.indexOf(d, a + 1);
-    u > a && (o += 5, a = u);
+    const u = r[l], d = n.indexOf(u, a + 1);
+    d > a && (o += 5, a = d);
   }
   return o >= r.length * 3 ? 40 + o : 0;
 }
-function wm(e) {
-  e && Yt.inject({ eventBus: e }), DS();
-  const t = LS("eventBus");
+function Xm(e) {
+  e && Kt.inject({ eventBus: e }), qS();
+  const t = YS("eventBus");
   t && t.emit && t.emit(f.FUZZY_INITIALIZED);
 }
-function Gc(e, t, r = {}) {
+function tu(e, t, r = {}) {
   const n = r.labelKey || "label", s = r.threshold || 30, i = r.maxResults || 10;
-  if (qn.searches++, !t || !(e != null && e.length)) return (e == null ? void 0 : e.slice(0, i)) || [];
+  if (Wn.searches++, !t || !(e != null && e.length)) return (e == null ? void 0 : e.slice(0, i)) || [];
   const a = e.map((l) => {
-    const d = typeof l == "string" ? l : l[n] || l.title || l.id || "", u = Fc(t, d);
-    return { item: l, score: u, text: d };
-  }).filter((l) => l.score >= s).sort((l, d) => d.score - l.score).slice(0, i).map((l) => Object.assign({}, l.item, { _fuzzyScore: l.score, _fuzzyMatch: l.text }));
-  return qn.matches += a.length, a.length === 0 && qn.misses++, a;
+    const u = typeof l == "string" ? l : l[n] || l.title || l.id || "", d = eu(t, u);
+    return { item: l, score: d, text: u };
+  }).filter((l) => l.score >= s).sort((l, u) => u.score - l.score).slice(0, i).map((l) => Object.assign({}, l.item, { _fuzzyScore: l.score, _fuzzyMatch: l.text }));
+  return Wn.matches += a.length, a.length === 0 && Wn.misses++, a;
 }
-function Nm(e, t, r) {
+function Zm(e, t, r) {
   if (!e) return { visible: 0, hidden: 0 };
   r = r || {};
-  const n = Array.from(e.querySelectorAll(`.${c.ITEM}`)), s = n.map((d) => {
-    var u;
+  const n = Array.from(e.querySelectorAll(`.${c.ITEM}`)), s = n.map((u) => {
+    var d;
     return {
-      element: d,
-      label: ((u = d.textContent) == null ? void 0 : u.trim()) || "",
-      id: d.dataset.itemId
+      element: u,
+      label: ((d = u.textContent) == null ? void 0 : d.trim()) || "",
+      id: u.dataset.itemId
     };
-  }), i = Gc(s, t, Object.assign({}, r, { maxResults: 100 })), o = new Set(i.map((d) => d.id));
+  }), i = tu(s, t, Object.assign({}, r, { maxResults: 100 })), o = new Set(i.map((u) => u.id));
   let a = 0, l = 0;
-  return n.forEach((d) => {
-    const u = d.dataset.itemId, h = !t || o.has(u);
-    d.style.display = h ? "" : "none";
-    const g = i.find((m) => m.id === u);
-    g && (d.style.order = String(100 - (g._fuzzyScore || 0))), h ? a++ : l++;
+  return n.forEach((u) => {
+    const d = u.dataset.itemId, h = !t || o.has(d);
+    u.style.display = h ? "" : "none";
+    const g = i.find((m) => m.id === d);
+    g && (u.style.order = String(100 - (g._fuzzyScore || 0))), h ? a++ : l++;
   }), { visible: a, hidden: l, results: i };
 }
-function Rm(e, t) {
+function Jm(e, t) {
   if (!t) return e;
   const r = new RegExp(`(${t.split("").join(".*?")})`, "gi");
   return e.replace(r, '<mark class="fuzzy-match">$1</mark>');
 }
-function xm() {
+function Qm() {
 }
-function To() {
-  return { ...qn };
+function Ro() {
+  return { ...Wn };
 }
-function Pm() {
-  return { moduleId: $s, version: Oo, portsInitialized: Yt.isInitialized(), metrics: To() };
+function ep() {
+  return { moduleId: Ns, version: No, portsInitialized: Kt.isInitialized(), metrics: Ro() };
 }
-function Hm() {
-  return { status: Yt.isInitialized() ? "HEALTHY" : "DEGRADED", version: Oo, moduleId: $s, portsInitialized: Yt.isInitialized(), checks: { searchesPerformed: qn.searches }, metrics: To() };
+function tp() {
+  return { status: Kt.isInitialized() ? "HEALTHY" : "DEGRADED", version: No, moduleId: Ns, portsInitialized: Kt.isInitialized(), checks: { searchesPerformed: Wn.searches }, metrics: Ro() };
 }
-var kS = { init: wm, search: Gc, applyFuzzySearch: Nm, highlightMatch: Rm, calculateScore: Fc, destroy: xm, injectPorts: $m, getPorts: km, getMetrics: To, info: Pm, healthCheck: Hm, VERSION: Oo, MODULE_ID: $s };
-const zm = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var WS = { init: Xm, search: tu, applyFuzzySearch: Zm, highlightMatch: Jm, calculateScore: eu, destroy: Qm, injectPorts: Km, getPorts: Wm, getMetrics: Ro, info: ep, healthCheck: tp, VERSION: No, MODULE_ID: Ns };
+const rp = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: $s,
-  VERSION: Oo,
-  applyFuzzySearch: Nm,
-  calculateScore: Fc,
-  default: kS,
-  destroy: xm,
-  getMetrics: To,
-  getPorts: km,
-  healthCheck: Hm,
-  highlightMatch: Rm,
-  info: Pm,
-  init: wm,
-  injectPorts: $m,
-  search: Gc
-}, Symbol.toStringTag, { value: "Module" })), Do = "7.1.0-ES6", ks = "sidebar-highlight-matches", Kt = v({ moduleId: ks });
-function wS() {
-  Kt.init();
+  MODULE_ID: Ns,
+  VERSION: No,
+  applyFuzzySearch: Zm,
+  calculateScore: eu,
+  default: WS,
+  destroy: Qm,
+  getMetrics: Ro,
+  getPorts: Wm,
+  healthCheck: tp,
+  highlightMatch: Jm,
+  info: ep,
+  init: Xm,
+  injectPorts: Km,
+  search: tu
+}, Symbol.toStringTag, { value: "Module" })), xo = "7.1.0-ES6", Rs = "sidebar-highlight-matches", Wt = v({ moduleId: Rs });
+function XS() {
+  Wt.init();
 }
-function Bm(e) {
-  return Kt.get(e);
+function np(e) {
+  return Wt.get(e);
 }
-function Um(e) {
-  return Kt.inject(e);
+function sp(e) {
+  return Wt.inject(e);
 }
-function jm() {
-  return Kt.snapshot();
+function ip() {
+  return Wt.snapshot();
 }
-let ue = null, Mn = "", Nt = [], Lo = { highlights: 0, clears: 0, navigations: 0 }, Tr = [];
-const Tt = { highlightClass: "dsd-highlight", highlightActiveClass: "dsd-highlight--active", minQueryLength: 2 };
-function Fm(e, t) {
-  e && Kt.inject({ eventBus: e }), wS(), ue = t;
-  const r = Bm("eventBus");
+let he = null, Ln = "", Rt = [], Po = { highlights: 0, clears: 0, navigations: 0 }, $r = [];
+const Dt = { highlightClass: "dsd-highlight", highlightActiveClass: "dsd-highlight--active", minQueryLength: 2 };
+function op(e, t) {
+  e && Wt.inject({ eventBus: e }), XS(), he = t;
+  const r = np("eventBus");
   if (r && r.on) {
-    const n = r.on(f.SEARCH, NS);
-    typeof n == "function" && Tr.push(n);
-    const s = r.on(f.SEARCH_CLEAR, On);
-    typeof s == "function" && Tr.push(s);
+    const n = r.on(f.SEARCH, ZS);
+    typeof n == "function" && $r.push(n);
+    const s = r.on(f.SEARCH_CLEAR, $n);
+    typeof s == "function" && $r.push(s);
   }
   r && r.emit && r.emit(f.HIGHLIGHT_INITIALIZED);
 }
-function NS(e) {
+function ZS(e) {
   const t = (e == null ? void 0 : e.query) || "";
-  if (t.length < Tt.minQueryLength) {
-    On();
+  if (t.length < Dt.minQueryLength) {
+    $n();
     return;
   }
-  Mn = t, Vc(t);
+  Ln = t, ru(t);
 }
-function Vc(e, t) {
-  const r = t || ue;
+function ru(e, t) {
+  const r = t || he;
   if (!r || !e) return;
-  On(), Mn = e;
-  const n = RS(e);
+  $n(), Ln = e;
+  const n = JS(e);
   r.querySelectorAll(`.${c.ITEM_TEXT}, .${c.ITEM_LABEL}, .${c.GROUP_TITLE}`).forEach((o) => {
     const a = o.textContent, l = a.match(n);
     if (l && l.length > 0) {
-      const d = a.replace(n, (u) => `<mark class="${Tt.highlightClass}">${xS(u)}</mark>`);
-      o.dataset.originalText = a, o.innerHTML = d, Nt.push(o);
+      const u = a.replace(n, (d) => `<mark class="${Dt.highlightClass}">${QS(d)}</mark>`);
+      o.dataset.originalText = a, o.innerHTML = u, Rt.push(o);
     }
-  }), Lo.highlights++;
-  const i = Bm("eventBus");
-  return i && i.emit && i.emit(f.HIGHLIGHTS_APPLIED, { query: e, count: Nt.length }), Nt.length;
+  }), Po.highlights++;
+  const i = np("eventBus");
+  return i && i.emit && i.emit(f.HIGHLIGHTS_APPLIED, { query: e, count: Rt.length }), Rt.length;
 }
-function RS(e) {
+function JS(e) {
   const t = e.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), r = "gi";
   return new RegExp(`(${t})`, r);
 }
-function xS(e) {
+function QS(e) {
   const t = document.createElement("div");
   return t.textContent = e, t.innerHTML;
 }
-function On() {
-  Nt.forEach((e) => {
+function $n() {
+  Rt.forEach((e) => {
     e.dataset.originalText && (e.textContent = e.dataset.originalText, delete e.dataset.originalText);
-  }), Nt = [], Mn = "", Lo.clears++, ue == null || ue.querySelectorAll(`.${Tt.highlightClass}`).forEach((e) => {
+  }), Rt = [], Ln = "", Po.clears++, he == null || he.querySelectorAll(`.${Dt.highlightClass}`).forEach((e) => {
     const t = e.parentNode;
     t.replaceChild(document.createTextNode(e.textContent), e), t.normalize();
   });
 }
-function Gm(e = "next") {
-  const t = ue == null ? void 0 : ue.querySelectorAll(`.${Tt.highlightClass}`);
+function ap(e = "next") {
+  const t = he == null ? void 0 : he.querySelectorAll(`.${Dt.highlightClass}`);
   if (!t || t.length === 0) return null;
-  Lo.navigations++;
-  let r = ue == null ? void 0 : ue.querySelector(`.${Tt.highlightActiveClass}`), n = r ? Array.from(t).indexOf(r) : -1;
-  r == null || r.classList.remove(Tt.highlightActiveClass), e === "next" ? n = (n + 1) % t.length : n = n <= 0 ? t.length - 1 : n - 1;
+  Po.navigations++;
+  let r = he == null ? void 0 : he.querySelector(`.${Dt.highlightActiveClass}`), n = r ? Array.from(t).indexOf(r) : -1;
+  r == null || r.classList.remove(Dt.highlightActiveClass), e === "next" ? n = (n + 1) % t.length : n = n <= 0 ? t.length - 1 : n - 1;
   const s = t[n];
-  return s.classList.add(Tt.highlightActiveClass), s.scrollIntoView({ behavior: "smooth", block: "center" }), { current: n + 1, total: t.length };
+  return s.classList.add(Dt.highlightActiveClass), s.scrollIntoView({ behavior: "smooth", block: "center" }), { current: n + 1, total: t.length };
 }
-function Vm() {
-  return (ue == null ? void 0 : ue.querySelectorAll(`.${Tt.highlightClass}`).length) || 0;
+function lp() {
+  return (he == null ? void 0 : he.querySelectorAll(`.${Dt.highlightClass}`).length) || 0;
 }
-function qm() {
-  return Mn;
+function cp() {
+  return Ln;
 }
-function Ym() {
-  Tr.forEach((e) => {
+function up() {
+  $r.forEach((e) => {
     try {
       typeof e == "function" && e();
     } catch {
     }
-  }), Tr = [], On(), ue = null;
+  }), $r = [], $n(), he = null;
 }
-function $o() {
-  return { ...Lo, currentHighlights: Nt.length, cleanups: Tr.length };
+function Ho() {
+  return { ...Po, currentHighlights: Rt.length, cleanups: $r.length };
 }
-function Km() {
-  return { moduleId: ks, version: Do, portsInitialized: Kt.isInitialized(), currentQuery: Mn, highlightCount: Nt.length, cleanups: Tr.length, metrics: $o(), p25Compliant: !0 };
+function dp() {
+  return { moduleId: Rs, version: xo, portsInitialized: Wt.isInitialized(), currentQuery: Ln, highlightCount: Rt.length, cleanups: $r.length, metrics: Ho(), p25Compliant: !0 };
 }
-function Wm() {
-  return { status: Kt.isInitialized() ? "HEALTHY" : "DEGRADED", version: Do, moduleId: ks, portsInitialized: Kt.isInitialized(), cleanups: Tr.length, checks: { highlightCount: Nt.length, currentQuery: Mn }, metrics: $o(), p25Compliant: !0 };
+function hp() {
+  return { status: Wt.isInitialized() ? "HEALTHY" : "DEGRADED", version: xo, moduleId: Rs, portsInitialized: Wt.isInitialized(), cleanups: $r.length, checks: { highlightCount: Rt.length, currentQuery: Ln }, metrics: Ho(), p25Compliant: !0 };
 }
-var PS = { init: Fm, highlightMatches: Vc, clearHighlights: On, navigateToMatch: Gm, getMatchCount: Vm, getCurrentQuery: qm, destroy: Ym, injectPorts: Um, getPorts: jm, getMetrics: $o, info: Km, healthCheck: Wm, VERSION: Do, MODULE_ID: ks };
-const Xm = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var e0 = { init: op, highlightMatches: ru, clearHighlights: $n, navigateToMatch: ap, getMatchCount: lp, getCurrentQuery: cp, destroy: up, injectPorts: sp, getPorts: ip, getMetrics: Ho, info: dp, healthCheck: hp, VERSION: xo, MODULE_ID: Rs };
+const fp = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: ks,
-  VERSION: Do,
-  clearHighlights: On,
-  default: PS,
-  destroy: Ym,
-  getCurrentQuery: qm,
-  getMatchCount: Vm,
-  getMetrics: $o,
-  getPorts: jm,
-  healthCheck: Wm,
-  highlightMatches: Vc,
-  info: Km,
-  init: Fm,
-  injectPorts: Um,
-  navigateToMatch: Gm
-}, Symbol.toStringTag, { value: "Module" })), ko = "6.0.0-NCS", ws = "sidebar.features.intersection-observer", jr = v({ moduleId: ws });
-function ou() {
-  jr.init();
+  MODULE_ID: Rs,
+  VERSION: xo,
+  clearHighlights: $n,
+  default: e0,
+  destroy: up,
+  getCurrentQuery: cp,
+  getMatchCount: lp,
+  getMetrics: Ho,
+  getPorts: ip,
+  healthCheck: hp,
+  highlightMatches: ru,
+  info: dp,
+  init: op,
+  injectPorts: sp,
+  navigateToMatch: ap
+}, Symbol.toStringTag, { value: "Module" })), zo = "6.0.0-NCS", xs = "sidebar.features.intersection-observer", Vr = v({ moduleId: xs });
+function md() {
+  Vr.init();
 }
-function Pa(e) {
-  return jr.get(e);
+function ja(e) {
+  return Vr.get(e);
 }
-function Zm(e) {
-  return jr.inject(e);
+function gp(e) {
+  return Vr.inject(e);
 }
-function Jm() {
-  return jr.snapshot();
+function mp() {
+  return Vr.snapshot();
 }
-let De = null, ee = null, at = null, yr = /* @__PURE__ */ new Set(), lt = [], Ha = !1, Dt = null, wo = { observes: 0, renders: 0, unrenders: 0 };
-const mn = {
+let Le = null, te = null, at = null, Ir = /* @__PURE__ */ new Set(), lt = [], Fa = !1, Lt = null, Bo = { observes: 0, renders: 0, unrenders: 0 };
+const _n = {
   rootMargin: "100px 0px",
   threshold: 0.1,
   batchSize: 10,
   batchDelay: 16
 };
-function Qm(e, t, r = {}) {
+function pp(e, t, r = {}) {
   var n, s, i, o, a, l;
   if (e && typeof e == "object" && !e.emit) {
-    const d = e, u = d.ports, h = d.eventBus, g = d.sidebarEl;
-    u && jr.inject(u), ou(), ee = h || Pa("eventBus"), De = g, d.config && Object.assign(mn, d.config);
+    const u = e, d = u.ports, h = u.eventBus, g = u.sidebarEl;
+    d && Vr.inject(d), md(), te = h || ja("eventBus"), Le = g, u.config && Object.assign(_n, u.config);
   } else
-    ee = e, De = t, r && Object.assign(mn, r), ou();
-  return "IntersectionObserver" in window ? De ? (HS(), Si(), (a = ee == null ? void 0 : ee.on) == null || a.call(ee, "sidebar:items-updated", Si), (l = ee == null ? void 0 : ee.emit) == null || l.call(ee, "sidebar:intersection-observer:initialized"), { ok: !0, supported: !0 }) : ((o = (i = Pa("logger")) == null ? void 0 : i.info) == null || o.call(i, "[IntersectionObserver] No container, will observe when available"), { ok: !0, deferred: !0 }) : ((s = (n = Pa("logger")) == null ? void 0 : n.warn) == null || s.call(n, "[IntersectionObserver] Not supported, rendering all items"), { ok: !0, supported: !1 });
+    te = e, Le = t, r && Object.assign(_n, r), md();
+  return "IntersectionObserver" in window ? Le ? (t0(), Di(), (a = te == null ? void 0 : te.on) == null || a.call(te, "sidebar:items-updated", Di), (l = te == null ? void 0 : te.emit) == null || l.call(te, "sidebar:intersection-observer:initialized"), { ok: !0, supported: !0 }) : ((o = (i = ja("logger")) == null ? void 0 : i.info) == null || o.call(i, "[IntersectionObserver] No container, will observe when available"), { ok: !0, deferred: !0 }) : ((s = (n = ja("logger")) == null ? void 0 : n.warn) == null || s.call(n, "[IntersectionObserver] Not supported, rendering all items"), { ok: !0, supported: !1 });
 }
-function HS() {
-  De && (at = new IntersectionObserver((e) => {
+function t0() {
+  Le && (at = new IntersectionObserver((e) => {
     e.forEach((t) => {
-      t.isIntersecting ? BS(t.target) : US(t.target);
+      t.isIntersecting ? n0(t.target) : s0(t.target);
     });
   }, {
-    root: De == null ? void 0 : De.querySelector(`.${c.NAV_CONTENT}, .${c.NAV}`),
-    rootMargin: mn.rootMargin,
-    threshold: mn.threshold
+    root: Le == null ? void 0 : Le.querySelector(`.${c.NAV_CONTENT}, .${c.NAV}`),
+    rootMargin: _n.rootMargin,
+    threshold: _n.threshold
   }));
 }
-function Si() {
-  if (!at || !De) return;
-  yr.forEach((t) => {
-    De.contains(t) || (at.unobserve(t), yr.delete(t));
-  }), De.querySelectorAll(`.${c.ITEM}:not([data-observed])`).forEach((t) => {
-    t.dataset.observed = "true", t.dataset.rendered = "false", t.classList.contains(c.ITEM_PLACEHOLDER) || zS(t), at.observe(t), yr.add(t), wo.observes++;
+function Di() {
+  if (!at || !Le) return;
+  Ir.forEach((t) => {
+    Le.contains(t) || (at.unobserve(t), Ir.delete(t));
+  }), Le.querySelectorAll(`.${c.ITEM}:not([data-observed])`).forEach((t) => {
+    t.dataset.observed = "true", t.dataset.rendered = "false", t.classList.contains(c.ITEM_PLACEHOLDER) || r0(t), at.observe(t), Ir.add(t), Bo.observes++;
   });
 }
-function zS(e) {
+function r0(e) {
   const t = e.offsetHeight || 40;
   e.dataset.originalContent = e.innerHTML, e.dataset.originalHeight = t, e.innerHTML = `<div class="dsd-sidebar__item-placeholder" style="height: ${t}px"><div class="dsd-sidebar__item-placeholder-icon"></div><div class="dsd-sidebar__item-placeholder-text"></div></div>`, e.classList.add(c.ITEM_PLACEHOLDER);
 }
-function ep(e) {
+function Ep(e) {
   e.dataset.originalContent && (e.innerHTML = e.dataset.originalContent, e.classList.remove(c.ITEM_PLACEHOLDER), e.dataset.rendered = "true", delete e.dataset.originalContent);
 }
-function BS(e) {
-  e.dataset.rendered !== "true" && (lt.includes(e) || lt.push(e), tp());
+function n0(e) {
+  e.dataset.rendered !== "true" && (lt.includes(e) || lt.push(e), bp());
 }
-function US(e) {
-  wo.unrenders++;
+function s0(e) {
+  Bo.unrenders++;
 }
-function tp() {
-  Ha || lt.length === 0 || (Ha = !0, requestAnimationFrame(() => {
+function bp() {
+  Fa || lt.length === 0 || (Fa = !0, requestAnimationFrame(() => {
     var t;
-    const e = lt.splice(0, mn.batchSize);
+    const e = lt.splice(0, _n.batchSize);
     e.forEach((r) => {
-      ep(r), wo.renders++, r.style.opacity = "0", r.style.transform = "translateX(-10px)", requestAnimationFrame(() => {
+      Ep(r), Bo.renders++, r.style.opacity = "0", r.style.transform = "translateX(-10px)", requestAnimationFrame(() => {
         r.style.transition = "opacity 0.2s ease, transform 0.2s ease", r.style.opacity = "1", r.style.transform = "translateX(0)";
       });
-    }), Ha = !1, lt.length > 0 && (Dt && clearTimeout(Dt), Dt = setTimeout(() => {
-      Dt = null, tp();
-    }, mn.batchDelay)), (t = ee == null ? void 0 : ee.emit) == null || t.call(ee, "sidebar:lazy-render", {
+    }), Fa = !1, lt.length > 0 && (Lt && clearTimeout(Lt), Lt = setTimeout(() => {
+      Lt = null, bp();
+    }, _n.batchDelay)), (t = te == null ? void 0 : te.emit) == null || t.call(te, "sidebar:lazy-render", {
       rendered: e.length,
       pending: lt.length
     });
   }));
 }
-function rp() {
-  yr.forEach((e) => {
-    e.dataset.rendered !== "true" && ep(e);
+function _p() {
+  Ir.forEach((e) => {
+    e.dataset.rendered !== "true" && Ep(e);
   }), lt = [];
 }
-function No() {
+function Uo() {
   let e = 0, t = 0;
-  return yr.forEach((r) => {
+  return Ir.forEach((r) => {
     r.dataset.rendered === "true" ? e++ : t++;
-  }), { total: yr.size, rendered: e, placeholder: t, pending: lt.length };
+  }), { total: Ir.size, rendered: e, placeholder: t, pending: lt.length };
 }
-function qc() {
-  Dt && (clearTimeout(Dt), Dt = null), at == null || at.disconnect(), at = null, yr.clear(), lt = [], ee = null, De = null;
+function nu() {
+  Lt && (clearTimeout(Lt), Lt = null), at == null || at.disconnect(), at = null, Ir.clear(), lt = [], te = null, Le = null;
 }
-function np() {
-  qc();
+function yp() {
+  nu();
 }
-function Ro() {
-  return { ...wo, ...No() };
+function jo() {
+  return { ...Bo, ...Uo() };
 }
-function sp() {
+function vp() {
   return {
-    moduleId: ws,
-    version: ko,
-    stats: No(),
-    metrics: Ro(),
-    portsInitialized: jr.isInitialized()
+    moduleId: xs,
+    version: zo,
+    stats: Uo(),
+    metrics: jo(),
+    portsInitialized: Vr.isInitialized()
   };
 }
-function ip() {
+function Ip() {
   const e = "IntersectionObserver" in window;
   return {
     status: e ? "HEALTHY" : "DEGRADED",
-    version: ko,
-    moduleId: ws,
+    version: zo,
+    moduleId: xs,
     checks: {
       supported: e,
-      hasContainer: !!De,
+      hasContainer: !!Le,
       hasObserver: !!at,
-      noOrphanTimers: !Dt,
-      portsInitialized: jr.isInitialized()
+      noOrphanTimers: !Lt,
+      portsInitialized: Vr.isInitialized()
     },
-    metrics: Ro()
+    metrics: jo()
   };
 }
-var jS = {
-  init: Qm,
-  cleanup: qc,
-  observeItems: Si,
-  renderAll: rp,
-  getStats: No,
-  destroy: np,
-  getMetrics: Ro,
-  info: sp,
-  healthCheck: ip,
-  injectPorts: Zm,
-  getPorts: Jm,
-  VERSION: ko,
-  MODULE_ID: ws
+var i0 = {
+  init: pp,
+  cleanup: nu,
+  observeItems: Di,
+  renderAll: _p,
+  getStats: Uo,
+  destroy: yp,
+  getMetrics: jo,
+  info: vp,
+  healthCheck: Ip,
+  injectPorts: gp,
+  getPorts: mp,
+  VERSION: zo,
+  MODULE_ID: xs
 };
-const op = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const Sp = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: ws,
-  VERSION: ko,
-  cleanup: qc,
-  default: jS,
-  destroy: np,
-  getMetrics: Ro,
-  getPorts: Jm,
-  getStats: No,
-  healthCheck: ip,
-  info: sp,
-  init: Qm,
-  injectPorts: Zm,
-  observeItems: Si,
-  renderAll: rp
-}, Symbol.toStringTag, { value: "Module" })), Tn = "sidebar-keyboard-shortcuts-extended", Dn = "7.1.0-ES6", Fr = v({ moduleId: Tn });
-function FS() {
-  Fr.init();
+  MODULE_ID: xs,
+  VERSION: zo,
+  cleanup: nu,
+  default: i0,
+  destroy: yp,
+  getMetrics: jo,
+  getPorts: mp,
+  getStats: Uo,
+  healthCheck: Ip,
+  info: vp,
+  init: pp,
+  injectPorts: gp,
+  observeItems: Di,
+  renderAll: _p
+}, Symbol.toStringTag, { value: "Module" })), kn = "sidebar-keyboard-shortcuts-extended", wn = "7.1.0-ES6", qr = v({ moduleId: kn });
+function o0() {
+  qr.init();
 }
-function en(e) {
-  return Fr.get(e);
+function nn(e) {
+  return qr.get(e);
 }
-function GS(e) {
-  return Fr.inject(e);
+function a0(e) {
+  return qr.inject(e);
 }
-function VS() {
-  return Fr.snapshot();
+function l0() {
+  return qr.snapshot();
 }
 const P = { initialized: !1, ctx: null, shortcuts: /* @__PURE__ */ new Map(), enabled: !0, triggered: 0, errors: 0, cleanups: [] };
-function vr(e, t, r) {
-  return { ok: e, data: t || null, meta: { moduleId: Tn, version: Dn, timestamp: (/* @__PURE__ */ new Date()).toISOString() }, errors: r || [] };
+function Sr(e, t, r) {
+  return { ok: e, data: t || null, meta: { moduleId: kn, version: wn, timestamp: (/* @__PURE__ */ new Date()).toISOString() }, errors: r || [] };
 }
-const qS = [
+const c0 = [
   { keys: "Alt+1", action: "gotoSection1", description: "Ir para seção 1" },
   { keys: "Alt+2", action: "gotoSection2", description: "Ir para seção 2" },
   { keys: "Alt+M", action: "toggleMiniMode", description: "Alternar modo mini" },
@@ -8438,41 +8572,41 @@ const qS = [
   { keys: "Shift+?", action: "showHelp", description: "Mostrar atalhos" },
   { keys: "Escape", action: "closeOverlays", description: "Fechar overlays" }
 ];
-function au(e) {
+function pd(e) {
   const t = document.querySelectorAll(`.${c.SECTION}`);
   if (t[e]) {
     const r = t[e].querySelector(`.${c.LINK}`);
     r && r.focus();
   }
 }
-const lu = {
+const Ed = {
   gotoSection1() {
-    au(0);
+    pd(0);
   },
   gotoSection2() {
-    au(1);
+    pd(1);
   },
   toggleMiniMode() {
-    const e = en("sidebar");
+    const e = nn("sidebar");
     e && e.toggleMiniMode && e.toggleMiniMode();
   },
   toggleSidebar() {
-    const e = en("sidebar");
+    const e = nn("sidebar");
     e && e.toggle && e.toggle();
   },
   toggleTheme() {
-    const e = en("sidebar");
+    const e = nn("sidebar");
     e && e.toggleTheme && e.toggleTheme();
   },
   showHelp() {
-    ap();
+    Cp();
   },
   closeOverlays() {
-    const e = en("sidebar");
+    const e = nn("sidebar");
     e && (e.hideCommandPalette && e.hideCommandPalette(), e.hideQuickSwitcher && e.hideQuickSwitcher());
   }
 };
-function YS(e) {
+function u0(e) {
   const t = e.split("+");
   return {
     ctrl: t.indexOf("Ctrl") >= 0,
@@ -8482,19 +8616,19 @@ function YS(e) {
     key: t[t.length - 1].toLowerCase()
   };
 }
-function KS(e, t) {
+function d0(e, t) {
   return e.ctrlKey === t.ctrl && e.altKey === t.alt && e.shiftKey === t.shift && e.metaKey === t.meta && e.key.toLowerCase() === t.key;
 }
-function cu(e) {
+function bd(e) {
   P.enabled && P.shortcuts.forEach((t) => {
-    if (KS(e, t.parsed)) {
-      e.preventDefault(), P.triggered++, lu[t.action] && lu[t.action]();
-      const r = en("eventBus");
+    if (d0(e, t.parsed)) {
+      e.preventDefault(), P.triggered++, Ed[t.action] && Ed[t.action]();
+      const r = nn("eventBus");
       r && r.emit && r.emit(f.SHORTCUT_TRIGGERED, { action: t.action, keys: t.keys });
     }
   });
 }
-function ap() {
+function Cp() {
   let e = document.querySelector(".dsd-shortcuts-modal");
   if (e) {
     e.classList.toggle("dsd-shortcuts-modal--visible");
@@ -8510,34 +8644,34 @@ function ap() {
     });
   });
 }
-function Yc(e) {
-  if (!e || !e.keys || !e.action) return vr(!1, null, [{ code: "INVALID", message: "Shortcut must have keys and action" }]);
-  const t = YS(e.keys);
-  return P.shortcuts.set(e.keys, { keys: e.keys, action: e.action, description: e.description || "", parsed: t }), vr(!0, { keys: e.keys });
+function su(e) {
+  if (!e || !e.keys || !e.action) return Sr(!1, null, [{ code: "INVALID", message: "Shortcut must have keys and action" }]);
+  const t = u0(e.keys);
+  return P.shortcuts.set(e.keys, { keys: e.keys, action: e.action, description: e.description || "", parsed: t }), Sr(!0, { keys: e.keys });
 }
-function lp(e) {
-  if (P.initialized) return vr(!0, { alreadyInitialized: !0 });
+function Ap(e) {
+  if (P.initialized) return Sr(!0, { alreadyInitialized: !0 });
   try {
-    P.ctx = e, e && e.ports && Fr.inject(e.ports), FS(), qS.forEach((r) => {
-      Yc(r);
-    }), document.addEventListener("keydown", cu), P.cleanups.push(() => {
-      document.removeEventListener("keydown", cu);
+    P.ctx = e, e && e.ports && qr.inject(e.ports), o0(), c0.forEach((r) => {
+      su(r);
+    }), document.addEventListener("keydown", bd), P.cleanups.push(() => {
+      document.removeEventListener("keydown", bd);
     }), P.initialized = !0;
-    const t = en("eventBus");
-    return t && t.emit && t.emit(f.SHORTCUTS_INITIALIZED, { version: Dn }), vr(!0, { initialized: !0 });
+    const t = nn("eventBus");
+    return t && t.emit && t.emit(f.SHORTCUTS_INITIALIZED, { version: wn }), Sr(!0, { initialized: !0 });
   } catch (t) {
-    return P.errors++, vr(!1, null, [{ code: "INIT_ERROR", message: t.message }]);
+    return P.errors++, Sr(!1, null, [{ code: "INIT_ERROR", message: t.message }]);
   }
 }
-function cp() {
+function Mp() {
   for (let e = 0; e < P.cleanups.length; e++)
     try {
       P.cleanups[e]();
     } catch {
     }
-  return P.cleanups = [], P.shortcuts.clear(), P.initialized = !1, vr(!0, { cleanedUp: !0 });
+  return P.cleanups = [], P.shortcuts.clear(), P.initialized = !1, Sr(!0, { cleanedUp: !0 });
 }
-function dp() {
+function Op() {
   const e = {
     initialized: P.initialized,
     shortcutsRegistered: P.shortcuts.size > 0,
@@ -8548,562 +8682,562 @@ function dp() {
   return P.initialized ? t < r && (n = "DEGRADED") : n = "NOT_INITIALIZED", {
     status: n,
     score: { passed: t, total: r, percentage: Math.round(t / r * 100) },
-    moduleId: Tn,
-    version: Dn,
-    portsInitialized: Fr.isInitialized(),
+    moduleId: kn,
+    version: wn,
+    portsInitialized: qr.isInitialized(),
     checks: e,
     metrics: { triggered: P.triggered, shortcutsCount: P.shortcuts.size, errors: P.errors },
     timestamp: Date.now()
   };
 }
-function up() {
-  return vr(!0, {
-    moduleId: Tn,
-    version: Dn,
-    portsInitialized: Fr.isInitialized(),
+function Tp() {
+  return Sr(!0, {
+    moduleId: kn,
+    version: wn,
+    portsInitialized: qr.isInitialized(),
     initialized: P.initialized,
     shortcutsCount: P.shortcuts.size,
     triggered: P.triggered
   });
 }
-const hp = { singleton: !0, critical: !1, rendersUI: !1, category: "accessibility", priority: "normal" };
-function fp() {
+const Dp = { singleton: !0, critical: !1, rendersUI: !1, category: "accessibility", priority: "normal" };
+function Lp() {
   return { triggered: P.triggered, shortcutsCount: P.shortcuts.size, errors: P.errors };
 }
-function WS() {
+function h0() {
   P.enabled = !0;
 }
-function XS() {
+function f0() {
   P.enabled = !1;
 }
-var ZS = { id: Tn, version: Dn, capabilities: hp, init: lp, cleanup: cp, healthCheck: dp, info: up, getMetrics: fp, registerShortcut: Yc };
-const gp = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var g0 = { id: kn, version: wn, capabilities: Dp, init: Ap, cleanup: Mp, healthCheck: Op, info: Tp, getMetrics: Lp, registerShortcut: su };
+const $p = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: Tn,
-  VERSION: Dn,
-  capabilities: hp,
-  cleanup: cp,
-  default: ZS,
-  disable: XS,
-  enable: WS,
-  getMetrics: fp,
-  getPorts: VS,
-  healthCheck: dp,
-  info: up,
-  init: lp,
-  injectPorts: GS,
-  registerShortcut: Yc,
-  showShortcutsHelp: ap
-}, Symbol.toStringTag, { value: "Module" })), xo = "6.1.0-ES6", Ns = "sidebar-mini-mode", Wt = v({ moduleId: Ns });
-function JS() {
-  Wt.init();
+  MODULE_ID: kn,
+  VERSION: wn,
+  capabilities: Dp,
+  cleanup: Mp,
+  default: g0,
+  disable: f0,
+  enable: h0,
+  getMetrics: Lp,
+  getPorts: l0,
+  healthCheck: Op,
+  info: Tp,
+  init: Ap,
+  injectPorts: a0,
+  registerShortcut: su,
+  showShortcutsHelp: Cp
+}, Symbol.toStringTag, { value: "Module" })), Fo = "6.1.0-ES6", Ps = "sidebar-mini-mode", Xt = v({ moduleId: Ps });
+function m0() {
+  Xt.init();
 }
-function Kc(e) {
-  return Wt.get(e);
+function iu(e) {
+  return Xt.get(e);
 }
-function mp(e) {
-  return Wt.inject(e);
+function kp(e) {
+  return Xt.inject(e);
 }
-function pp() {
-  return Wt.snapshot();
+function wp() {
+  return Xt.snapshot();
 }
-const Ep = "dsd-sidebar-mini";
-let Gr = !1, Y = null, ts = [], Po = { enables: 0, disables: 0, toggles: 0 };
-function QS() {
+const Np = "dsd-sidebar-mini";
+let Yr = !1, K = null, ss = [], Go = { enables: 0, disables: 0, toggles: 0 };
+function p0() {
   try {
-    return localStorage.getItem(Ep) === "true";
+    return localStorage.getItem(Np) === "true";
   } catch {
     return !1;
   }
 }
-function bp(e) {
+function Rp(e) {
   try {
-    localStorage.setItem(Ep, String(e));
+    localStorage.setItem(Np, String(e));
   } catch {
   }
 }
-function e0(e) {
+function E0(e) {
   const t = () => {
-    Gr && e.classList.add(c.MOD_MINI_HOVER);
+    Yr && e.classList.add(c.MOD_MINI_HOVER);
   }, r = () => {
     e.classList.remove(c.MOD_MINI_HOVER);
   };
-  e.addEventListener("mouseenter", t), e.addEventListener("mouseleave", r), ts.push(() => {
+  e.addEventListener("mouseenter", t), e.addEventListener("mouseleave", r), ss.push(() => {
     e.removeEventListener("mouseenter", t);
-  }), ts.push(() => {
+  }), ss.push(() => {
     e.removeEventListener("mouseleave", r);
   });
 }
-function _p(e, t) {
-  e && Wt.inject({ eventBus: e }), JS(), Y = t, t && e0(t);
-  const r = QS();
-  r && t && Ho(t);
-  const n = Kc("eventBus");
+function xp(e, t) {
+  e && Xt.inject({ eventBus: e }), m0(), K = t, t && E0(t);
+  const r = p0();
+  r && t && Vo(t);
+  const n = iu("eventBus");
   return n && n.emit && n.emit(f.MINI_INITIALIZED), r;
 }
-function Ho(e) {
-  if (Y = e || Y, !Y) return !1;
-  Y.classList.add(c.MOD_MINI), Y.setAttribute("data-mini", "true"), Gr = !0, Po.enables++, bp(!0), Y.querySelectorAll(`.${c.ITEM}`).forEach((r) => {
+function Vo(e) {
+  if (K = e || K, !K) return !1;
+  K.classList.add(c.MOD_MINI), K.setAttribute("data-mini", "true"), Yr = !0, Go.enables++, Rp(!0), K.querySelectorAll(`.${c.ITEM}`).forEach((r) => {
     const n = r.querySelector(`.${c.ITEM_LABEL}`);
     n && r.setAttribute("title", n.textContent || "");
   });
-  const t = Kc("eventBus");
+  const t = iu("eventBus");
   return t && t.emit && t.emit(f.MINI_ENABLED), !0;
 }
-function zo(e) {
-  if (Y = e || Y, !Y) return !1;
-  Y.classList.remove(c.MOD_MINI), Y.classList.remove(c.MOD_MINI_HOVER), Y.removeAttribute("data-mini"), Gr = !1, Po.disables++, bp(!1), Y.querySelectorAll(`.${c.ITEM}[title]`).forEach((r) => {
+function qo(e) {
+  if (K = e || K, !K) return !1;
+  K.classList.remove(c.MOD_MINI), K.classList.remove(c.MOD_MINI_HOVER), K.removeAttribute("data-mini"), Yr = !1, Go.disables++, Rp(!1), K.querySelectorAll(`.${c.ITEM}[title]`).forEach((r) => {
     r.removeAttribute("title");
   });
-  const t = Kc("eventBus");
+  const t = iu("eventBus");
   return t && t.emit && t.emit(f.MINI_DISABLED), !0;
 }
-function yp(e) {
-  return Y = e || Y, Po.toggles++, Gr ? (zo(Y), !1) : (Ho(Y), !0);
+function Pp(e) {
+  return K = e || K, Go.toggles++, Yr ? (qo(K), !1) : (Vo(K), !0);
 }
-function vp() {
-  return Gr;
+function Hp() {
+  return Yr;
 }
-function Ip() {
-  return Y;
+function zp() {
+  return K;
 }
-function Sp() {
-  ts.forEach((e) => {
+function Bp() {
+  ss.forEach((e) => {
     try {
       e();
     } catch {
     }
-  }), ts = [], zo(Y);
+  }), ss = [], qo(K);
 }
-function Bo() {
-  return { ...Po };
+function Yo() {
+  return { ...Go };
 }
-function Cp() {
-  return { moduleId: Ns, version: xo, portsInitialized: Wt.isInitialized(), enabled: Gr, hasContainer: !!Y, cleanups: ts.length, metrics: Bo() };
+function Up() {
+  return { moduleId: Ps, version: Fo, portsInitialized: Xt.isInitialized(), enabled: Yr, hasContainer: !!K, cleanups: ss.length, metrics: Yo() };
 }
-function Ap() {
-  return { status: Wt.isInitialized() ? "HEALTHY" : "DEGRADED", version: xo, moduleId: Ns, portsInitialized: Wt.isInitialized(), checks: { enabled: Gr, hasContainer: !!Y }, metrics: Bo() };
+function jp() {
+  return { status: Xt.isInitialized() ? "HEALTHY" : "DEGRADED", version: Fo, moduleId: Ps, portsInitialized: Xt.isInitialized(), checks: { enabled: Yr, hasContainer: !!K }, metrics: Yo() };
 }
-var t0 = { init: _p, enable: Ho, disable: zo, toggle: yp, isEnabled: vp, getContainer: Ip, destroy: Sp, injectPorts: mp, getPorts: pp, getMetrics: Bo, info: Cp, healthCheck: Ap, VERSION: xo, MODULE_ID: Ns };
-const Mp = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var b0 = { init: xp, enable: Vo, disable: qo, toggle: Pp, isEnabled: Hp, getContainer: zp, destroy: Bp, injectPorts: kp, getPorts: wp, getMetrics: Yo, info: Up, healthCheck: jp, VERSION: Fo, MODULE_ID: Ps };
+const Fp = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: Ns,
-  VERSION: xo,
-  default: t0,
-  destroy: Sp,
-  disable: zo,
-  enable: Ho,
-  getContainer: Ip,
-  getMetrics: Bo,
-  getPorts: pp,
-  healthCheck: Ap,
-  info: Cp,
-  init: _p,
-  injectPorts: mp,
-  isEnabled: vp,
-  toggle: yp
-}, Symbol.toStringTag, { value: "Module" })), Uo = "7.1.0-ES6", Rs = "sidebar-notification-dots", Xt = v({ moduleId: Rs });
-function r0() {
-  Xt.init();
+  MODULE_ID: Ps,
+  VERSION: Fo,
+  default: b0,
+  destroy: Bp,
+  disable: qo,
+  enable: Vo,
+  getContainer: zp,
+  getMetrics: Yo,
+  getPorts: wp,
+  healthCheck: jp,
+  info: Up,
+  init: xp,
+  injectPorts: kp,
+  isEnabled: Hp,
+  toggle: Pp
+}, Symbol.toStringTag, { value: "Module" })), Ko = "7.1.0-ES6", Hs = "sidebar-notification-dots", Zt = v({ moduleId: Hs });
+function _0() {
+  Zt.init();
 }
-function Wc(e) {
-  return Xt.get(e);
+function ou(e) {
+  return Zt.get(e);
 }
-function Op(e) {
-  return Xt.inject(e);
+function Gp(e) {
+  return Zt.inject(e);
 }
-function Tp() {
-  return Xt.snapshot();
+function Vp() {
+  return Zt.snapshot();
 }
-let Yn = null, Ne = /* @__PURE__ */ new Map(), pn = [], jo = { shows: 0, hides: 0, updates: 0 };
-const du = {
+let Xn = null, Re = /* @__PURE__ */ new Map(), yn = [], Wo = { shows: 0, hides: 0, updates: 0 };
+const _d = {
   default: { color: "#ef4444", size: 8 },
   success: { color: "#10b981", size: 8 },
   warning: { color: "#f59e0b", size: 8 },
   info: { color: "#3b82f6", size: 8 },
   urgent: { color: "#ef4444", size: 10, pulse: !0 }
 };
-function uu(e) {
-  e != null && e.itemId && Fo(e.itemId, e.variant || "default", e.count);
+function yd(e) {
+  e != null && e.itemId && Xo(e.itemId, e.variant || "default", e.count);
 }
-function hu(e) {
-  e != null && e.itemId && Vr(e.itemId);
+function vd(e) {
+  e != null && e.itemId && Kr(e.itemId);
 }
-function Dp(e, t) {
-  e && Xt.inject({ eventBus: e }), r0(), Yn = t;
-  const r = Wc("eventBus");
+function qp(e, t) {
+  e && Zt.inject({ eventBus: e }), _0(), Xn = t;
+  const r = ou("eventBus");
   if (r && r.on) {
-    const n = r.on(f.NOTIFICATION, uu), s = r.on(f.NOTIFICATION_CLEAR, hu);
-    pn.push(
+    const n = r.on(f.NOTIFICATION, yd), s = r.on(f.NOTIFICATION_CLEAR, vd);
+    yn.push(
       typeof n == "function" ? n : () => {
-        r.off && r.off(f.NOTIFICATION, uu);
+        r.off && r.off(f.NOTIFICATION, yd);
       }
-    ), pn.push(
+    ), yn.push(
       typeof s == "function" ? s : () => {
-        r.off && r.off(f.NOTIFICATION_CLEAR, hu);
+        r.off && r.off(f.NOTIFICATION_CLEAR, vd);
       }
     );
   }
   r && r.emit && r.emit(f.DOTS_INITIALIZED);
 }
-function Fo(e, t = "default", r = null) {
-  const n = Yn == null ? void 0 : Yn.querySelector(`[data-item-id="${e}"]`);
+function Xo(e, t = "default", r = null) {
+  const n = Xn == null ? void 0 : Xn.querySelector(`[data-item-id="${e}"]`);
   if (!n) return !1;
-  Vr(e);
-  const s = du[t] || du.default, i = n0(s, r), o = n.querySelector(`.${C.LINK}`);
-  o ? (o.style.position = "relative", o.appendChild(i)) : (n.style.position = "relative", n.appendChild(i)), Ne.set(e, { element: i, variant: t, count: r }), jo.shows++;
-  const a = Wc("eventBus");
+  Kr(e);
+  const s = _d[t] || _d.default, i = y0(s, r), o = n.querySelector(`.${C.LINK}`);
+  o ? (o.style.position = "relative", o.appendChild(i)) : (n.style.position = "relative", n.appendChild(i)), Re.set(e, { element: i, variant: t, count: r }), Wo.shows++;
+  const a = ou("eventBus");
   return a && a.emit && a.emit(f.DOT_SHOWN, { itemId: e, variant: t, count: r }), !0;
 }
-function n0(e, t) {
+function y0(e, t) {
   const r = document.createElement("span");
   return r.className = "dsd-notification-dot", e.pulse && r.classList.add("dsd-notification-dot--pulse"), r.style.cssText = `position:absolute;top:8px;right:8px;width:${e.size}px;height:${e.size}px;background:${e.color};border-radius:50%;border:2px solid var(--surface-base,#1a1a2e);z-index:10;pointer-events:none;`, t !== null && t > 0 && (r.classList.add("dsd-notification-dot--count"), r.textContent = t > 99 ? "99+" : t, r.style.width = "auto", r.style.minWidth = "16px", r.style.height = "16px", r.style.padding = "0 4px", r.style.fontSize = "10px", r.style.fontWeight = "600", r.style.color = "white", r.style.display = "flex", r.style.alignItems = "center", r.style.justifyContent = "center"), r.style.animation = "dotAppear 0.3s ease-out", r;
 }
-function Vr(e) {
-  const t = Ne.get(e);
+function Kr(e) {
+  const t = Re.get(e);
   if (!t) return !1;
   const r = t.element;
-  r.style.animation = "dotDisappear 0.2s ease-out forwards", jo.hides++, setTimeout(() => {
-    r.remove(), Ne.delete(e);
+  r.style.animation = "dotDisappear 0.2s ease-out forwards", Wo.hides++, setTimeout(() => {
+    r.remove(), Re.delete(e);
   }, 200);
-  const n = Wc("eventBus");
+  const n = ou("eventBus");
   return n && n.emit && n.emit(f.DOT_HIDDEN, { itemId: e }), !0;
 }
-function Go(e, t) {
-  jo.updates++;
-  const r = Ne.get(e);
+function Zo(e, t) {
+  Wo.updates++;
+  const r = Re.get(e);
   if (!r) return !1;
-  if (t <= 0) return Vr(e);
+  if (t <= 0) return Kr(e);
   const n = r.element;
   return n.classList.contains("dsd-notification-dot--count") && (n.textContent = t > 99 ? "99+" : t, n.style.animation = "dotPulse 0.3s ease-out"), r.count = t, !0;
 }
-function Lp(e, t = 1) {
-  const r = Ne.get(e);
+function Yp(e, t = 1) {
+  const r = Re.get(e);
   if (!r)
-    return Fo(e, "default", t), t;
+    return Xo(e, "default", t), t;
   const n = (r.count || 0) + t;
-  return Go(e, n), n;
+  return Zo(e, n), n;
 }
-function $p(e, t = 1) {
-  const r = Ne.get(e);
+function Kp(e, t = 1) {
+  const r = Re.get(e);
   if (!r) return 0;
   const n = Math.max(0, (r.count || 0) - t);
-  return n === 0 ? Vr(e) : Go(e, n), n;
+  return n === 0 ? Kr(e) : Zo(e, n), n;
 }
-function Xc() {
-  Ne.forEach((e, t) => {
-    Vr(t);
+function au() {
+  Re.forEach((e, t) => {
+    Kr(t);
   });
 }
-function Zc() {
+function lu() {
   const e = {};
-  return Ne.forEach((t, r) => {
+  return Re.forEach((t, r) => {
     e[r] = { variant: t.variant, count: t.count };
   }), e;
 }
-function kp(e) {
-  return Ne.has(e);
+function Wp(e) {
+  return Re.has(e);
 }
-function wp() {
-  pn.forEach((e) => {
+function Xp() {
+  yn.forEach((e) => {
     try {
       e();
     } catch {
     }
-  }), pn = [], Xc(), Yn = null;
+  }), yn = [], au(), Xn = null;
 }
-function Vo() {
-  return { ...jo, activeDots: Ne.size, cleanups: pn.length };
+function Jo() {
+  return { ...Wo, activeDots: Re.size, cleanups: yn.length };
 }
-function Np() {
+function Zp() {
   return {
-    moduleId: Rs,
-    version: Uo,
-    portsInitialized: Xt.isInitialized(),
-    activeDots: Ne.size,
-    dots: Zc(),
-    cleanups: pn.length,
-    metrics: Vo(),
+    moduleId: Hs,
+    version: Ko,
+    portsInitialized: Zt.isInitialized(),
+    activeDots: Re.size,
+    dots: lu(),
+    cleanups: yn.length,
+    metrics: Jo(),
     p24Compliant: !0
   };
 }
-function Rp() {
+function Jp() {
   return {
-    status: Xt.isInitialized() ? "HEALTHY" : "DEGRADED",
-    version: Uo,
-    moduleId: Rs,
-    portsInitialized: Xt.isInitialized(),
-    checks: { activeDots: Ne.size, noOrphanListeners: !0 },
-    metrics: Vo(),
+    status: Zt.isInitialized() ? "HEALTHY" : "DEGRADED",
+    version: Ko,
+    moduleId: Hs,
+    portsInitialized: Zt.isInitialized(),
+    checks: { activeDots: Re.size, noOrphanListeners: !0 },
+    metrics: Jo(),
     p24Compliant: !0
   };
 }
-var s0 = { init: Dp, showDot: Fo, hideDot: Vr, updateCount: Go, incrementCount: Lp, decrementCount: $p, clearAll: Xc, getAll: Zc, hasDot: kp, destroy: wp, injectPorts: Op, getPorts: Tp, getMetrics: Vo, info: Np, healthCheck: Rp, VERSION: Uo, MODULE_ID: Rs };
-const xp = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var v0 = { init: qp, showDot: Xo, hideDot: Kr, updateCount: Zo, incrementCount: Yp, decrementCount: Kp, clearAll: au, getAll: lu, hasDot: Wp, destroy: Xp, injectPorts: Gp, getPorts: Vp, getMetrics: Jo, info: Zp, healthCheck: Jp, VERSION: Ko, MODULE_ID: Hs };
+const Qp = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: Rs,
-  VERSION: Uo,
-  clearAll: Xc,
-  decrementCount: $p,
-  default: s0,
-  destroy: wp,
-  getAll: Zc,
-  getMetrics: Vo,
-  getPorts: Tp,
-  hasDot: kp,
-  healthCheck: Rp,
-  hideDot: Vr,
-  incrementCount: Lp,
-  info: Np,
-  init: Dp,
-  injectPorts: Op,
-  showDot: Fo,
-  updateCount: Go
-}, Symbol.toStringTag, { value: "Module" })), qo = "6.1.0-ES6", xs = "sidebar-parallax", Zt = v({ moduleId: xs });
-function i0() {
-  Zt.init();
+  MODULE_ID: Hs,
+  VERSION: Ko,
+  clearAll: au,
+  decrementCount: Kp,
+  default: v0,
+  destroy: Xp,
+  getAll: lu,
+  getMetrics: Jo,
+  getPorts: Vp,
+  hasDot: Wp,
+  healthCheck: Jp,
+  hideDot: Kr,
+  incrementCount: Yp,
+  info: Zp,
+  init: qp,
+  injectPorts: Gp,
+  showDot: Xo,
+  updateCount: Zo
+}, Symbol.toStringTag, { value: "Module" })), Qo = "6.1.0-ES6", zs = "sidebar-parallax", Jt = v({ moduleId: zs });
+function I0() {
+  Jt.init();
 }
-function o0(e) {
-  return Zt.get(e);
+function S0(e) {
+  return Jt.get(e);
 }
-function Pp(e) {
-  return Zt.inject(e);
+function eE(e) {
+  return Jt.inject(e);
 }
-function Hp() {
-  return Zt.snapshot();
+function tE() {
+  return Jt.snapshot();
 }
-let Dr = !1, li = null, Ci = { enables: 0, disables: 0, scrollEvents: 0 };
-function zp(e) {
-  e && Zt.inject({ eventBus: e }), i0();
-  const t = o0("eventBus");
+let kr = !1, fi = null, Li = { enables: 0, disables: 0, scrollEvents: 0 };
+function rE(e) {
+  e && Jt.inject({ eventBus: e }), I0();
+  const t = S0("eventBus");
   t && t.emit && t.emit(f.PARALLAX_INITIALIZED);
 }
-function Jc(e) {
-  if (!e || Dr) return !1;
+function cu(e) {
+  if (!e || kr) return !1;
   e.classList.add(c.MOD_PARALLAX);
   const t = e.querySelector(`.${c.NAV_CONTENT}, .${c.NAV}`);
   if (!t) return !1;
   const r = () => {
-    Ci.scrollEvents++;
+    Li.scrollEvents++;
     const s = t.scrollTop * -0.3;
     e.style.setProperty("--parallax-offset", `${s}px`);
   };
-  return t.addEventListener("scroll", r, { passive: !0 }), li = () => {
+  return t.addEventListener("scroll", r, { passive: !0 }), fi = () => {
     t.removeEventListener("scroll", r), e.classList.remove(c.MOD_PARALLAX), e.style.removeProperty("--parallax-offset");
-  }, Dr = !0, Ci.enables++, !0;
+  }, kr = !0, Li.enables++, !0;
 }
-function Yo() {
-  li && (li(), li = null), Dr = !1, Ci.disables++;
+function ea() {
+  fi && (fi(), fi = null), kr = !1, Li.disables++;
 }
-function Bp(e) {
-  return Dr ? (Yo(), !1) : Jc(e);
+function nE(e) {
+  return kr ? (ea(), !1) : cu(e);
 }
-function Up() {
-  return Dr;
+function sE() {
+  return kr;
 }
-function jp() {
-  Yo();
+function iE() {
+  ea();
 }
-function Ko() {
-  return { ...Ci };
+function ta() {
+  return { ...Li };
 }
-function Fp() {
-  return { moduleId: xs, version: qo, portsInitialized: Zt.isInitialized(), enabled: Dr, metrics: Ko() };
+function oE() {
+  return { moduleId: zs, version: Qo, portsInitialized: Jt.isInitialized(), enabled: kr, metrics: ta() };
 }
-function Gp() {
-  return { status: Zt.isInitialized() ? "HEALTHY" : "DEGRADED", version: qo, moduleId: xs, portsInitialized: Zt.isInitialized(), checks: { enabled: Dr }, metrics: Ko() };
+function aE() {
+  return { status: Jt.isInitialized() ? "HEALTHY" : "DEGRADED", version: Qo, moduleId: zs, portsInitialized: Jt.isInitialized(), checks: { enabled: kr }, metrics: ta() };
 }
-var a0 = { init: zp, enable: Jc, disable: Yo, toggle: Bp, isEnabled: Up, destroy: jp, injectPorts: Pp, getPorts: Hp, getMetrics: Ko, info: Fp, healthCheck: Gp, VERSION: qo, MODULE_ID: xs };
-const Vp = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var C0 = { init: rE, enable: cu, disable: ea, toggle: nE, isEnabled: sE, destroy: iE, injectPorts: eE, getPorts: tE, getMetrics: ta, info: oE, healthCheck: aE, VERSION: Qo, MODULE_ID: zs };
+const lE = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: xs,
-  VERSION: qo,
-  default: a0,
-  destroy: jp,
-  disable: Yo,
-  enable: Jc,
-  getMetrics: Ko,
-  getPorts: Hp,
-  healthCheck: Gp,
-  info: Fp,
-  init: zp,
-  injectPorts: Pp,
-  isEnabled: Up,
-  toggle: Bp
-}, Symbol.toStringTag, { value: "Module" })), Wo = "6.2.0-REGION-AWARE", Ps = "sidebar-preload-critical-css", Jt = v({ moduleId: Ps });
-function l0() {
-  Jt.init();
+  MODULE_ID: zs,
+  VERSION: Qo,
+  default: C0,
+  destroy: iE,
+  disable: ea,
+  enable: cu,
+  getMetrics: ta,
+  getPorts: tE,
+  healthCheck: aE,
+  info: oE,
+  init: rE,
+  injectPorts: eE,
+  isEnabled: sE,
+  toggle: nE
+}, Symbol.toStringTag, { value: "Module" })), ra = "6.2.0-REGION-AWARE", Bs = "sidebar-preload-critical-css", Qt = v({ moduleId: Bs });
+function A0() {
+  Qt.init();
 }
-function c0(e) {
-  return Jt.get(e);
+function M0(e) {
+  return Qt.get(e);
 }
-function qp(e) {
-  return Jt.inject(e);
+function cE(e) {
+  return Qt.inject(e);
 }
-function Yp() {
-  return Jt.snapshot();
+function uE() {
+  return Qt.snapshot();
 }
-let bt = [], Xo = { injects: 0, customAdds: 0, removes: 0 };
-const Kp = ".dsd-sidebar{position:relative;width:100%;height:100%;background:var(--sidebar-bg,#0E0E12);z-index:1;display:flex;flex-direction:column;transition:width var(--sidebar-transition-slow,300ms)}.dsd-sidebar.dsd-sidebar--collapsed{width:var(--sidebar-width-collapsed,72px);min-width:var(--sidebar-width-collapsed,72px)}.dsd-sidebar.dsd-sidebar--collapsed .dsd-sidebar__item-text,.dsd-sidebar.dsd-sidebar--collapsed .dsd-sidebar__section-title,.dsd-sidebar.dsd-sidebar--collapsed .dsd-sidebar__group-title,.dsd-sidebar.dsd-sidebar--collapsed .dsd-sidebar__search,.dsd-sidebar.dsd-sidebar--collapsed .dsd-sidebar__badge,.dsd-sidebar.dsd-sidebar--collapsed .dsd-sidebar__group-chevron{display:none}.dsd-sidebar.dsd-sidebar--collapsed .dsd-sidebar__link{justify-content:center;padding:12px}.dsd-sidebar.dsd-sidebar--collapsed .dsd-sidebar__item-icon{margin:0}.dsd-sidebar__header{flex-shrink:0;padding:1rem;border-bottom:1px solid var(--sidebar-border,rgba(255,255,255,0.06))}.dsd-sidebar__nav{flex:1;overflow-y:auto;overflow-x:hidden}.dsd-sidebar__link{display:flex;align-items:center;padding:0.625rem 1rem;color:var(--sidebar-text-secondary,rgba(229,231,235,1));text-decoration:none;transition:background var(--sidebar-transition-fast,150ms),color var(--sidebar-transition-fast,150ms)}.dsd-sidebar__item-icon{width:var(--sidebar-icon-size,20px);height:var(--sidebar-icon-size,20px);margin-right:0.75rem;flex-shrink:0}.dsd-sidebar__item-text{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}@media(max-width:768px){.dsd-sidebar{transform:translateX(-100%);transition:transform 0.3s ease,width 0.3s ease}.dsd-sidebar--mobile-open{transform:translateX(0)}}";
-function Wp(e) {
-  e && Jt.inject({ eventBus: e }), l0(), d0();
-  const t = c0("eventBus");
+let _t = [], na = { injects: 0, customAdds: 0, removes: 0 };
+const dE = ".dsd-sidebar{position:relative;width:100%;height:100%;background:var(--sidebar-bg,#0E0E12);z-index:1;display:flex;flex-direction:column;transition:width var(--sidebar-transition-slow,300ms)}.dsd-sidebar.dsd-sidebar--collapsed{width:var(--sidebar-width-collapsed,72px);min-width:var(--sidebar-width-collapsed,72px)}.dsd-sidebar.dsd-sidebar--collapsed .dsd-sidebar__item-text,.dsd-sidebar.dsd-sidebar--collapsed .dsd-sidebar__section-title,.dsd-sidebar.dsd-sidebar--collapsed .dsd-sidebar__group-title,.dsd-sidebar.dsd-sidebar--collapsed .dsd-sidebar__search,.dsd-sidebar.dsd-sidebar--collapsed .dsd-sidebar__badge,.dsd-sidebar.dsd-sidebar--collapsed .dsd-sidebar__group-chevron{display:none}.dsd-sidebar.dsd-sidebar--collapsed .dsd-sidebar__link{justify-content:center;padding:12px}.dsd-sidebar.dsd-sidebar--collapsed .dsd-sidebar__item-icon{margin:0}.dsd-sidebar__header{flex-shrink:0;padding:1rem;border-bottom:1px solid var(--sidebar-border,rgba(255,255,255,0.06))}.dsd-sidebar__nav{flex:1;overflow-y:auto;overflow-x:hidden}.dsd-sidebar__link{display:flex;align-items:center;padding:0.625rem 1rem;color:var(--sidebar-text-secondary,rgba(229,231,235,1));text-decoration:none;transition:background var(--sidebar-transition-fast,150ms),color var(--sidebar-transition-fast,150ms)}.dsd-sidebar__item-icon{width:var(--sidebar-icon-size,20px);height:var(--sidebar-icon-size,20px);margin-right:0.75rem;flex-shrink:0}.dsd-sidebar__item-text{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}@media(max-width:768px){.dsd-sidebar{transform:translateX(-100%);transition:transform 0.3s ease,width 0.3s ease}.dsd-sidebar--mobile-open{transform:translateX(0)}}";
+function hE(e) {
+  e && Qt.inject({ eventBus: e }), A0(), O0();
+  const t = M0("eventBus");
   t && t.emit && (t.emit(f.CRITICAL_CSS_INJECTED), t.emit(f.PRELOAD_CSS_INITIALIZED));
 }
-function d0() {
+function O0() {
   if (document.getElementById("dsd-sidebar-critical-css")) return;
   const e = document.createElement("style");
-  e.id = "dsd-sidebar-critical-css", e.textContent = Kp, document.head.insertBefore(e, document.head.firstChild), bt.push(e), Xo.injects++;
+  e.id = "dsd-sidebar-critical-css", e.textContent = dE, document.head.insertBefore(e, document.head.firstChild), _t.push(e), na.injects++;
 }
-function Xp(e, t) {
+function fE(e, t) {
   const r = t || "dsd-sidebar-custom-" + Date.now();
   if (t) {
     const s = document.getElementById(r);
     s && s.remove();
   }
   const n = document.createElement("style");
-  return n.id = r, n.textContent = e, document.head.appendChild(n), bt.push(n), Xo.customAdds++, r;
+  return n.id = r, n.textContent = e, document.head.appendChild(n), _t.push(n), na.customAdds++, r;
 }
-function Zp(e) {
+function gE(e) {
   const t = document.getElementById(e);
-  return t ? (t.remove(), bt = bt.filter(function(r) {
+  return t ? (t.remove(), _t = _t.filter(function(r) {
     return r.id !== e;
-  }), Xo.removes++, !0) : !1;
+  }), na.removes++, !0) : !1;
 }
-function Jp() {
-  return Kp;
+function mE() {
+  return dE;
 }
-function Qc() {
-  bt.forEach(function(e) {
+function uu() {
+  _t.forEach(function(e) {
     e.remove();
-  }), bt = [];
+  }), _t = [];
 }
-function Qp() {
-  Qc();
+function pE() {
+  uu();
 }
-function Zo() {
-  return Object.assign({}, Xo, { injectedStyles: bt.length });
+function sa() {
+  return Object.assign({}, na, { injectedStyles: _t.length });
 }
-function eE() {
-  return { moduleId: Ps, version: Wo, portsInitialized: Jt.isInitialized(), injectedStyles: bt.length, criticalCSSPresent: !!document.getElementById("dsd-sidebar-critical-css"), metrics: Zo() };
+function EE() {
+  return { moduleId: Bs, version: ra, portsInitialized: Qt.isInitialized(), injectedStyles: _t.length, criticalCSSPresent: !!document.getElementById("dsd-sidebar-critical-css"), metrics: sa() };
 }
-function tE() {
-  return { status: Jt.isInitialized() ? "HEALTHY" : "DEGRADED", version: Wo, moduleId: Ps, portsInitialized: Jt.isInitialized(), checks: { injectedStyles: bt.length, criticalCSSPresent: !!document.getElementById("dsd-sidebar-critical-css") }, metrics: Zo() };
+function bE() {
+  return { status: Qt.isInitialized() ? "HEALTHY" : "DEGRADED", version: ra, moduleId: Bs, portsInitialized: Qt.isInitialized(), checks: { injectedStyles: _t.length, criticalCSSPresent: !!document.getElementById("dsd-sidebar-critical-css") }, metrics: sa() };
 }
-var u0 = { init: Wp, addCustomCSS: Xp, removeCustomCSS: Zp, getCriticalCSS: Jp, cleanup: Qc, destroy: Qp, injectPorts: qp, getPorts: Yp, getMetrics: Zo, info: eE, healthCheck: tE, VERSION: Wo, MODULE_ID: Ps };
-const rE = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var T0 = { init: hE, addCustomCSS: fE, removeCustomCSS: gE, getCriticalCSS: mE, cleanup: uu, destroy: pE, injectPorts: cE, getPorts: uE, getMetrics: sa, info: EE, healthCheck: bE, VERSION: ra, MODULE_ID: Bs };
+const _E = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: Ps,
-  VERSION: Wo,
-  addCustomCSS: Xp,
-  cleanup: Qc,
-  default: u0,
-  destroy: Qp,
-  getCriticalCSS: Jp,
-  getMetrics: Zo,
-  getPorts: Yp,
-  healthCheck: tE,
-  info: eE,
-  init: Wp,
-  injectPorts: qp,
-  removeCustomCSS: Zp
-}, Symbol.toStringTag, { value: "Module" })), Ln = "sidebar-resize-handler", $n = "7.1.0-ES6", ar = v({ moduleId: Ln });
-function h0() {
-  ar.init();
+  MODULE_ID: Bs,
+  VERSION: ra,
+  addCustomCSS: fE,
+  cleanup: uu,
+  default: T0,
+  destroy: pE,
+  getCriticalCSS: mE,
+  getMetrics: sa,
+  getPorts: uE,
+  healthCheck: bE,
+  info: EE,
+  init: hE,
+  injectPorts: cE,
+  removeCustomCSS: gE
+}, Symbol.toStringTag, { value: "Module" })), Nn = "sidebar-resize-handler", Rn = "7.1.0-ES6", lr = v({ moduleId: Nn });
+function D0() {
+  lr.init();
 }
-function rs(e) {
-  return ar.get(e);
+function is(e) {
+  return lr.get(e);
 }
-function f0(e) {
-  return ar.inject(e);
+function L0(e) {
+  return lr.inject(e);
 }
-function g0() {
-  return ar.snapshot();
+function $0() {
+  return lr.snapshot();
 }
-const D = { initialized: !1, ctx: null, container: null, isResizing: !1, startX: 0, startWidth: 0, resizes: 0, errors: 0, cleanups: [] }, Le = { minWidth: 200, maxWidth: 400, defaultWidth: 260, storageKey: "dsd-sidebar-width" };
-function Kn(e, t, r) {
-  return { ok: e, data: t || null, meta: { moduleId: Ln, version: $n, timestamp: (/* @__PURE__ */ new Date()).toISOString() }, errors: r || [] };
+const D = { initialized: !1, ctx: null, container: null, isResizing: !1, startX: 0, startWidth: 0, resizes: 0, errors: 0, cleanups: [] }, $e = { minWidth: 200, maxWidth: 400, defaultWidth: 260, storageKey: "dsd-sidebar-width" };
+function Zn(e, t, r) {
+  return { ok: e, data: t || null, meta: { moduleId: Nn, version: Rn, timestamp: (/* @__PURE__ */ new Date()).toISOString() }, errors: r || [] };
 }
-function ed() {
+function du() {
   try {
-    const e = localStorage.getItem(Le.storageKey);
-    return e ? parseInt(e, 10) : Le.defaultWidth;
+    const e = localStorage.getItem($e.storageKey);
+    return e ? parseInt(e, 10) : $e.defaultWidth;
   } catch {
-    return Le.defaultWidth;
+    return $e.defaultWidth;
   }
 }
-function Jo(e) {
+function ia(e) {
   try {
-    localStorage.setItem(Le.storageKey, String(e));
+    localStorage.setItem($e.storageKey, String(e));
   } catch {
   }
 }
-function Qo() {
-  return D.container ? D.container.offsetWidth : ed();
+function oa() {
+  return D.container ? D.container.offsetWidth : du();
 }
-function nE(e) {
-  const t = Math.max(Le.minWidth, Math.min(Le.maxWidth, e));
-  D.container && (D.container.style.width = `${t}px`), Jo(t);
-  const r = rs("eventBus");
+function yE(e) {
+  const t = Math.max($e.minWidth, Math.min($e.maxWidth, e));
+  D.container && (D.container.style.width = `${t}px`), ia(t);
+  const r = is("eventBus");
   return r && r.emit && r.emit(f.RESIZE, { width: t }), t;
 }
-function sE() {
-  D.container && (D.container.style.width = `${Le.defaultWidth}px`), Jo(Le.defaultWidth);
-  const e = rs("eventBus");
-  return e && e.emit && e.emit(f.RESIZE_RESET, { width: Le.defaultWidth }), Le.defaultWidth;
+function vE() {
+  D.container && (D.container.style.width = `${$e.defaultWidth}px`), ia($e.defaultWidth);
+  const e = is("eventBus");
+  return e && e.emit && e.emit(f.RESIZE_RESET, { width: $e.defaultWidth }), $e.defaultWidth;
 }
-function iE(e) {
+function IE(e) {
   const t = e.container, r = e.eventBus;
   if (!t) return () => {
   };
-  r && ar.inject({ eventBus: r }), D.container = t;
+  r && lr.inject({ eventBus: r }), D.container = t;
   let n = t.querySelector(`.${c.RESIZE_HANDLE}`);
-  n || (n = document.createElement("div"), n.className = c.RESIZE_HANDLE, n.setAttribute("role", "separator"), n.setAttribute("aria-label", "Redimensionar sidebar"), n.setAttribute("tabindex", "0"), t.appendChild(n)), t.style.width = `${ed()}px`;
+  n || (n = document.createElement("div"), n.className = c.RESIZE_HANDLE, n.setAttribute("role", "separator"), n.setAttribute("aria-label", "Redimensionar sidebar"), n.setAttribute("tabindex", "0"), t.appendChild(n)), t.style.width = `${du()}px`;
   let s = null, i = null;
   const o = (a) => {
     a.preventDefault(), D.isResizing = !0, D.startX = a.clientX, D.startWidth = t.offsetWidth, t.classList.add(c.MOD_RESIZING), n.classList.add(c.RESIZE_HANDLE_ACTIVE), document.body.style.cursor = "col-resize", document.body.style.userSelect = "none", s = (l) => {
       if (!D.isResizing) return;
-      const d = l.clientX - D.startX, u = Math.max(Le.minWidth, Math.min(Le.maxWidth, D.startWidth + d));
-      t.style.width = `${u}px`;
-      const h = rs("eventBus");
-      h && h.emit && h.emit(f.RESIZE, { width: u });
+      const u = l.clientX - D.startX, d = Math.max($e.minWidth, Math.min($e.maxWidth, D.startWidth + u));
+      t.style.width = `${d}px`;
+      const h = is("eventBus");
+      h && h.emit && h.emit(f.RESIZE, { width: d });
     }, i = () => {
       if (!D.isResizing) return;
       D.isResizing = !1, D.resizes++;
       const l = t.offsetWidth;
-      Jo(l), t.classList.remove(c.MOD_RESIZING), n.classList.remove(c.RESIZE_HANDLE_ACTIVE), document.body.style.cursor = "", document.body.style.userSelect = "", document.removeEventListener("mousemove", s), document.removeEventListener("mouseup", i);
-      const d = rs("eventBus");
-      d && d.emit && d.emit(f.RESIZE_END, { width: l });
+      ia(l), t.classList.remove(c.MOD_RESIZING), n.classList.remove(c.RESIZE_HANDLE_ACTIVE), document.body.style.cursor = "", document.body.style.userSelect = "", document.removeEventListener("mousemove", s), document.removeEventListener("mouseup", i);
+      const u = is("eventBus");
+      u && u.emit && u.emit(f.RESIZE_END, { width: l });
     }, document.addEventListener("mousemove", s), document.addEventListener("mouseup", i);
   };
   return n.addEventListener("mousedown", o), D.cleanups.push(() => {
     n.removeEventListener("mousedown", o);
   }), () => {
-    ea();
+    aa();
   };
 }
-function oE(e) {
-  if (D.initialized) return Kn(!0, { alreadyInitialized: !0 });
+function SE(e) {
+  if (D.initialized) return Zn(!0, { alreadyInitialized: !0 });
   try {
-    D.ctx = e, e && e.ports && ar.inject(e.ports), h0(), D.initialized = !0;
-    const t = rs("eventBus");
-    return t && t.emit && t.emit(f.RESIZE_INITIALIZED, { version: $n }), Kn(!0, { initialized: !0 });
+    D.ctx = e, e && e.ports && lr.inject(e.ports), D0(), D.initialized = !0;
+    const t = is("eventBus");
+    return t && t.emit && t.emit(f.RESIZE_INITIALIZED, { version: Rn }), Zn(!0, { initialized: !0 });
   } catch (t) {
-    return D.errors++, Kn(!1, null, [{ code: "INIT_ERROR", message: t.message }]);
+    return D.errors++, Zn(!1, null, [{ code: "INIT_ERROR", message: t.message }]);
   }
 }
-function ea() {
+function aa() {
   for (let e = 0; e < D.cleanups.length; e++)
     try {
       D.cleanups[e]();
     } catch {
     }
-  return D.cleanups = [], D.initialized = !1, D.container = null, Kn(!0, { cleanedUp: !0 });
+  return D.cleanups = [], D.initialized = !1, D.container = null, Zn(!0, { cleanedUp: !0 });
 }
-function aE() {
-  return ea();
+function CE() {
+  return aa();
 }
-function lE() {
+function AE() {
   const e = {
     initialized: D.initialized,
     notResizing: !D.isResizing,
@@ -9113,79 +9247,79 @@ function lE() {
   return D.initialized ? t < r && (n = "DEGRADED") : n = "NOT_INITIALIZED", {
     status: n,
     score: { passed: t, total: r, percentage: Math.round(t / r * 100) },
-    moduleId: Ln,
-    version: $n,
-    portsInitialized: ar.isInitialized(),
+    moduleId: Nn,
+    version: Rn,
+    portsInitialized: lr.isInitialized(),
     checks: e,
-    metrics: { resizes: D.resizes, errors: D.errors, currentWidth: Qo() },
+    metrics: { resizes: D.resizes, errors: D.errors, currentWidth: oa() },
     timestamp: Date.now()
   };
 }
-function cE() {
-  return Kn(!0, {
-    moduleId: Ln,
-    version: $n,
-    portsInitialized: ar.isInitialized(),
+function ME() {
+  return Zn(!0, {
+    moduleId: Nn,
+    version: Rn,
+    portsInitialized: lr.isInitialized(),
     initialized: D.initialized,
     resizes: D.resizes,
-    currentWidth: Qo()
+    currentWidth: oa()
   });
 }
-const dE = { singleton: !0, critical: !1, rendersUI: !0, category: "layout", priority: "normal" };
-function uE() {
+const OE = { singleton: !0, critical: !1, rendersUI: !0, category: "layout", priority: "normal" };
+function TE() {
   return { resizes: D.resizes, errors: D.errors };
 }
-var m0 = { id: Ln, version: $n, capabilities: dE, init: oE, cleanup: ea, destroy: aE, healthCheck: lE, info: cE, getMetrics: uE, setupResizeHandle: iE, getWidth: Qo, setWidth: nE, resetWidth: sE };
-const hE = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var k0 = { id: Nn, version: Rn, capabilities: OE, init: SE, cleanup: aa, destroy: CE, healthCheck: AE, info: ME, getMetrics: TE, setupResizeHandle: IE, getWidth: oa, setWidth: yE, resetWidth: vE };
+const DE = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: Ln,
-  VERSION: $n,
-  capabilities: dE,
-  cleanup: ea,
-  default: m0,
-  destroy: aE,
-  getMetrics: uE,
-  getPorts: g0,
-  getSavedWidth: ed,
-  getWidth: Qo,
-  healthCheck: lE,
-  info: cE,
-  init: oE,
-  injectPorts: f0,
-  resetWidth: sE,
-  saveWidth: Jo,
-  setWidth: nE,
-  setupResizeHandle: iE
-}, Symbol.toStringTag, { value: "Module" })), ta = "6.1.0-ES6", Hs = "sidebar-screen-reader", Qt = v({ moduleId: Hs });
-function p0() {
-  Qt.init();
+  MODULE_ID: Nn,
+  VERSION: Rn,
+  capabilities: OE,
+  cleanup: aa,
+  default: k0,
+  destroy: CE,
+  getMetrics: TE,
+  getPorts: $0,
+  getSavedWidth: du,
+  getWidth: oa,
+  healthCheck: AE,
+  info: ME,
+  init: SE,
+  injectPorts: L0,
+  resetWidth: vE,
+  saveWidth: ia,
+  setWidth: yE,
+  setupResizeHandle: IE
+}, Symbol.toStringTag, { value: "Module" })), la = "6.1.0-ES6", Us = "sidebar-screen-reader", er = v({ moduleId: Us });
+function w0() {
+  er.init();
 }
-function E0(e) {
-  return Qt.get(e);
+function N0(e) {
+  return er.get(e);
 }
-function fE(e) {
-  return Qt.inject(e);
+function LE(e) {
+  return er.inject(e);
 }
-function gE() {
-  return Qt.snapshot();
+function $E() {
+  return er.snapshot();
 }
-let ne = null, Q = null, Lt = null, ns = [], td = { announcements: 0, enhancements: 0 };
-function b0() {
-  return ne || (ne = document.createElement("div"), ne.setAttribute("role", "status"), ne.setAttribute("aria-live", "polite"), ne.setAttribute("aria-atomic", "true"), ne.className = "sr-only", ne.style.cssText = "position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;", document.body.appendChild(ne), ne);
+let ie = null, ee = null, $t = null, os = [], hu = { announcements: 0, enhancements: 0 };
+function R0() {
+  return ie || (ie = document.createElement("div"), ie.setAttribute("role", "status"), ie.setAttribute("aria-live", "polite"), ie.setAttribute("aria-atomic", "true"), ie.className = "sr-only", ie.style.cssText = "position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;", document.body.appendChild(ie), ie);
 }
-function mE(e) {
-  e && Qt.inject({ eventBus: e }), p0();
-  const t = E0("eventBus");
+function kE(e) {
+  e && er.inject({ eventBus: e }), w0();
+  const t = N0("eventBus");
   t && t.emit && t.emit(f.SCREEN_READER_INITIALIZED);
 }
-function Ge(e, t = "polite") {
-  const r = b0();
-  r.setAttribute("aria-live", t), r.textContent = "", td.announcements++, Lt && clearTimeout(Lt), Lt = setTimeout(() => {
-    r.textContent = e, Lt = null;
+function Ve(e, t = "polite") {
+  const r = R0();
+  r.setAttribute("aria-live", t), r.textContent = "", hu.announcements++, $t && clearTimeout($t), $t = setTimeout(() => {
+    r.textContent = e, $t = null;
   }, 100);
 }
-function pE(e) {
-  e && (td.enhancements++, e.setAttribute("role", "navigation"), e.setAttribute("aria-label", "Menu principal"), e.querySelectorAll(`.${c.SECTION}`).forEach((t, r) => {
+function wE(e) {
+  e && (hu.enhancements++, e.setAttribute("role", "navigation"), e.setAttribute("aria-label", "Menu principal"), e.querySelectorAll(`.${c.SECTION}`).forEach((t, r) => {
     t.setAttribute("role", "region");
     const n = t.querySelector(`.${c.GROUP_TITLE}`), s = (n == null ? void 0 : n.textContent) || `Seção ${r + 1}`;
     t.setAttribute("aria-label", s);
@@ -9199,103 +9333,103 @@ function pE(e) {
     var n;
     const r = (n = t.closest(`.${c.SECTION}`)) == null ? void 0 : n.classList.contains(c.SECTION_EXPANDED);
     t.setAttribute("aria-expanded", String(r));
-  }), _0(e));
+  }), x0(e));
 }
-function _0(e) {
-  if (Q) return;
-  Q = document.createElement("a"), Q.className = `${c.SKIP_LINK} sr-only-focusable`, Q.href = "#main-content", Q.textContent = "Pular para conteúdo principal", Q.style.cssText = "position:absolute;top:-40px;left:0;padding:8px 16px;background:var(--sidebar-accent-primary,#7B6EF6);color:white;z-index:10000;transition:top 0.2s;";
+function x0(e) {
+  if (ee) return;
+  ee = document.createElement("a"), ee.className = `${c.SKIP_LINK} sr-only-focusable`, ee.href = "#main-content", ee.textContent = "Pular para conteúdo principal", ee.style.cssText = "position:absolute;top:-40px;left:0;padding:8px 16px;background:var(--sidebar-accent-primary,#7B6EF6);color:white;z-index:10000;transition:top 0.2s;";
   const t = () => {
-    Q.style.top = "0";
+    ee.style.top = "0";
   }, r = () => {
-    Q.style.top = "-40px";
+    ee.style.top = "-40px";
   };
-  Q.addEventListener("focus", t), Q.addEventListener("blur", r), ns.push(() => {
-    Q.removeEventListener("focus", t);
-  }), ns.push(() => {
-    Q.removeEventListener("blur", r);
-  }), e.insertBefore(Q, e.firstChild);
+  ee.addEventListener("focus", t), ee.addEventListener("blur", r), os.push(() => {
+    ee.removeEventListener("focus", t);
+  }), os.push(() => {
+    ee.removeEventListener("blur", r);
+  }), e.insertBefore(ee, e.firstChild);
 }
-function EE(e) {
-  Ge(`Navegando para ${e}`);
+function NE(e) {
+  Ve(`Navegando para ${e}`);
 }
-function bE(e, t) {
-  Ge(`${e} ${t ? "expandido" : "colapsado"}`);
+function RE(e, t) {
+  Ve(`${e} ${t ? "expandido" : "colapsado"}`);
 }
-function _E(e) {
-  Ge(e === 0 ? "Nenhum resultado encontrado" : e === 1 ? "1 resultado encontrado" : `${e} resultados encontrados`);
+function xE(e) {
+  Ve(e === 0 ? "Nenhum resultado encontrado" : e === 1 ? "1 resultado encontrado" : `${e} resultados encontrados`);
 }
-function yE(e) {
-  e == null || e.classList.add(c.MOD_HIGH_CONTRAST), Ge("Modo de alto contraste ativado");
+function PE(e) {
+  e == null || e.classList.add(c.MOD_HIGH_CONTRAST), Ve("Modo de alto contraste ativado");
 }
-function vE(e) {
-  e == null || e.classList.remove(c.MOD_HIGH_CONTRAST), Ge("Modo de alto contraste desativado");
+function HE(e) {
+  e == null || e.classList.remove(c.MOD_HIGH_CONTRAST), Ve("Modo de alto contraste desativado");
 }
-function IE(e) {
-  e == null || e.classList.add(c.MOD_LARGE_TEXT), Ge("Texto grande ativado");
+function zE(e) {
+  e == null || e.classList.add(c.MOD_LARGE_TEXT), Ve("Texto grande ativado");
 }
-function SE(e) {
-  e == null || e.classList.remove(c.MOD_LARGE_TEXT), Ge("Texto grande desativado");
+function BE(e) {
+  e == null || e.classList.remove(c.MOD_LARGE_TEXT), Ve("Texto grande desativado");
 }
-function CE() {
-  Lt && (clearTimeout(Lt), Lt = null), ns.forEach((e) => {
+function UE() {
+  $t && (clearTimeout($t), $t = null), os.forEach((e) => {
     try {
       e();
     } catch {
     }
-  }), ns = [], ne == null || ne.remove(), ne = null, Q == null || Q.remove(), Q = null;
+  }), os = [], ie == null || ie.remove(), ie = null, ee == null || ee.remove(), ee = null;
 }
-function ra() {
-  return { ...td };
+function ca() {
+  return { ...hu };
 }
-function AE() {
-  return { moduleId: Hs, version: ta, portsInitialized: Qt.isInitialized(), hasLiveRegion: !!ne, hasSkipLink: !!Q, cleanups: ns.length, metrics: ra() };
+function jE() {
+  return { moduleId: Us, version: la, portsInitialized: er.isInitialized(), hasLiveRegion: !!ie, hasSkipLink: !!ee, cleanups: os.length, metrics: ca() };
 }
-function ME() {
-  return { status: Qt.isInitialized() ? "HEALTHY" : "DEGRADED", version: ta, moduleId: Hs, portsInitialized: Qt.isInitialized(), checks: { liveRegionReady: !!ne || !0, noOrphanTimers: !Lt }, metrics: ra() };
+function FE() {
+  return { status: er.isInitialized() ? "HEALTHY" : "DEGRADED", version: la, moduleId: Us, portsInitialized: er.isInitialized(), checks: { liveRegionReady: !!ie || !0, noOrphanTimers: !$t }, metrics: ca() };
 }
-var y0 = { init: mE, announce: Ge, enhance: pE, announceNavigation: EE, announceExpansion: bE, announceSearchResults: _E, enableHighContrast: yE, disableHighContrast: vE, enableLargeText: IE, disableLargeText: SE, destroy: CE, injectPorts: fE, getPorts: gE, getMetrics: ra, info: AE, healthCheck: ME, VERSION: ta, MODULE_ID: Hs };
-const OE = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var P0 = { init: kE, announce: Ve, enhance: wE, announceNavigation: NE, announceExpansion: RE, announceSearchResults: xE, enableHighContrast: PE, disableHighContrast: HE, enableLargeText: zE, disableLargeText: BE, destroy: UE, injectPorts: LE, getPorts: $E, getMetrics: ca, info: jE, healthCheck: FE, VERSION: la, MODULE_ID: Us };
+const GE = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: Hs,
-  VERSION: ta,
-  announce: Ge,
-  announceExpansion: bE,
-  announceNavigation: EE,
-  announceSearchResults: _E,
-  default: y0,
-  destroy: CE,
-  disableHighContrast: vE,
-  disableLargeText: SE,
-  enableHighContrast: yE,
-  enableLargeText: IE,
-  enhance: pE,
-  getMetrics: ra,
-  getPorts: gE,
-  healthCheck: ME,
-  info: AE,
-  init: mE,
-  injectPorts: fE
-}, Symbol.toStringTag, { value: "Module" })), na = "6.1.0-ES6", zs = "sidebar-submenu", er = v({ moduleId: zs });
-function v0() {
-  er.init();
+  MODULE_ID: Us,
+  VERSION: la,
+  announce: Ve,
+  announceExpansion: RE,
+  announceNavigation: NE,
+  announceSearchResults: xE,
+  default: P0,
+  destroy: UE,
+  disableHighContrast: HE,
+  disableLargeText: BE,
+  enableHighContrast: PE,
+  enableLargeText: zE,
+  enhance: wE,
+  getMetrics: ca,
+  getPorts: $E,
+  healthCheck: FE,
+  info: jE,
+  init: kE,
+  injectPorts: LE
+}, Symbol.toStringTag, { value: "Module" })), ua = "6.1.0-ES6", js = "sidebar-submenu", tr = v({ moduleId: js });
+function H0() {
+  tr.init();
 }
-function TE(e) {
-  return er.get(e);
+function VE(e) {
+  return tr.get(e);
 }
-function DE(e) {
-  return er.inject(e);
+function qE(e) {
+  return tr.inject(e);
 }
-function LE() {
-  return er.snapshot();
+function YE() {
+  return tr.snapshot();
 }
-let nl = [], Bs = { creates: 0, toggles: 0, opens: 0, closes: 0 };
-function $E(e) {
-  e && er.inject({ eventBus: e }), v0();
-  const t = TE("eventBus");
+let hl = [], Fs = { creates: 0, toggles: 0, opens: 0, closes: 0 };
+function KE(e) {
+  e && tr.inject({ eventBus: e }), H0();
+  const t = VE("eventBus");
   t && t.emit && t.emit(f.SUBMENU_INITIALIZED);
 }
-function rd(e) {
-  Bs.creates++;
+function fu(e) {
+  Fs.creates++;
   const t = document.createElement("ul");
   return t.className = c.SUBMENU, t.setAttribute("role", "menu"), e.forEach((r) => {
     const n = document.createElement("li");
@@ -9304,374 +9438,374 @@ function rd(e) {
     s.className = c.SUBMENU_LINK, s.href = r.route || `#${r.id}`, s.setAttribute("role", "menuitem"), s.setAttribute("data-submenu-item", r.id), s.textContent = r.label || r.title || r.id, n.appendChild(s), t.appendChild(n);
   }), t;
 }
-function kE(e, t) {
+function WE(e, t) {
   if (!e || !(t != null && t.length)) return null;
   e.classList.add(c.ITEM_HAS_SUBMENU);
-  const r = rd(t);
+  const r = fu(t);
   return e.appendChild(r), r;
 }
-function nd(e) {
+function gu(e) {
   if (!(e != null && e.classList.contains(c.ITEM_HAS_SUBMENU))) return !1;
-  Bs.toggles++;
-  const t = e.classList.toggle(c.ITEM_SUBMENU_OPEN), r = TE("eventBus");
+  Fs.toggles++;
+  const t = e.classList.toggle(c.ITEM_SUBMENU_OPEN), r = VE("eventBus");
   return r && r.emit && r.emit(f.SUBMENU_TOGGLED, { itemId: e.dataset.itemId, isOpen: t }), t;
 }
-function wE(e) {
-  return e != null && e.classList.contains(c.ITEM_HAS_SUBMENU) ? (Bs.opens++, e.classList.add(c.ITEM_SUBMENU_OPEN), !0) : !1;
+function XE(e) {
+  return e != null && e.classList.contains(c.ITEM_HAS_SUBMENU) ? (Fs.opens++, e.classList.add(c.ITEM_SUBMENU_OPEN), !0) : !1;
 }
-function NE(e) {
-  return e != null && e.classList.contains(c.ITEM_HAS_SUBMENU) ? (Bs.closes++, e.classList.remove(c.ITEM_SUBMENU_OPEN), !0) : !1;
+function ZE(e) {
+  return e != null && e.classList.contains(c.ITEM_HAS_SUBMENU) ? (Fs.closes++, e.classList.remove(c.ITEM_SUBMENU_OPEN), !0) : !1;
 }
-function RE(e) {
+function JE(e) {
   e && e.querySelectorAll(`.${c.ITEM_SUBMENU_OPEN}`).forEach((t) => {
     t.classList.remove(c.ITEM_SUBMENU_OPEN);
   });
 }
-function xE(e) {
+function QE(e) {
   if (!e) return () => {
   };
   const t = (n) => {
     const s = n.target.closest(`.${c.ITEM_HAS_SUBMENU}`);
     if (!s) return;
-    n.target.closest(`.${c.LINK}`) && (n.preventDefault(), nd(s));
+    n.target.closest(`.${c.LINK}`) && (n.preventDefault(), gu(s));
   };
   e.addEventListener("click", t);
   const r = () => {
     e.removeEventListener("click", t);
   };
-  return nl.push(r), r;
+  return hl.push(r), r;
 }
-function PE() {
-  nl.forEach((e) => {
+function eb() {
+  hl.forEach((e) => {
     try {
       e();
     } catch {
     }
-  }), nl = [];
+  }), hl = [];
 }
-function sa() {
-  return { ...Bs };
+function da() {
+  return { ...Fs };
 }
-function HE() {
-  return { moduleId: zs, version: na, portsInitialized: er.isInitialized(), metrics: sa() };
+function tb() {
+  return { moduleId: js, version: ua, portsInitialized: tr.isInitialized(), metrics: da() };
 }
-function zE() {
-  return { status: er.isInitialized() ? "HEALTHY" : "DEGRADED", version: na, moduleId: zs, portsInitialized: er.isInitialized(), checks: {}, metrics: sa() };
+function rb() {
+  return { status: tr.isInitialized() ? "HEALTHY" : "DEGRADED", version: ua, moduleId: js, portsInitialized: tr.isInitialized(), checks: {}, metrics: da() };
 }
-var I0 = { init: $E, createSubmenu: rd, addSubmenuToItem: kE, toggleSubmenu: nd, openSubmenu: wE, closeSubmenu: NE, closeAllSubmenus: RE, setupSubmenuHandlers: xE, destroy: PE, injectPorts: DE, getPorts: LE, getMetrics: sa, info: HE, healthCheck: zE, VERSION: na, MODULE_ID: zs };
-const BE = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var z0 = { init: KE, createSubmenu: fu, addSubmenuToItem: WE, toggleSubmenu: gu, openSubmenu: XE, closeSubmenu: ZE, closeAllSubmenus: JE, setupSubmenuHandlers: QE, destroy: eb, injectPorts: qE, getPorts: YE, getMetrics: da, info: tb, healthCheck: rb, VERSION: ua, MODULE_ID: js };
+const nb = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: zs,
-  VERSION: na,
-  addSubmenuToItem: kE,
-  closeAllSubmenus: RE,
-  closeSubmenu: NE,
-  createSubmenu: rd,
-  default: I0,
-  destroy: PE,
-  getMetrics: sa,
-  getPorts: LE,
-  healthCheck: zE,
-  info: HE,
-  init: $E,
-  injectPorts: DE,
-  openSubmenu: wE,
-  setupSubmenuHandlers: xE,
-  toggleSubmenu: nd
-}, Symbol.toStringTag, { value: "Module" })), ia = "6.1.0-ES6", Us = "sidebar-theme-handler", tr = v({ moduleId: Us });
-function S0() {
-  tr.init();
+  MODULE_ID: js,
+  VERSION: ua,
+  addSubmenuToItem: WE,
+  closeAllSubmenus: JE,
+  closeSubmenu: ZE,
+  createSubmenu: fu,
+  default: z0,
+  destroy: eb,
+  getMetrics: da,
+  getPorts: YE,
+  healthCheck: rb,
+  info: tb,
+  init: KE,
+  injectPorts: qE,
+  openSubmenu: XE,
+  setupSubmenuHandlers: QE,
+  toggleSubmenu: gu
+}, Symbol.toStringTag, { value: "Module" })), ha = "6.1.0-ES6", Gs = "sidebar-theme-handler", rr = v({ moduleId: Gs });
+function B0() {
+  rr.init();
 }
-function C0(e) {
-  return tr.get(e);
+function U0(e) {
+  return rr.get(e);
 }
-function UE(e) {
-  return tr.inject(e);
+function sb(e) {
+  return rr.inject(e);
 }
-function jE() {
-  return tr.snapshot();
+function ib() {
+  return rr.snapshot();
 }
-const FE = "dsd-sidebar-theme", Ve = ["dark", "light", "high-contrast"], sl = { dark: c.MOD_DARK, light: c.MOD_LIGHT, "high-contrast": c.MOD_HIGH_CONTRAST };
-let qr = "dark", an = null, sd = { sets: 0, toggles: 0 };
-function GE() {
+const ob = "dsd-sidebar-theme", qe = ["dark", "light", "high-contrast"], fl = { dark: c.MOD_DARK, light: c.MOD_LIGHT, "high-contrast": c.MOD_HIGH_CONTRAST };
+let Wr = "dark", dn = null, mu = { sets: 0, toggles: 0 };
+function ab() {
   try {
-    const e = localStorage.getItem(FE);
-    return Ve.includes(e) ? e : "dark";
+    const e = localStorage.getItem(ob);
+    return qe.includes(e) ? e : "dark";
   } catch {
     return "dark";
   }
 }
-function A0(e) {
+function j0(e) {
   try {
-    localStorage.setItem(FE, e);
+    localStorage.setItem(ob, e);
   } catch {
   }
 }
-function VE(e, t) {
-  e && tr.inject({ eventBus: e }), S0(), an = t;
-  const r = GE();
-  js(t, r);
-  const n = C0("eventBus");
+function lb(e, t) {
+  e && rr.inject({ eventBus: e }), B0(), dn = t;
+  const r = ab();
+  Vs(t, r);
+  const n = U0("eventBus");
   n && n.emit && n.emit(f.THEME_HANDLER_INITIALIZED);
 }
-function js(e, t) {
-  if (!e || !Ve.includes(t)) return !1;
-  if (an = e, sd.sets++, Ve.forEach((r) => {
-    const n = sl[r];
+function Vs(e, t) {
+  if (!e || !qe.includes(t)) return !1;
+  if (dn = e, mu.sets++, qe.forEach((r) => {
+    const n = fl[r];
     n && e.classList.remove(n);
   }), t !== "dark") {
-    const r = sl[t];
+    const r = fl[t];
     r && e.classList.add(r);
   }
-  return qr = t, A0(t), !0;
+  return Wr = t, j0(t), !0;
 }
-function qE() {
-  return qr;
+function cb() {
+  return Wr;
 }
-function YE(e) {
-  sd.toggles++;
-  const r = (Ve.indexOf(qr) + 1) % Ve.length;
-  return js(e, Ve[r]);
+function ub(e) {
+  mu.toggles++;
+  const r = (qe.indexOf(Wr) + 1) % qe.length;
+  return Vs(e, qe[r]);
 }
-function KE(e) {
-  an = e;
-  const t = GE();
-  return js(e, t);
+function db(e) {
+  dn = e;
+  const t = ab();
+  return Vs(e, t);
 }
-function WE() {
-  return [].concat(Ve);
+function hb() {
+  return [].concat(qe);
 }
-function XE() {
-  an && Ve.forEach((e) => {
-    const t = sl[e];
-    t && an.classList.remove(t);
-  }), an = null, qr = "dark";
+function fb() {
+  dn && qe.forEach((e) => {
+    const t = fl[e];
+    t && dn.classList.remove(t);
+  }), dn = null, Wr = "dark";
 }
-function oa() {
-  return { ...sd, currentTheme: qr };
+function fa() {
+  return { ...mu, currentTheme: Wr };
 }
-function ZE() {
-  return { moduleId: Us, version: ia, portsInitialized: tr.isInitialized(), currentTheme: qr, availableThemes: Ve, metrics: oa() };
+function gb() {
+  return { moduleId: Gs, version: ha, portsInitialized: rr.isInitialized(), currentTheme: Wr, availableThemes: qe, metrics: fa() };
 }
-function JE() {
-  return { status: tr.isInitialized() ? "HEALTHY" : "DEGRADED", version: ia, moduleId: Us, portsInitialized: tr.isInitialized(), checks: { currentTheme: qr, availableThemes: Ve.length }, metrics: oa() };
+function mb() {
+  return { status: rr.isInitialized() ? "HEALTHY" : "DEGRADED", version: ha, moduleId: Gs, portsInitialized: rr.isInitialized(), checks: { currentTheme: Wr, availableThemes: qe.length }, metrics: fa() };
 }
-var M0 = { init: VE, setTheme: js, getTheme: qE, toggleTheme: YE, initTheme: KE, getAvailableThemes: WE, destroy: XE, injectPorts: UE, getPorts: jE, getMetrics: oa, info: ZE, healthCheck: JE, VERSION: ia, MODULE_ID: Us, THEMES: Ve };
-const QE = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var F0 = { init: lb, setTheme: Vs, getTheme: cb, toggleTheme: ub, initTheme: db, getAvailableThemes: hb, destroy: fb, injectPorts: sb, getPorts: ib, getMetrics: fa, info: gb, healthCheck: mb, VERSION: ha, MODULE_ID: Gs, THEMES: qe };
+const pb = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: Us,
-  VERSION: ia,
-  default: M0,
-  destroy: XE,
-  getAvailableThemes: WE,
-  getMetrics: oa,
-  getPorts: jE,
-  getTheme: qE,
-  healthCheck: JE,
-  info: ZE,
-  init: VE,
-  initTheme: KE,
-  injectPorts: UE,
-  setTheme: js,
-  toggleTheme: YE
-}, Symbol.toStringTag, { value: "Module" })), aa = "6.1.0-ES6", Fs = "sidebar-virtual-list", rr = v({ moduleId: Fs });
-function O0() {
-  rr.init();
+  MODULE_ID: Gs,
+  VERSION: ha,
+  default: F0,
+  destroy: fb,
+  getAvailableThemes: hb,
+  getMetrics: fa,
+  getPorts: ib,
+  getTheme: cb,
+  healthCheck: mb,
+  info: gb,
+  init: lb,
+  initTheme: db,
+  injectPorts: sb,
+  setTheme: Vs,
+  toggleTheme: ub
+}, Symbol.toStringTag, { value: "Module" })), ga = "6.1.0-ES6", qs = "sidebar-virtual-list", nr = v({ moduleId: qs });
+function G0() {
+  nr.init();
 }
-function la(e) {
-  return rr.get(e);
+function ma(e) {
+  return nr.get(e);
 }
-function eb(e) {
-  return rr.inject(e);
+function Eb(e) {
+  return nr.inject(e);
 }
-function tb() {
-  return rr.snapshot();
+function bb() {
+  return nr.snapshot();
 }
-let V = null, ie = { itemHeight: 40, bufferSize: 5, threshold: 50 }, M = { items: [], visibleItems: [], scrollTop: 0, startIndex: 0, endIndex: 0, totalHeight: 0, enabled: !1 }, Un = null, ca = { enables: 0, disables: 0, renders: 0 };
-function rb(e, t, r) {
-  e && rr.inject({ eventBus: e }), O0(), V = t, ie = Object.assign({}, ie, r || {});
-  const n = la("eventBus");
+let q = null, ae = { itemHeight: 40, bufferSize: 5, threshold: 50 }, M = { items: [], visibleItems: [], scrollTop: 0, startIndex: 0, endIndex: 0, totalHeight: 0, enabled: !1 }, Gn = null, pa = { enables: 0, disables: 0, renders: 0 };
+function _b(e, t, r) {
+  e && nr.inject({ eventBus: e }), G0(), q = t, ae = Object.assign({}, ae, r || {});
+  const n = ma("eventBus");
   n && n.emit && n.emit(f.VIRTUAL_INITIALIZED);
 }
-function id(e) {
-  if (!V || e.length < ie.threshold) return !1;
-  ca.enables++, M.items = e, M.enabled = !0, M.totalHeight = e.length * ie.itemHeight;
-  const t = T0(), r = V.querySelector(`.${c.NAV_CONTENT}, .${c.NAV}`);
+function pu(e) {
+  if (!q || e.length < ae.threshold) return !1;
+  pa.enables++, M.items = e, M.enabled = !0, M.totalHeight = e.length * ae.itemHeight;
+  const t = V0(), r = q.querySelector(`.${c.NAV_CONTENT}, .${c.NAV}`);
   if (!r) return !1;
   const n = r.innerHTML;
   r.innerHTML = "", r.appendChild(t);
   const s = () => {
-    D0(r, t);
+    q0(r, t);
   };
-  r.addEventListener("scroll", s, { passive: !0 }), ua(r, t), Un = () => {
+  r.addEventListener("scroll", s, { passive: !0 }), ba(r, t), Gn = () => {
     r.removeEventListener("scroll", s), r.innerHTML = n, M.enabled = !1;
   };
-  const i = la("eventBus");
+  const i = ma("eventBus");
   return i && i.emit && i.emit(f.VIRTUAL_ENABLED, { itemCount: e.length }), !0;
 }
-function da() {
-  ca.disables++, Un == null || Un(), Un = null, M.enabled = !1;
-  const e = la("eventBus");
+function Ea() {
+  pa.disables++, Gn == null || Gn(), Gn = null, M.enabled = !1;
+  const e = ma("eventBus");
   e && e.emit && e.emit(f.VIRTUAL_DISABLED);
 }
-function T0() {
+function V0() {
   const e = document.createElement("div");
   e.className = "dsd-virtual-list", e.style.cssText = `position:relative;height:${M.totalHeight}px;overflow:hidden;`;
   const t = document.createElement("div");
   return t.className = "dsd-virtual-list__content", t.style.cssText = "position:absolute;left:0;right:0;will-change:transform;", e.appendChild(t), e;
 }
-function D0(e, t) {
+function q0(e, t) {
   M.enabled && requestAnimationFrame(() => {
-    ua(e, t);
+    ba(e, t);
   });
 }
-function ua(e, t) {
-  ca.renders++;
-  const r = e.scrollTop, n = e.clientHeight, s = Math.max(0, Math.floor(r / ie.itemHeight) - ie.bufferSize), i = Math.min(M.items.length, Math.ceil((r + n) / ie.itemHeight) + ie.bufferSize);
+function ba(e, t) {
+  pa.renders++;
+  const r = e.scrollTop, n = e.clientHeight, s = Math.max(0, Math.floor(r / ae.itemHeight) - ae.bufferSize), i = Math.min(M.items.length, Math.ceil((r + n) / ae.itemHeight) + ae.bufferSize);
   if (s === M.startIndex && i === M.endIndex) return;
   M.startIndex = s, M.endIndex = i, M.scrollTop = r;
   const o = t.querySelector(".dsd-virtual-list__content");
   if (!o) return;
   const a = document.createDocumentFragment();
-  for (let d = s; d < i; d++) {
-    const u = M.items[d];
-    if (!u) continue;
-    const h = L0(u, d);
+  for (let u = s; u < i; u++) {
+    const d = M.items[u];
+    if (!d) continue;
+    const h = Y0(d, u);
     a.appendChild(h);
   }
-  o.innerHTML = "", o.appendChild(a), o.style.transform = `translateY(${s * ie.itemHeight}px)`, M.visibleItems = M.items.slice(s, i);
-  const l = la("eventBus");
+  o.innerHTML = "", o.appendChild(a), o.style.transform = `translateY(${s * ae.itemHeight}px)`, M.visibleItems = M.items.slice(s, i);
+  const l = ma("eventBus");
   l && l.emit && l.emit(f.VIRTUAL_UPDATED, { startIndex: s, endIndex: i, visibleCount: i - s });
 }
-function L0(e, t) {
+function Y0(e, t) {
   const r = document.createElement("div");
-  r.className = `${c.ITEM} dsd-virtual-list__item`, r.style.height = `${ie.itemHeight}px`, r.dataset.itemId = e.id, r.dataset.virtualIndex = t;
-  const n = e.active || e.id === $0();
+  r.className = `${c.ITEM} dsd-virtual-list__item`, r.style.height = `${ae.itemHeight}px`, r.dataset.itemId = e.id, r.dataset.virtualIndex = t;
+  const n = e.active || e.id === K0();
   return n && r.classList.add(c.ITEM_ACTIVE), r.innerHTML = `<a class="${c.LINK}" href="${e.route || "#"}" tabindex="${n ? 0 : -1}">${e.icon ? `<span class="${c.ITEM_ICON}" aria-hidden="true">${e.icon}</span>` : ""}<span class="${c.ITEM_TEXT}">${e.label}</span>${e.badge ? `<span class="${c.BADGE}">${e.badge}</span>` : ""}</a>`, r;
 }
-function $0() {
+function K0() {
   var e, t;
-  return (t = (e = V == null ? void 0 : V.querySelector(`.${c.ITEM_ACTIVE}`)) == null ? void 0 : e.dataset) == null ? void 0 : t.itemId;
+  return (t = (e = q == null ? void 0 : q.querySelector(`.${c.ITEM_ACTIVE}`)) == null ? void 0 : e.dataset) == null ? void 0 : t.itemId;
 }
-function nb(e) {
+function yb(e) {
   const t = M.items.findIndex((s) => s.id === e);
   if (t === -1) return !1;
-  const r = V == null ? void 0 : V.querySelector(`.${c.NAV_CONTENT}, .${c.NAV}`);
+  const r = q == null ? void 0 : q.querySelector(`.${c.NAV_CONTENT}, .${c.NAV}`);
   if (!r) return !1;
-  const n = t * ie.itemHeight;
+  const n = t * ae.itemHeight;
   return r.scrollTo({ top: n, behavior: "smooth" }), !0;
 }
-function sb(e, t) {
+function vb(e, t) {
   const r = M.items.findIndex((n) => n.id === e);
   if (r === -1) return !1;
   if (M.items[r] = Object.assign({}, M.items[r], t), r >= M.startIndex && r < M.endIndex) {
-    const n = V == null ? void 0 : V.querySelector(`.${c.NAV_CONTENT}, .${c.NAV}`), s = V == null ? void 0 : V.querySelector(".dsd-virtual-list");
-    n && s && ua(n, s);
+    const n = q == null ? void 0 : q.querySelector(`.${c.NAV_CONTENT}, .${c.NAV}`), s = q == null ? void 0 : q.querySelector(".dsd-virtual-list");
+    n && s && ba(n, s);
   }
   return !0;
 }
-function ib(e, t) {
-  t === void 0 || t === -1 ? M.items.push(e) : M.items.splice(t, 0, e), M.totalHeight = M.items.length * ie.itemHeight;
-  const r = V == null ? void 0 : V.querySelector(".dsd-virtual-list");
+function Ib(e, t) {
+  t === void 0 || t === -1 ? M.items.push(e) : M.items.splice(t, 0, e), M.totalHeight = M.items.length * ae.itemHeight;
+  const r = q == null ? void 0 : q.querySelector(".dsd-virtual-list");
   return r && (r.style.height = `${M.totalHeight}px`), !0;
 }
-function ob(e) {
+function Sb(e) {
   const t = M.items.findIndex((s) => s.id === e);
   if (t === -1) return !1;
-  M.items.splice(t, 1), M.totalHeight = M.items.length * ie.itemHeight;
-  const r = V == null ? void 0 : V.querySelector(".dsd-virtual-list");
+  M.items.splice(t, 1), M.totalHeight = M.items.length * ae.itemHeight;
+  const r = q == null ? void 0 : q.querySelector(".dsd-virtual-list");
   r && (r.style.height = `${M.totalHeight}px`);
-  const n = V == null ? void 0 : V.querySelector(`.${c.NAV_CONTENT}, .${c.NAV}`);
-  return n && r && ua(n, r), !0;
+  const n = q == null ? void 0 : q.querySelector(`.${c.NAV_CONTENT}, .${c.NAV}`);
+  return n && r && ba(n, r), !0;
 }
-function ha() {
-  return { enabled: M.enabled, totalItems: M.items.length, visibleItems: M.visibleItems.length, startIndex: M.startIndex, endIndex: M.endIndex, totalHeight: M.totalHeight, itemHeight: ie.itemHeight };
+function _a() {
+  return { enabled: M.enabled, totalItems: M.items.length, visibleItems: M.visibleItems.length, startIndex: M.startIndex, endIndex: M.endIndex, totalHeight: M.totalHeight, itemHeight: ae.itemHeight };
 }
-function ab() {
+function Cb() {
   return M.enabled;
 }
-function lb() {
+function Ab() {
   return [].concat(M.items);
 }
-function cb(e) {
+function Mb(e) {
   const t = M.enabled;
-  t && da(), t && e.length >= ie.threshold ? id(e) : M.items = e;
+  t && Ea(), t && e.length >= ae.threshold ? pu(e) : M.items = e;
 }
-function db() {
-  da(), M = { items: [], visibleItems: [], scrollTop: 0, startIndex: 0, endIndex: 0, totalHeight: 0, enabled: !1 };
+function Ob() {
+  Ea(), M = { items: [], visibleItems: [], scrollTop: 0, startIndex: 0, endIndex: 0, totalHeight: 0, enabled: !1 };
 }
-function fa() {
-  return { ...ca, ...ha() };
+function ya() {
+  return { ...pa, ..._a() };
 }
-function ub() {
-  return { moduleId: Fs, version: aa, portsInitialized: rr.isInitialized(), state: ha(), metrics: fa() };
+function Tb() {
+  return { moduleId: qs, version: ga, portsInitialized: nr.isInitialized(), state: _a(), metrics: ya() };
 }
-function hb() {
-  return { status: rr.isInitialized() ? "HEALTHY" : "DEGRADED", version: aa, moduleId: Fs, portsInitialized: rr.isInitialized(), checks: { enabled: M.enabled, itemCount: M.items.length, visibleCount: M.visibleItems.length, threshold: ie.threshold }, metrics: fa() };
+function Db() {
+  return { status: nr.isInitialized() ? "HEALTHY" : "DEGRADED", version: ga, moduleId: qs, portsInitialized: nr.isInitialized(), checks: { enabled: M.enabled, itemCount: M.items.length, visibleCount: M.visibleItems.length, threshold: ae.threshold }, metrics: ya() };
 }
-var k0 = { init: rb, enable: id, disable: da, scrollToItem: nb, updateItem: sb, addItem: ib, removeItem: ob, getState: ha, isEnabled: ab, getItems: lb, setItems: cb, healthCheck: hb, destroy: db, injectPorts: eb, getPorts: tb, getMetrics: fa, info: ub, VERSION: aa, MODULE_ID: Fs };
-const fb = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var W0 = { init: _b, enable: pu, disable: Ea, scrollToItem: yb, updateItem: vb, addItem: Ib, removeItem: Sb, getState: _a, isEnabled: Cb, getItems: Ab, setItems: Mb, healthCheck: Db, destroy: Ob, injectPorts: Eb, getPorts: bb, getMetrics: ya, info: Tb, VERSION: ga, MODULE_ID: qs };
+const Lb = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: Fs,
-  VERSION: aa,
-  addItem: ib,
-  default: k0,
-  destroy: db,
-  disable: da,
-  enable: id,
-  getItems: lb,
-  getMetrics: fa,
-  getPorts: tb,
-  getState: ha,
-  healthCheck: hb,
-  info: ub,
-  init: rb,
-  injectPorts: eb,
-  isEnabled: ab,
-  removeItem: ob,
-  scrollToItem: nb,
-  setItems: cb,
-  updateItem: sb
-}, Symbol.toStringTag, { value: "Module" })), od = {
-  "accessibility-landmarks": ef,
-  "accordion-ncs": Ef,
-  "animated-transitions": kf,
-  "auto-theme": Vf,
-  "command-palette": ng,
-  "compact-mode": mg,
-  "config-manager": Ag,
-  "context-menu": Rg,
-  "debug-panel": Fg,
-  "dynamic-badges": rm,
-  "event-setup": v_,
-  "favorites-handler": gm,
-  "feature-flags": Lm,
-  "fuzzy-search": zm,
-  "highlight-matches": Xm,
-  "intersection-observer": op,
-  "keyboard-navigation": Hv,
-  "keyboard-shortcuts-extended": gp,
-  "mini-mode": Mp,
-  "mobile-handler": Fv,
-  "notification-dots": xp,
-  parallax: Vp,
-  "preload-critical-css": rE,
-  "resize-handler": hE,
-  "router-sync": D_,
-  "screen-reader": OE,
-  "submenu-handler": BE,
-  "theme-handler": QE,
-  "virtual-list": fb
-}, ad = "5.3.0-P2-ENTERPRISE", ld = "sidebar-window-api", gb = 30, ga = v({ moduleId: ld });
-function w0() {
-  ga.init();
+  MODULE_ID: qs,
+  VERSION: ga,
+  addItem: Ib,
+  default: W0,
+  destroy: Ob,
+  disable: Ea,
+  enable: pu,
+  getItems: Ab,
+  getMetrics: ya,
+  getPorts: bb,
+  getState: _a,
+  healthCheck: Db,
+  info: Tb,
+  init: _b,
+  injectPorts: Eb,
+  isEnabled: Cb,
+  removeItem: Sb,
+  scrollToItem: yb,
+  setItems: Mb,
+  updateItem: vb
+}, Symbol.toStringTag, { value: "Module" })), Eu = {
+  "accessibility-landmarks": bf,
+  "accordion-ncs": Nf,
+  "animated-transitions": Wf,
+  "auto-theme": lg,
+  "command-palette": yg,
+  "compact-mode": kg,
+  "config-manager": jg,
+  "context-menu": Jg,
+  "debug-panel": om,
+  "dynamic-badges": _m,
+  "event-setup": H_,
+  "favorites-handler": $m,
+  "feature-flags": Ym,
+  "fuzzy-search": rp,
+  "highlight-matches": fp,
+  "intersection-observer": Sp,
+  "keyboard-navigation": tI,
+  "keyboard-shortcuts-extended": $p,
+  "mini-mode": Fp,
+  "mobile-handler": oI,
+  "notification-dots": Qp,
+  parallax: lE,
+  "preload-critical-css": _E,
+  "resize-handler": DE,
+  "router-sync": q_,
+  "screen-reader": GE,
+  "submenu-handler": nb,
+  "theme-handler": pb,
+  "virtual-list": Lb
+}, bu = "5.3.0-P2-ENTERPRISE", _u = "sidebar-window-api", $b = 30, va = v({ moduleId: _u });
+function X0() {
+  va.init();
 }
-function il(e) {
-  return ga.get(e);
+function gl(e) {
+  return va.get(e);
 }
-function N0() {
+function Z0() {
   var t, r;
-  const e = il("logger");
+  const e = gl("logger");
   if (e) return e;
   if (typeof window < "u" && ((r = (t = window.Core) == null ? void 0 : t.windowAdapter) != null && r.get)) {
     const n = window.Core.windowAdapter.get("Logger");
@@ -9679,13 +9813,13 @@ function N0() {
   }
   return null;
 }
-const _t = (e, ...t) => {
-  const r = "[WindowAPI]", n = N0();
-  n != null && n[e] ? n[e](r, ...t) : !vt() && (e === "error" || e === "warn" || e === "info") && console.debug(r, ...t);
+const yt = (e, ...t) => {
+  const r = "[WindowAPI]", n = Z0();
+  n != null && n[e] ? n[e](r, ...t) : !It() && (e === "error" || e === "warn" || e === "info") && console.debug(r, ...t);
 };
-function R0() {
+function J0() {
   var t, r;
-  const e = il("eventBus") || il("eventBusGlobal");
+  const e = gl("eventBus") || gl("eventBusGlobal");
   if (e) return e;
   if (typeof window < "u" && ((r = (t = window.Core) == null ? void 0 : t.windowAdapter) != null && r.get)) {
     const n = window.Core.windowAdapter.get("EventBus");
@@ -9693,7 +9827,7 @@ function R0() {
   }
   return null;
 }
-const z = {
+const B = {
   initialized: !1,
   setupAt: null,
   getInstance: null,
@@ -9702,7 +9836,7 @@ const z = {
   legacyBridgeApplied: !1,
   featuresPreloaded: !1,
   readyListenerCleanup: null
-}, W = {
+}, X = {
   apiCalls: 0,
   setupCalls: 0,
   featureLoads: 0,
@@ -9713,60 +9847,60 @@ const z = {
   preloadCompletedAt: null
 };
 function T(e) {
-  W.apiCalls++, W.lastCallAt = Date.now(), W.mostUsedMethods[e] = (W.mostUsedMethods[e] || 0) + 1;
+  X.apiCalls++, X.lastCallAt = Date.now(), X.mostUsedMethods[e] = (X.mostUsedMethods[e] || 0) + 1;
 }
-async function mb(e, t) {
+async function kb(e, t) {
   if (!t || !t.module) return null;
   try {
-    const r = t.module.endsWith(".js") ? t.module.slice(0, -3) : t.module, n = od[r];
-    return n ? (W.featureLoads++, n) : (W.errors++, _t("warn", `Feature not found in barrel: ${r}`), null);
+    const r = t.module.endsWith(".js") ? t.module.slice(0, -3) : t.module, n = Eu[r];
+    return n ? (X.featureLoads++, n) : (X.errors++, yt("warn", `Feature not found in barrel: ${r}`), null);
   } catch (r) {
-    return W.errors++, _t("warn", `Failed to load feature: ${e}`, r.message), null;
+    return X.errors++, yt("warn", `Failed to load feature: ${e}`, r.message), null;
   }
 }
-function fu(e) {
-  return jh(e, Qn, mb);
+function Id(e) {
+  return of(e, rs, kb);
 }
-async function x0(e) {
-  if (z.featureCache.has(e)) return z.featureCache.get(e);
+async function Q0(e) {
+  if (B.featureCache.has(e)) return B.featureCache.get(e);
   try {
-    const t = od[e];
-    return t ? (z.featureCache.set(e, t), W.featureLoads++, t) : (W.errors++, _t("warn", `Feature not found in barrel: ${e}`), null);
+    const t = Eu[e];
+    return t ? (B.featureCache.set(e, t), X.featureLoads++, t) : (X.errors++, yt("warn", `Feature not found in barrel: ${e}`), null);
   } catch (t) {
-    return W.errors++, _t("warn", `Failed to load feature: ${e}`, t.message), null;
+    return X.errors++, yt("warn", `Failed to load feature: ${e}`, t.message), null;
   }
 }
-async function za() {
-  if (z.featuresPreloaded) return;
-  W.preloadStartedAt = Date.now();
+async function Ga() {
+  if (B.featuresPreloaded) return;
+  X.preloadStartedAt = Date.now();
   const e = ["favorites", "theme", "search", "commands", "context", "submenu", "resize"];
   try {
-    await EI(e, Qn, mb);
+    await NI(e, rs, kb);
     const t = ["theme-handler", "resize-handler", "favorites-handler", "command-palette", "fuzzy-search", "context-menu", "submenu-handler"];
-    await Promise.all(t.map((r) => x0(r))), z.featuresPreloaded = !0, W.preloadCompletedAt = Date.now(), _t("info", "Features preloaded post-READY", { duration: W.preloadCompletedAt - W.preloadStartedAt, featuresCount: e.length + t.length });
+    await Promise.all(t.map((r) => Q0(r))), B.featuresPreloaded = !0, X.preloadCompletedAt = Date.now(), yt("info", "Features preloaded post-READY", { duration: X.preloadCompletedAt - X.preloadStartedAt, featuresCount: e.length + t.length });
   } catch (t) {
-    W.errors++, _t("warn", "Preload failed:", t.message);
+    X.errors++, yt("warn", "Preload failed:", t.message);
   }
 }
-function P0() {
-  const e = R0();
+function eC() {
+  const e = J0();
   if (!e || !e.on) {
-    _t("warn", "No EventBus, preloading immediately"), za();
+    yt("warn", "No EventBus, preloading immediately"), Ga();
     return;
   }
   const t = () => {
-    za(), z.readyListenerCleanup && (z.readyListenerCleanup(), z.readyListenerCleanup = null);
+    Ga(), B.readyListenerCleanup && (B.readyListenerCleanup(), B.readyListenerCleanup = null);
   }, r = e.on(f.READY, t);
-  typeof r == "function" ? z.readyListenerCleanup = r : z.readyListenerCleanup = () => {
+  typeof r == "function" ? B.readyListenerCleanup = r : B.readyListenerCleanup = () => {
     e.off && e.off(f.READY, t);
   }, setTimeout(() => {
-    z.featuresPreloaded || (_t("warn", "READY timeout, preloading now"), za());
+    B.featuresPreloaded || (yt("warn", "READY timeout, preloading now"), Ga());
   }, 5e3);
 }
-function H0(e, t, r, n) {
+function tC(e, t, r, n) {
   if (!(typeof window > "u")) {
-    if (W.setupCalls++, z.initialized = !0, z.setupAt = Date.now(), z.getInstance = e, z.getSidebarEl = t, w0(), P0(), vt()) {
-      _t("info", "Strict mode: window.Sidebar not exposed");
+    if (X.setupCalls++, B.initialized = !0, B.setupAt = Date.now(), B.getInstance = e, B.getSidebarEl = t, X0(), eC(), It()) {
+      yt("info", "Strict mode: window.Sidebar not exposed");
       return;
     }
     window.Sidebar = {
@@ -9850,23 +9984,23 @@ function H0(e, t, r, n) {
         var s, i;
         return T("forceSync"), (i = (s = e()) == null ? void 0 : s.forceSync) == null ? void 0 : i.call(s);
       },
-      checkPersistenceSync: () => (T("checkPersistenceSync"), h_()),
-      forcePersistenceSync: () => (T("forcePersistenceSync"), f_()),
-      feature: (s) => (T(`feature:${s}`), fu(s)),
+      checkPersistenceSync: () => (T("checkPersistenceSync"), D_()),
+      forcePersistenceSync: () => (T("forcePersistenceSync"), L_()),
+      feature: (s) => (T(`feature:${s}`), Id(s)),
       kernel: {
-        listFeatures: () => xi(),
-        getFeatureStatus: (s) => fs(s),
-        enableFeature: (s, i) => hs(s, i),
-        disableFeature: (s, i) => vn(s, i),
-        metrics: () => In(),
-        healthCheck: () => or()
+        listFeatures: () => Fi(),
+        getFeatureStatus: (s) => ps(s),
+        enableFeature: (s, i) => ms(s, i),
+        disableFeature: (s, i) => An(s, i),
+        metrics: () => Mn(),
+        healthCheck: () => ar()
       },
       metrics: {
         aggregate: () => Je(),
-        getSourceMetrics: (s) => Bi(s),
-        listSources: () => Fi(),
-        takeSnapshot: (s) => Ui(s),
-        getSnapshots: (s) => ji(s)
+        getSourceMetrics: (s) => Yi(s),
+        listSources: () => Xi(),
+        takeSnapshot: (s) => Ki(s),
+        getSnapshots: (s) => Wi(s)
       },
       registry: {
         setBadge: (s, i) => w.setBadge(s, i),
@@ -9932,76 +10066,76 @@ function H0(e, t, r, n) {
       config: {
         legacyWarnings: !0,
         setLegacyWarnings: (s) => {
-          window.Sidebar.config.legacyWarnings = s, Na();
+          window.Sidebar.config.legacyWarnings = s, za();
         },
-        getDeprecationReport: () => Na(),
-        getFeatureContracts: () => ({ ...Qn }),
-        listFeatures: () => Object.keys(Qn)
+        getDeprecationReport: () => za(),
+        getFeatureContracts: () => ({ ...rs }),
+        listFeatures: () => Object.keys(rs)
       },
-      VERSION: fr,
-      MODULE_ID: oe,
-      CAPABILITIES: bu,
-      TOTAL_FEATURES: gb,
-      API_VERSION: ad,
-      getAPIMetrics: () => U0(),
-      getAPIInfo: () => B0(),
-      getAPIHealthCheck: () => z0(),
-      getProxyMetrics: () => qi()
-    }, CI(window.Sidebar, fu), z.legacyBridgeApplied = !0, Na({ showWarnings: window.Sidebar.config.legacyWarnings });
+      VERSION: mr,
+      MODULE_ID: le,
+      CAPABILITIES: Od,
+      TOTAL_FEATURES: $b,
+      API_VERSION: bu,
+      getAPIMetrics: () => sC(),
+      getAPIInfo: () => nC(),
+      getAPIHealthCheck: () => rC(),
+      getProxyMetrics: () => Qi()
+    }, UI(window.Sidebar, Id), B.legacyBridgeApplied = !0, za({ showWarnings: window.Sidebar.config.legacyWarnings });
   }
 }
-function z0() {
-  const t = z.getInstance && typeof z.getInstance == "function" && z.getInstance() !== null, r = typeof window < "u" && window.Sidebar !== void 0, n = ga.isInitialized(), s = or(), i = bI(), o = {
-    initialized: z.initialized,
+function rC() {
+  const t = B.getInstance && typeof B.getInstance == "function" && B.getInstance() !== null, r = typeof window < "u" && window.Sidebar !== void 0, n = va.isInitialized(), s = ar(), i = RI(), o = {
+    initialized: B.initialized,
     instanceExists: t,
     windowAPIExists: r,
     portsInitialized: n,
     kernelReady: s.status === "HEALTHY",
-    legacyBridgeApplied: z.legacyBridgeApplied,
+    legacyBridgeApplied: B.legacyBridgeApplied,
     proxyHealthy: i.status === "HEALTHY",
-    featuresPreloaded: z.featuresPreloaded,
-    noErrors: W.errors === 0
+    featuresPreloaded: B.featuresPreloaded,
+    noErrors: X.errors === 0
   }, a = Object.values(o).filter(Boolean).length, l = Object.keys(o).length;
-  let d = "HEALTHY";
-  return a < l && a >= Math.floor(l * 0.6) && (d = "DEGRADED"), a < Math.floor(l * 0.6) && (d = "UNHEALTHY"), {
-    status: d,
+  let u = "HEALTHY";
+  return a < l && a >= Math.floor(l * 0.6) && (u = "DEGRADED"), a < Math.floor(l * 0.6) && (u = "UNHEALTHY"), {
+    status: u,
     score: { passed: a, total: l, percentage: Math.round(a / l * 100) },
     checks: o,
-    issues: Object.entries(o).filter(([, u]) => !u).map(([u]) => ({ code: u, severity: "warn", message: `Check failed: ${u}` })),
-    moduleId: ld,
-    version: ad,
+    issues: Object.entries(o).filter(([, d]) => !d).map(([d]) => ({ code: d, severity: "warn", message: `Check failed: ${d}` })),
+    moduleId: _u,
+    version: bu,
     architecture: "Facade + FeatureProxy + Legacy Bridge",
     ports: { initialized: n, missing: [] },
-    strictMode: vt(),
+    strictMode: It(),
     timestamp: Date.now()
   };
 }
-function B0() {
-  const e = Object.entries(W.mostUsedMethods).sort((t, r) => r[1] - t[1]).slice(0, 10).map(([t, r]) => ({ method: t, count: r }));
+function nC() {
+  const e = Object.entries(X.mostUsedMethods).sort((t, r) => r[1] - t[1]).slice(0, 10).map(([t, r]) => ({ method: t, count: r }));
   return {
-    moduleId: ld,
-    version: ad,
+    moduleId: _u,
+    version: bu,
     architecture: "Facade + FeatureProxy + Legacy Bridge",
-    initialized: z.initialized,
-    setupAt: z.setupAt,
-    totalFeatures: gb,
-    featuresCached: z.featureCache.size,
-    featuresPreloaded: z.featuresPreloaded,
-    legacyBridgeApplied: z.legacyBridgeApplied,
-    availableFeatures: Object.keys(Qn).length,
-    portsInitialized: ga.isInitialized(),
-    strictMode: vt(),
-    metrics: { ...W },
-    proxyMetrics: qi(),
+    initialized: B.initialized,
+    setupAt: B.setupAt,
+    totalFeatures: $b,
+    featuresCached: B.featureCache.size,
+    featuresPreloaded: B.featuresPreloaded,
+    legacyBridgeApplied: B.legacyBridgeApplied,
+    availableFeatures: Object.keys(rs).length,
+    portsInitialized: va.isInitialized(),
+    strictMode: It(),
+    metrics: { ...X },
+    proxyMetrics: Qi(),
     topMethods: e,
     timestamp: Date.now()
   };
 }
-function U0() {
-  return { ...W, featuresCached: z.featureCache.size, featuresPreloaded: z.featuresPreloaded, proxyMetrics: qi(), topMethods: Object.entries(W.mostUsedMethods).sort((e, t) => t[1] - e[1]).slice(0, 20) };
+function sC() {
+  return { ...X, featuresCached: B.featureCache.size, featuresPreloaded: B.featuresPreloaded, proxyMetrics: Qi(), topMethods: Object.entries(X.mostUsedMethods).sort((e, t) => t[1] - e[1]).slice(0, 20) };
 }
-const pb = "6.1.0-P2-ENTERPRISE";
-function j0(e) {
+const wb = "6.1.0-P2-ENTERPRISE";
+function iC(e) {
   var n;
   const t = Je().data || {};
   return {
@@ -10010,18 +10144,18 @@ function j0(e) {
     sources: t.sources || {},
     byCategory: t.byCategory || {},
     summary: t.summary || { totalSources: 0, activeSources: 0 },
-    version: fr,
-    aggregatorVersion: pb,
+    version: mr,
+    aggregatorVersion: wb,
     timestamp: Date.now()
   };
 }
-function F0(e) {
+function oC(e) {
   var r;
-  const t = Gi().data || {};
+  const t = Zi().data || {};
   return {
-    moduleId: oe,
-    version: fr,
-    aggregatorVersion: pb,
+    moduleId: le,
+    version: mr,
+    aggregatorVersion: wb,
     architecture: "MetricsHub-Delegated",
     initialized: !!e,
     status: (e == null ? void 0 : e.status) || "not-initialized",
@@ -10031,16 +10165,16 @@ function F0(e) {
     timestamp: Date.now()
   };
 }
-function G0(e) {
+function aC(e) {
   typeof window > "u" || (window.__dev = window.__dev || {}, window.__dev.sidebar = {
     getInstance: () => e(),
     getRenderer: () => {
       var t;
       return (t = e()) == null ? void 0 : t._renderer;
     },
-    getVersion: () => fr,
-    info: () => F0(e()),
-    getMetrics: () => j0(e()),
+    getVersion: () => mr,
+    info: () => oC(e()),
+    getMetrics: () => iC(e()),
     healthCheck: () => {
       var t, r;
       return (r = (t = e()) == null ? void 0 : t.healthCheck) == null ? void 0 : r.call(t);
@@ -10049,95 +10183,95 @@ function G0(e) {
       var t, r;
       return (r = (t = e()) == null ? void 0 : t.getState) == null ? void 0 : r.call(t);
     },
-    getToggleMetrics: () => Zu(),
-    resetDebounce: () => My(),
+    getToggleMetrics: () => gh(),
+    resetDebounce: () => Fy(),
     registry: w,
     features: {
-      favorites: gm,
-      contextMenu: Rg,
-      autoTheme: Vf,
-      submenu: BE,
-      configManager: Ag,
-      parallax: Vp,
-      commandPalette: ng,
-      fuzzySearch: zm,
-      featureFlags: Lm,
-      screenReader: OE,
-      compactMode: mg,
-      miniMode: Mp,
-      dynamicBadges: rm,
-      accessibilityLandmarks: ef,
-      keyboardShortcutsExtended: gp,
-      virtualList: fb,
-      animatedTransitions: kf,
-      notificationDots: xp,
-      highlightMatches: Xm,
-      debugPanel: Fg,
-      intersectionObserver: op,
-      preloadCriticalCSS: rE,
-      themeHandler: QE,
-      resizeHandler: hE,
-      accordionNcs: Ef
+      favorites: $m,
+      contextMenu: Jg,
+      autoTheme: lg,
+      submenu: nb,
+      configManager: jg,
+      parallax: lE,
+      commandPalette: yg,
+      fuzzySearch: rp,
+      featureFlags: Ym,
+      screenReader: GE,
+      compactMode: kg,
+      miniMode: Fp,
+      dynamicBadges: _m,
+      accessibilityLandmarks: bf,
+      keyboardShortcutsExtended: $p,
+      virtualList: Lb,
+      animatedTransitions: Wf,
+      notificationDots: Qp,
+      highlightMatches: fp,
+      debugPanel: om,
+      intersectionObserver: Sp,
+      preloadCriticalCSS: _E,
+      themeHandler: pb,
+      resizeHandler: DE,
+      accordionNcs: Nf
     }
   });
 }
-const cd = "sidebar-kernel-circuit-breaker", dd = "1.1.0-ES6", he = Object.freeze({
+const yu = "sidebar-kernel-circuit-breaker", vu = "1.1.0-ES6", fe = Object.freeze({
   CLOSED: "closed",
   OPEN: "open",
   HALF_OPEN: "half-open"
-}), Eb = {
+}), Nb = {
   failureThreshold: 5,
   successThreshold: 3,
   timeout: 3e4,
   halfOpenMaxAttempts: 3
-}, Ir = /* @__PURE__ */ new Map();
-let ht = {
+}, Cr = /* @__PURE__ */ new Map();
+let ft = {
   totalFailures: 0,
   totalSuccesses: 0,
   circuitsOpened: 0,
   circuitsClosed: 0,
   blockedCalls: 0
 };
-function kn(e) {
-  return Ir.has(e) || Ir.set(e, {
-    state: he.CLOSED,
+function xn(e) {
+  return Cr.has(e) || Cr.set(e, {
+    state: fe.CLOSED,
     failures: 0,
     successes: 0,
     lastFailure: null,
     lastSuccess: null,
     openedAt: null,
     halfOpenAttempts: 0,
-    config: Object.assign({}, Eb)
-  }), Ir.get(e);
+    config: Object.assign({}, Nb)
+  }), Cr.get(e);
 }
-function ud(e, t) {
-  const r = kn(e);
-  return r.config = Object.assign({}, Eb, t || {}), { ok: !0, featureId: e };
+function Iu(e, t) {
+  const r = xn(e);
+  return r.config = Object.assign({}, Nb, t || {}), { ok: !0, featureId: e };
 }
-function Gs(e) {
-  const t = kn(e);
-  if (t.state === he.CLOSED)
+function Ys(e) {
+  const t = xn(e);
+  if (t.state === fe.CLOSED)
     return { allowed: !0, state: t.state };
-  if (t.state === he.OPEN) {
+  if (t.state === fe.OPEN) {
     const r = Date.now() - t.openedAt;
-    return r >= t.config.timeout ? (t.state = he.HALF_OPEN, t.halfOpenAttempts = 0, { allowed: !0, state: t.state, reason: "timeout-expired" }) : (ht.blockedCalls++, { allowed: !1, state: t.state, reason: "circuit-open", retryAfter: t.config.timeout - r });
+    return r >= t.config.timeout ? (t.state = fe.HALF_OPEN, t.halfOpenAttempts = 0, { allowed: !0, state: t.state, reason: "timeout-expired" }) : (ft.blockedCalls++, { allowed: !1, state: t.state, reason: "circuit-open", retryAfter: t.config.timeout - r });
   }
-  return t.state === he.HALF_OPEN ? t.halfOpenAttempts < t.config.halfOpenMaxAttempts ? (t.halfOpenAttempts++, { allowed: !0, state: t.state, attempt: t.halfOpenAttempts }) : (ht.blockedCalls++, { allowed: !1, state: t.state, reason: "half-open-limit" }) : { allowed: !0, state: t.state };
+  return t.state === fe.HALF_OPEN ? t.halfOpenAttempts < t.config.halfOpenMaxAttempts ? (t.halfOpenAttempts++, { allowed: !0, state: t.state, attempt: t.halfOpenAttempts }) : (ft.blockedCalls++, { allowed: !1, state: t.state, reason: "half-open-limit" }) : { allowed: !0, state: t.state };
 }
-function Vs(e) {
-  const t = kn(e);
-  return t.successes++, t.lastSuccess = Date.now(), ht.totalSuccesses++, t.state === he.HALF_OPEN ? t.successes >= t.config.successThreshold && (t.state = he.CLOSED, t.failures = 0, t.successes = 0, ht.circuitsClosed++) : t.state === he.CLOSED && (t.failures = 0), { ok: !0, state: t.state };
+function Ks(e) {
+  const t = xn(e);
+  return t.successes++, t.lastSuccess = Date.now(), ft.totalSuccesses++, t.state === fe.HALF_OPEN ? t.successes >= t.config.successThreshold && (t.state = fe.CLOSED, t.failures = 0, t.successes = 0, ft.circuitsClosed++) : t.state === fe.CLOSED && (t.failures = 0), { ok: !0, state: t.state };
 }
-function Rt(e, t) {
-  const r = kn(e);
-  return r.failures++, r.lastFailure = Date.now(), r.lastError = t, ht.totalFailures++, (r.state === he.HALF_OPEN || r.state === he.CLOSED && r.failures >= r.config.failureThreshold) && (r.state = he.OPEN, r.openedAt = Date.now(), ht.circuitsOpened++), { ok: !0, state: r.state };
+function xt(e, t) {
+  const r = xn(e);
+  return r.failures++, r.lastFailure = Date.now(), r.lastError = t, ft.totalFailures++, (r.state === fe.HALF_OPEN || r.state === fe.CLOSED && r.failures >= r.config.failureThreshold) && (r.state = fe.OPEN, r.openedAt = Date.now(), ft.circuitsOpened++), { ok: !0, state: r.state };
 }
-function ma(e) {
-  const t = kn(e);
-  return t.state = he.CLOSED, t.failures = 0, t.successes = 0, t.halfOpenAttempts = 0, { ok: !0 };
+function Ia(e) {
+  const t = xn(e);
+  return t.state = fe.CLOSED, t.failures = 0, t.successes = 0, t.halfOpenAttempts = 0, { ok: !0 };
 }
-function hd(e) {
-  const t = kn(e);
+function Su(e) {
+  const t = xn(e);
   return {
     featureId: e,
     state: t.state,
@@ -10148,9 +10282,9 @@ function hd(e) {
     config: t.config
   };
 }
-function fd() {
+function Cu() {
   const e = {};
-  return Ir.forEach((t, r) => {
+  return Cr.forEach((t, r) => {
     e[r] = {
       state: t.state,
       failures: t.failures,
@@ -10158,67 +10292,67 @@ function fd() {
     };
   }), e;
 }
-function gd() {
-  return Object.assign({}, ht, { circuitsCount: Ir.size });
+function Au() {
+  return Object.assign({}, ft, { circuitsCount: Cr.size });
 }
-function pa() {
+function Sa() {
   let e = 0;
-  return Ir.forEach((t) => {
-    t.state === he.OPEN && e++;
+  return Cr.forEach((t) => {
+    t.state === fe.OPEN && e++;
   }), {
     status: e === 0 ? "HEALTHY" : e < 3 ? "DEGRADED" : "UNHEALTHY",
-    moduleId: cd,
-    version: dd,
+    moduleId: yu,
+    version: vu,
     openCircuits: e,
-    totalCircuits: Ir.size,
-    metrics: ht,
+    totalCircuits: Cr.size,
+    metrics: ft,
     timestamp: Date.now()
   };
 }
-async function bb(e, t, r) {
-  if (!Gs(e).allowed) {
+async function Rb(e, t, r) {
+  if (!Ys(e).allowed) {
     if (r) return r();
     throw new Error("Circuit breaker is open for: " + e);
   }
   try {
     const s = await t();
-    return Vs(e), s;
+    return Ks(e), s;
   } catch (s) {
-    if (Rt(e, s), r) return r();
+    if (xt(e, s), r) return r();
     throw s;
   }
 }
-var V0 = {
-  MODULE_ID: cd,
-  VERSION: dd,
-  STATES: he,
-  configure: ud,
-  canExecute: Gs,
-  execute: bb,
-  recordSuccess: Vs,
-  recordFailure: Rt,
-  reset: ma,
-  getStatus: hd,
-  getAllStatus: fd,
-  getMetrics: gd,
-  healthCheck: pa
+var lC = {
+  MODULE_ID: yu,
+  VERSION: vu,
+  STATES: fe,
+  configure: Iu,
+  canExecute: Ys,
+  execute: Rb,
+  recordSuccess: Ks,
+  recordFailure: xt,
+  reset: Ia,
+  getStatus: Su,
+  getAllStatus: Cu,
+  getMetrics: Au,
+  healthCheck: Sa
 };
-const q0 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const cC = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: cd,
-  VERSION: dd,
-  canExecute: Gs,
-  configure: ud,
-  default: V0,
-  execute: bb,
-  getAllStatus: fd,
-  getMetrics: gd,
-  getStatus: hd,
-  healthCheck: pa,
-  recordFailure: Rt,
-  recordSuccess: Vs,
-  reset: ma
-}, Symbol.toStringTag, { value: "Module" })), Ea = "sidebar-kernel-health-monitor", ba = "1.1.0-ES6", _b = {
+  MODULE_ID: yu,
+  VERSION: vu,
+  canExecute: Ys,
+  configure: Iu,
+  default: lC,
+  execute: Rb,
+  getAllStatus: Cu,
+  getMetrics: Au,
+  getStatus: Su,
+  healthCheck: Sa,
+  recordFailure: xt,
+  recordSuccess: Ks,
+  reset: Ia
+}, Symbol.toStringTag, { value: "Module" })), Ca = "sidebar-kernel-health-monitor", Aa = "1.1.0-ES6", xb = {
   intervalMs: 3e4,
   degradedThreshold: 80,
   unhealthyThreshold: 50,
@@ -10228,7 +10362,7 @@ const q0 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   onUnhealthy: null,
   onRecovered: null
 };
-let Lr = null, de = Object.assign({}, _b), ci = null, yt = !1, di = /* @__PURE__ */ new Map(), it = {
+let wr = null, de = Object.assign({}, xb), gi = null, vt = !1, mi = /* @__PURE__ */ new Map(), it = {
   checksPerformed: 0,
   degradedEvents: 0,
   unhealthyEvents: 0,
@@ -10236,20 +10370,20 @@ let Lr = null, de = Object.assign({}, _b), ci = null, yt = !1, di = /* @__PURE__
   recoverySuccesses: 0,
   lastCheckTime: null,
   lastStatus: null
-}, Sr = [];
-const Y0 = 100;
-function K0(e) {
-  Sr.unshift({
+}, Ar = [];
+const uC = 100;
+function dC(e) {
+  Ar.unshift({
     timestamp: Date.now(),
     status: e.status,
     score: e.score,
     featuresHealthy: 0
-  }), Sr.length > Y0 && Sr.pop();
+  }), Ar.length > uC && Ar.pop();
 }
-function ol() {
-  if (!Lr) return;
-  const e = Lr.healthCheck();
-  if (it.checksPerformed++, it.lastCheckTime = Date.now(), it.lastStatus = e.status, K0(e), e.score < de.unhealthyThreshold) {
+function ml() {
+  if (!wr) return;
+  const e = wr.healthCheck();
+  if (it.checksPerformed++, it.lastCheckTime = Date.now(), it.lastStatus = e.status, dC(e), e.score < de.unhealthyThreshold) {
     if (it.unhealthyEvents++, typeof de.onUnhealthy == "function")
       try {
         de.onUnhealthy(e);
@@ -10260,22 +10394,22 @@ function ol() {
       de.onDegraded(e);
     } catch {
     }
-  return de.autoRecover && W0(e), e;
+  return de.autoRecover && hC(e), e;
 }
-function W0(e) {
+function hC(e) {
   if (e.issues) {
     for (let t = 0; t < e.issues.length; t++)
       if (e.issues[t].code === "FEATURES_ERROR") {
-        const n = Lr.listFeatures();
+        const n = wr.listFeatures();
         if (n.ok && n.data && n.data.features)
           for (let s = 0; s < n.data.features.length; s++) {
             const i = n.data.features[s];
             if (i.status === "error") {
-              const o = di.get(i.id) || 0;
+              const o = mi.get(i.id) || 0;
               if (o < de.maxRecoveryAttempts) {
-                it.recoveryAttempts++, di.set(i.id, o + 1);
+                it.recoveryAttempts++, mi.set(i.id, o + 1);
                 try {
-                  if (Lr.enableFeature(i.id).ok && (it.recoverySuccesses++, di.delete(i.id), typeof de.onRecovered == "function"))
+                  if (wr.enableFeature(i.id).ok && (it.recoverySuccesses++, mi.delete(i.id), typeof de.onRecovered == "function"))
                     try {
                       de.onRecovered(i.id);
                     } catch {
@@ -10288,122 +10422,122 @@ function W0(e) {
       }
   }
 }
-function md(e, t) {
-  return yt ? { ok: !0, alreadyRunning: !0 } : (Lr = e, de = Object.assign({}, _b, t || {}), { ok: !0, config: Object.assign({}, de) });
+function Mu(e, t) {
+  return vt ? { ok: !0, alreadyRunning: !0 } : (wr = e, de = Object.assign({}, xb, t || {}), { ok: !0, config: Object.assign({}, de) });
 }
-function _a() {
-  return yt ? { ok: !0, alreadyRunning: !0 } : Lr ? (yt = !0, ol(), ci = setInterval(ol, de.intervalMs), { ok: !0, intervalMs: de.intervalMs }) : { ok: !1, error: "Not initialized" };
+function Ma() {
+  return vt ? { ok: !0, alreadyRunning: !0 } : wr ? (vt = !0, ml(), gi = setInterval(ml, de.intervalMs), { ok: !0, intervalMs: de.intervalMs }) : { ok: !1, error: "Not initialized" };
 }
-function ya() {
-  return yt ? (ci && (clearInterval(ci), ci = null), yt = !1, { ok: !0 }) : { ok: !0, alreadyStopped: !0 };
+function Oa() {
+  return vt ? (gi && (clearInterval(gi), gi = null), vt = !1, { ok: !0 }) : { ok: !0, alreadyStopped: !0 };
 }
-function pd() {
-  return ol();
+function Ou() {
+  return ml();
 }
-function Ed(e) {
-  return e ? Sr.slice(0, e) : Sr.slice();
+function Tu(e) {
+  return e ? Ar.slice(0, e) : Ar.slice();
 }
-function va() {
-  return Object.assign({}, it, { running: yt, historySize: Sr.length });
+function Ta() {
+  return Object.assign({}, it, { running: vt, historySize: Ar.length });
 }
-function yb() {
-  return { moduleId: Ea, version: ba, running: yt, intervalMs: de.intervalMs, metrics: va() };
+function Pb() {
+  return { moduleId: Ca, version: Aa, running: vt, intervalMs: de.intervalMs, metrics: Ta() };
 }
-function Ia() {
+function Da() {
   return {
-    status: yt ? "HEALTHY" : "NOT_RUNNING",
-    moduleId: Ea,
-    version: ba,
-    running: yt,
+    status: vt ? "HEALTHY" : "NOT_RUNNING",
+    moduleId: Ca,
+    version: Aa,
+    running: vt,
     metrics: it,
     timestamp: Date.now()
   };
 }
-function bd() {
-  return ya(), Lr = null, Sr = [], di.clear(), { ok: !0 };
+function Du() {
+  return Oa(), wr = null, Ar = [], mi.clear(), { ok: !0 };
 }
-var X0 = {
-  MODULE_ID: Ea,
-  VERSION: ba,
-  init: md,
-  start: _a,
-  stop: ya,
-  checkNow: pd,
-  getHistory: Ed,
-  getMetrics: va,
-  info: yb,
-  healthCheck: Ia,
-  destroy: bd
+var fC = {
+  MODULE_ID: Ca,
+  VERSION: Aa,
+  init: Mu,
+  start: Ma,
+  stop: Oa,
+  checkNow: Ou,
+  getHistory: Tu,
+  getMetrics: Ta,
+  info: Pb,
+  healthCheck: Da,
+  destroy: Du
 };
-const Z0 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const gC = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  MODULE_ID: Ea,
-  VERSION: ba,
-  checkNow: pd,
-  default: X0,
-  destroy: bd,
-  getHistory: Ed,
-  getMetrics: va,
-  healthCheck: Ia,
-  info: yb,
-  init: md,
-  start: _a,
-  stop: ya
-}, Symbol.toStringTag, { value: "Module" })), J0 = "sidebar-factory";
-v({ moduleId: J0 });
-let ge = null, al = !1;
-function Q0() {
+  MODULE_ID: Ca,
+  VERSION: Aa,
+  checkNow: Ou,
+  default: fC,
+  destroy: Du,
+  getHistory: Tu,
+  getMetrics: Ta,
+  healthCheck: Da,
+  info: Pb,
+  init: Mu,
+  start: Ma,
+  stop: Oa
+}, Symbol.toStringTag, { value: "Module" })), mC = "sidebar-factory";
+v({ moduleId: mC });
+let ge = null, pl = !1;
+function pC() {
   if (!ge) return console.warn("[sk] Kernel not connected");
   const e = ge.info();
   console.log("%cSidebarKernel Status", "font-weight:bold;color:#8B5CF6"), console.log("Version:", e.data.version), console.log("Status:", e.data.status);
   const t = ge.healthCheck();
   return console.log("Health:", t.status, `(${t.score}%)`), console.log("Features:", e.data.featuresCount), console.log("Uptime:", `${Math.round(e.data.uptime / 1e3)}s`), t;
 }
-function eC() {
+function EC() {
   if (!ge) return console.warn("[sk] Kernel not connected");
   const e = ge.listFeatures();
   return e.ok && (console.log("%cFeatures", "font-weight:bold;color:#8B5CF6"), console.table(e.data.features)), e.data.features;
 }
-function tC(e) {
+function bC(e) {
   if (!ge) return console.warn("[sk] Kernel not connected");
   const t = ge.enableFeature(e);
   return console.log(t.ok ? `✓ Enabled: ${e}` : `✗ Failed: ${e}`, t), t;
 }
-function rC(e) {
+function _C(e) {
   if (!ge) return console.warn("[sk] Kernel not connected");
   const t = ge.disableFeature(e, "manual");
   return console.log(t.ok ? `✓ Disabled: ${e}` : `✗ Failed: ${e}`, t), t;
 }
-function nC() {
+function yC() {
   if (!ge) return console.warn("[sk] Kernel not connected");
   const e = ge.healthCheck();
   return console.log("%cHealth Check", "font-weight:bold;color:#8B5CF6"), console.log("Status:", e.status), console.log("Score:", `${e.score}%`), e.issues && e.issues.length > 0 && (console.log("Issues:"), e.issues.forEach((t) => {
     console.log("  -", `${t.code}:`, t.message);
   })), e;
 }
-function sC() {
+function vC() {
   if (!ge) return console.warn("[sk] Kernel not connected");
   const e = ge.metrics();
   return console.log("%cMetrics", "font-weight:bold;color:#8B5CF6"), console.table(e.data), e.data;
 }
-function iC() {
+function IC() {
   console.log("%cSidebarKernel Console Commands", "font-weight:bold;color:#8B5CF6"), console.log(""), console.log("  sk.status()        - Show kernel status"), console.log("  sk.list()          - List all features"), console.log("  sk.enable(id)      - Enable a feature"), console.log("  sk.disable(id)     - Disable a feature"), console.log("  sk.health()        - Run health check"), console.log("  sk.metrics()       - Show metrics"), console.log("  sk.help()          - Show this help"), console.log("");
 }
-function oC(e) {
-  return al ? { ok: !0, alreadyRegistered: !0 } : (ge = e, typeof window < "u" && (window.sk = {
-    status: Q0,
-    list: eC,
-    enable: tC,
-    disable: rC,
-    health: nC,
-    metrics: sC,
-    help: iC
-  }, al = !0), { ok: !0 });
+function SC(e) {
+  return pl ? { ok: !0, alreadyRegistered: !0 } : (ge = e, typeof window < "u" && (window.sk = {
+    status: pC,
+    list: EC,
+    enable: bC,
+    disable: _C,
+    health: yC,
+    metrics: vC,
+    help: IC
+  }, pl = !0), { ok: !0 });
 }
-function aC() {
-  return typeof window < "u" && window.sk && delete window.sk, ge = null, al = !1, { ok: !0 };
+function CC() {
+  return typeof window < "u" && window.sk && delete window.sk, ge = null, pl = !1, { ok: !0 };
 }
-const U = Object.freeze({
+const j = Object.freeze({
   PERFORMANCE: "performance",
   CORE: "core",
   SEARCH: "search",
@@ -10412,93 +10546,93 @@ const U = Object.freeze({
   ACCESSIBILITY: "accessibility",
   VISUAL: "visual",
   DEBUG: "debug"
-}), j = Object.freeze({
+}), F = Object.freeze({
   CRITICAL: 0,
   HIGH: 1,
   NORMAL: 2,
   LOW: 3
-}), lC = [
-  { id: "preload-critical-css", path: "./features/preload-critical-css.js", category: U.PERFORMANCE, priority: j.CRITICAL, enabled: !0, dependencies: [], requiresEl: !1, description: "Pré-carregamento de CSS crítico" },
-  { id: "favorites-handler", path: "./features/favorites-handler.js", category: U.CORE, priority: j.HIGH, enabled: !0, dependencies: [], requiresEl: !1, description: "Gerenciador de favoritos" },
-  { id: "command-palette", path: "./features/command-palette.js", category: U.SEARCH, priority: j.HIGH, enabled: !0, dependencies: [], requiresEl: !1, description: "Paleta de comandos (Ctrl+K)" },
-  { id: "feature-flags", path: "./features/feature-flags.js", category: U.CORE, priority: j.HIGH, enabled: !0, dependencies: [], requiresEl: !1, description: "Sistema de feature flags" },
-  { id: "submenu-handler", path: "./features/submenu-handler.js", category: U.NAVIGATION, priority: j.HIGH, enabled: !0, dependencies: [], requiresEl: !1, description: "Gerenciador de submenus" },
-  { id: "fuzzy-search", path: "./features/fuzzy-search.js", category: U.SEARCH, priority: j.HIGH, enabled: !0, dependencies: [], requiresEl: !1, description: "Busca fuzzy" },
-  { id: "theme-handler", path: "./features/theme-handler.js", category: U.UI, priority: j.HIGH, enabled: !0, dependencies: [], requiresEl: !0, description: "Gerenciador de temas" },
-  { id: "accessibility-landmarks", path: "./features/accessibility-landmarks.js", category: U.ACCESSIBILITY, priority: j.HIGH, enabled: !0, dependencies: [], requiresEl: !0, description: "Landmarks de acessibilidade" },
-  { id: "screen-reader", path: "./features/screen-reader.js", category: U.ACCESSIBILITY, priority: j.HIGH, enabled: !0, dependencies: [], requiresEl: !0, description: "Suporte a leitores de tela" },
-  { id: "dynamic-badges", path: "./features/dynamic-badges.js", category: U.UI, priority: j.NORMAL, enabled: !0, dependencies: [], requiresEl: !0, description: "Badges dinâmicos" },
-  { id: "keyboard-shortcuts-extended", path: "./features/keyboard-shortcuts-extended.js", category: U.ACCESSIBILITY, priority: j.NORMAL, enabled: !0, dependencies: [], requiresEl: !1, description: "Atalhos de teclado estendidos" },
-  { id: "notification-dots", path: "./features/notification-dots.js", category: U.UI, priority: j.NORMAL, enabled: !0, dependencies: [], requiresEl: !0, description: "Indicadores de notificação" },
-  { id: "highlight-matches", path: "./features/highlight-matches.js", category: U.SEARCH, priority: j.NORMAL, enabled: !0, dependencies: [], requiresEl: !0, description: "Destaque de matches na busca" },
-  { id: "context-menu", path: "./features/context-menu.js", category: U.UI, priority: j.NORMAL, enabled: !0, dependencies: [], requiresEl: !0, description: "Menu de contexto" },
-  { id: "resize-handler", path: "./features/resize-handler.js", category: U.UI, priority: j.NORMAL, enabled: !0, dependencies: [], requiresEl: !0, description: "Gerenciador de redimensionamento" },
-  { id: "auto-theme", path: "./features/auto-theme.js", category: U.UI, priority: j.NORMAL, enabled: !0, dependencies: ["theme-handler"], requiresEl: !0, description: "Tema automático" },
-  { id: "compact-mode", path: "./features/compact-mode.js", category: U.UI, priority: j.NORMAL, enabled: !0, dependencies: [], requiresEl: !0, description: "Modo compacto" },
-  { id: "mini-mode", path: "./features/mini-mode.js", category: U.UI, priority: j.NORMAL, enabled: !0, dependencies: [], requiresEl: !0, description: "Modo mini" },
-  { id: "config-manager", path: "./features/config-manager.js", category: U.CORE, priority: j.NORMAL, enabled: !0, dependencies: [], requiresEl: !1, description: "Gerenciador de configuração" },
-  { id: "accordion-ncs", path: "./features/accordion-ncs.js", category: U.UI, priority: j.NORMAL, enabled: !0, dependencies: [], requiresEl: !1, description: "Accordion NCS" },
-  { id: "animated-transitions", path: "./features/animated-transitions.js", category: U.UI, priority: j.NORMAL, enabled: !0, dependencies: [], requiresEl: !0, description: "Transições animadas" },
-  { id: "parallax", path: "./features/parallax.js", category: U.VISUAL, priority: j.LOW, enabled: !0, dependencies: [], requiresEl: !1, description: "Efeito parallax" },
-  { id: "debug-panel", path: "./features/debug-panel.js", category: U.DEBUG, priority: j.LOW, enabled: !0, dependencies: [], requiresEl: !0, description: "Painel de debug" },
-  { id: "virtual-list", path: "./features/virtual-list.js", category: U.PERFORMANCE, priority: j.LOW, enabled: !1, dependencies: [], requiresEl: !0, description: "Lista virtualizada" },
-  { id: "intersection-observer", path: "./features/intersection-observer.js", category: U.PERFORMANCE, priority: j.LOW, enabled: !1, dependencies: [], requiresEl: !0, description: "Intersection Observer para lazy load" }
+}), AC = [
+  { id: "preload-critical-css", path: "./features/preload-critical-css.js", category: j.PERFORMANCE, priority: F.CRITICAL, enabled: !0, dependencies: [], requiresEl: !1, description: "Pré-carregamento de CSS crítico" },
+  { id: "favorites-handler", path: "./features/favorites-handler.js", category: j.CORE, priority: F.HIGH, enabled: !0, dependencies: [], requiresEl: !1, description: "Gerenciador de favoritos" },
+  { id: "command-palette", path: "./features/command-palette.js", category: j.SEARCH, priority: F.HIGH, enabled: !0, dependencies: [], requiresEl: !1, description: "Paleta de comandos (Ctrl+K)" },
+  { id: "feature-flags", path: "./features/feature-flags.js", category: j.CORE, priority: F.HIGH, enabled: !0, dependencies: [], requiresEl: !1, description: "Sistema de feature flags" },
+  { id: "submenu-handler", path: "./features/submenu-handler.js", category: j.NAVIGATION, priority: F.HIGH, enabled: !0, dependencies: [], requiresEl: !1, description: "Gerenciador de submenus" },
+  { id: "fuzzy-search", path: "./features/fuzzy-search.js", category: j.SEARCH, priority: F.HIGH, enabled: !0, dependencies: [], requiresEl: !1, description: "Busca fuzzy" },
+  { id: "theme-handler", path: "./features/theme-handler.js", category: j.UI, priority: F.HIGH, enabled: !0, dependencies: [], requiresEl: !0, description: "Gerenciador de temas" },
+  { id: "accessibility-landmarks", path: "./features/accessibility-landmarks.js", category: j.ACCESSIBILITY, priority: F.HIGH, enabled: !0, dependencies: [], requiresEl: !0, description: "Landmarks de acessibilidade" },
+  { id: "screen-reader", path: "./features/screen-reader.js", category: j.ACCESSIBILITY, priority: F.HIGH, enabled: !0, dependencies: [], requiresEl: !0, description: "Suporte a leitores de tela" },
+  { id: "dynamic-badges", path: "./features/dynamic-badges.js", category: j.UI, priority: F.NORMAL, enabled: !0, dependencies: [], requiresEl: !0, description: "Badges dinâmicos" },
+  { id: "keyboard-shortcuts-extended", path: "./features/keyboard-shortcuts-extended.js", category: j.ACCESSIBILITY, priority: F.NORMAL, enabled: !0, dependencies: [], requiresEl: !1, description: "Atalhos de teclado estendidos" },
+  { id: "notification-dots", path: "./features/notification-dots.js", category: j.UI, priority: F.NORMAL, enabled: !0, dependencies: [], requiresEl: !0, description: "Indicadores de notificação" },
+  { id: "highlight-matches", path: "./features/highlight-matches.js", category: j.SEARCH, priority: F.NORMAL, enabled: !0, dependencies: [], requiresEl: !0, description: "Destaque de matches na busca" },
+  { id: "context-menu", path: "./features/context-menu.js", category: j.UI, priority: F.NORMAL, enabled: !0, dependencies: [], requiresEl: !0, description: "Menu de contexto" },
+  { id: "resize-handler", path: "./features/resize-handler.js", category: j.UI, priority: F.NORMAL, enabled: !0, dependencies: [], requiresEl: !0, description: "Gerenciador de redimensionamento" },
+  { id: "auto-theme", path: "./features/auto-theme.js", category: j.UI, priority: F.NORMAL, enabled: !0, dependencies: ["theme-handler"], requiresEl: !0, description: "Tema automático" },
+  { id: "compact-mode", path: "./features/compact-mode.js", category: j.UI, priority: F.NORMAL, enabled: !0, dependencies: [], requiresEl: !0, description: "Modo compacto" },
+  { id: "mini-mode", path: "./features/mini-mode.js", category: j.UI, priority: F.NORMAL, enabled: !0, dependencies: [], requiresEl: !0, description: "Modo mini" },
+  { id: "config-manager", path: "./features/config-manager.js", category: j.CORE, priority: F.NORMAL, enabled: !0, dependencies: [], requiresEl: !1, description: "Gerenciador de configuração" },
+  { id: "accordion-ncs", path: "./features/accordion-ncs.js", category: j.UI, priority: F.NORMAL, enabled: !0, dependencies: [], requiresEl: !1, description: "Accordion NCS" },
+  { id: "animated-transitions", path: "./features/animated-transitions.js", category: j.UI, priority: F.NORMAL, enabled: !0, dependencies: [], requiresEl: !0, description: "Transições animadas" },
+  { id: "parallax", path: "./features/parallax.js", category: j.VISUAL, priority: F.LOW, enabled: !0, dependencies: [], requiresEl: !1, description: "Efeito parallax" },
+  { id: "debug-panel", path: "./features/debug-panel.js", category: j.DEBUG, priority: F.LOW, enabled: !0, dependencies: [], requiresEl: !0, description: "Painel de debug" },
+  { id: "virtual-list", path: "./features/virtual-list.js", category: j.PERFORMANCE, priority: F.LOW, enabled: !1, dependencies: [], requiresEl: !0, description: "Lista virtualizada" },
+  { id: "intersection-observer", path: "./features/intersection-observer.js", category: j.PERFORMANCE, priority: F.LOW, enabled: !1, dependencies: [], requiresEl: !0, description: "Intersection Observer para lazy load" }
 ];
-function vb() {
-  return lC.slice().sort((e, t) => e.priority - t.priority);
+function Hb() {
+  return AC.slice().sort((e, t) => e.priority - t.priority);
 }
-async function cC(e, t) {
+async function MC(e, t) {
   if (t.featureModules.has(e.id)) return t.featureModules.get(e.id);
   try {
-    const r = od[e.id];
+    const r = Eu[e.id];
     return r ? (t.featureModules.set(e.id, r), r) : (t.moduleMetrics.featureErrors++, t.log("warn", `Feature not found in barrel: ${e.id}`), null);
   } catch (r) {
     return t.moduleMetrics.featureErrors++, t.moduleMetrics.lastError = { featureId: e.id, message: r.message, timestamp: Date.now() }, t.log("warn", `Failed to load feature: ${e.id}`, r.message), null;
   }
 }
-function dC(e) {
+function OC(e) {
   try {
-    const t = Ju(), r = t && t.featureTiers || {};
+    const t = mh(), r = t && t.featureTiers || {};
     return r.CORE && r.CORE.indexOf(e) > -1 ? "CORE" : r.POST_READY && r.POST_READY.indexOf(e) > -1 ? "POST_READY" : r.OPT_IN && r.OPT_IN.indexOf(e) > -1 ? "OPT_IN" : "CORE";
   } catch {
     return "CORE";
   }
 }
-function Ib(e, t) {
-  return e.enabled === !1 ? !1 : t.safeMode ? dC(e.id) === "CORE" : !0;
+function zb(e, t) {
+  return e.enabled === !1 ? !1 : t.safeMode ? OC(e.id) === "CORE" : !0;
 }
-function uC(e, t) {
+function TC(e, t) {
   return !(e.enabled === !1 || e.priority > t.config.autoEnableMaxPriority);
 }
-async function hC(e) {
+async function DC(e) {
   if (e.featuresLoaded) return;
-  const t = vb();
+  const t = Hb();
   if (e.config.enableCircuitBreaker)
     for (let r = 0; r < t.length; r++)
-      ud(t[r].id, {
+      Iu(t[r].id, {
         failureThreshold: e.config.circuitBreakerFailureThreshold,
         timeout: e.config.circuitBreakerTimeout
       });
   for (let r = 0; r < t.length; r++) {
     const n = t[r];
-    if (!Ib(n, e)) {
+    if (!zb(n, e)) {
       e.log("debug", `Feature skipped (disabled): ${n.id}`), e.moduleMetrics.featuresSkipped++;
       continue;
     }
     if (e.config.enableCircuitBreaker) {
-      const s = Gs(n.id);
+      const s = Ys(n.id);
       if (!s.allowed) {
         e.log("warn", `Feature blocked by circuit breaker: ${n.id}`, s.reason), e.moduleMetrics.circuitBreakerBlocks++;
         continue;
       }
     }
     try {
-      const s = await cC(n, e);
+      const s = await MC(n, e);
       if (!s) {
-        e.config.enableCircuitBreaker && Rt(n.id, "Load failed");
+        e.config.enableCircuitBreaker && xt(n.id, "Load failed");
         continue;
       }
-      Vl({
+      rc({
         id: n.id,
         version: s.VERSION || s.default && s.default.VERSION || "0.0.0",
         category: n.category,
@@ -10510,24 +10644,24 @@ async function hC(e) {
         getMetrics: s.getMetrics || s.default && s.default.getMetrics,
         healthCheck: s.healthCheck || s.default && s.default.healthCheck,
         info: s.info || s.default && s.default.info
-      }).ok ? (e.moduleMetrics.featuresRegistered++, e.config.enableCircuitBreaker && Vs(n.id), (s.getMetrics || s.default && s.default.getMetrics) && zi(n.id, {
+      }).ok ? (e.moduleMetrics.featuresRegistered++, e.config.enableCircuitBreaker && Ks(n.id), (s.getMetrics || s.default && s.default.getMetrics) && qi(n.id, {
         category: n.category,
         version: s.VERSION || s.default && s.default.VERSION || "0.0.0",
         getMetrics: s.getMetrics || s.default && s.default.getMetrics,
         healthCheck: s.healthCheck || s.default && s.default.healthCheck
-      })) : e.config.enableCircuitBreaker && Rt(n.id, "Registration failed");
+      })) : e.config.enableCircuitBreaker && xt(n.id, "Registration failed");
     } catch (s) {
-      e.moduleMetrics.featureErrors++, e.config.enableCircuitBreaker && Rt(n.id, s.message), e.log("warn", `Failed to register feature: ${n.id}`, s.message);
+      e.moduleMetrics.featureErrors++, e.config.enableCircuitBreaker && xt(n.id, s.message), e.log("warn", `Failed to register feature: ${n.id}`, s.message);
     }
   }
   e.setFeaturesLoaded(!0);
 }
-async function fC(e, t, r) {
-  const n = vb();
+async function LC(e, t, r) {
+  const n = Hb();
   for (let s = 0; s < n.length; s++) {
     const i = n[s];
-    if (Ib(i, r) && uC(i, r)) {
-      if (r.config.enableCircuitBreaker && !Gs(i.id).allowed) {
+    if (zb(i, r) && TC(i, r)) {
+      if (r.config.enableCircuitBreaker && !Ys(i.id).allowed) {
         r.moduleMetrics.circuitBreakerBlocks++;
         continue;
       }
@@ -10536,38 +10670,38 @@ async function fC(e, t, r) {
         const o = {
           eventBus: e,
           sidebarEl: i.requiresEl ? t : void 0
-        }, a = hs(i.id, o);
-        a.ok && !(a.data && a.data.alreadyEnabled) ? (r.moduleMetrics.featuresEnabled++, r.config.enableCircuitBreaker && Vs(i.id), r.log("debug", `Feature enabled: ${i.id} (priority=${i.priority})`)) : a.ok || (r.moduleMetrics.featureErrors++, r.config.enableCircuitBreaker && Rt(i.id, "Enable failed"));
+        }, a = ms(i.id, o);
+        a.ok && !(a.data && a.data.alreadyEnabled) ? (r.moduleMetrics.featuresEnabled++, r.config.enableCircuitBreaker && Ks(i.id), r.log("debug", `Feature enabled: ${i.id} (priority=${i.priority})`)) : a.ok || (r.moduleMetrics.featureErrors++, r.config.enableCircuitBreaker && xt(i.id, "Enable failed"));
       } catch (o) {
-        r.moduleMetrics.featureErrors++, r.config.enableCircuitBreaker && Rt(i.id, o.message), r.log("warn", `Failed to enable feature: ${i.id}`, o.message);
+        r.moduleMetrics.featureErrors++, r.config.enableCircuitBreaker && xt(i.id, o.message), r.log("warn", `Failed to enable feature: ${i.id}`, o.message);
       }
     }
   }
 }
-function gC(e) {
+function $C(e) {
   return (t = {}) => {
     if (e.getInstance()) return e.getInstance();
     const r = Date.now();
     e.initPorts();
     try {
-      const o = Ju();
+      const o = mh();
       e.setSafeMode(o && o.safeMode === !0 || t.safeMode === !0), o && o.kernel && e.setConfig(Object.assign({}, e.DEFAULT_CONFIG, o.kernel, t)), e.getSafeMode() && (e.moduleMetrics.safeModeBoots++, e.log("info", "SafeMode ACTIVE - minimal boot"));
     } catch {
       e.setSafeMode(t.safeMode === !0);
     }
-    if (Gl({ ports: e.Ports.snapshot() }), Jl({ ports: e.Ports.snapshot() }), zi("sidebar-orchestrator", {
+    if (tc({ ports: e.Ports.snapshot() }), cc({ ports: e.Ports.snapshot() }), qi("sidebar-orchestrator", {
       category: "core",
       version: e.VERSION,
       getMetrics() {
-        return Object.assign({}, e.moduleMetrics, { kernel: In().data });
+        return Object.assign({}, e.moduleMetrics, { kernel: Mn().data });
       }
     }), e.getConfig().enableConsoleCommands)
       try {
-        oC(Qa), e.log("debug", "Console commands registered (sk.*)");
+        SC(ll), e.log("debug", "Console commands registered (sk.*)");
       } catch (o) {
         e.log("warn", "Failed to register console commands:", o.message);
       }
-    const n = new Zv();
+    const n = new gI();
     e.setInstance(n), e.moduleMetrics.instancesCreated++;
     const s = e.getEventBus(), i = {
       log: e.log,
@@ -10580,18 +10714,18 @@ function gC(e) {
     };
     return (async () => {
       try {
-        if (await hC(i), await fC(s, e.getSidebarEl(), i), e.getConfig().enableHealthMonitor)
+        if (await DC(i), await LC(s, e.getSidebarEl(), i), e.getConfig().enableHealthMonitor)
           try {
-            md(Qa, {
+            Mu(ll, {
               intervalMs: e.getConfig().healthMonitorIntervalMs,
               autoRecover: e.getConfig().healthMonitorAutoRecover,
               onDegraded(o) {
                 e.log("warn", "Kernel health degraded:", `${o.status} ${o.score}%`);
               },
               onRecovered(o) {
-                e.log("info", "Feature recovered:", o), e.getConfig().enableCircuitBreaker && ma(o);
+                e.log("info", "Feature recovered:", o), e.getConfig().enableCircuitBreaker && Ia(o);
               }
-            }), _a(), e.log("debug", "HealthMonitor started");
+            }), Ma(), e.log("debug", "HealthMonitor started");
           } catch (o) {
             e.log("warn", "Failed to start HealthMonitor:", o.message);
           }
@@ -10609,45 +10743,45 @@ function gC(e) {
     })(), n;
   };
 }
-function mC(e) {
+function kC(e) {
   return () => {
     if (!e.getInstance()) throw new Error("Sidebar not initialized");
     return e.getInstance();
   };
 }
-function pC(e) {
+function wC(e) {
   return () => {
     if (e.getConfig().enableHealthMonitor)
       try {
-        bd();
+        Du();
       } catch {
       }
     if (e.getConfig().enableConsoleCommands)
       try {
-        aC();
+        CC();
       } catch {
       }
-    Ri("destroySidebar"), tc();
+    ji("destroySidebar"), hc();
     const t = e.getInstance();
     t && t.destroy && t.destroy(), e.setInstance(null), e.setFeaturesLoaded(!1), e.featureModules.clear(), e.setSafeMode(!1);
   };
 }
-function EC(e) {
+function NC(e) {
   return () => {
-    const t = !!e.getInstance(), r = !!e.getSidebarEl(), n = e.Ports.isInitialized(), s = or(), i = rc(), o = e.getConfig().enableCircuitBreaker ? pa() : null, a = e.getConfig().enableHealthMonitor ? Ia() : null, l = {
+    const t = !!e.getInstance(), r = !!e.getSidebarEl(), n = e.Ports.isInitialized(), s = ar(), i = fc(), o = e.getConfig().enableCircuitBreaker ? Sa() : null, a = e.getConfig().enableHealthMonitor ? Da() : null, l = {
       hasInstance: t,
       hasSidebarElement: r,
       portsInitialized: n,
       kernelReady: s.status === "HEALTHY",
       metricsHubReady: i.status === "HEALTHY"
-    }, d = Object.values(l).filter(Boolean).length, u = Object.keys(l).length;
+    }, u = Object.values(l).filter(Boolean).length, d = Object.keys(l).length;
     let h = "HEALTHY";
-    return d < u && d >= Math.floor(u * 0.6) && (h = "DEGRADED"), d < Math.floor(u * 0.6) && (h = "UNHEALTHY"), {
+    return u < d && u >= Math.floor(d * 0.6) && (h = "DEGRADED"), u < Math.floor(d * 0.6) && (h = "UNHEALTHY"), {
       status: h,
-      score: { passed: d, total: u, percentage: Math.round(d / u * 100) },
+      score: { passed: u, total: d, percentage: Math.round(u / d * 100) },
       checks: l,
       issues: s.issues || [],
-      moduleId: oe,
+      moduleId: le,
       version: e.VERSION,
       safeMode: e.getSafeMode(),
       kernel: s,
@@ -10660,17 +10794,17 @@ function EC(e) {
     };
   };
 }
-function bC(e) {
+function RC(e) {
   return () => ({
-    moduleId: oe,
+    moduleId: le,
     version: e.VERSION,
     architecture: "Kernel-Orchestrated",
     safeMode: e.getSafeMode(),
     portsInitialized: e.Ports.isInitialized(),
     initialized: !!e.getInstance(),
     config: Object.assign({}, e.getConfig()),
-    kernel: Pi().data,
-    metricsHub: Gi().data,
+    kernel: Gi().data,
+    metricsHub: Zi().data,
     circuitBreakerEnabled: e.getConfig().enableCircuitBreaker,
     healthMonitorEnabled: e.getConfig().enableHealthMonitor,
     moduleMetrics: Object.assign({}, e.moduleMetrics),
@@ -10679,63 +10813,63 @@ function bC(e) {
     timestamp: Date.now()
   });
 }
-function _C() {
+function xC() {
   return () => Je().data;
 }
-const yC = {
-  listFeatures: xi,
-  getFeatureStatus: fs,
-  getFeature: Wl,
-  enableFeature: hs,
-  disableFeature: vn,
-  canDisable: ql,
-  getDependents: Yl,
-  getFeaturesByStatus: Kl,
-  getFeatureMetrics: Xl,
-  metrics: In,
-  healthCheck: or,
-  exportDiagnostics: Zl
-}, vC = {
+const PC = {
+  listFeatures: Fi,
+  getFeatureStatus: ps,
+  getFeature: oc,
+  enableFeature: ms,
+  disableFeature: An,
+  canDisable: nc,
+  getDependents: sc,
+  getFeaturesByStatus: ic,
+  getFeatureMetrics: ac,
+  metrics: Mn,
+  healthCheck: ar,
+  exportDiagnostics: lc
+}, HC = {
   aggregate: Je,
-  getSourceMetrics: Bi,
-  getMetricsByCategory: Ql,
-  takeSnapshot: Ui,
-  getSnapshots: ji,
-  compareSnapshots: ec,
-  listSources: Fi
-}, IC = {
-  getStatus: hd,
-  getAllStatus: fd,
-  reset: ma,
-  getMetrics: gd,
-  healthCheck: pa
-}, SC = {
-  start: _a,
-  stop: ya,
-  checkNow: pd,
-  getHistory: Ed,
-  getMetrics: va,
-  healthCheck: Ia
-}, Sb = "7.4.0-P2-ENTERPRISE", qs = v({ moduleId: oe }), CC = () => {
-  qs.init();
-}, ll = (e) => qs.get(e);
-function AC(e) {
-  return qs.inject(e);
+  getSourceMetrics: Yi,
+  getMetricsByCategory: uc,
+  takeSnapshot: Ki,
+  getSnapshots: Wi,
+  compareSnapshots: dc,
+  listSources: Xi
+}, zC = {
+  getStatus: Su,
+  getAllStatus: Cu,
+  reset: Ia,
+  getMetrics: Au,
+  healthCheck: Sa
+}, BC = {
+  start: Ma,
+  stop: Oa,
+  checkNow: Ou,
+  getHistory: Tu,
+  getMetrics: Ta,
+  healthCheck: Da
+}, Bb = "7.4.0-P2-ENTERPRISE", Ws = v({ moduleId: le }), UC = () => {
+  Ws.init();
+}, El = (e) => Ws.get(e);
+function jC(e) {
+  return Ws.inject(e);
 }
-function MC() {
-  return qs.snapshot();
+function FC() {
+  return Ws.snapshot();
 }
-const OC = function(e) {
-  const t = Array.prototype.slice.call(arguments, 1), r = "[Sidebar]", n = ll("logger");
+const GC = function(e) {
+  const t = Array.prototype.slice.call(arguments, 1), r = "[Sidebar]", n = El("logger");
   n && n[e] ? n[e](...[r].concat(t)) : (e === "error" || e === "warn" || e === "info") && console.debug.apply(console, [r].concat(t));
 };
-function TC() {
-  return ll("eventBus") || ll("eventBusGlobal");
+function VC() {
+  return El("eventBus") || El("eventBusGlobal");
 }
-let ct = null, gu = !1;
-const DC = /* @__PURE__ */ new Map();
-let mu = !1;
-const Cb = {
+let ct = null, Sd = !1;
+const qC = /* @__PURE__ */ new Map();
+let Cd = !1;
+const Ub = {
   enableConsoleCommands: !0,
   enableHealthMonitor: !0,
   enableCircuitBreaker: !0,
@@ -10747,7 +10881,7 @@ const Cb = {
   featureEnableTimeoutMs: 5e3,
   logLevel: "info"
 };
-let pu = Object.assign({}, Cb), LC = {
+let Ad = Object.assign({}, Ub), YC = {
   instancesCreated: 0,
   featuresRegistered: 0,
   featuresEnabled: 0,
@@ -10758,55 +10892,55 @@ let pu = Object.assign({}, Cb), LC = {
   lastError: null,
   safeModeBoots: 0
 };
-const Ab = () => !ct || !ct._renderer || !ct._renderer.getSidebar ? null : ct._renderer.getSidebar(), Ys = {
-  Ports: qs,
-  VERSION: Sb,
-  DEFAULT_CONFIG: Cb,
-  log: OC,
-  initPorts: CC,
-  getEventBus: TC,
-  getSidebarEl: Ab,
-  moduleMetrics: LC,
-  featureModules: DC,
+const jb = () => !ct || !ct._renderer || !ct._renderer.getSidebar ? null : ct._renderer.getSidebar(), Xs = {
+  Ports: Ws,
+  VERSION: Bb,
+  DEFAULT_CONFIG: Ub,
+  log: GC,
+  initPorts: UC,
+  getEventBus: VC,
+  getSidebarEl: jb,
+  moduleMetrics: YC,
+  featureModules: qC,
   getInstance: () => ct,
   setInstance: (e) => {
     ct = e;
   },
-  getConfig: () => pu,
+  getConfig: () => Ad,
   setConfig: (e) => {
-    pu = e;
+    Ad = e;
   },
-  getSafeMode: () => mu,
+  getSafeMode: () => Cd,
   setSafeMode: (e) => {
-    mu = e;
+    Cd = e;
   },
-  getFeaturesLoaded: () => gu,
+  getFeaturesLoaded: () => Sd,
   setFeaturesLoaded: (e) => {
-    gu = e;
+    Sd = e;
   }
-}, Mb = gC(Ys), KC = mC(Ys), Ob = pC(Ys), $C = EC(Ys), kC = bC(Ys), wC = _C(), NC = yC, RC = vC, xC = IC, PC = SC;
-typeof window < "u" && (G0(() => ct), vt() ? (zn("GLOBAL_EXPOSURE_BLOCKED", { module: oe, target: "(window as any).SidebarKernel" }), zn("GLOBAL_EXPOSURE_BLOCKED", { module: oe, target: "(window as any).SidebarMetricsHub" }), zn("GLOBAL_EXPOSURE_BLOCKED", { module: oe, target: "(window as any).SidebarCircuitBreaker" }), zn("GLOBAL_EXPOSURE_BLOCKED", { module: oe, target: "(window as any).SidebarHealthMonitor" })) : (H0(() => ct, Ab, Mb, Ob), window.SidebarKernel = Qa, window.SidebarMetricsHub = sI, window.SidebarCircuitBreaker = q0, window.SidebarHealthMonitor = Z0));
-const WC = {
-  VERSION: Sb,
-  MODULE_ID: oe,
-  CAPABILITIES: bu,
-  createSidebar: Mb,
+}, Fb = $C(Xs), dA = kC(Xs), Gb = wC(Xs), KC = NC(Xs), WC = RC(Xs), XC = xC(), ZC = PC, JC = HC, QC = zC, eA = BC;
+typeof window < "u" && (aC(() => ct), It() ? (jn("GLOBAL_EXPOSURE_BLOCKED", { module: le, target: "(window as any).SidebarKernel" }), jn("GLOBAL_EXPOSURE_BLOCKED", { module: le, target: "(window as any).SidebarMetricsHub" }), jn("GLOBAL_EXPOSURE_BLOCKED", { module: le, target: "(window as any).SidebarCircuitBreaker" }), jn("GLOBAL_EXPOSURE_BLOCKED", { module: le, target: "(window as any).SidebarHealthMonitor" })) : (tC(() => ct, jb, Fb, Gb), window.SidebarKernel = ll, window.SidebarMetricsHub = vI, window.SidebarCircuitBreaker = cC, window.SidebarHealthMonitor = gC));
+const hA = {
+  VERSION: Bb,
+  MODULE_ID: le,
+  CAPABILITIES: Od,
+  createSidebar: Fb,
   getSidebar() {
     return ct;
   },
-  destroySidebar: Ob,
-  getMetrics: wC,
-  info: kC,
-  healthCheck: $C,
-  injectPorts: AC,
-  getPorts: MC,
-  kernel: NC,
-  metricsHub: RC,
-  circuitBreaker: xC,
-  healthMonitor: PC
-}, Ks = "5.6.0-UARPS-ONLY", Sa = "sidebar-items-manifest";
-let Ws = { lookups: 0, filters: 0 };
-const ft = [
+  destroySidebar: Gb,
+  getMetrics: XC,
+  info: WC,
+  healthCheck: KC,
+  injectPorts: jC,
+  getPorts: FC,
+  kernel: ZC,
+  metricsHub: JC,
+  circuitBreaker: QC,
+  healthMonitor: eA
+}, Zs = "5.6.0-UARPS-ONLY", La = "sidebar-items-manifest";
+let Js = { lookups: 0, filters: 0 };
+const gt = [
   { id: "main", title: null, icon: "dashboard", priority: 1, collapsible: !1 },
   { id: "operacional", title: null, icon: "settings", priority: 2, collapsible: !1 },
   { id: "admin", title: "Administração", icon: "shield", priority: 3, collapsible: !0 }
@@ -10839,85 +10973,85 @@ const ft = [
   { id: "nav-admin", sectionId: "admin", title: "Navegação", route: "#/admin/navegacao", icon: "nav", priority: 5 },
   { id: "user-preferences", sectionId: "admin", title: "Minhas Preferências", route: "#/preferencias", icon: "settings", priority: 6 }
 ];
-function Tb(e) {
-  return Ws.lookups++, Xe.find((t) => t.id === e) || null;
+function Vb(e) {
+  return Js.lookups++, Xe.find((t) => t.id === e) || null;
 }
-function Db(e) {
-  return Ws.lookups++, Xe.filter((t) => t.sectionId === e).sort((t, r) => (t.priority || 100) - (r.priority || 100));
+function qb(e) {
+  return Js.lookups++, Xe.filter((t) => t.sectionId === e).sort((t, r) => (t.priority || 100) - (r.priority || 100));
 }
-function _d(e) {
-  return Ws.lookups++, ft.find((t) => t.id === e) || null;
+function Lu(e) {
+  return Js.lookups++, gt.find((t) => t.id === e) || null;
 }
-function Lb(e) {
-  const t = _d(e);
+function Yb(e) {
+  const t = Lu(e);
   return (t == null ? void 0 : t.icon) || "grid";
 }
-function $b(e, t = 0) {
-  return Ws.filters++, [...e];
+function Kb(e, t = 0) {
+  return Js.filters++, [...e];
 }
-function kb() {
-  return { version: Ks, sections: [...ft], items: [...Xe], timestamp: Date.now() };
+function Wb() {
+  return { version: Zs, sections: [...gt], items: [...Xe], timestamp: Date.now() };
 }
-function Ca() {
-  return { ...Ws, sectionsCount: ft.length, itemsCount: Xe.length };
+function $a() {
+  return { ...Js, sectionsCount: gt.length, itemsCount: Xe.length };
 }
-function wb() {
-  return { moduleId: Sa, version: Ks, sectionsCount: ft.length, itemsCount: Xe.length, metrics: Ca() };
+function Xb() {
+  return { moduleId: La, version: Zs, sectionsCount: gt.length, itemsCount: Xe.length, metrics: $a() };
 }
-function Nb() {
-  const e = ft.length > 0, t = Xe.length > 0, r = ft.every((a) => !!a.icon), n = Xe.every((a) => !!a.route), s = { hasSections: e, hasItems: t, allSectionsHaveIcons: r, allItemsHaveRoutes: n, validStructure: !0 }, i = Object.values(s).filter(Boolean).length, o = Object.keys(s).length;
+function Zb() {
+  const e = gt.length > 0, t = Xe.length > 0, r = gt.every((a) => !!a.icon), n = Xe.every((a) => !!a.route), s = { hasSections: e, hasItems: t, allSectionsHaveIcons: r, allItemsHaveRoutes: n, validStructure: !0 }, i = Object.values(s).filter(Boolean).length, o = Object.keys(s).length;
   return {
     status: i === o ? "HEALTHY" : "DEGRADED",
     score: i,
     maxScore: o,
     scoreDisplay: `${i}/${o}`,
     checks: s,
-    sectionsCount: ft.length,
+    sectionsCount: gt.length,
     itemsCount: Xe.length,
-    version: Ks,
-    moduleId: Sa,
+    version: Zs,
+    moduleId: La,
     timestamp: Date.now(),
-    metrics: Ca()
+    metrics: $a()
   };
 }
-var HC = { VERSION: Ks, MODULE_ID: Sa, SECTIONS: ft, ITEMS: Xe, getManifest: kb, getItemById: Tb, getItemsBySection: Db, getSectionById: _d, getSectionIcon: Lb, filterByLevel: $b, info: wb, getMetrics: Ca, healthCheck: Nb };
-const zC = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var tA = { VERSION: Zs, MODULE_ID: La, SECTIONS: gt, ITEMS: Xe, getManifest: Wb, getItemById: Vb, getItemsBySection: qb, getSectionById: Lu, getSectionIcon: Yb, filterByLevel: Kb, info: Xb, getMetrics: $a, healthCheck: Zb };
+const rA = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   ITEMS: Xe,
-  MODULE_ID: Sa,
-  SECTIONS: ft,
-  VERSION: Ks,
-  default: HC,
-  filterByLevel: $b,
-  getItemById: Tb,
-  getItemsBySection: Db,
-  getManifest: kb,
-  getMetrics: Ca,
-  getSectionById: _d,
-  getSectionIcon: Lb,
-  healthCheck: Nb,
-  info: wb
+  MODULE_ID: La,
+  SECTIONS: gt,
+  VERSION: Zs,
+  default: tA,
+  filterByLevel: Kb,
+  getItemById: Vb,
+  getItemsBySection: qb,
+  getManifest: Wb,
+  getMetrics: $a,
+  getSectionById: Lu,
+  getSectionIcon: Yb,
+  healthCheck: Zb,
+  info: Xb
 }, Symbol.toStringTag, { value: "Module" }));
 export {
-  bu as CAPABILITIES,
-  fr as CORE_VERSION,
+  Od as CAPABILITIES,
+  mr as CORE_VERSION,
   L as LIFECYCLE_STATES,
-  oe as MODULE_ID,
-  JC as SIDEBAR_EVENTS,
-  Zv as Sidebar,
+  le as MODULE_ID,
+  mA as SIDEBAR_EVENTS,
+  gI as Sidebar,
   w as SidebarRegistry,
-  Sb as VERSION,
-  xC as circuitBreaker,
-  Mb as createSidebar,
-  WC as default,
-  Ob as destroySidebar,
-  wC as getMetrics,
-  MC as getPorts,
-  KC as getSidebar,
-  $C as healthCheck,
-  PC as healthMonitor,
-  kC as info,
-  AC as injectPorts,
-  NC as kernel,
-  RC as metricsHub
+  Bb as VERSION,
+  QC as circuitBreaker,
+  Fb as createSidebar,
+  hA as default,
+  Gb as destroySidebar,
+  XC as getMetrics,
+  FC as getPorts,
+  dA as getSidebar,
+  KC as healthCheck,
+  eA as healthMonitor,
+  WC as info,
+  jC as injectPorts,
+  ZC as kernel,
+  JC as metricsHub
 };

@@ -53,13 +53,17 @@ const isStorageAvailable = (type: string) => {
 const hasLocalStorage = isStorageAvailable('localStorage');
 const hasSessionStorage = isStorageAvailable('sessionStorage');
 
-export const getFromSession = () => {
+// INTEGRADO-01 · P1 (QI do AZUL, item 10): o cache do modelo de menu é amarrado ao USUÁRIO dono. Outro usuário (ou dono desconhecido) não
+// reaproveita o modelo de outra sessão no mesmo navegador; o logout e o login limpam (index.ts). Entradas antigas sem dono são descartadas.
+const doDono = (cached: DynObj, dono: string | null) => !!dono && cached && cached.owner === dono;
+export const getFromSession = (dono: string | null = null) => {
     if (!hasSessionStorage) return null;
     try {
         const raw = sessionStorage.getItem(TOKENS.SESSION_KEY);
         if (!raw) return null;
         const cached = JSON.parse(raw);
         if (!cached?.data || !cached?.timestamp) return null;
+        if (!doDono(cached, dono)) { sessionStorage.removeItem(TOKENS.SESSION_KEY); track('cache:session:owner-mismatch'); return null; }
         const age = Date.now() - cached.timestamp;
         if (age > TOKENS.SESSION_TTL) {
             sessionStorage.removeItem(TOKENS.SESSION_KEY);
@@ -72,11 +76,12 @@ export const getFromSession = () => {
     }
 };
 
-export const saveToSession = (data: DynObj) => {
-    if (!hasSessionStorage || !data) return false;
+export const saveToSession = (data: DynObj, dono: string | null = null) => {
+    if (!hasSessionStorage || !data || !dono) return false;
     try {
         const payload = {
             data,
+            owner: dono,
             timestamp: Date.now(),
             version: TOKENS.SESSION_KEY
         };
@@ -88,13 +93,14 @@ export const saveToSession = (data: DynObj) => {
     }
 };
 
-export const getFromLocal = () => {
+export const getFromLocal = (dono: string | null = null) => {
     if (!hasLocalStorage) return null;
     try {
         const raw = localStorage.getItem(TOKENS.CACHE_KEY);
         if (!raw) return null;
         const cached = JSON.parse(raw);
         if (!cached?.data || !cached?.timestamp) return null;
+        if (!doDono(cached, dono)) { localStorage.removeItem(TOKENS.CACHE_KEY); track('cache:local:owner-mismatch'); return null; }
         const age = Date.now() - cached.timestamp;
         if (age > TOKENS.CACHE_TTL) {
             localStorage.removeItem(TOKENS.CACHE_KEY);
@@ -107,11 +113,12 @@ export const getFromLocal = () => {
     }
 };
 
-export const saveToLocal = (data: DynObj) => {
-    if (!hasLocalStorage || !data) return false;
+export const saveToLocal = (data: DynObj, dono: string | null = null) => {
+    if (!hasLocalStorage || !data || !dono) return false;
     try {
         const payload = {
             data,
+            owner: dono,
             timestamp: Date.now(),
             version: TOKENS.CACHE_KEY
         };
@@ -134,15 +141,15 @@ export const invalidateAll = () => {
     }
 };
 
-export const getCached = () => {
-    const session = getFromSession();
+export const getCached = (dono: string | null = null) => {
+    const session = getFromSession(dono);
     if (session) return { data: session, source: 'session' };
-    const local = getFromLocal();
+    const local = getFromLocal(dono);
     if (local) return { data: local, source: 'local' };
     return null;
 };
 
-export const saveToCache = (data: DynObj) => {
-    saveToSession(data);
-    saveToLocal(data);
+export const saveToCache = (data: DynObj, dono: string | null = null) => {
+    saveToSession(data, dono);
+    saveToLocal(data, dono);
 };

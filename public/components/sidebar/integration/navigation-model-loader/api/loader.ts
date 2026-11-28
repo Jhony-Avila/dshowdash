@@ -96,6 +96,8 @@ export const loadFromAPI = async (options: { timeout?: number; retries?: number;
             return {
                 success: true,
                 data,
+                // INTEGRADO-01 · item 8 (ROXO 27/11): a identidade do menu publicada pelo servidor (meta.menu: revisão/geração/checksum), quando existir
+                meta: (json && typeof json.meta === 'object') ? json.meta : null,
                 source: 'api',
                 attempt
             };
