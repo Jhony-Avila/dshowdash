@@ -98,23 +98,26 @@ final class PipeSyncService
         $errosSeguidos = 0;
 
         foreach ($ids as $dealId) {
-            $res = $client->request('GET', 'v2', '/deals/' . $dealId . '/products');
-            $this->accounts->logApiRequest('GET', '/deals/{id}/products', $res);
-            $c['api_calls']++;
-            $c['token_cost'] += 20;
+            // DDI-037: a coleção inteira (paginada até o fim) — uma página só podia substituir tudo por um pedaço
+            $todos = [];
+            $res = $client->paginate('deals/' . $dealId . '/products', ['version' => 'v2', 'limit' => 500],
+                function (array $lote) use (&$todos) { foreach ($lote as $x) { $todos[] = $x; } });
+            $this->accounts->logApiRequest('GET', '/deals/{id}/products', ['ok' => $res['ok'] ?? false, 'status' => $res['status'] ?? 0, 'meta' => []]);
+            $c['api_calls'] += (int)($res['api_calls'] ?? 1);
+            $c['token_cost'] += (int)($res['token_cost'] ?? 20);
             $c['processed']++;
 
             if (!($res['ok'] ?? false)) {
-                // 404 = negocio sem produtos ou removido -> nao e erro fatal
-                if ((int)($res['status'] ?? 0) === 404) { $this->repo->upsertDealProducts($dealId, []); $c['updated']++; $errosSeguidos = 0; continue; }
-                $c['errors']++;
+                // 404 = negócio removido/inexistente: AUSÊNCIA, não "vazio comprovado" → preserva (a exclusão do negócio é tratada pela sincronização dele)
+                if ((int)($res['status'] ?? 0) === 404) { $c['skipped']++; $errosSeguidos = 0; continue; }
+                $c['errors']++;   // inclui RESPOSTA_INVALIDA (DDI-037): preserva a coleção atual
                 if (++$errosSeguidos >= 5) { error_log('[pipedrive] deal_products: 5 erros seguidos, abortando'); break; }
                 continue;
             }
             $errosSeguidos = 0;
-            $produtos = is_array($res['data'] ?? null) ? $res['data'] : [];
+            if (!($res['completo'] ?? false)) { $c['errors']++; error_log('[pipedrive] deal_products deal ' . $dealId . ': paginação incompleta, coleção preservada'); continue; }
             try {
-                $n = $this->repo->upsertDealProducts($dealId, $produtos);
+                $n = $this->repo->upsertDealProducts($dealId, $todos);   // completa e válida ([] = vazia comprovada)
                 $c['items'] += $n;
                 $c['updated']++;
             } catch (\Throwable $e) {

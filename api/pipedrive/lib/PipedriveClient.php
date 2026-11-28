@@ -116,6 +116,8 @@ final class PipedriveClient
             'ok'     => $ok,
             'status' => $status,
             'data'   => is_array($json) ? ($json['data'] ?? null) : null,
+            // DDI-037: distinguir "data" AUSENTE (resposta inválida) de "data": null (v1: coleção vazia comprovada)
+            'tem_data' => is_array($json) && array_key_exists('data', $json),
             'additional_data' => is_array($json) ? ($json['additional_data'] ?? null) : null,
             'error'  => $error,
             'meta'   => $meta,
@@ -148,7 +150,7 @@ final class PipedriveClient
         $listCost = (int)($opts['listCost'] ?? 20);
         $baseQuery = is_array($opts['query'] ?? null) ? $opts['query'] : [];
 
-        $pages = 0; $items = 0; $apiCalls = 0; $tokenCost = 0;
+        $pages = 0; $items = 0; $apiCalls = 0; $tokenCost = 0; $completo = false;
         $cursor = null; $start = 0;
         $lastStatus = 0;
 
@@ -176,13 +178,23 @@ final class PipedriveClient
 
             if (!$res || !$res['ok']) {
                 return [
-                    'ok' => false, 'pages' => $pages, 'items' => $items,
+                    'ok' => false, 'pages' => $pages, 'items' => $items, 'completo' => false,
                     'api_calls' => $apiCalls, 'token_cost' => $tokenCost,
                     'status' => $lastStatus, 'error' => $res['error'] ?? 'ERRO_PAGINACAO',
                 ];
             }
 
-            $lote = is_array($res['data'] ?? null) ? $res['data'] : [];
+            // DDI-037: resposta sem "data" (ou com "data" que não é lista nem null) = INVÁLIDA → para, sem fingir coleção vazia;
+            // "data": null (v1, success=true) = página vazia comprovada.
+            $d = $res['data'] ?? null;
+            if (!($res['tem_data'] ?? true) || ($d !== null && !is_array($d))) {
+                return [
+                    'ok' => false, 'pages' => $pages, 'items' => $items, 'completo' => false,
+                    'api_calls' => $apiCalls, 'token_cost' => $tokenCost,
+                    'status' => $lastStatus, 'error' => 'RESPOSTA_INVALIDA',
+                ];
+            }
+            $lote = is_array($d) ? $d : [];
             $pages++;
             $items += count($lote);
             // onBatch pode retornar false para PARAR a paginacao (stop-early incremental v1).
@@ -200,7 +212,8 @@ final class PipedriveClient
                 $start = (int)($pg['next_start'] ?? ($start + $limit));
             }
 
-            if ($fim || $pararCedo) { break; }
+            if ($fim) { $completo = true; break; }   // DDI-037: só o fim da paginação prova a coleção COMPLETA
+            if ($pararCedo) { break; }
             if ($maxPages > 0 && $pages >= $maxPages) { break; }
             if ($maxItems > 0 && $items >= $maxItems) { break; }
 
@@ -213,7 +226,7 @@ final class PipedriveClient
         }
 
         return [
-            'ok' => true, 'pages' => $pages, 'items' => $items,
+            'ok' => true, 'pages' => $pages, 'items' => $items, 'completo' => $completo,
             'api_calls' => $apiCalls, 'token_cost' => $tokenCost,
             'status' => $lastStatus, 'error' => null,
         ];

@@ -296,6 +296,35 @@ final class PipeSyncRepository
     /** Entidades com versão da origem (coluna source_updated_at). */
     private const VERSIONADAS = ['deal', 'person', 'organization', 'activity', 'lead'];
 
+    /** DDI-036: executa $f numa transação (ou num SAVEPOINT, se já houver uma aberta). Falha = ROLLBACK e a exceção sobe: o estado anterior
+     *  (registro pai E coleção filha) fica intacto e ninguém vê a coleção intermediária (apagada e ainda não reinserida). */
+    private function emTransacao(callable $f)
+    {
+        if ($this->pdo->inTransaction()) {
+            $sp = 'ddi036_' . bin2hex(random_bytes(4));
+            $this->pdo->exec("SAVEPOINT $sp");
+            try { $r = $f(); $this->pdo->exec("RELEASE SAVEPOINT $sp"); return $r; }
+            catch (\Throwable $e) { $this->pdo->exec("ROLLBACK TO SAVEPOINT $sp"); throw $e; }
+        }
+        $this->pdo->beginTransaction();
+        try { $r = $f(); $this->pdo->commit(); return $r; }
+        catch (\Throwable $e) { if ($this->pdo->inTransaction()) { $this->pdo->rollBack(); } throw $e; }
+    }
+
+    /** DDI-037: classifica a coleção filha recebida ANTES de qualquer substituição.
+     *  chave ausente = AUSENTE (preserva) · não é lista = INVALIDA (preserva + registra) · [] = VAZIA comprovada (substitui por vazio) ·
+     *  lista = PREENCHIDA (substitui). Devolve a lista a gravar, ou null para preservar. */
+    private static function colecao(array $pai, string $chave, string $contexto): ?array
+    {
+        if (!array_key_exists($chave, $pai)) { return null; }
+        $v = $pai[$chave];
+        if (!is_array($v) || ($v !== [] && array_keys($v) !== range(0, count($v) - 1))) {
+            error_log("[pipedrive] DDI-037 coleção inválida preservada: {$contexto}.{$chave}");
+            return null;
+        }
+        return $v;
+    }
+
     // ── upserts por entidade ────────────────────────────────────
     public function upsertPipeline(array $p): string
     {
@@ -524,16 +553,25 @@ final class PipeSyncRepository
         return self::outcome($st);
     }
 
-    public function upsertPerson(array $p): string
+    /** DDI-036: pessoa + e-mails + telefones numa transação só (falha = ROLLBACK, o anterior fica intacto). */
+    public function upsertPerson(array $p): string { return $this->emTransacao(fn () => $this->upsertPersonNaTransacao($p)); }
+
+    private function upsertPersonNaTransacao(array $p): string
     {
-        $emails = is_array($p['emails'] ?? null) ? $p['emails'] : [];
-        $phones = is_array($p['phones'] ?? null) ? $p['phones'] : [];
-        $primEmail = self::primaryValue($emails);
-        $primPhone = self::primaryValue($phones);
+        // DDI-037: ausente/inválida = preserva os filhos atuais (null); [] = vazia comprovada; lista = substitui
+        $emails = self::colecao($p, 'emails', 'person');
+        $phones = self::colecao($p, 'phones', 'person');
+        $primEmail = self::primaryValue($emails ?? []);
+        $primPhone = self::primaryValue($phones ?? []);
         $labels = $p['label_ids'] ?? null;
         if (is_array($labels)) { $labels = implode(',', array_map('strval', $labels)); }
         $raw = json_encode($p, JSON_UNESCAPED_UNICODE);
         $vn = self::VERSAO_NOVA;   // DDI-030: só grava se a versão da origem recebida for >= à persistida (source_updated_at por ÚLTIMO)
+        // QI VERDE/AZUL 12:04 (P1): coleção AUSENTE/INVÁLIDA preserva também os campos DERIVADOS no pai (primary_*, *_norm), não só os filhos
+        $cEmail = $emails === null ? 'primary_email=primary_email, email_norm=email_norm'
+            : "primary_email=IF({$vn}, VALUES(primary_email), primary_email), email_norm=IF({$vn}, VALUES(email_norm), email_norm)";
+        $cPhone = $phones === null ? 'primary_phone=primary_phone, phone_norm=phone_norm'
+            : "primary_phone=IF({$vn}, VALUES(primary_phone), primary_phone), phone_norm=IF({$vn}, VALUES(phone_norm), phone_norm)";
         $st = $this->pdo->prepare(
             "INSERT INTO pipe_persons
                (pipedrive_id, company_id, name, org_id, job_title, owner_id, creator_user_id, label_ids,
@@ -544,8 +582,7 @@ final class PipeSyncRepository
              ON DUPLICATE KEY UPDATE
                company_id=IF({$vn}, VALUES(company_id), company_id), name=IF({$vn}, VALUES(name), name), org_id=IF({$vn}, VALUES(org_id), org_id), job_title=IF({$vn}, VALUES(job_title), job_title),
                owner_id=IF({$vn}, VALUES(owner_id), owner_id), creator_user_id=IF({$vn}, VALUES(creator_user_id), creator_user_id), label_ids=IF({$vn}, VALUES(label_ids), label_ids),
-               primary_email=IF({$vn}, VALUES(primary_email), primary_email), primary_phone=IF({$vn}, VALUES(primary_phone), primary_phone),
-               email_norm=IF({$vn}, VALUES(email_norm), email_norm), phone_norm=IF({$vn}, VALUES(phone_norm), phone_norm),
+               {$cEmail}, {$cPhone},
                custom_fields=IF({$vn}, VALUES(custom_fields), custom_fields), is_deleted=IF({$vn}, VALUES(is_deleted), is_deleted),
                add_time=IF({$vn}, VALUES(add_time), add_time), update_time=IF({$vn}, VALUES(update_time), update_time), raw_payload=IF({$vn}, VALUES(raw_payload), raw_payload), payload_hash=IF({$vn}, VALUES(payload_hash), payload_hash), last_synced_at=IF({$vn}, NOW(), last_synced_at),
                sync_version=IF({$vn}, sync_version+1, sync_version),
@@ -566,13 +603,16 @@ final class PipeSyncRepository
         ]);
         $out = self::outcome($st);
         if ($st->rowCount() > 0) {   // DDI-030: resposta ANTIGA (upsert condicional não aplicou) não troca e-mails/telefones da versão mais nova
-            $this->replaceChildren('pipe_person_emails', 'person_pd_id', (int)$p['id'], $emails, ['value', 'label', 'primary']);
-            $this->replaceChildren('pipe_person_phones', 'person_pd_id', (int)$p['id'], $phones, ['value', 'label', 'primary']);
+            if ($emails !== null) { $this->replaceChildren('pipe_person_emails', 'person_pd_id', (int)$p['id'], $emails, ['value', 'label', 'primary']); }
+            if ($phones !== null) { $this->replaceChildren('pipe_person_phones', 'person_pd_id', (int)$p['id'], $phones, ['value', 'label', 'primary']); }
         }
         return $out;
     }
 
-    public function upsertProduct(array $pr): string
+    /** DDI-036: produto + preços/custos numa transação só. */
+    public function upsertProduct(array $pr): string { return $this->emTransacao(fn () => $this->upsertProductNaTransacao($pr)); }
+
+    private function upsertProductNaTransacao(array $pr): string
     {
         $raw = json_encode($pr, JSON_UNESCAPED_UNICODE);
         $st = $this->pdo->prepare(
@@ -599,8 +639,8 @@ final class PipeSyncRepository
             ':raw' => $raw, ':hash' => hash('sha256', $raw),
         ]);
         $out = self::outcome($st);
-        $prices = is_array($pr['prices'] ?? null) ? $pr['prices'] : [];
-        $this->replaceChildren('pipe_product_prices', 'product_pd_id', (int)$pr['id'], $prices, ['price', 'currency', 'cost']);
+        $prices = self::colecao($pr, 'prices', 'product');   // DDI-037: ausente/inválida = preserva preços e custos atuais
+        if ($prices !== null) { $this->replaceChildren('pipe_product_prices', 'product_pd_id', (int)$pr['id'], $prices, ['price', 'currency', 'cost']); }
         return $out;
     }
 
@@ -609,9 +649,16 @@ final class PipeSyncRepository
      * Cada linha vem de GET /v2/deals/{id}/products. `sum` pode faltar no payload →
      * calcula item_price*quantity - discount como fallback. @return int nº de itens.
      */
-    public function upsertDealProducts(int $dealPdId, array $products): int
+    /** DDI-036/037: $products = coleção COMPLETA e válida (paginação concluída); null = preservar a atual (ausente/inválida/incompleta).
+     *  Apagar + inserir numa transação só: falha = ROLLBACK, a coleção anterior fica intacta; ninguém vê a intermediária. */
+    public function upsertDealProducts(int $dealPdId, ?array $products): int
     {
-        if ($dealPdId <= 0) { return 0; }
+        if ($dealPdId <= 0 || $products === null) { return 0; }
+        return $this->emTransacao(fn () => $this->upsertDealProductsNaTransacao($dealPdId, $products));
+    }
+
+    private function upsertDealProductsNaTransacao(int $dealPdId, array $products): int
+    {
         $this->pdo->prepare("DELETE FROM pipe_deal_products WHERE deal_pd_id = ?")->execute([$dealPdId]);
         if (!$products) { return 0; }
         $ins = $this->pdo->prepare(
@@ -916,9 +963,15 @@ final class PipeSyncRepository
         return $first;
     }
 
+    /** DDI-036: apagar + inserir os filhos SEMPRE numa transação (ou savepoint): falha no meio = a coleção anterior volta inteira. */
     private function replaceChildren(string $table, string $fk, int $parentPdId, array $items, array $cols): void
     {
         if ($parentPdId <= 0) { return; }
+        $this->emTransacao(function () use ($table, $fk, $parentPdId, $items, $cols): void { $this->replaceChildrenNaTransacao($table, $fk, $parentPdId, $items, $cols); });
+    }
+
+    private function replaceChildrenNaTransacao(string $table, string $fk, int $parentPdId, array $items, array $cols): void
+    {
         $this->pdo->prepare("DELETE FROM `$table` WHERE `$fk` = ?")->execute([$parentPdId]);
         if (!$items) { return; }
         // cols mapeia [value,label,primary] p/ emails/phones OU [price,currency,cost] p/ prices
