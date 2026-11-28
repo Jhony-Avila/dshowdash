@@ -16,6 +16,7 @@ require_once __DIR__ . '/../_helpers/ApiResponse.php';
 require_once __DIR__ . '/../_helpers/AuthHelpers.php';
 require_once __DIR__ . '/../../config/db_connection.php';
 require_once __DIR__ . '/../core/repositories/UserProfileRepository.php';
+require_once __DIR__ . '/../_helpers/TextoPerfil.php';   // P0 XSS-UARPS (27/11): o servidor recusa " < > ` e controles nos campos do perfil
 
 CorsPolicy::setupApiEndpoint([
     'methods' => ['GET', 'POST', 'PUT', 'PATCH', 'OPTIONS'],
@@ -59,16 +60,20 @@ if (in_array($method, ['POST', 'PUT', 'PATCH'], true)) {
     }
 
     $allowed = ['nome', 'nome_resumido', 'nome_completo', 'funcao', 'departamento'];
-    $clean = [];
+    $clean = []; $recusados = [];
     foreach ($allowed as $f) {
         if (!array_key_exists($f, $input)) continue;
         $v = $input[$f];
         if ($v === null) { $clean[$f] = null; continue; }
+        if (!is_scalar($v) || TextoPerfil::inseguro((string) $v)) { $recusados[] = $f; continue; }   // P0 XSS-UARPS: recusa, não "limpa"
         $v = strip_tags(trim((string)$v));
         if (mb_strlen($v) > 128) $v = mb_substr($v, 0, 128);
         $clean[$f] = $v;
     }
 
+    if ($recusados !== []) {
+        ApiResponse::error('VALIDATION_FAILED', 400, ['message' => 'Use só letras, números, espaço e pontuação comum (sem aspas duplas, < >, crase ou quebra de linha).', 'fields' => $recusados]);
+    }
     if (empty($clean)) {
         ApiResponse::error('NO_FIELDS', 400, ['message' => 'Nenhum campo válido para atualizar']);
     }
