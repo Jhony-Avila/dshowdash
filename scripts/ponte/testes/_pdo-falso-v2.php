@@ -49,6 +49,8 @@ final class PdoFalsoV2 extends PDO
     /** @var array<string,string> regex → mensagem: prepare() lança PDOException (simula banco em falha) */
     public array $lancar = [];
     public function lastInsertId(?string $name = null): string|false { $this->eventos[] = 'lastInsertId'; return '77'; }
+    /** DDI-072: SAVEPOINT/RELEASE/ROLLBACK TO (o MetaLib dentro da transação do núcleo) ficam registrados nos eventos e nas executadas. */
+    public function exec(string $statement): int|false { $this->executadas[] = [$statement, []]; $this->eventos[] = $statement; return 0; }
     public function query(string $query, ?int $fetchMode = null, mixed ...$fetchModeArgs): PDOStatement|false { $st = $this->prepare($query); $st->execute([]); return $st; }
     public function beginTransaction(): bool { $this->emTransacao = true; $this->eventos[] = 'begin'; return true; }
     public function commit(): bool { $this->emTransacao = false; $this->eventos[] = 'commit'; return true; }

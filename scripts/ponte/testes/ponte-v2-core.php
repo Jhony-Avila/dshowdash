@@ -16,12 +16,14 @@ $SQL_ROLES = '/^SELECT r\.id, r\.role_key, r\.role_name, r\.level FROM app_user_
 $SQL_IDEM_INS = '/^INSERT IGNORE INTO app_ponte_ops/';
 $SQL_IDEM_SEL = '/^SELECT corpo_hash, status, resposta_json, UNIX_TIMESTAMP\(criado_em\) AS criado FROM app_ponte_ops/';
 $SQL_IDEM_RETOMA = '/^UPDATE app_ponte_ops SET criado_em = FROM_UNIXTIME\(\?\) WHERE/';
-$pdoBase = static function (array $extra = [], int $nivel = 80) use ($SQL_USER, $SQL_ROLES, $SQL_IDEM_INS): PdoFalsoV2 {
+$SQL_IDEM_LOCK = '/^SELECT status, UNIX_TIMESTAMP\(criado_em\) AS criado FROM app_ponte_ops WHERE user_id = \? AND request_id = \? FOR UPDATE/';   // DDI-072: trava + cerca da reserva
+$pdoBase = static function (array $extra = [], int $nivel = 80) use ($SQL_USER, $SQL_ROLES, $SQL_IDEM_INS, $SQL_IDEM_LOCK, $agora): PdoFalsoV2 {
     $p = new PdoFalsoV2();
     $p->respostas = $extra + [
         $SQL_USER => ['linhas' => [['id' => 7, 'status' => 'active', 'deleted_at' => null]]],
         $SQL_ROLES => ['linhas' => $nivel > 0 ? [['id' => 1, 'role_key' => 'x', 'role_name' => 'X', 'level' => $nivel]] : []],
         $SQL_IDEM_INS => ['afetadas' => 1],
+        $SQL_IDEM_LOCK => ['linhas' => [['status' => 0, 'criado' => $agora]]],   // DDI-072: a reserva desta execução (token = $agora)
     ];
     return $p;
 };
@@ -104,6 +106,9 @@ $p = $pdoBase([$SQL_N_LIDA => ['afetadas' => 0]], 0); [$s, $e] = $exec($p, $srv(
 $p = $pdoBase([$SQL_N_TODAS => ['afetadas' => 4]], 0); $c = $pedido('notificacoes', 'marcar_todas'); [$s, $e] = $exec($p, $srv($c), $c); $ok($s === 200 && $e['data'] === ['marked' => 4] && $binds($p, $SQL_N_TODAS) === [7], '[17c] marcar_todas → 200 marked 4');
 $p = $pdoBase([$SQL_N_DEL => ['afetadas' => 1]], 0); $c = $pedido('notificacoes', 'excluir', ['id' => 5]); [$s, $e] = $exec($p, $srv($c), $c); $ok($s === 200 && $e['data'] === ['deleted' => true] && $binds($p, $SQL_N_DEL) === [5, 7], '[17d] excluir → 200');
 
+$p = $pdoBase([$SQL_ACK => ['afetadas' => 1]]); $p->lancar = ['/^INSERT INTO app_audit_trail/' => 'Table app_audit_trail is full'];
+$c12 = $pedido('alertas', 'reconhecer', ['id' => 123]); [$s, $e] = $exec($p, $srv($c12), $c12);
+$ok($s === 500 && in_array('rollback', $p->eventos, true) && !in_array('commit', $p->eventos, true) && !$executou($p, '/^UPDATE app_ponte_ops SET status = \?/'), '[12b] DDI-072: auditoria OBRIGATÓRIA (app_audit_trail) falhou → ROLLBACK do efeito local, nada concluído: ' . json_encode($p->eventos));
 // idempotência
 $c = $pedido('alertas', 'reconhecer', ['id' => 123]);
 $hash = hash('sha256', "alertas\nreconhecer\n" . json_encode(['id' => 123], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
@@ -115,9 +120,25 @@ $p = $pdoBase([$SQL_IDEM_INS => ['afetadas' => 0], $SQL_IDEM_SEL => ['linhas' =>
 $p = $pdoBase([$SQL_IDEM_INS => ['afetadas' => 0], $SQL_IDEM_SEL => ['linhas' => [['corpo_hash' => $hash, 'status' => 0, 'resposta_json' => null, 'criado' => $agora - 5]]], $SQL_IDEM_RETOMA => ['afetadas' => 0]]);
 [$s, $e] = $exec($p, $srv($c), $c); $ok($s === 409 && $e['error'] === 'EM_ANDAMENTO', '[18c] em andamento (5 s) → 409');
 $p = $pdoBase([$SQL_IDEM_INS => ['afetadas' => 0], $SQL_IDEM_SEL => ['linhas' => [['corpo_hash' => $hash, 'status' => 0, 'resposta_json' => null, 'criado' => $agora - 600]]], $SQL_IDEM_RETOMA => ['afetadas' => 1], $SQL_ACK => ['afetadas' => 1]]);
-[$s, $e] = $exec($p, $srv($c), $c); $ok($s === 200 && $executou($p, $SQL_ACK), '[18d] em andamento há 600 s → retomado e executado');
-$rb = $binds($p, $SQL_IDEM_RETOMA); $ok(($rb[3] ?? 0) === $agora - PV2_EM_ANDAMENTO_S, '[18d] janela de retomada = 60 s');
+[$s, $e] = $exec($p, $srv($c), $c); $ok($s === 200 && $executou($p, $SQL_ACK) && $executou($p, $SQL_IDEM_RETOMA) && in_array('commit', $p->eventos, true), '[18d] DDI-072: ATÔMICA (alertas) com reserva sem conclusão há 600 s → retomada sob cerca e executada numa transação (a anterior não confirmou nada)');
+$ok(($binds($p, $SQL_IDEM_RETOMA)[3] ?? 0) === $agora - PV2_EM_ANDAMENTO_S, '[18d] janela de retomada = 60 s');
+$ca = $pedido('agenda', 'criar', ['calendar_id' => 'x', 'titulo' => 't']);
+$ha = hash('sha256', "agenda\ncriar\n" . json_encode(['calendar_id' => 'x', 'titulo' => 't'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+$p = $pdoBase([$SQL_IDEM_INS => ['afetadas' => 0], $SQL_IDEM_SEL => ['linhas' => [['corpo_hash' => $ha, 'status' => 0, 'resposta_json' => null, 'criado' => $agora - 600]]], $SQL_IDEM_RETOMA => ['afetadas' => 1]], 0);
+[$s, $e] = $exec($p, $srv($ca), $ca, ['flagsModulo' => ['ponte.agenda.escrita' => true]]); $ok($s === 409 && $e['error'] === 'RESULTADO_INDETERMINADO' && !$executou($p, $SQL_IDEM_RETOMA), '[18f] DDI-072: EXTERNA (agenda/Google) com reserva velha → RESULTADO_INDETERMINADO, nunca reexecuta (reconciliar antes): ' . json_encode($e));
+$p = $pdoBase([$SQL_IDEM_LOCK => ['linhas' => [['status' => 0, 'criado' => $agora + 7]]], $SQL_ACK => ['afetadas' => 1]]);
+[$s, $e] = $exec($p, $srv($c), $c); $ok($s === 409 && $e['error'] === 'EM_ANDAMENTO' && !$executou($p, $SQL_ACK) && in_array('rollback', $p->eventos, true), '[18g] DDI-072: cerca perdida (outra execução retomou a reserva) → 409, o handler NÃO roda (um escritor só)');
+$p = $pdoBase([$SQL_IDEM_INS => ['afetadas' => 0], $SQL_IDEM_SEL => ['linhas' => [['corpo_hash' => $hash, 'status' => 200, 'resposta_json' => '{corrompido', 'criado' => $agora - 10]]], $SQL_ACK => ['afetadas' => 1]]);
+[$s, $e] = $exec($p, $srv($c), $c); $ok($s === 200 && ($e['data'] ?? null) === ['ja_processado' => true] && ($e['meta']['replay'] ?? false) === true && !$executou($p, $SQL_ACK), '[18e] DDI-062/069: resposta guardada ilegível → só o comprovante do efeito, sem reexecutar: ' . json_encode($e));
 
+$at = 0; $ex = []; foreach (PV2_ALLOWLIST as $m => $as) { foreach ($as as $a => $d) { if ($d['tipo'] !== 'escrita') continue; if (!empty(PV2_ESCRITA_ATOMICA[$m][$a])) $at++; else $ex[] = "$m.$a"; } }
+$ok($at === 9 && count($ex) === 4 && array_filter($ex, static fn($x) => !str_starts_with($x, 'agenda.')) === [], '[19b] DDI-072: 9 escritas locais atômicas e 4 externas (só agenda): ' . json_encode($ex));
+$p = new PdoFalsoV2(); pv2_idem_concluir($p, 7, 'req-0123456789abcdef', 200, ['ok' => true], $agora); pv2_idem_concluir($p, 7, 'req-0123456789abcdef', 500, [], $agora);
+$cc = array_values(array_filter($p->executadas, static fn($x) => str_contains((string)$x[0], 'app_ponte_ops')));
+$ok(count($cc) === 2 && str_contains((string)$cc[0][0], 'AND status = 0 AND criado_em = FROM_UNIXTIME(?)') && end($cc[0][1]) === $agora && str_contains((string)$cc[1][0], 'AND status = 0 AND criado_em = FROM_UNIXTIME(?)'), '[18h] DDI-072: concluir e apagar SÓ com user_id + request_id + token da tentativa (a antiga não toca a reserva da que retomou)');
+$p = new PdoFalsoV2(); $pr = meta_tx_abrir($p); meta_tx_confirmar($p, $pr);
+$q = new PdoFalsoV2(); $q->beginTransaction(); $pq = meta_tx_abrir($q); meta_tx_desfazer($q, $pq); $q->commit();
+$ok($pr === true && $p->eventos === ['begin', 'commit'] && $pq === false && $q->eventos === ['begin', 'SAVEPOINT meta_tx', 'ROLLBACK TO SAVEPOINT meta_tx', 'commit'], '[22h] DDI-072: MetaLib fora de transação (painel do Dash) = BEGIN/COMMIT próprios como antes; dentro da do núcleo = SAVEPOINT: ' . json_encode([$p->eventos, $q->eventos]));
 // erro interno libera a chave; nonce repetido é recusado
 $p = $pdoBase([$SQL_ACK => ['afetadas' => 1]]); $p->lancar = [$SQL_ACK => 'MySQL server has gone away']; [$s, $e] = $exec($p, $srv($c), $c);
 $ok($s === 500 && $e['error'] === 'ERRO_INTERNO' && $executou($p, '/^DELETE FROM app_ponte_ops WHERE user_id = \? AND request_id = \?/'), '[19] PDOException no handler → 500 e chave liberada para retry');

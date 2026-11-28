@@ -19,7 +19,16 @@ require_once __DIR__ . '/../core/repositories/UserRolesRepository.php';
 const PV2_VERSAO = '2.0.0';
 const PV2_FLAG_GERAL = 'ponte.v2';
 const PV2_CORPO_MAX = 262_144;      // 256 KB — nenhuma ação da W1 carrega mais que alguns KB
-const PV2_EM_ANDAMENTO_S = 60;      // após isso, um pedido "em andamento" pode ser retomado (processo morreu)
+/** DDI-072 (GPT DATA, 28/11): escritas LOCAIS e ATÔMICAS (um comando no banco do Dash, sem transação própria nem efeito externo). Nelas o núcleo
+ *  grava o efeito, a auditoria e a conclusão da idempotência NA MESMA transação: se o processo cair antes do commit, nada foi confirmado e a
+ *  reserva pode ser retomada com segurança. Qualquer outra escrita (transação própria, ex.: metas; efeito EXTERNO, ex.: agenda/Google) é tratada
+ *  como NÃO atômica: nunca é reexecutada automaticamente (reserva velha = RESULTADO_INDETERMINADO, reconciliar antes). Padrão = não atômica. */
+const PV2_ESCRITA_ATOMICA = [
+    'alertas' => ['reconhecer' => true, 'resolver' => true, 'silenciar' => true, 'dessilenciar' => true],
+    'notificacoes' => ['marcar_lida' => true, 'marcar_todas' => true, 'excluir' => true],
+    'metas' => ['definir' => true, 'remover' => true],   // GPT DATA 007-R05: 9 locais; o MetaLib usa SAVEPOINT dentro da transação do núcleo
+];
+const PV2_EM_ANDAMENTO_S = 60;      // até isso, um pedido sem conclusão é EM_ANDAMENTO (409); depois, RESULTADO_INDETERMINADO (409) — nunca reexecuta (DDI-062/069)
 const PV2_REQUEST_ID_RE = '/^[A-Za-z0-9_-]{16,64}$/';
 
 function pv2_envelope(bool $ok, ?array $data, ?string $erro, array $meta = []): array
@@ -67,14 +76,14 @@ function pv2_nivel(PDO $pdo, int $userId): int
 
 /**
  * Idempotência: reserva (user_id, request_id) em app_ponte_ops.
- * @return array{estado:'novo'|'replay'|'divergente'|'em_andamento', status?:int, envelope?:array}
+ * @return array{estado:'novo'|'replay'|'divergente'|'em_andamento'|'indeterminado', status?:int, envelope?:array}
  */
-function pv2_idem_iniciar(PDO $pdo, int $userId, string $reqId, string $modulo, string $acao, string $hash, int $agora): array
+function pv2_idem_iniciar(PDO $pdo, int $userId, string $reqId, string $modulo, string $acao, string $hash, int $agora, bool $retomavel = false): array
 {
     $ins = $pdo->prepare('INSERT IGNORE INTO app_ponte_ops (user_id, request_id, modulo, acao, corpo_hash, status, criado_em) VALUES (?, ?, ?, ?, ?, 0, FROM_UNIXTIME(?))');
     $ins->execute([$userId, $reqId, $modulo, $acao, $hash, $agora]);
     if ($ins->rowCount() > 0) {
-        return ['estado' => 'novo'];
+        return ['estado' => 'novo', 'token' => $agora];   // token de cerca = o criado_em desta execução
     }
     $sel = $pdo->prepare('SELECT corpo_hash, status, resposta_json, UNIX_TIMESTAMP(criado_em) AS criado FROM app_ponte_ops WHERE user_id = ? AND request_id = ?');
     $sel->execute([$userId, $reqId]);
@@ -86,28 +95,45 @@ function pv2_idem_iniciar(PDO $pdo, int $userId, string $reqId, string $modulo, 
         return ['estado' => 'divergente'];
     }
     if ((int)$r['status'] === 0) {
+        // DDI-062/069 (critério do arquiteto 12:38): uma escrita JÁ CONCLUÍDA nunca é repetida. Uma reserva sem conclusão (status 0) pode ser de uma
+        // execução que CONFIRMOU o efeito e caiu antes de gravar a conclusão (ex.: a agenda já falou com o Google): reexecutar duplicaria. Por isso
+        // a reserva velha NÃO é mais retomada automaticamente: devolve RESULTADO_INDETERMINADO e o cliente confere o estado (e usa outra chave se
+        // precisar). Antes: depois de PV2_EM_ANDAMENTO_S a reserva era retomada e o handler rodava de novo.
+        $velha = (int)($r['criado'] ?? $agora) < $agora - PV2_EM_ANDAMENTO_S;
+        if (!$velha) return ['estado' => 'em_andamento'];
+        if (!$retomavel) return ['estado' => 'indeterminado'];
+        // DDI-072: atômica = o efeito e a conclusão iam na MESMA transação; status 0 velho = nada confirmado. Retomada com UPDATE condicional (só um
+        // vence) e TOKEN novo: uma execução antiga que ainda esteja viva perde a cerca e não confirma nada (um escritor só).
         $retoma = $pdo->prepare('UPDATE app_ponte_ops SET criado_em = FROM_UNIXTIME(?) WHERE user_id = ? AND request_id = ? AND status = 0 AND criado_em < FROM_UNIXTIME(?)');
         $retoma->execute([$agora, $userId, $reqId, $agora - PV2_EM_ANDAMENTO_S]);
-        return ['estado' => $retoma->rowCount() > 0 ? 'novo' : 'em_andamento'];
+        return $retoma->rowCount() > 0 ? ['estado' => 'novo', 'token' => $agora] : ['estado' => 'em_andamento'];
     }
     $env = json_decode((string)$r['resposta_json'], true);
-    return ['estado' => 'replay', 'status' => (int)$r['status'], 'envelope' => is_array($env) ? $env : pv2_envelope(false, null, 'ERRO_INTERNO')];
+    // DDI-062/069: resposta guardada ilegível → só o COMPROVANTE do efeito (sem conteúdo), nunca reexecutar
+    if (!is_array($env)) { $st = (int)$r['status']; $env = pv2_envelope($st < 400, ['ja_processado' => true], $st < 400 ? null : 'JA_PROCESSADO'); }
+    return ['estado' => 'replay', 'status' => (int)$r['status'], 'envelope' => $env];
 }
 
-function pv2_idem_concluir(PDO $pdo, int $userId, string $reqId, int $status, array $envelope): void
+function pv2_idem_concluir(PDO $pdo, int $userId, string $reqId, int $status, array $envelope, ?int $token = null): void
 {
+    // DDI-072 (GPT DATA 007-R05): concluir/apagar SÓ a reserva da PRÓPRIA tentativa (user_id + request_id + token = criado_em dela). Uma tentativa
+    // antiga que continue viva depois de outra ter retomado a reserva não conclui, não altera e não apaga a reserva da outra.
+    $cerca = $token !== null ? ' AND status = 0 AND criado_em = FROM_UNIXTIME(?)' : '';
+    $extra = $token !== null ? [$token] : [];
     if ($status >= 500) {
         // falha transitória: libera a chave para a próxima tentativa
-        $pdo->prepare('DELETE FROM app_ponte_ops WHERE user_id = ? AND request_id = ?')->execute([$userId, $reqId]);
+        $pdo->prepare('DELETE FROM app_ponte_ops WHERE user_id = ? AND request_id = ?' . $cerca)->execute(array_merge([$userId, $reqId], $extra));
         return;
     }
-    $pdo->prepare('UPDATE app_ponte_ops SET status = ?, resposta_json = ?, concluido_em = NOW(3) WHERE user_id = ? AND request_id = ?')
-        ->execute([$status, json_encode($envelope, JSON_UNESCAPED_UNICODE), $userId, $reqId]);
+    $pdo->prepare('UPDATE app_ponte_ops SET status = ?, resposta_json = ?, concluido_em = NOW(3) WHERE user_id = ? AND request_id = ?' . $cerca)
+        ->execute(array_merge([$status, json_encode($envelope, JSON_UNESCAPED_UNICODE), $userId, $reqId], $extra));
 }
 
 /** Auditoria dupla: app_audit_log (AuditLogger, o que a central de auditoria do núcleo usa) + app_audit_trail (o que o painel Audit Trail lê). */
-function pv2_auditar(PDO $pdo, int $userId, string $modulo, string $acao, string $reqId, int $status, ?array $recurso, ?array $antes, ?array $depois, array $ctx): void
+function pv2_auditar(PDO $pdo, int $userId, string $modulo, string $acao, string $reqId, int $status, ?array $recurso, ?array $antes, ?array $depois, array $ctx, bool $obrigatoria = false): void
 {
+    // DDI-072 (GPT DATA 007-R05): app_audit_trail = auditoria OBRIGATÓRIA da escrita local (com $obrigatoria, a falha sobe e desfaz o efeito na
+    // mesma transação); app_audit_log (AuditLogger) = telemetria complementar (falha só registrada). Leituras e registros de erro não são obrigatórios.
     $evento = "ponte.$modulo.$acao";
     $tipo = (string)($recurso[0] ?? $modulo);
     $id = $recurso[1] ?? null;
@@ -123,6 +149,7 @@ function pv2_auditar(PDO $pdo, int $userId, string $modulo, string $acao, string
                 substr((string)($ctx['ip_app'] ?? '127.0.0.1'), 0, 45), substr('app-dshow/' . (string)($ctx['app_versao'] ?? '?'), 0, 500)]);
     } catch (Throwable $e) {
         error_log('[ponte] auditoria app_audit_trail falhou: ' . $e->getMessage());
+        if ($obrigatoria) { throw $e; }
     }
 }
 
@@ -193,8 +220,13 @@ function pv2_executar(?PDO $pdo, array $server, string $corpo, array $amb = []):
         }
 
         $agora = (int)($amb['agora'] ?? time());
+        // DDI-069 (GPT DATA, 28/11): a idempotência com REPLAY vale só para ESCRITA. Uma LEITURA sempre roda o handler com a autorização ATUAL
+        // (conta, nível e as travas por pessoa, ex.: concessão financeira do feed) e o corpo dela NUNCA é guardado em app_ponte_ops: antes, a
+        // repetição do mesmo request_id depois de uma revogação devolvia o conteúdo guardado sem passar pelo handler.
+        $leitura = ($def['tipo'] ?? '') === 'leitura';
         $hash = hash('sha256', $modulo . "\n" . $acao . "\n" . json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-        $idem = pv2_idem_iniciar($pdo, $userId, $reqId, $modulo, $acao, $hash, $agora);
+        $atomica = !$leitura && !empty(PV2_ESCRITA_ATOMICA[$modulo][$acao]);
+        $idem = $leitura ? ['estado' => 'novo'] : pv2_idem_iniciar($pdo, $userId, $reqId, $modulo, $acao, $hash, $agora, $atomica);
         if ($idem['estado'] === 'replay') {
             pv2_log($userId, $modulo, $acao, $reqId, $idem['status'], 'REPLAY');
             $env = $idem['envelope'];
@@ -209,25 +241,48 @@ function pv2_executar(?PDO $pdo, array $server, string $corpo, array $amb = []):
             pv2_log($userId, $modulo, $acao, $reqId, 409, 'EM_ANDAMENTO');
             return [409, pv2_envelope(false, null, 'EM_ANDAMENTO')];
         }
+        if ($idem['estado'] === 'indeterminado') {   // DDI-062/069: reserva velha sem conclusão — nunca reexecuta a escrita
+            pv2_log($userId, $modulo, $acao, $reqId, 409, 'RESULTADO_INDETERMINADO');
+            return [409, pv2_envelope(false, null, 'RESULTADO_INDETERMINADO')];
+        }
 
-        $status = 200; $envelope = null;
+        $status = 200; $envelope = null; $concluido = false;
+        if ($atomica) {
+            // DDI-072: efeito + auditoria + conclusão numa transação, com a reserva TRAVADA e a cerca conferida (só quem tem o token confirma)
+            $pdo->beginTransaction();
+            $lk = $pdo->prepare('SELECT status, UNIX_TIMESTAMP(criado_em) AS criado FROM app_ponte_ops WHERE user_id = ? AND request_id = ? FOR UPDATE');
+            $lk->execute([$userId, $reqId]);
+            $row = $lk->fetch(PDO::FETCH_ASSOC);
+            if (!is_array($row) || (int)$row['status'] !== 0 || (int)$row['criado'] !== (int)($idem['token'] ?? -1)) {
+                $pdo->rollBack();
+                pv2_log($userId, $modulo, $acao, $reqId, 409, 'EM_ANDAMENTO');
+                return [409, pv2_envelope(false, null, 'EM_ANDAMENTO')];
+            }
+        }
         try {
             $r = ($def['handler'])($pdo, $userId, $payload);
             $envelope = pv2_envelope(true, $r['data'] ?? [], null);
-            pv2_auditar($pdo, $userId, $modulo, $acao, $reqId, 200, $r['recurso'] ?? null, $r['antes'] ?? null, $r['depois'] ?? null, $ctx);
+            pv2_auditar($pdo, $userId, $modulo, $acao, $reqId, 200, $r['recurso'] ?? null, $r['antes'] ?? null, $r['depois'] ?? null, $ctx, $atomica);
+            if ($atomica) { pv2_idem_concluir($pdo, $userId, $reqId, 200, $envelope, (int)$idem['token']); $pdo->commit(); $concluido = true; }
         } catch (PonteErro $e) {
             if ($pdo->inTransaction()) { $pdo->rollBack(); }
             $status = $e->status;
             $envelope = pv2_envelope(false, $e->extra ?: null, $e->codigo);
             pv2_auditar($pdo, $userId, $modulo, $acao, $reqId, $status, null, null, ['erro' => $e->codigo], $ctx);
         }
-        pv2_idem_concluir($pdo, $userId, $reqId, $status, $envelope);
+        // DDI-072 (GPT DATA 007-R08): numa escrita NÃO atômica (efeito externo/transação própria), um erro >= 500 é RESULTADO DESCONHECIDO (ex.: o
+        // Google aplicou e a resposta se perdeu → o agenda_traduzir devolve 503): a reserva FICA (status 0) e a repetição vira EM_ANDAMENTO e depois
+        // RESULTADO_INDETERMINADO, nunca reexecuta. Antes, o 503 era "concluído" e o concluir(>=500) APAGAVA a reserva → a repetição duplicava o efeito.
+        $desconhecido = !$leitura && !$atomica && $status >= 500;
+        if (!$leitura && !$concluido && !$desconhecido) { pv2_idem_concluir($pdo, $userId, $reqId, $status, $envelope, isset($idem['token']) ? (int)$idem['token'] : null); }   // DDI-069: leitura não guarda corpo
         pv2_log($userId, $modulo, $acao, $reqId, $status, $status === 200 ? '' : (string)$envelope['error']);
         return [$status, $envelope];
     } catch (Throwable $e) {
         if ($pdo->inTransaction()) { $pdo->rollBack(); }
         error_log('[ponte] ' . get_class($e) . ': ' . $e->getMessage());
-        try { pv2_idem_concluir($pdo, $userId, $reqId, 500, []); } catch (Throwable $e2) { /* já em falha */ }
+        // DDI-072: 500 só LIBERA a chave quando é certo que nada foi confirmado (atômica: a transação do efeito foi desfeita). Não atômica
+        // (transação própria/efeito externo): a reserva FICA (status 0) → em andamento e, depois, RESULTADO_INDETERMINADO; nunca reexecuta sozinha.
+        if (empty($leitura) && !empty($atomica) && empty($concluido)) { try { pv2_idem_concluir($pdo, $userId, $reqId, 500, [], isset($idem['token']) ? (int)$idem['token'] : null); } catch (Throwable $e2) { /* já em falha */ } }
         pv2_log($userId, $modulo, $acao, $reqId, 500, 'ERRO_INTERNO');
         return [500, pv2_envelope(false, null, 'ERRO_INTERNO')];
     }

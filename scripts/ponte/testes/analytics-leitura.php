@@ -36,6 +36,22 @@ $exec = static function (int $nivel, string $corpo, bool $flag = true) use ($pdo
 [$s, $e] = $exec(80, $pedido('status')); $ok($s === 200 && isset($e['data']['pronto']), "[5] nível 80 lê o status (tem $s)");
 [$s, $e] = $exec(50, $pedido('aquisicao', ['filtros' => ['inicio' => '31/10/2026', 'fim' => '2026-10-31']])); $ok($s === 422 && $e['error'] === 'VALIDACAO', "[6] filtro inválido → 422 (tem $s)");
 [$s, $e] = $exec(100, $pedido('apagar_tudo')); $ok($s === 400 && empty($e['ok']), "[7] ação fora da allowlist → 400 do núcleo, nada executado (tem $s)");
+// DDI-069 (GPT DATA, 28/11): LEITURA não tem replay. Mesmo com uma resposta GUARDADA em app_ponte_ops para o mesmo request_id, o núcleo roda o
+// handler com a autorização ATUAL e não lê nem grava app_ponte_ops; com o nível rebaixado (revogação), a repetição dá 403, nunca o guardado.
+$guardado = json_encode(['ok' => true, 'data' => ['GUARDADO' => 'conteudo-de-antes-da-revogacao'], 'error' => null]);
+$pdoReplay = static function (int $nivel) use ($pdo, $guardado): PdoFalsoV2 {
+    $p = $pdo($nivel);
+    $p->respostas['/^INSERT IGNORE INTO app_ponte_ops/'] = ['afetadas' => 0];
+    $h = hash('sha256', "analytics\nvisao_geral\n" . json_encode(['filtros' => ['periodo' => '7d']], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));   // MESMO corpo = replay de verdade
+    $p->respostas['/^SELECT corpo_hash, status, resposta_json/'] = ['linhas' => [['corpo_hash' => $h, 'status' => 200, 'resposta_json' => $guardado, 'criado' => 1_800_000_000 - 5]]];
+    return $p;
+};
+$mesmo = json_encode(['user_id' => 7, 'modulo' => 'analytics', 'acao' => 'visao_geral', 'payload' => ['filtros' => ['periodo' => '7d']], 'request_id' => 'req-ddi069-0123456789']);
+$p9 = $pdoReplay(50); [$s, $e] = pv2_executar($p9, $srv($mesmo), $mesmo, $amb(true));
+$tocou = (bool)array_filter($p9->executadas, static fn($x) => str_contains((string)$x[0], 'app_ponte_ops'));
+$ok($s === 200 && !isset($e['data']['GUARDADO']) && empty($e['meta']['replay']) && ($e['data']['meta']['fonte'] ?? '') === 'mock' && !$tocou, '[9] DDI-069: leitura com resposta guardada para o mesmo request_id → roda o handler, sem replay, sem tocar app_ponte_ops');
+$p10 = $pdoReplay(49); [$s, $e] = pv2_executar($p10, $srv($mesmo), $mesmo, $amb(true));
+$ok($s === 403 && ($e['error'] ?? '') === 'PERMISSAO_NEGADA' && !isset($e['data']['GUARDADO']), "[10] DDI-069: depois da revogação de NÍVEL a repetição do MESMO request_id = 403 (o nível já era conferido antes do replay; o buraco era a trava POR PESSOA dentro do handler, coberta pelo [9]) (tem $s)");
 foreach (array_keys(PV2_ALLOWLIST['analytics']) as $acao) { $ok(PV2_ALLOWLIST['analytics'][$acao]['tipo'] === 'leitura', "[8] analytics.$acao é LEITURA"); }
 @array_map('unlink', glob("$dir/nonces/*") ?: []); @rmdir("$dir/nonces"); @rmdir($dir);
 if ($falhas) { echo "FALHAS (" . count($falhas) . "):\n - " . implode("\n - ", $falhas) . "\n"; exit(1); }

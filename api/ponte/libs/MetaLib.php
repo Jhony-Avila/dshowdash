@@ -77,7 +77,7 @@ function meta_definir(PDO $pdo, int $userId, array $payload, string $origem = 'a
     if (!in_array($origem, ['app', 'dash'], true)) { $origem = 'app'; }
     $reqId = meta_request_id($payload);
 
-    $pdo->beginTransaction();
+    $propria = meta_tx_abrir($pdo);
     $sel = $pdo->prepare('SELECT id, valor_cents, versao FROM app_metas_comerciais WHERE ano = ? AND mes = ? AND escopo = ? AND owner_pd_id = ? FOR UPDATE');
     $sel->execute([$k['ano'], $k['mes'], $k['escopo'], $k['owner_pd_id']]);
     $atual = $sel->fetch(PDO::FETCH_ASSOC) ?: null;
@@ -85,7 +85,7 @@ function meta_definir(PDO $pdo, int $userId, array $payload, string $origem = 'a
     if ($atual !== null) {
         $versaoAtual = (int)$atual['versao'];
         if ($k['versao_esperada'] !== null && $k['versao_esperada'] !== $versaoAtual) {
-            $pdo->rollBack();
+            meta_tx_desfazer($pdo, $propria);
             throw new PonteErro('CONFLITO', 409, ['versao_atual' => $versaoAtual, 'valor_atual_cents' => (int)$atual['valor_cents']]);
         }
         $novaVersao = $versaoAtual + 1;
@@ -95,7 +95,7 @@ function meta_definir(PDO $pdo, int $userId, array $payload, string $origem = 'a
         $anterior = (int)$atual['valor_cents'];
     } else {
         if ($k['versao_esperada'] !== null && $k['versao_esperada'] !== 0) {
-            $pdo->rollBack();
+            meta_tx_desfazer($pdo, $propria);
             throw new PonteErro('CONFLITO', 409, ['versao_atual' => 0, 'valor_atual_cents' => null]);
         }
         $pdo->prepare('INSERT INTO app_metas_comerciais (ano, mes, escopo, owner_pd_id, valor_cents, versao, criado_por, atualizado_por, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, ?, ?, NOW(3), NOW(3))')
@@ -106,11 +106,17 @@ function meta_definir(PDO $pdo, int $userId, array $payload, string $origem = 'a
     }
     $pdo->prepare('INSERT INTO app_metas_comerciais_hist (meta_id, versao, valor_anterior_cents, valor_novo_cents, alterado_por, origem, request_id, motivo, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NOW(3))')
         ->execute([$id, $novaVersao, $anterior, $valor, $userId, $origem, $reqId]);
-    $pdo->commit();
+    meta_tx_confirmar($pdo, $propria);
 
     return ['id' => $id, 'ano' => $k['ano'], 'mes' => $k['mes'], 'escopo' => $k['escopo'], 'owner_pd_id' => $k['owner_pd_id'],
         'valor_cents' => $valor, 'versao' => $novaVersao, 'valor_anterior_cents' => $anterior];
 }
+
+/** DDI-072 (GPT DATA 007-R05): transação ciente de aninhamento. Fora de uma transação (painel do Dash) = como antes (BEGIN/COMMIT próprios).
+ *  Dentro da transação do núcleo da Ponte (escrita atômica: efeito + auditoria + conclusão da idempotência juntos) = SAVEPOINT. */
+function meta_tx_abrir(PDO $pdo): bool { if ($pdo->inTransaction()) { $pdo->exec('SAVEPOINT meta_tx'); return false; } $pdo->beginTransaction(); return true; }
+function meta_tx_confirmar(PDO $pdo, bool $propria): void { if ($propria) { $pdo->commit(); } else { $pdo->exec('RELEASE SAVEPOINT meta_tx'); } }
+function meta_tx_desfazer(PDO $pdo, bool $propria): void { if ($propria) { $pdo->rollBack(); } else { $pdo->exec('ROLLBACK TO SAVEPOINT meta_tx'); } }
 
 /** metas.remover — payload {id, versao_esperada?}: apaga a meta e grava na hist (valor_novo NULL). 404 NAO_ENCONTRADO · 409 CONFLITO. */
 function meta_remover(PDO $pdo, int $userId, array $payload, string $origem = 'app'): array
@@ -127,23 +133,23 @@ function meta_remover(PDO $pdo, int $userId, array $payload, string $origem = 'a
     if (!in_array($origem, ['app', 'dash'], true)) { $origem = 'app'; }
     $reqId = meta_request_id($payload);
 
-    $pdo->beginTransaction();
+    $propria = meta_tx_abrir($pdo);
     $sel = $pdo->prepare('SELECT id, ano, mes, escopo, owner_pd_id, valor_cents, versao FROM app_metas_comerciais WHERE id = ? FOR UPDATE');
     $sel->execute([$id]);
     $atual = $sel->fetch(PDO::FETCH_ASSOC) ?: null;
     if ($atual === null) {
-        $pdo->rollBack();
+        meta_tx_desfazer($pdo, $propria);
         throw new PonteErro('NAO_ENCONTRADO', 404, ['message' => 'Meta nao encontrada']);
     }
     $versaoAtual = (int)$atual['versao'];
     if ($ve !== null && $ve !== $versaoAtual) {
-        $pdo->rollBack();
+        meta_tx_desfazer($pdo, $propria);
         throw new PonteErro('CONFLITO', 409, ['versao_atual' => $versaoAtual, 'valor_atual_cents' => (int)$atual['valor_cents']]);
     }
     $pdo->prepare('INSERT INTO app_metas_comerciais_hist (meta_id, versao, valor_anterior_cents, valor_novo_cents, alterado_por, origem, request_id, motivo, created_at) VALUES (?, ?, ?, NULL, ?, ?, ?, NULL, NOW(3))')
         ->execute([$id, $versaoAtual + 1, (int)$atual['valor_cents'], $userId, $origem, $reqId]);
     $pdo->prepare('DELETE FROM app_metas_comerciais WHERE id = ?')->execute([$id]);
-    $pdo->commit();
+    meta_tx_confirmar($pdo, $propria);
 
     return ['id' => $id, 'removed' => true, 'ano' => (int)$atual['ano'], 'mes' => (int)$atual['mes'], 'escopo' => (string)$atual['escopo'],
         'owner_pd_id' => (int)$atual['owner_pd_id'], 'valor_anterior_cents' => (int)$atual['valor_cents']];
