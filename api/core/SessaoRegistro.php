@@ -58,6 +58,18 @@ final class SessaoRegistro
         return getConnection('DSHOWDASH');
     }
 
+    /** L02 (LOGS-009/011, autorizado 28/11 09:35): o registro guarda a REFERÊNCIA da sessão, nunca o id cru (que é o próprio cookie).
+     *  'h1:' + sha256(id). O id do PHP só tem [A-Za-z0-9,-]: um valor 'h1:…' lido do banco não serve como cookie. */
+    public static function ref(string $sid): string { return 'h1:' . hash('sha256', $sid); }
+    /** Leitura na transição: a referência OU o id cru das linhas criadas antes da migração (scripts/seguranca/l02/01-migrar-PROPOSTA.sql). */
+    public static function refs(string $sid): array { return (strpos($sid, ':') === false) ? [self::ref($sid), $sid] : [self::ref($sid), self::ref($sid)]; }
+    /** O valor guardado corresponde a este id? (comparação em tempo constante) */
+    public static function ehMesma(?string $guardado, string $sid): bool
+    {
+        if ($guardado === null || $guardado === '' || $sid === '') return false;
+        return hash_equals($guardado, self::ref($sid)) || (strpos($sid, ':') === false && hash_equals($guardado, $sid));
+    }
+
     /** OK | AUSENTE | OUTRO_TITULAR | REVOGADA | EXPIRADA | FALHA */
     public static function situacao(string $token, int $userId): string
     {
@@ -75,8 +87,8 @@ final class SessaoRegistro
                 self::$temF1 = (int) $pdo->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'app_usuario_f1'")->fetchColumn() === 1;
             }
             $f1 = self::$temF1 ? ", (SELECT COUNT(*) FROM app_usuario_f1 f WHERE f.user_id = s.user_id AND f.situacao = 'pendente_f1') AS f1_pendente" : ', 0 AS f1_pendente';
-            $st = $pdo->prepare('SELECT s.user_id, s.is_active, (s.expires_at > NOW()) AS vigente, u.status AS conta_status, (u.deleted_at IS NULL) AS conta_viva' . $f1 . ' FROM app_user_sessions s LEFT JOIN app_users u ON u.id = s.user_id WHERE s.session_token = ? LIMIT 1');
-            $st->execute([$token]);
+            $st = $pdo->prepare('SELECT s.user_id, s.is_active, (s.expires_at > NOW()) AS vigente, u.status AS conta_status, (u.deleted_at IS NULL) AS conta_viva' . $f1 . ' FROM app_user_sessions s LEFT JOIN app_users u ON u.id = s.user_id WHERE s.session_token IN (?, ?) LIMIT 1');
+            $st->execute(self::refs($token));
             $linha = $st->fetch(PDO::FETCH_ASSOC);
         } catch (\Throwable $e) {
             error_log('[SessaoRegistro] consulta falhou: ' . get_class($e));
@@ -109,11 +121,11 @@ final class SessaoRegistro
         }
         try {
             $set = 'session_token = ?, last_activity_at = NOW(3)';
-            $p = [$novo];
+            $p = [self::ref($novo)];   // L02: a renovação já grava a referência (e migra a linha antiga)
             if ($csrf !== null) { $set .= ', csrf_token = ?'; $p[] = $csrf; }
             if ($expiraEm !== null) { $set .= ', expires_at = FROM_UNIXTIME(?)'; $p[] = $expiraEm; }
-            $st = self::pdo()->prepare("UPDATE app_user_sessions SET $set WHERE session_token = ? AND user_id = ? AND is_active = 1 AND expires_at > NOW()");
-            $st->execute(array_merge($p, [$antigo, $userId]));
+            $st = self::pdo()->prepare("UPDATE app_user_sessions SET $set WHERE session_token IN (?, ?) AND user_id = ? AND is_active = 1 AND expires_at > NOW()");
+            $st->execute(array_merge($p, self::refs($antigo), [$userId]));
             return $st->rowCount() === 1;
         } catch (\Throwable $e) {
             error_log('[SessaoRegistro] troca falhou: ' . get_class($e));
@@ -129,11 +141,11 @@ final class SessaoRegistro
             return false;
         }
         try {
-            $st = self::pdo()->prepare('UPDATE app_user_sessions SET is_active = 0, logout_at = NOW(3), logout_reason = ? WHERE session_token = ? AND user_id = ? AND is_active = 1');
-            $st->execute([substr($motivo, 0, 50), $token, $userId]);
+            $st = self::pdo()->prepare('UPDATE app_user_sessions SET is_active = 0, logout_at = NOW(3), logout_reason = ? WHERE session_token IN (?, ?) AND user_id = ? AND is_active = 1');
+            $st->execute(array_merge([substr($motivo, 0, 50)], self::refs($token), [$userId]));
             // Codex DSHOW-113 (4): "encerrado" só com prova de que NÃO sobrou registro ativo com este id (o UPDATE sem erro não basta)
-            $v = self::pdo()->prepare('SELECT COUNT(*) FROM app_user_sessions WHERE session_token = ? AND is_active = 1');
-            $v->execute([$token]);
+            $v = self::pdo()->prepare('SELECT COUNT(*) FROM app_user_sessions WHERE session_token IN (?, ?) AND is_active = 1');
+            $v->execute(self::refs($token));
             return (int) $v->fetchColumn() === 0;
         } catch (\Throwable $e) {
             error_log('[SessaoRegistro] encerramento falhou: ' . get_class($e));

@@ -6,25 +6,13 @@ const MODULE_ID = "session-token";
 const STORAGE_KEY = "dshowdash.session.token";
 const _metrics = { tokensSet: 0, tokensCleared: 0, csrfSet: 0, csrfCleared: 0, persistSuccess: 0, persistFailed: 0, restoreSuccess: 0, restoreFailed: 0 };
 const jwtState = { jwt: null, jwtExp: null };
-function persistToken(token) {
+function persistToken(_token) {
   try {
-    if (token) {
-      const exp = getJWTExpiration(token);
-      const result = StoragePort.set(STORAGE_KEY, { token, exp, savedAt: Date.now() });
-      if (result) {
-        _metrics.persistSuccess++;
-        return true;
-      }
-    } else {
-      StoragePort.remove(STORAGE_KEY);
-      _metrics.persistSuccess++;
-      return true;
-    }
-    _metrics.persistFailed++;
-    return false;
+    StoragePort.remove(STORAGE_KEY);
+    _metrics.persistSuccess++;
+    return true;
   } catch (e) {
     _metrics.persistFailed++;
-    log.warn("Failed to persist token", { error: e.message });
     return false;
   }
 }
@@ -55,7 +43,10 @@ function initFromStorage() {
   }
   return false;
 }
-initFromStorage();
+try {
+  StoragePort.remove(STORAGE_KEY);
+} catch (e) {
+}
 function getSecurityCSRF() {
   if (typeof window !== "undefined" && window.SecurityCSRF) return window.SecurityCSRF;
   return null;

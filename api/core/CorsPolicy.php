@@ -9,22 +9,21 @@ declare(strict_types=1);
 
 class CorsPolicy {
     
-    // Origens permitidas (produção + desenvolvimento)
+    // L02 (28/11, CORS por ambiente): PRODUÇÃO = só https do domínio (sem http, sem localhost). Origens de desenvolvimento só com
+    // DSHOW_CORS_DEV=1 no ambiente do processo (homologação local), nunca por padrão.
     private static array $allowedOrigins = [
         'https://dshowdash.com.br',
         'https://www.dshowdash.com.br',
-        'https://test.dshowdash.com.br',
-        'http://dshowdash.com.br',
-        'http://www.dshowdash.com.br',
-        'http://test.dshowdash.com.br',
+    ];
+    private static array $devOrigins = [
         'http://localhost:3000',
         'http://localhost:8080',
         'http://127.0.0.1:3000',
-        'http://127.0.0.1:8080'
+        'http://127.0.0.1:8080',
     ];
-    
-    // Regex para validação dinâmica (subdomínios)
-    private static string $originPattern = '#^https?://([\w-]+\.)?dshowdash\.com\.br$#';
+
+    // Regex para validação dinâmica (subdomínios) — só https
+    private static string $originPattern = '#^https://([\w-]+\.)?dshowdash\.com\.br$#';
     
     // Headers padrão
     private static array $defaultHeaders = [
@@ -44,6 +43,9 @@ class CorsPolicy {
             return false;
         }
         if (in_array($origin, self::$allowedOrigins, true)) {
+            return true;
+        }
+        if (getenv('DSHOW_CORS_DEV') === '1' && in_array($origin, self::$devOrigins, true)) {
             return true;
         }
         return (bool)preg_match(self::$originPattern, $origin);

@@ -1,5 +1,7 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/../core/CorsPolicy.php';   // L02: CORS por ambiente
+require_once __DIR__ . '/../core/SessaoRegistro.php';   // L02: SessaoRegistro::ref/refs/ehMesma
 
 // /api/auth/check.php
 // @version 5.2.0-AVATAR-FIX
@@ -8,14 +10,9 @@ declare(strict_types=1);
 // v5.1.0: P0.3 FIX - SEMPRE retorna csrf_token
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-$allowedOrigins = [
-    'https://dshowdash.com.br',
-    'https://www.dshowdash.com.br',
-    'http://localhost:3000',
-    'http://127.0.0.1:3000'
-];
+// L02 (28/11): lista única e por ambiente no CorsPolicy (sem http, sem localhost em produção)
 
-if ($origin && (in_array($origin, $allowedOrigins, true) || preg_match('#^https?://([\w-]+\.)?dshowdash\.com\.br$#', $origin))) {
+if ($origin && CorsPolicy::isAllowedOrigin($origin)) {
     header("Access-Control-Allow-Origin: $origin");
     header('Access-Control-Allow-Credentials: true');
     header('Vary: Origin');
@@ -109,17 +106,17 @@ try {
     $stmt = $pdo->prepare("
         UPDATE app_user_sessions 
         SET last_activity_at = NOW(3) 
-        WHERE session_token = ? AND user_id = ? AND is_active = 1
+        WHERE session_token IN (?, ?) AND user_id = ? AND is_active = 1
     ");
-    $stmt->execute([$sessionToken, $userId]);
+    $stmt->execute(array_merge(SessaoRegistro::refs($sessionToken), [$userId]));
     
     $stmtSession = $pdo->prepare("
-        SELECT session_token, csrf_token, expires_at, last_activity_at, device_type, browser, os, origin_ip
+        SELECT csrf_token, expires_at, last_activity_at, device_type, browser, os, origin_ip
         FROM app_user_sessions 
-        WHERE session_token = ? AND user_id = ? AND is_active = 1
+        WHERE session_token IN (?, ?) AND user_id = ? AND is_active = 1
         LIMIT 1
     ");
-    $stmtSession->execute([$sessionToken, $userId]);
+    $stmtSession->execute(array_merge(SessaoRegistro::refs($sessionToken), [$userId]));
     $dbSession = $stmtSession->fetch();
     
     // v5.2.0: Buscar avatar_url do usuário
@@ -142,7 +139,7 @@ try {
 $_SESSION['last_activity'] = $now;
 
 $sessionData = [
-    'token' => $sessionToken,
+    // L02: o id da sessão (= cookie HttpOnly) NÃO volta mais no corpo
     'expires_at' => isset($_SESSION['expire_time']) ? date('Y-m-d\TH:i:s\Z', $_SESSION['expire_time']) : null,
     'last_activity_at' => $lastActivity,
     'csrf_token' => $csrfToken

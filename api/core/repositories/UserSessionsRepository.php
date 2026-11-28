@@ -7,6 +7,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/RepositoryException.php';
+require_once __DIR__ . '/../SessaoRegistro.php';   // L02: busca pela referência da sessão
 
 class UserSessionsRepository
 {
@@ -76,9 +77,9 @@ class UserSessionsRepository
             $stmt = $this->pdo->prepare("
                 SELECT id, user_id, origin_ip AS ip_address, CONCAT_WS(' · ', browser, os) AS user_agent, is_active, created_at AS login_at, last_activity_at
                 FROM app_user_sessions
-                WHERE session_token = ?
+                WHERE session_token IN (?, ?)
             ");
-            $stmt->execute([$token]);
+            $stmt->execute(SessaoRegistro::refs($token));
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
         } catch (PDOException $e) {
             throw RepositoryException::fromPDOException($e, 'getSessionByToken');
@@ -124,9 +125,9 @@ class UserSessionsRepository
             $stmt = $this->pdo->prepare("
                 UPDATE app_user_sessions
                 SET is_active = 0, logout_at = NOW(3), logout_reason = ?
-                WHERE session_token = ? AND is_active = 1
+                WHERE session_token IN (?, ?) AND is_active = 1
             ");
-            return $stmt->execute([$reason, $token]) && $stmt->rowCount() > 0;
+            return $stmt->execute([$reason, ...SessaoRegistro::refs($token)]) && $stmt->rowCount() > 0;
         } catch (PDOException $e) {
             throw RepositoryException::fromPDOException($e, 'terminateSessionByToken');
         }

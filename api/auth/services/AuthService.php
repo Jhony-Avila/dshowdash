@@ -149,7 +149,7 @@ class AuthService
 
             $this->logEvent($userId, 'logout_success', $ip, [
                 'username' => $username,
-                'session_token' => substr($sessionToken, 0, 8) . '...',
+                // L02 (decisão 10:00): o log não leva mais nenhum pedaço do id da sessão
                 'request_id' => $requestId
             ]);
 
@@ -482,7 +482,7 @@ class AuthService
         return [
             'user' => $finalUserData,
             'session' => [
-                'token' => $sessionToken,
+                // L02: o id da sessão (= cookie HttpOnly) NÃO volta mais no corpo
                 'expires_at' => $expiresAtISO,
                 'csrf_token' => $csrfToken,
                 'device_type' => $deviceInfo['device_type'],

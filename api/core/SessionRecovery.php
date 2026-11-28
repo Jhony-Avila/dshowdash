@@ -10,6 +10,12 @@ class SessionRecovery
 {
     private const SESSION_PATH = '/var/lib/php/sessions';
     private const BACKUP_PATH = '/var/lib/php/sessions/backup';
+
+    /** L02 (28/11): o NOME do backup não carrega mais o id da sessão (= cookie); usa sha256 do id. Listar a pasta não revela credencial. */
+    private static function arquivoBackup(string $sessionId): string
+    {
+        return self::BACKUP_PATH . '/sess_h1_' . hash('sha256', $sessionId) . '.bak';
+    }
     private const MAX_RECOVERY_ATTEMPTS = 3;
     
     // Tentar recuperar sessão corrompida
@@ -27,8 +33,11 @@ class SessionRecovery
             return $data;
         }
         
-        // 2. Tentar backup se existir
-        $backupFile = self::BACKUP_PATH . '/sess_' . $sessionId . '.bak';
+        // 2. Tentar backup se existir (L02: nome pela referência; o nome cru antigo só na transição)
+        $backupFile = self::arquivoBackup($sessionId);
+        if (!file_exists($backupFile) && preg_match('/^[A-Za-z0-9,-]+$/', $sessionId)) {
+            $backupFile = self::BACKUP_PATH . '/sess_' . $sessionId . '.bak';
+        }
         if (file_exists($backupFile)) {
             $data = self::tryReadSession($backupFile);
             if ($data !== null) {
@@ -61,7 +70,7 @@ class SessionRecovery
             @mkdir(self::BACKUP_PATH, 0700, true);
         }
         
-        $backupFile = self::BACKUP_PATH . '/sess_' . $sessionId . '.bak';
+        $backupFile = self::arquivoBackup($sessionId);
         
         return @copy($sessionFile, $backupFile);
     }

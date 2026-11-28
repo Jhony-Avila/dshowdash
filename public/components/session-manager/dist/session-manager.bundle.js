@@ -559,13 +559,7 @@ function es() {
 const D = { get: Gn, set: Bn, remove: Yn, clear: qn, has: Wn, useMemoryAdapter: Jn, useLocalStorageAdapter: Kn, getAdapterType: Zn, getVersion: Xn, getMetrics: gr, info: Qn, healthCheck: es }, wt = "5.1.0-P17WI", hr = "session-token", Le = "dshowdash.session.token", w = { tokensSet: 0, tokensCleared: 0, csrfSet: 0, csrfCleared: 0, persistSuccess: 0, persistFailed: 0, restoreSuccess: 0, restoreFailed: 0 }, d = { jwt: null, jwtExp: null };
 function mr(e) {
   try {
-    if (e) {
-      const t = vt(e);
-      if (D.set(Le, { token: e, exp: t, savedAt: Date.now() }))
-        return w.persistSuccess++, !0;
-    } else
-      return D.remove(Le), w.persistSuccess++, !0;
-    return w.persistFailed++, !1;
+    return D.remove(Le), w.persistSuccess++, !0;   // L02: o id da sessão nunca é gravado no navegador; só apaga
   } catch (t) {
     return w.persistFailed++, k.warn("Failed to persist token", { error: t.message }), !1;
   }
@@ -582,7 +576,7 @@ function kr() {
   const e = pr();
   return e && e.token ? (d.jwt = e.token, d.jwtExp = e.exp || vt(e.token), !0) : !1;
 }
-kr();
+try { D.remove(Le); } catch (e) { /* L02: apaga a chave legada; armazenamento indisponível = nada a apagar */ }
 function Ie() {
   return typeof window < "u" && window.SecurityCSRF ? window.SecurityCSRF : null;
 }

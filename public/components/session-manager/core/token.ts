@@ -35,14 +35,16 @@ const STORAGE_KEY = 'dshowdash.session.token';
 const _metrics = { tokensSet: 0, tokensCleared: 0, csrfSet: 0, csrfCleared: 0, persistSuccess: 0, persistFailed: 0, restoreSuccess: 0, restoreFailed: 0 };
 const jwtState: { jwt: string | null; jwtExp: number | null } = { jwt: null, jwtExp: null };
 
-function persistToken(token: string | null) { try { if (token) { const exp = getJWTExpiration(token); const result = StoragePort.set(STORAGE_KEY, { token, exp, savedAt: Date.now() }); if (result) { _metrics.persistSuccess++; return true; } } else { StoragePort.remove(STORAGE_KEY); _metrics.persistSuccess++; return true; } _metrics.persistFailed++; return false; } catch (e: any) { _metrics.persistFailed++; log.warn('Failed to persist token', { error: e.message }); return false; } }
+// L02 (28/11): o id da sessão (= cookie HttpOnly) nunca mais é gravado no navegador; qualquer chamada só APAGA a chave
+function persistToken(_token: string | null) { try { StoragePort.remove(STORAGE_KEY); _metrics.persistSuccess++; return true; } catch (e: any) { _metrics.persistFailed++; return false; } }
 
 
 function restoreToken() { try { const data = StoragePort.get(STORAGE_KEY); if (!data || !data.token) return null; if (data.exp && isTokenExpired(data.exp)) { log.info('Restored token is expired, clearing'); StoragePort.remove(STORAGE_KEY); return null; } _metrics.restoreSuccess++; log.info('Token restored from storage'); return data; } catch (e: any) { _metrics.restoreFailed++; log.warn('Failed to restore token', { error: e.message }); return null; } }
 
 function initFromStorage() { const stored = restoreToken(); if (stored && stored.token) { jwtState.jwt = stored.token; jwtState.jwtExp = stored.exp || getJWTExpiration(stored.token); return true; } return false; }
 
-initFromStorage();
+// L02: não restaura mais o id salvo; apaga a chave legada de quem já a tinha (dshowdash.session.token)
+try { StoragePort.remove(STORAGE_KEY); } catch (e) { /* armazenamento indisponível: nada a apagar */ }
 
 
 function getSecurityCSRF() { if (typeof window !== 'undefined' && (window as any).SecurityCSRF) return (window as any).SecurityCSRF; return null; }

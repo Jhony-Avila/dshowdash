@@ -7,6 +7,7 @@
 // Repository para operações de autenticação
 
 declare(strict_types=1);
+require_once __DIR__ . '/../../core/SessaoRegistro.php';   // L02: SessaoRegistro::ref/refs/ehMesma
 
 class AuthRepository
 {
@@ -103,8 +104,8 @@ class AuthRepository
 
     public function findSessionByToken(string $token): ?array
     {
-        $stmt = $this->pdo->prepare("SELECT id, user_id, is_active FROM app_user_sessions WHERE session_token = ?");
-        $stmt->execute([$token]);
+        $stmt = $this->pdo->prepare("SELECT id, user_id, is_active FROM app_user_sessions WHERE session_token IN (?, ?)");
+        $stmt->execute(SessaoRegistro::refs($token));
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result ?: null;
     }
@@ -114,9 +115,9 @@ class AuthRepository
         $stmt = $this->pdo->prepare("
             SELECT id, user_id, csrf_token, expires_at, last_activity_at
             FROM app_user_sessions 
-            WHERE session_token = ? AND is_active = 1
+            WHERE session_token IN (?, ?) AND is_active = 1
         ");
-        $stmt->execute([$token]);
+        $stmt->execute(SessaoRegistro::refs($token));
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result ?: null;
     }
@@ -127,11 +128,11 @@ class AuthRepository
             UPDATE app_user_sessions 
             SET user_id = ?, csrf_token = ?, device_type = ?, browser = ?, os = ?, 
                 origin_ip = ?, is_active = 1, expires_at = FROM_UNIXTIME(?), last_activity_at = NOW(3)
-            WHERE session_token = ?
+            WHERE session_token IN (?, ?)
         ");
         return $stmt->execute([
             $userId, $csrf, $device['device_type'], $device['browser'],
-            $device['os'], $ip, $expiresAt, $token
+            $device['os'], $ip, $expiresAt, ...SessaoRegistro::refs($token)
         ]);
     }
 
@@ -143,7 +144,7 @@ class AuthRepository
             VALUES (?, ?, ?, ?, ?, ?, ?, 1, FROM_UNIXTIME(?), NOW(3))
         ");
         return $stmt->execute([
-            $userId, $token, $csrf, $device['device_type'],
+            $userId, SessaoRegistro::ref($token), $csrf, $device['device_type'],
             $device['browser'], $device['os'], $ip, $expiresAt
         ]);
     }
@@ -153,18 +154,18 @@ class AuthRepository
         $stmt = $this->pdo->prepare("
             UPDATE app_user_sessions 
             SET is_active = 0, updated_at = NOW(3)
-            WHERE session_token = ? AND user_id = ?
+            WHERE session_token IN (?, ?) AND user_id = ?
         ");
-        return $stmt->execute([$token, $userId]);
+        return $stmt->execute([...SessaoRegistro::refs($token), $userId]);
     }
 
     public function deleteSession(string $token, int $userId): bool
     {
         $stmt = $this->pdo->prepare("
             DELETE FROM app_user_sessions 
-            WHERE user_id = ? AND session_token = ?
+            WHERE user_id = ? AND session_token IN (?, ?)
         ");
-        return $stmt->execute([$userId, $token]);
+        return $stmt->execute([$userId, ...SessaoRegistro::refs($token)]);
     }
 
     public function refreshSessionActivity(string $token, int $userId, string $newCsrf, int $expiresAt): bool
@@ -172,9 +173,9 @@ class AuthRepository
         $stmt = $this->pdo->prepare("
             UPDATE app_user_sessions 
             SET csrf_token = ?, last_activity_at = NOW(3), expires_at = FROM_UNIXTIME(?)
-            WHERE session_token = ? AND user_id = ? AND is_active = 1
+            WHERE session_token IN (?, ?) AND user_id = ? AND is_active = 1
         ");
-        return $stmt->execute([$newCsrf, $expiresAt, $token, $userId]);
+        return $stmt->execute([$newCsrf, $expiresAt, ...SessaoRegistro::refs($token), $userId]);
     }
 
     // ════════════════════════════════════════════════════════════

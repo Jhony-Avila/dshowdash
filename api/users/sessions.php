@@ -6,6 +6,7 @@
 // v2.2.0: Removida getDbConnection() local
 
 declare(strict_types=1);
+require_once __DIR__ . '/../core/SessaoRegistro.php';   // L02: SessaoRegistro::ref/refs/ehMesma
 
 require_once __DIR__ . '/../_helpers/ApiResponse.php';
 require_once __DIR__ . '/../_helpers/AuthHelpers.php';
@@ -70,7 +71,7 @@ function handleGetSessions(): void {
         $currentToken = session_id();
         foreach ($sessions as &$session) {
             $session['token_preview'] = '...' . substr((string)$session['session_token'], -8);
-            $session['is_current'] = ($session['session_token'] === $currentToken);
+            $session['is_current'] = SessaoRegistro::ehMesma((string)$session['session_token'], (string)$currentToken);
             unset($session['session_token']);
         }
         unset($session);
@@ -114,7 +115,7 @@ function handleDeleteSession(): void {
             ApiResponse::error('SESSION_NOT_FOUND', 404);
             return;
         }
-        if ((string)$alvo['session_token'] === session_id()) {
+        if (SessaoRegistro::ehMesma((string)$alvo['session_token'], session_id())) {
             ApiResponse::error('CANNOT_DELETE_CURRENT_SESSION', 400, ['message' => 'Use o logout para encerrar a sessão atual.']);
             return;
         }

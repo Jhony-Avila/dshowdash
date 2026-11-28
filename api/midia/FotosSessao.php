@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/../core/SessaoRegistro.php';   // L02: SessaoRegistro::ref/refs/ehMesma
 
 /**
  * /api/midia/FotosSessao.php — DSHOW-103 P1-2 (19/11, ACIMA_DIREITA): SESSÃO COMPLETA no proxy de fotos.
@@ -25,8 +26,8 @@ final class FotosSessaoPdo implements FotosSessaoRepositorio
 
     public function situacao(string $tokenSessao, int $userId): array
     {
-        $s = $this->pdo->prepare('SELECT 1 FROM app_user_sessions WHERE session_token = ? AND user_id = ? AND is_active = 1 AND (expires_at IS NULL OR expires_at > NOW()) LIMIT 1');
-        $s->execute([$tokenSessao, $userId]);
+        $s = $this->pdo->prepare('SELECT 1 FROM app_user_sessions WHERE session_token IN (?, ?) AND user_id = ? AND is_active = 1 AND (expires_at IS NULL OR expires_at > NOW()) LIMIT 1');
+        $s->execute([...SessaoRegistro::refs($tokenSessao), $userId]);
         $sessao = $s->fetchColumn() !== false;
         $u = $this->pdo->prepare("SELECT 1 FROM app_users WHERE id = ? AND status = 'active' AND deleted_at IS NULL LIMIT 1");
         $u->execute([$userId]);

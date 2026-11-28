@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/../core/SessaoRegistro.php';   // L02: SessaoRegistro::ref/refs/ehMesma
 
 // /api/sessions/index.php - Gerenciamento de sessões do usuário
 // @version 2.3.0-ENTERPRISE - Migrado para _init.php
@@ -62,7 +63,7 @@ try {
             $currentToken = session_id();
             foreach ($sessions as &$session) {
                 $session['token_preview'] = '...' . substr((string)$session['session_token'], -8);
-                $session['is_current'] = ($session['session_token'] === $currentToken);
+                $session['is_current'] = SessaoRegistro::ehMesma((string)$session['session_token'], (string)$currentToken);
                 unset($session['session_token']);
             }
             unset($session);
@@ -80,9 +81,9 @@ try {
             $stmt = $pdo->prepare("
                 SELECT device_type, browser, os, origin_ip, created_at, last_activity_at, expires_at
                 FROM app_user_sessions 
-                WHERE session_token = ? AND user_id = ?
+                WHERE session_token IN (?, ?) AND user_id = ?
             ");
-            $stmt->execute([$currentToken, $userId]);
+            $stmt->execute([...SessaoRegistro::refs($currentToken), $userId]);
             $session = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if (!$session) {
@@ -93,7 +94,9 @@ try {
             break;
             
         case 'create':
-            // Criar nova sessão (para uso programático)
+            // L02 (decisão do arquiteto 28/11 10:00): DESLIGADO. Devolvia um id de sessão no corpo e nenhuma tela usa. Reativar só com
+            // decisão documentada (e sem devolver o id). O código abaixo fica inalcançável de propósito, para a reativação ser revisável.
+            ApiResponse::error('GONE', 410, ['message' => 'Criação programática de sessão desativada']);
             requireMethod('POST');
             requireCsrf();
             
@@ -103,7 +106,7 @@ try {
                 (user_id, session_token, device_type, browser, os, origin_ip, is_active, expires_at)
                 VALUES (?, ?, 'api', 'API Client', 'Unknown', ?, 1, DATE_ADD(NOW(), INTERVAL 7 DAY))
             ");
-            $stmt->execute([$userId, $sessionToken, $_SERVER['REMOTE_ADDR'] ?? 'unknown']);
+            $stmt->execute([$userId, SessaoRegistro::ref($sessionToken), $_SERVER['REMOTE_ADDR'] ?? 'unknown']);
             
             ApiResponse::success(['session_token' => $sessionToken], ['message' => 'Sessão criada']);
             break;
@@ -114,9 +117,9 @@ try {
             $stmt = $pdo->prepare("
                 UPDATE app_user_sessions 
                 SET last_activity_at = NOW(), expires_at = DATE_ADD(NOW(), INTERVAL 7 DAY)
-                WHERE session_token = ? AND user_id = ?
+                WHERE session_token IN (?, ?) AND user_id = ?
             ");
-            $stmt->execute([$currentToken, $userId]);
+            $stmt->execute([...SessaoRegistro::refs($currentToken), $userId]);
             
             ApiResponse::success(null, ['updated' => $stmt->rowCount() > 0]);
             break;
@@ -136,8 +139,8 @@ try {
                 ApiResponse::error('CANNOT_REVOKE_CURRENT', 400, ['message' => 'Use logout para encerrar a sessão atual']);
             }
             
-            $stmt = $pdo->prepare("UPDATE app_user_sessions SET is_active = 0 WHERE session_token = ? AND user_id = ?");
-            $stmt->execute([$token, $userId]);
+            $stmt = $pdo->prepare("UPDATE app_user_sessions SET is_active = 0 WHERE session_token IN (?, ?) AND user_id = ?");
+            $stmt->execute([...SessaoRegistro::refs((string)$token), $userId]);
             
             ApiResponse::success(null, ['revoked' => $stmt->rowCount() > 0]);
             break;
@@ -151,9 +154,9 @@ try {
             $stmt = $pdo->prepare("
                 UPDATE app_user_sessions 
                 SET is_active = 0 
-                WHERE user_id = ? AND session_token != ? AND is_active = 1
+                WHERE user_id = ? AND session_token NOT IN (?, ?) AND is_active = 1
             ");
-            $stmt->execute([$userId, $currentToken]);
+            $stmt->execute([$userId, ...SessaoRegistro::refs($currentToken)]);
             
             ApiResponse::success(null, [
                 'revoked_count' => $stmt->rowCount(),
@@ -182,11 +185,11 @@ try {
             $placeholders = implode(',', array_fill(0, count($ids), '?'));
 
             if ($isAdmin) {
-                $sql = "UPDATE app_user_sessions SET is_active = 0 WHERE id IN ($placeholders) AND is_active = 1 AND session_token <> ?";
-                $params = array_merge($ids, [$currentToken]);
+                $sql = "UPDATE app_user_sessions SET is_active = 0 WHERE id IN ($placeholders) AND is_active = 1 AND session_token NOT IN (?, ?)";
+                $params = array_merge($ids, SessaoRegistro::refs($currentToken));
             } else {
-                $sql = "UPDATE app_user_sessions SET is_active = 0 WHERE id IN ($placeholders) AND user_id = ? AND is_active = 1 AND session_token <> ?";
-                $params = array_merge($ids, [$userId, $currentToken]);
+                $sql = "UPDATE app_user_sessions SET is_active = 0 WHERE id IN ($placeholders) AND user_id = ? AND is_active = 1 AND session_token NOT IN (?, ?)";
+                $params = array_merge($ids, [$userId], SessaoRegistro::refs($currentToken));
             }
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);

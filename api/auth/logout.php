@@ -9,19 +9,15 @@
 // v6.0.0: FASE 1 - #6 Rate Limiting, #7 CSRF Rotation, #12 CSRF Age
 
 declare(strict_types=1);
+require_once __DIR__ . '/../core/CorsPolicy.php';   // L02: CORS por ambiente
 
 // ═══════════════════════════════════════════════════════════════
 // CORS HEADERS + PREFLIGHT (ANTES DE QUALQUER COISA)
 // ═══════════════════════════════════════════════════════════════
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-$allowedOrigins = [
-    'https://dshowdash.com.br',
-    'https://www.dshowdash.com.br',
-    'http://localhost:3000',
-    'http://127.0.0.1:3000'
-];
+// L02 (28/11): lista única e por ambiente no CorsPolicy (sem http, sem localhost em produção)
 
-if ($origin && (in_array($origin, $allowedOrigins, true) || preg_match('#^https?://([\w-]+\.)?dshowdash\.com\.br$#', $origin))) {
+if ($origin && CorsPolicy::isAllowedOrigin($origin)) {
     header("Access-Control-Allow-Origin: $origin");
     header('Access-Control-Allow-Credentials: true');
     header('Vary: Origin');

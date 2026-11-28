@@ -54,7 +54,7 @@ $chegaCom = function (string $id) use ($novaRequisicao) {
 };
 $valida = function () use ($novaRequisicao) { $novaRequisicao(); return SessionGate::validate(); };
 $proxy = function () use ($pdo, $novaRequisicao): string { $novaRequisicao(); try { FotosSessao::exigir(SessionGate::validate(), session_id(), new FotosSessaoPdo($pdo)); return 'aceita'; } catch (FotosErro $e) { return $e->codigo . '|' . $e->http; } };
-$linha = function (string $tok) use ($pdo) { $s = $pdo->prepare('SELECT id, user_id, session_token, csrf_token, is_active, logout_reason FROM app_user_sessions WHERE session_token = ?'); $s->execute([$tok]); return $s->fetch() ?: null; };
+$linha = function (string $tok) use ($pdo) { $s = $pdo->prepare('SELECT id, user_id, session_token, csrf_token, is_active, logout_reason FROM app_user_sessions WHERE session_token IN (?, ?)'); $s->execute(SessaoRegistro::refs($tok)); return $s->fetch() ?: null; };   // L02: o banco guarda a referência
 $ativas = fn () => (int) $pdo->query("SELECT COUNT(*) FROM app_user_sessions WHERE user_id = $U AND is_active = 1")->fetchColumn();
 $ociosa = function () { $_SESSION['last_activity'] = time() - 3700; };
 $entrar = function () use ($pdo, $U) {   // login como o AuthService faz: SessionGate::create + registro com o session_id() atual
@@ -214,7 +214,7 @@ case 'logout-banco-fora': {   // Codex DSHOW-113 (P1-C): contraprova obrigatóri
     $afirma('destroy() com o banco fora: o registro continua ativo (não deu para gravar)…', ($linha($t1)['is_active'] ?? 0) == 1);
     $afirma('…mas não fica backup: com o banco de volta a sessão NÃO revive pela recuperação', SessionRecovery::attemptRecovery($t1) === null && SessionGate::readOnly($t1) === []);
     // encerrar() só confirma com prova de que não sobrou registro ativo
-    $t2 = $linha($t1)['session_token'];
+    $t2 = $t1;   // L02: o banco guarda a referência; encerrar() recebe o id
     $afirma('encerrar() com o banco ok: confirma e não sobra ativo', SessaoRegistro::encerrar($t2, $U, 'teste') === true && ($linha($t2)['is_active'] ?? 1) == 0);
     $pdo->prepare('INSERT INTO app_user_sessions (user_id, session_token, is_active, expires_at) VALUES (?, ?, 1, NOW() + INTERVAL 1 DAY)')->execute([$U + 1, 'sintetico-outro-titular-' . bin2hex(random_bytes(4))]);
     $t3 = (string) $pdo->query("SELECT session_token FROM app_user_sessions WHERE user_id = " . ($U + 1))->fetchColumn();
