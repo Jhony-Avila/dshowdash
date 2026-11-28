@@ -170,4 +170,7 @@
 .uarps-cell--expired .uarps-cell__label { text-decoration: line-through; }
 .uarps-cell--inherited { opacity: 0.9; }
 .uarps-cell__estado { display: block; font-size: 11px; line-height: 1.3; color: var(--uarps-text-secondary, inherit); margin-top: 2px; }
+/* P2 do editor (VERDE, 27/11; capturas da janela 4/5): o texto do estado (concedente + quando + alçada) transbordava a célula. Fica em até
+   3 linhas com reticências; o texto INTEIRO continua no title da célula ("Status: …") e na "Regra atual" do diálogo. */
+.uarps-cell__estado { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; overflow-wrap: anywhere; max-width: 100%; }
 .uarps-matrix__secao { font-size: 13px; font-weight: 600; margin: 16px 0 8px; }

@@ -125,7 +125,7 @@ export function triggerMatrix(triggers: Record<string, unknown>[], grantedTrigge
     
     html += `<div class="uarps-matrix__group ${isCollapsed ? 'uarps-matrix__group--collapsed' : ''}" data-area="${area}">`;
     html += `<div class="uarps-matrix__group-header" data-action="toggle-area" data-area="${area}">`;
-    html += `  <button class="uarps-matrix__toggle" type="button" aria-expanded="${!isCollapsed}">`;
+    html += `  <button class="uarps-matrix__toggle" type="button" aria-expanded="${!isCollapsed}" aria-label="${isCollapsed ? 'Expandir' : 'Recolher'} a área ${_formatArea(area)}">`;   // a11y (axe button-name, 27/11)
     html += `    <span class="uarps-matrix__toggle-icon">${isCollapsed ? Lucide.chevronRight : Lucide.chevronDown}</span>`;
     html += '  </button>';
     html += `  <span class="uarps-matrix__group-icon">${getAreaLucideIcon(area)}</span>`;

@@ -62,3 +62,7 @@
 /* E3 (VERDE, 27/11): região com regra vencida = tracejada (o texto do estado está no data-tooltip, vindo do servidor) */
 .uarps-region--expired { opacity: 0.85; border-style: dashed; }
 .uarps-region--inherited { opacity: 0.9; }
+
+/* P2 do editor (VERDE, 27/11): estado da região (concedente + alçada) em até 3 linhas; o texto inteiro fica no tooltip da região */
+.uarps-region__estado { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; overflow-wrap: anywhere;
+  font-size: 0.7rem; line-height: 1.3; color: var(--uarps-text-secondary, inherit); margin-top: 2px; }
