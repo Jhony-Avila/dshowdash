@@ -165,7 +165,23 @@ function contaRevogarSessoes(PDO $pdo, array $ids, string $motivo): int {
     $in = implode(',', array_fill(0, count($ids), '?'));
     $st = $pdo->prepare("UPDATE app_user_sessions SET is_active = 0, logout_at = NOW(3), logout_reason = ? WHERE user_id IN ({$in}) AND is_active = 1");
     $st->execute(array_merge([substr($motivo, 0, 50)], $ids));
-    return $st->rowCount();
+    $n = $st->rowCount();
+    contaAvancarEpoca($pdo, $ids);
+    return $n;
+}
+/** LOGS-048/063 (decisão do arquiteto 01:50 + proposta AZUL/VERDE 01:5x): marco PERSISTENTE da revogação corporativa. Toda revogação de conta
+ *  (desativar, bloquear, pendente, excluir, em massa, encerrar todas as sessões) avança app_users.auth_epoch na MESMA transação. Contador, não
+ *  horário: um login concorrente lê a época antiga (leitura consistente) e a sessão dele cai assim que o commit acontece. O APP aceita sessão só
+ *  com a época igual à atual; isso cobre "desativa → nenhuma chamada → reativa". INERTE sem a coluna (DDL proposta, aplicada só após o aceite). */
+function contaAvancarEpoca(PDO $pdo, array $ids): void {
+    if ($ids === []) return;
+    static $tem = null;
+    if ($tem === null) {
+        $tem = (int) $pdo->query("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'app_users' AND column_name = 'auth_epoch'")->fetchColumn() === 1;
+    }
+    if (!$tem) return;
+    $in = implode(',', array_fill(0, count($ids), '?'));
+    $pdo->prepare("UPDATE app_users SET auth_epoch = auth_epoch + 1 WHERE id IN ({$in})")->execute($ids);
 }
 function contaMarcarF1Pendente(PDO $pdo, array $ids): void {
     $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn(int $i): bool => $i > 0)));
