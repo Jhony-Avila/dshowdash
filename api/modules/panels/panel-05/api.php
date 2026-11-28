@@ -23,6 +23,11 @@ if (!SessionGate::validate()) {
     ApiResponse::error(ApiResponse::ERR_AUTH_REQUIRED, 401);
     exit;
 }
+// P0 28/11 (arquiteto 15:15, slowlog: 12 ações paradas >5 s em SessionGate::start()): a sessão PHP fica TRAVADA enquanto o pedido roda, e a tela
+// dispara 12 chamadas em paralelo com a MESMA sessão → fila. O painel só LÊ a sessão: validate() já gravou a renovação (last_activity) e daqui
+// em diante só se lê $_SESSION (usuário/nível continuam legíveis depois do fechamento). Fecha a escrita ANTES do cache e das consultas.
+// Revogação/logout/expiração não dependem disto: são decididas no servidor (SessaoRegistro) a cada pedido, antes deste ponto.
+session_write_close();
 // ERP NOVO (26/11, mesma regra do painel 01): origem decidida DEPOIS do login e ANTES do cache e da consulta; na origem nova só quem tem a
 // permissão financeira POR PESSOA (override de financeiro_asaas_leitura; 403 senão) e o cache é separado ('panel:05n:'). Legado = como antes.
 $ERP_ORIGEM = erp_ponto_origem('painel05');
