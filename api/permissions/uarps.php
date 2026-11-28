@@ -65,6 +65,7 @@ try {
             case 'check-trigger':
                 $triggerId = $validator->string('trigger_id', '', ['maxLength' => 100]) ?: null;
                 $targetUserId = $validator->id('user_id', 0) ?: $userId;
+                if ($targetUserId !== $userId) { enforceUarpsAdmin($userId); }   // IDOR (AZUL 28/11): consultar OUTRA pessoa exige a mesma alçada do editor
                 if (!$triggerId) {
                     ApiResponse::error('TRIGGER_ID_REQUIRED', 400, ['message' => 'Parâmetro trigger_id obrigatório']);
                 }
@@ -74,6 +75,7 @@ try {
             case 'check-region':
                 $regionId = $validator->string('region_id', '', ['maxLength' => 100]) ?: null;
                 $targetUserId = $validator->id('user_id', 0) ?: $userId;
+                if ($targetUserId !== $userId) { enforceUarpsAdmin($userId); }   // IDOR (AZUL 28/11): consultar OUTRA pessoa exige a mesma alçada do editor
                 if (!$regionId) {
                     ApiResponse::error('REGION_ID_REQUIRED', 400, ['message' => 'Parâmetro region_id obrigatório']);
                 }
@@ -84,6 +86,7 @@ try {
                 $idsRaw = $validator->string('ids', '', ['maxLength' => 1000]);
                 $entityIds = $idsRaw ? explode(',', $idsRaw) : [];
                 $targetUserId = $validator->id('user_id', 0) ?: $userId;
+                if ($targetUserId !== $userId) { enforceUarpsAdmin($userId); }   // IDOR (AZUL 28/11): consultar OUTRA pessoa exige a mesma alçada do editor
                 if (empty($entityIds)) {
                     ApiResponse::error('IDS_REQUIRED', 400, ['message' => 'Parâmetro ids obrigatório']);
                 }
