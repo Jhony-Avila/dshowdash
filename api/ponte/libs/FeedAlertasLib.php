@@ -34,9 +34,12 @@ function feed_alertas_montar(callable $pipedrive, callable $asaas, callable $pod
         }
     };
     $junta('pipedrive', $pipedrive);
-    $pode = false;
-    try { $pode = (bool)$podeAsaas(); } catch (Throwable $e) { error_log('[ponte] feed_alertas flags do asaas: ' . get_class($e)); }
-    if ($pode) { $junta('asaas', $asaas); } else { $fontes['asaas'] = 'sem_permissao'; }
+    // DDI-001 (28/11): decidido ANTES de ler o Asaas. true/'permite' = lê; 'falha' (ou exceção) = 'indisponivel'; o resto = 'sem_permissao'.
+    $pode = 'falha';
+    try { $pode = $podeAsaas(); } catch (Throwable $e) { error_log('[ponte] feed_alertas flags do asaas: ' . get_class($e)); }
+    if ($pode === true || $pode === 'permite') { $junta('asaas', $asaas); }
+    elseif ($pode === 'falha') { $fontes['asaas'] = 'indisponivel'; }
+    else { $fontes['asaas'] = 'sem_permissao'; }
 
     usort($alertas, static function (array $a, array $b): int {
         $s = (FEED_ALERTAS_SEV[$a['severity'] ?? ''] ?? 3) <=> (FEED_ALERTAS_SEV[$b['severity'] ?? ''] ?? 3);
@@ -58,9 +61,12 @@ function feed_alertas_ler(PDO $pdo, int $userId): array
     return feed_alertas_montar(
         static fn () => (new PipeAnalyticsRepository(getConnection('PIPE_DSHOW')))->alertasApp(),
         static fn () => (new GeralV2Asaas($pdo))->alertas(AsaasChaves::padrao()->rotulos(), new DateTimeImmutable('now'), 500000),
-        static function () use ($pdo, $userId): bool {
+        static function () use ($pdo, $userId): string {   // DDI-001: devolve a DECISÃO (permite|nega|falha)
             $r = new FeatureFlagResolver($pdo);
-            return (bool)($r->resolve('geral_v2_asaas', null)['enabled'] ?? false) && (bool)($r->resolve('financeiro_asaas_leitura', $userId)['enabled'] ?? false);
+            // DDI-001: a global geral_v2_asaas liga o cartão; o DIREITO da pessoa é a concessão pessoal (decisor único FinanceiroAcesso)
+            if (($r->resolve('geral_v2_asaas', null)['enabled'] ?? false) !== true) return 'nega';
+            require_once __DIR__ . '/../../_helpers/FinanceiroAcesso.php';
+            return FinanceiroAcesso::decidir((int)$userId, static fn (string $k, int $u): array => $r->resolve($k, $u));
         }
     );
 }

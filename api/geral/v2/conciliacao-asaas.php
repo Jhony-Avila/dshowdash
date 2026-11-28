@@ -15,7 +15,10 @@ $flag = static function (string $k, ?int $u): bool {
 };
 if (!$flag('geral_v2_conciliacao_asaas', null)) ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404);
 $usuario = geral_v2_portao();
-if (!$flag('financeiro_asaas_leitura', $usuario)) ApiResponse::error(ApiResponse::ERR_NOT_FOUND, 404);
+// DDI-001 (GPT DATA + critério do GPT Warps, 28/11): só com CONCESSÃO PESSOAL vigente (decisor único FinanceiroAcesso), decidida ANTES de
+// qualquer leitura; sem concessão (inclusive global/rollout ligados) = 403; falha da consulta individual = 503; nunca com valores.
+require_once __DIR__ . '/../../_helpers/FinanceiroAcesso.php';
+FinanceiroAcesso::exigir((int) $usuario);
 $d = geral_v2_q('dias');
 $dias = $d !== null && preg_match('/^\d{1,2}\z/', $d) === 1 ? (int) $d : 30;
 $pasta = getenv('DSHOW_ASAAS_CHAVES_DIR'); $pasta = is_string($pasta) && $pasta !== '' ? $pasta : dirname(__DIR__, 3) . '/config/asaas';

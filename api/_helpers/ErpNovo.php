@@ -33,20 +33,9 @@ function erp_novo_ligado(string $ponto): bool
  */
 function erp_novo_autorizado(int $usuario, ?Closure $resolver = null): bool
 {
-    if ($usuario <= 0) { return false; }
-    try {
-        $resolver ??= static function (string $k, int $u): array {
-            require_once __DIR__ . '/../feature-flags/resolver.php';
-            return (new FeatureFlagResolver(getConnection('DSHOWDASH')))->resolve($k, $u);
-        };
-        $r = $resolver('financeiro_asaas_leitura', $usuario);
-        // POR PESSOA de verdade (revisão da VINHO, 20:50; mesma regra da P70 43137ec2): só o OVERRIDE do usuário libera. Liberação global ou
-        // por rollout (alguém subir o %) NÃO conta — o canário oficial deixa a global a 0% e libera cada pessoa por override.
-        return is_array($r) && ($r['enabled'] ?? null) === true && ($r['source'] ?? null) === 'user_override';
-    } catch (Throwable $e) {
-        error_log('[erp-novo] autorização: ' . get_class($e));
-        return false;
-    }
+    // DDI-001 (28/11): o MESMO decisor de todos os leitores de financeiro_asaas_leitura (concessão pessoal vigente; falha nega)
+    require_once __DIR__ . '/FinanceiroAcesso.php';
+    return FinanceiroAcesso::permite($usuario, $resolver);
 }
 
 /** Credencial e destino presentes? (não conecta) */

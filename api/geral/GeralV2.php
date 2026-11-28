@@ -73,10 +73,9 @@ final class GeralV2
      */
     public static function podeFinanceiro(int $usuario, Closure $resolver): bool
     {
-        if ($usuario <= 0) return false;
-        try { $r = $resolver('financeiro_asaas_leitura', $usuario); }
-        catch (Throwable $e) { error_log('[geral-v2] flag financeiro: ' . get_class($e)); return false; }
-        return is_array($r) && ($r['enabled'] ?? null) === true && ($r['source'] ?? null) === 'user_override';
+        // DDI-001 (28/11): o decisor é ÚNICO para todos os leitores da capacidade (FinanceiroAcesso); aqui só se pergunta "permite?"
+        require_once __DIR__ . '/../_helpers/FinanceiroAcesso.php';
+        return FinanceiroAcesso::permite($usuario, $resolver);
     }
 
     // ─────────────────────────────────────────── resumo ───────────────────────────────────────────

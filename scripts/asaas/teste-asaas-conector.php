@@ -196,9 +196,14 @@ check('portão: conferência de sessão fora → 503', $r[0] === 503);
 $l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'cobrancas'], deps($l, $g, ['user_id' => 75], $sOk, $on));
 check('portão: rota desconhecida → 404', $r[0] === 404 && !in_array('resumo', $l->getArrayCopy(), true));
 $l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'resumo'], deps($l, $g, ['user_id' => 12], $sOk, ['enabled' => false, 'source' => 'rollout_excluded']));
-check('portão: outra pessoa (sem override) → 404, resumo não lido', $r[0] === 404 && !in_array('resumo', $l->getArrayCopy(), true));
+check('portão: outra pessoa (sem override) → 403 (DDI-001), resumo não lido', $r[0] === 403 && !in_array('resumo', $l->getArrayCopy(), true));
 $l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'resumo'], deps($l, $g, ['user_id' => 75], $sOk, ['enabled' => true, 'source' => 'error']));
-check('portão: flag da pessoa ilegível → 404', $r[0] === 404);
+check('portão: flag da pessoa ilegível → 503 (DDI-001: falha nunca autoriza nem se disfarça de ausência)', $r[0] === 503);
+// DDI-001 (28/11): 'enabled' que NÃO vem do override da própria pessoa (global ligada, rollout que alcançou a pessoa) NÃO libera o financeiro
+foreach (['global', 'rollout', 'default', 'environment'] as $fonte) {
+    $l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'resumo'], deps($l, $g, ['user_id' => 12], $sOk, ['enabled' => true, 'source' => $fonte]));
+    check("DDI-001: pessoa liberada por '$fonte' (sem override) → 403, resumo não lido", $r[0] === 403 && !in_array('resumo', $l->getArrayCopy(), true));
+}
 $l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'resumo'], deps($l, $g, ['user_id' => '75'], $sOk, $on));
 check('portão: 75 com override → 200 na ordem certa', $r[0] === 200 && $l->getArrayCopy() === ['flag:g', 'sessao', 'repo', 'flag:75', 'resumo']);
 $l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'resumo'], deps($l, $g, ['user_id' => 75], $sOk, $on, function (): array { throw new PDOException('fora'); }));
@@ -228,7 +233,7 @@ $lerV = fn(ArrayObject $l) => function () use ($l): array { $l[] = 'vencidas'; r
 $l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'vencidas'], $depsV($l, ['user_id' => 75], $on, $lerV($l)));
 check('portão vencidas: 75 com override → 200 na ordem certa, sem ler o resumo', $r[0] === 200 && $l->getArrayCopy() === ['flag:g', 'sessao', 'repo', 'flag:75', 'vencidas']);
 $l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'vencidas'], $depsV($l, ['user_id' => 12], ['enabled' => false, 'source' => 'rollout_excluded'], $lerV($l)));
-check('portão vencidas: sem financeiro_asaas_leitura → 404, vencidas não lidas', $r[0] === 404 && !in_array('vencidas', $l->getArrayCopy(), true));
+check('portão vencidas: sem financeiro_asaas_leitura → 403 (DDI-001), vencidas não lidas', $r[0] === 403 && !in_array('vencidas', $l->getArrayCopy(), true));
 $l = new ArrayObject(); $r = AsaasPortao::atender('GET', ['r' => 'vencidas'], $depsV($l, null, $on, $lerV($l)));
 check('portão vencidas: sem sessão → 401', $r[0] === 401 && !in_array('vencidas', $l->getArrayCopy(), true));
 $l = new ArrayObject(); $r = AsaasPortao::atender('POST', ['r' => 'vencidas'], $depsV($l, ['user_id' => 75], $on, $lerV($l)));

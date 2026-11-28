@@ -112,7 +112,8 @@ final class FeatureFlagResolver
 
         // 5. Override por usuario (vence o rollout, nunca o kill switch)
         if ($userId !== null && $userId > 0) {
-            $ov = $this->userOverride($flagKey, $userId);
+            try { $ov = $this->userOverride($flagKey, $userId); }
+            catch (RuntimeException $e) { return array_merge($out, ['enabled' => false, 'source' => 'error']); }   // DDI-001: fail-closed
             if ($ov !== null) {
                 $out['enabled'] = $ov['is_enabled'];
                 $out['source']  = 'user_override';
@@ -195,8 +196,10 @@ final class FeatureFlagResolver
                 'payload'    => self::decodePayload($r['payload_json'] ?? null, $flagKey),
             ];
         } catch (PDOException $e) {
+            // DDI-001 (28/11, critério do GPT Warps): falha ao ler a decisão INDIVIDUAL não pode cair no rollout/global (isso transformava a
+            // falha em autorização, e uma negação pessoal ilegível virava a liberação geral). Sobe como falha: resolve() devolve source=error.
             error_log('[feature-flags] userOverride: ' . $e->getMessage());
-            return null;
+            throw new RuntimeException('override ilegível', 0, $e);
         }
     }
 

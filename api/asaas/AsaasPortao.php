@@ -16,6 +16,7 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/AsaasDados.php';
+require_once __DIR__ . '/../_helpers/FinanceiroAcesso.php';   // DDI-001: decisor único
 
 interface AsaasSessaoRepositorio
 {
@@ -89,8 +90,10 @@ final class AsaasPortao
 
             $rota = is_string($get['r'] ?? null) ? $get['r'] : '';
             if (!in_array($rota, self::ROTAS, true)) return self::erro(404, 'NOT_FOUND');
-            $p = ($d->flag)(self::FLAG, $uid);
-            if ((string) ($p['source'] ?? 'error') === 'error' || ($p['enabled'] ?? false) !== true) return self::erro(404, 'NOT_FOUND');
+            // DDI-001 (28/11): concessão PESSOAL vigente (decisor único). Global/rollout ligados sem override = 403; falha/indeterminado = 503.
+            $dec = FinanceiroAcesso::deResultado(($d->flag)(self::FLAG, $uid));
+            if ($dec === FinanceiroAcesso::FALHA) return self::erro(503, 'FINANCIAL_ACCESS_UNAVAILABLE');
+            if ($dec !== FinanceiroAcesso::PERMITE) return self::erro(403, 'FINANCIAL_ACCESS_DENIED');
 
             if (in_array($rota, self::ROTAS_COBRANCAS, true)) {
                 if ($d->cobrancas === null || $d->nivel === null) return self::erro(404, 'NOT_FOUND');
