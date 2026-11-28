@@ -1,3 +1,9 @@
+const _esc = (v) => String(v ?? "").replace(/[&<>"'`]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "`": "&#96;" })[c]);
+const _avatarSeguro = (v) => {
+  const u = String(v ?? "").trim();
+  return u && (/^\/(?!\/)/.test(u) || /^https:\/\//i.test(u)) ? _esc(u) : null;
+};
+"use strict";
 const VERSION = "9.3.0-P2-ENTERPRISE";
 const MODULE_ID = "panel-01/ui/activity-log";
 const ACTIVITY_TYPES = {
@@ -102,14 +108,14 @@ ActivityLogManager.prototype._renderEntry = function(entry) {
   const icon = this._getIcon(entry.type);
   const message = this._getMessage(entry);
   const time = this._formatTime(entry.timestamp);
-  return `<div class="p01-activity-entry p01-activity-entry--${entry.type}"><div class="p01-activity-icon">${icon}</div><div class="p01-activity-content"><div class="p01-activity-message">${message}</div><div class="p01-activity-meta"><span class="p01-activity-user">${entry.user ? entry.user.name : "Sistema"}</span><span class="p01-activity-time">${time}</span></div></div></div>`;
+  return `<div class="p01-activity-entry p01-activity-entry--${_esc(entry.type)}"><div class="p01-activity-icon">${icon}</div><div class="p01-activity-content"><div class="p01-activity-message">${message}</div><div class="p01-activity-meta"><span class="p01-activity-user">${entry.user ? _esc(entry.user.name) : "Sistema"}</span><span class="p01-activity-time">${time}</span></div></div></div>`;
 };
 ActivityLogManager.prototype._getIcon = (type) => {
   const icons = { create: "\u2795", update: "\u270F\uFE0F", delete: "\u{1F5D1}\uFE0F", status_change: "\u{1F504}", comment: "\u{1F4AC}", assign: "\u{1F464}", unassign: "\u{1F465}", approve: "\u2705", reject: "\u274C", view: "\u{1F441}\uFE0F" };
   return icons[type] || "\u{1F4DD}";
 };
 ActivityLogManager.prototype._getMessage = function(entry) {
-  const id = entry.itemId;
+  const id = _esc(entry.itemId);
   const data = entry.data || {};
   switch (entry.type) {
     case ACTIVITY_TYPES.CREATE:
@@ -119,11 +125,11 @@ ActivityLogManager.prototype._getMessage = function(entry) {
     case ACTIVITY_TYPES.DELETE:
       return `Removeu a requisi\xE7\xE3o <strong>#${id}</strong>`;
     case ACTIVITY_TYPES.STATUS_CHANGE:
-      return `Alterou status de <strong>${data.oldStatus}</strong> para <strong>${data.newStatus}</strong>`;
+      return `Alterou status de <strong>${_esc(data.oldStatus)}</strong> para <strong>${_esc(data.newStatus)}</strong>`;
     case ACTIVITY_TYPES.COMMENT:
-      return `Comentou: "${this._truncate(data.comment, 50)}"`;
+      return `Comentou: "${_esc(this._truncate(data.comment, 50))}"`;
     case ACTIVITY_TYPES.ASSIGN:
-      return `Atribuiu a <strong>${data.assignee ? data.assignee.name : "usu\xE1rio"}</strong>`;
+      return `Atribuiu a <strong>${data.assignee ? _esc(data.assignee.name) : "usu\xE1rio"}</strong>`;
     case ACTIVITY_TYPES.APPROVE:
       return `Aprovou a requisi\xE7\xE3o <strong>#${id}</strong>`;
     case ACTIVITY_TYPES.REJECT:

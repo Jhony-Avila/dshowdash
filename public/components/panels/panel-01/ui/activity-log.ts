@@ -23,6 +23,9 @@
 // WINDOW ACCESS:
 //   (none)
 // ═══════════════════════════════════════════════════════════════
+// XSS (VERDE 28/11, varredura pós XSS-UARPS): dado de pessoa/comentário entra no HTML só ESCAPADO; avatar só caminho do site ou https.
+const _esc = (v: unknown) => String(v ?? '').replace(/[&<>"'`]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;' } as Record<string, string>)[c]);
+const _avatarSeguro = (v: unknown): string | null => { const u = String(v ?? '').trim(); return u && (/^\/(?!\/)/.test(u) || /^https:\/\//i.test(u)) ? _esc(u) : null; };
 'use strict';
 
 export const VERSION = '9.3.0-P2-ENTERPRISE';
@@ -99,7 +102,7 @@ ActivityLogManager.prototype._renderEntry = function(entry: Record<string, unkno
   const icon = this._getIcon(entry.type);
   const message = this._getMessage(entry);
   const time = this._formatTime(entry.timestamp);
-  return `<div class="p01-activity-entry p01-activity-entry--${entry.type}"><div class="p01-activity-icon">${icon}</div><div class="p01-activity-content"><div class="p01-activity-message">${message}</div><div class="p01-activity-meta"><span class="p01-activity-user">${entry.user ? (entry.user as Record<string, unknown>).name : 'Sistema'}</span><span class="p01-activity-time">${time}</span></div></div></div>`;
+  return `<div class="p01-activity-entry p01-activity-entry--${_esc(entry.type)}"><div class="p01-activity-icon">${icon}</div><div class="p01-activity-content"><div class="p01-activity-message">${message}</div><div class="p01-activity-meta"><span class="p01-activity-user">${entry.user ? _esc((entry.user as Record<string, unknown>).name) : 'Sistema'}</span><span class="p01-activity-time">${time}</span></div></div></div>`;
 };
 
 ActivityLogManager.prototype._getIcon = (type: string) => {
@@ -108,15 +111,15 @@ ActivityLogManager.prototype._getIcon = (type: string) => {
 };
 
 ActivityLogManager.prototype._getMessage = function(entry: Record<string, unknown>) {
-  const id = entry.itemId;
+  const id = _esc(entry.itemId);
   const data = entry.data || {};
   switch (entry.type) {
     case ACTIVITY_TYPES.CREATE: return `Criou a requisição <strong>#${id}</strong>`;
     case ACTIVITY_TYPES.UPDATE: return `Atualizou a requisição <strong>#${id}</strong>`;
     case ACTIVITY_TYPES.DELETE: return `Removeu a requisição <strong>#${id}</strong>`;
-    case ACTIVITY_TYPES.STATUS_CHANGE: return `Alterou status de <strong>${(data as Record<string, unknown>).oldStatus}</strong> para <strong>${(data as Record<string, unknown>).newStatus}</strong>`;
-    case ACTIVITY_TYPES.COMMENT: return `Comentou: "${this._truncate((data as Record<string, unknown>).comment as string, 50)}"`;
-    case ACTIVITY_TYPES.ASSIGN: return `Atribuiu a <strong>${(data as Record<string, unknown>).assignee ? ((data as Record<string, unknown>).assignee as Record<string, unknown>).name : 'usuário'}</strong>`;
+    case ACTIVITY_TYPES.STATUS_CHANGE: return `Alterou status de <strong>${_esc((data as Record<string, unknown>).oldStatus)}</strong> para <strong>${_esc((data as Record<string, unknown>).newStatus)}</strong>`;
+    case ACTIVITY_TYPES.COMMENT: return `Comentou: "${_esc(this._truncate((data as Record<string, unknown>).comment as string, 50))}"`;
+    case ACTIVITY_TYPES.ASSIGN: return `Atribuiu a <strong>${(data as Record<string, unknown>).assignee ? _esc(((data as Record<string, unknown>).assignee as Record<string, unknown>).name) : 'usuário'}</strong>`;
     case ACTIVITY_TYPES.APPROVE: return `Aprovou a requisição <strong>#${id}</strong>`;
     case ACTIVITY_TYPES.REJECT: return `Rejeitou a requisição <strong>#${id}</strong>`;
     default: return `Ação em <strong>#${id}</strong>`;

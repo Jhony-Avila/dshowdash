@@ -1,3 +1,9 @@
+const _esc = (v) => String(v ?? "").replace(/[&<>"'`]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "`": "&#96;" })[c]);
+const _avatarSeguro = (v) => {
+  const u = String(v ?? "").trim();
+  return u && (/^\/(?!\/)/.test(u) || /^https:\/\//i.test(u)) ? _esc(u) : null;
+};
+"use strict";
 const VERSION = "9.3.0-P2-ENTERPRISE";
 const MODULE_ID = "panel-01/ui/user-assignments";
 const SVGS = { check: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><polyline points="20 6 9 17 4 12"/></svg>' };
@@ -63,10 +69,11 @@ UserAssignmentsManager.prototype._renderModal = function(itemId, currentAssignee
   const usersHtml = this.users.map((user) => {
     const isSelected = currentAssignee?.id === user.id;
     const selectedClass = isSelected ? " p01-user-selected" : "";
-    const avatar = user.avatar || self._getInitials(user.name);
-    return `<div class="p01-user-item${selectedClass}" data-user-id="${user.id}"><div class="p01-user-avatar">${user.avatar ? `<img src="${user.avatar}">` : avatar}</div><div class="p01-user-info"><span class="p01-user-name">${user.name}</span><span class="p01-user-email">${user.email || ""}</span></div>${isSelected ? `<span class="p01-user-check">${SVGS.check}</span>` : ""}</div>`;
+    const avatarH = _avatarSeguro(user.avatar);
+    const iniciaisH = _esc(self._getInitials(String(user.name ?? "")));
+    return `<div class="p01-user-item${selectedClass}" data-user-id="${_esc(user.id)}"><div class="p01-user-avatar">${avatarH ? `<img src="${avatarH}" alt="">` : iniciaisH}</div><div class="p01-user-info"><span class="p01-user-name">${_esc(user.name)}</span><span class="p01-user-email">${_esc(user.email || "")}</span></div>${isSelected ? `<span class="p01-user-check">${SVGS.check}</span>` : ""}</div>`;
   }).join("");
-  return `<div class="p01-modal p01-modal--sm"><div class="p01-modal-header"><h2>Atribuir Respons\xE1vel</h2><button class="p01-modal-close" data-action="close">&times;</button></div><div class="p01-modal-body"><div class="p01-assign-search"><input type="text" class="p01-input" data-input="search" placeholder="Buscar usu\xE1rio..."></div><div class="p01-assign-current">${currentAssignee ? `<div class="p01-assign-current-user"><span>Atribu\xEDdo a: <strong>${currentAssignee.name}</strong></span><button class="p01-btn p01-btn--secondary p01-btn--sm" data-action="unassign">Remover</button></div>` : '<span class="p01-assign-none">Nenhum respons\xE1vel atribu\xEDdo</span>'}</div><div class="p01-users-list">${usersHtml}</div></div><div class="p01-modal-footer"><button class="p01-btn p01-btn--secondary" data-action="close">Cancelar</button></div></div>`;
+  return `<div class="p01-modal p01-modal--sm"><div class="p01-modal-header"><h2>Atribuir Respons\xE1vel</h2><button class="p01-modal-close" data-action="close">&times;</button></div><div class="p01-modal-body"><div class="p01-assign-search"><input type="text" class="p01-input" data-input="search" placeholder="Buscar usu\xE1rio..."></div><div class="p01-assign-current">${currentAssignee ? `<div class="p01-assign-current-user"><span>Atribu\xEDdo a: <strong>${_esc(currentAssignee.name)}</strong></span><button class="p01-btn p01-btn--secondary p01-btn--sm" data-action="unassign">Remover</button></div>` : '<span class="p01-assign-none">Nenhum respons\xE1vel atribu\xEDdo</span>'}</div><div class="p01-users-list">${usersHtml}</div></div><div class="p01-modal-footer"><button class="p01-btn p01-btn--secondary" data-action="close">Cancelar</button></div></div>`;
 };
 UserAssignmentsManager.prototype._bindEvents = function(itemId) {
   const self = this;
@@ -106,8 +113,9 @@ UserAssignmentsManager.prototype._getInitials = (name) => {
 UserAssignmentsManager.prototype.renderBadge = function(itemId) {
   const user = this.getAssignment(itemId);
   if (!user) return "";
-  const initials = this._getInitials(user.name);
-  return `<span class="p01-assign-badge" title="${user.name}">${user.avatar ? `<img src="${user.avatar}">` : initials}</span>`;
+  const initials = _esc(this._getInitials(String(user.name ?? "")));
+  const avatarH = _avatarSeguro(user.avatar);
+  return `<span class="p01-assign-badge" title="${_esc(user.name)}">${avatarH ? `<img src="${avatarH}" alt="">` : initials}</span>`;
 };
 UserAssignmentsManager.prototype.closeModal = function() {
   const self = this;

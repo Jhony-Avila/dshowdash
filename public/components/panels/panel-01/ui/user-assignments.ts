@@ -23,6 +23,9 @@
 // WINDOW ACCESS:
 //   (none)
 // ═══════════════════════════════════════════════════════════════
+// XSS (VERDE 28/11, varredura pós XSS-UARPS): dado de pessoa/comentário entra no HTML só ESCAPADO; avatar só caminho do site ou https.
+const _esc = (v: unknown) => String(v ?? '').replace(/[&<>"'`]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;' } as Record<string, string>)[c]);
+const _avatarSeguro = (v: unknown): string | null => { const u = String(v ?? '').trim(); return u && (/^\/(?!\/)/.test(u) || /^https:\/\//i.test(u)) ? _esc(u) : null; };
 'use strict';
 
 export const VERSION = '9.3.0-P2-ENTERPRISE';
@@ -96,10 +99,10 @@ UserAssignmentsManager.prototype._renderModal = function(itemId: string | number
   const usersHtml = this.users.map((user: Record<string, unknown>) => {
     const isSelected = currentAssignee?.id === user.id;
     const selectedClass = isSelected ? ' p01-user-selected' : '';
-    const avatar = user.avatar || self._getInitials(user.name as string);
-    return `<div class="p01-user-item${selectedClass}" data-user-id="${user.id}"><div class="p01-user-avatar">${user.avatar ? `<img src="${user.avatar}">` : avatar}</div><div class="p01-user-info"><span class="p01-user-name">${user.name}</span><span class="p01-user-email">${user.email || ''}</span></div>${isSelected ? `<span class="p01-user-check">${SVGS.check}</span>` : ''}</div>`;
+    const avatarH = _avatarSeguro(user.avatar); const iniciaisH = _esc(self._getInitials(String(user.name ?? '')));
+    return `<div class="p01-user-item${selectedClass}" data-user-id="${_esc(user.id)}"><div class="p01-user-avatar">${avatarH ? `<img src="${avatarH}" alt="">` : iniciaisH}</div><div class="p01-user-info"><span class="p01-user-name">${_esc(user.name)}</span><span class="p01-user-email">${_esc(user.email || '')}</span></div>${isSelected ? `<span class="p01-user-check">${SVGS.check}</span>` : ''}</div>`;
   }).join('');
-  return `<div class="p01-modal p01-modal--sm"><div class="p01-modal-header"><h2>Atribuir Responsável</h2><button class="p01-modal-close" data-action="close">&times;</button></div><div class="p01-modal-body"><div class="p01-assign-search"><input type="text" class="p01-input" data-input="search" placeholder="Buscar usuário..."></div><div class="p01-assign-current">${currentAssignee ? `<div class="p01-assign-current-user"><span>Atribuído a: <strong>${currentAssignee.name}</strong></span><button class="p01-btn p01-btn--secondary p01-btn--sm" data-action="unassign">Remover</button></div>` : '<span class="p01-assign-none">Nenhum responsável atribuído</span>'}</div><div class="p01-users-list">${usersHtml}</div></div><div class="p01-modal-footer"><button class="p01-btn p01-btn--secondary" data-action="close">Cancelar</button></div></div>`;
+  return `<div class="p01-modal p01-modal--sm"><div class="p01-modal-header"><h2>Atribuir Responsável</h2><button class="p01-modal-close" data-action="close">&times;</button></div><div class="p01-modal-body"><div class="p01-assign-search"><input type="text" class="p01-input" data-input="search" placeholder="Buscar usuário..."></div><div class="p01-assign-current">${currentAssignee ? `<div class="p01-assign-current-user"><span>Atribuído a: <strong>${_esc(currentAssignee.name)}</strong></span><button class="p01-btn p01-btn--secondary p01-btn--sm" data-action="unassign">Remover</button></div>` : '<span class="p01-assign-none">Nenhum responsável atribuído</span>'}</div><div class="p01-users-list">${usersHtml}</div></div><div class="p01-modal-footer"><button class="p01-btn p01-btn--secondary" data-action="close">Cancelar</button></div></div>`;
   void itemId;
 };
 
@@ -135,8 +138,8 @@ UserAssignmentsManager.prototype._getInitials = (name: string) => {
 UserAssignmentsManager.prototype.renderBadge = function(itemId: string | number) {
   const user = this.getAssignment(itemId) as Record<string, unknown> | null;
   if (!user) return '';
-  const initials = this._getInitials(user.name as string);
-  return `<span class="p01-assign-badge" title="${user.name}">${user.avatar ? `<img src="${user.avatar}">` : initials}</span>`;
+  const initials = _esc(this._getInitials(String(user.name ?? ''))); const avatarH = _avatarSeguro(user.avatar);
+  return `<span class="p01-assign-badge" title="${_esc(user.name)}">${avatarH ? `<img src="${avatarH}" alt="">` : initials}</span>`;
 };
 
 UserAssignmentsManager.prototype.closeModal = function() {

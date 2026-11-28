@@ -1,3 +1,9 @@
+const _esc = (v) => String(v ?? "").replace(/[&<>"'`]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "`": "&#96;" })[c]);
+const _avatarSeguro = (v) => {
+  const u = String(v ?? "").trim();
+  return u && (/^\/(?!\/)/.test(u) || /^https:\/\//i.test(u)) ? _esc(u) : null;
+};
+"use strict";
 const VERSION = "9.3.0-P2-ENTERPRISE";
 const MODULE_ID = "panel-01/ui/mentions";
 function MentionsManager(options = {}) {
@@ -124,8 +130,9 @@ MentionsManager.prototype._render = function() {
   }
   const html = this._filteredUsers.map((user, index) => {
     const selectedClass = index === self._selectedIndex ? " selected" : "";
-    const initials = self._getInitials(user.name);
-    return `<div class="p01-mention-item${selectedClass}" data-index="${index}"><div class="p01-mention-avatar">${user.avatar ? `<img src="${user.avatar}">` : initials}</div><div class="p01-mention-info"><span class="p01-mention-name">${user.name}</span><span class="p01-mention-username">@${user.username || user.email || user.id}</span></div></div>`;
+    const initials = _esc(self._getInitials(String(user.name ?? "")));
+    const avatarH = _avatarSeguro(user.avatar);
+    return `<div class="p01-mention-item${selectedClass}" data-index="${index}"><div class="p01-mention-avatar">${avatarH ? `<img src="${avatarH}" alt="">` : initials}</div><div class="p01-mention-info"><span class="p01-mention-name">${_esc(user.name)}</span><span class="p01-mention-username">@${_esc(user.username || user.email || user.id)}</span></div></div>`;
   }).join("");
   this._dropdown.innerHTML = html;
   this._bindItemEvents();
@@ -189,10 +196,10 @@ MentionsManager.prototype.extractMentions = function(text) {
 };
 MentionsManager.prototype.highlightMentions = function(text) {
   const self = this;
-  return text.replace(new RegExp(`${this.triggerChar}([\\w.-]+)`, "g"), (match, username) => {
+  return _esc(text).replace(new RegExp(`${this.triggerChar}([\\w.-]+)`, "g"), (match, username) => {
     const user = self.users.find((u) => u.username === username || u.name?.replace(/\s+/g, "") === username);
     if (user) {
-      return `<span class="p01-mention" data-user-id="${user.id}">${match}</span>`;
+      return `<span class="p01-mention" data-user-id="${_esc(user.id)}">${match}</span>`;
     }
     return match;
   });

@@ -26,6 +26,9 @@
 // WINDOW ACCESS:
 //   (none)
 // ═══════════════════════════════════════════════════════════════
+// XSS (VERDE 28/11, varredura pós XSS-UARPS): dado de pessoa/comentário entra no HTML só ESCAPADO; avatar só caminho do site ou https.
+const _esc = (v: unknown) => String(v ?? '').replace(/[&<>"'`]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;' } as Record<string, string>)[c]);
+const _avatarSeguro = (v: unknown): string | null => { const u = String(v ?? '').trim(); return u && (/^\/(?!\/)/.test(u) || /^https:\/\//i.test(u)) ? _esc(u) : null; };
 'use strict';
 
 export const VERSION = '9.3.0-P2-ENTERPRISE';
@@ -117,8 +120,8 @@ MentionsManager.prototype._render = function() {
   if (this._filteredUsers.length === 0) { this._dropdown.innerHTML = '<div class="p01-mentions-empty">Nenhum usuário encontrado</div>'; return; }
   const html = this._filteredUsers.map((user: Record<string, unknown>, index: number) => {
     const selectedClass = index === self._selectedIndex ? ' selected' : '';
-    const initials = self._getInitials(user.name);
-    return `<div class="p01-mention-item${selectedClass}" data-index="${index}"><div class="p01-mention-avatar">${user.avatar ? `<img src="${user.avatar}">` : initials}</div><div class="p01-mention-info"><span class="p01-mention-name">${user.name}</span><span class="p01-mention-username">@${user.username || user.email || user.id}</span></div></div>`;
+    const initials = _esc(self._getInitials(String(user.name ?? ''))); const avatarH = _avatarSeguro(user.avatar);
+    return `<div class="p01-mention-item${selectedClass}" data-index="${index}"><div class="p01-mention-avatar">${avatarH ? `<img src="${avatarH}" alt="">` : initials}</div><div class="p01-mention-info"><span class="p01-mention-name">${_esc(user.name)}</span><span class="p01-mention-username">@${_esc(user.username || user.email || user.id)}</span></div></div>`;
   }).join('');
   this._dropdown.innerHTML = html;
   this._bindItemEvents();
@@ -156,7 +159,7 @@ MentionsManager.prototype._getInitials = (name: string) => { if (!name) return '
 MentionsManager.prototype._show = function() { this._render(); this._dropdown.style.display = 'block'; this._visible = true; };
 MentionsManager.prototype._hide = function() { if (this._dropdown) this._dropdown.style.display = 'none'; this._visible = false; this._mentionStart = -1; };
 MentionsManager.prototype.extractMentions = function(text: string) { const regex = new RegExp(`${this.triggerChar}([\\w.-]+)`, 'g'); const mentions = []; let match; while ((match = regex.exec(text)) !== null) { mentions.push(match[1]); } return mentions; };
-MentionsManager.prototype.highlightMentions = function(text: string) { const self = this; return text.replace(new RegExp(`${this.triggerChar}([\\w.-]+)`, 'g'), (match: string, username: string) => { const user = self.users.find((u: Record<string, unknown>) => u.username === username || (u.name as string)?.replace(/\s+/g, '') === username); if (user) { return `<span class="p01-mention" data-user-id="${user.id}">${match}</span>`; } return match; }); };
+MentionsManager.prototype.highlightMentions = function(text: string) { const self = this; return _esc(text).replace(new RegExp(`${this.triggerChar}([\\w.-]+)`, 'g'), (match: string, username: string) => { const user = self.users.find((u: Record<string, unknown>) => u.username === username || (u.name as string)?.replace(/\s+/g, '') === username); if (user) { return `<span class="p01-mention" data-user-id="${_esc(user.id)}">${match}</span>`; } return match; }); };
 MentionsManager.prototype.destroy = function() { if (this._blurTimeout) { clearTimeout(this._blurTimeout); this._blurTimeout = null; } if (this._input && this._handlers) { this._input.removeEventListener('input', this._handlers.input); this._input.removeEventListener('keydown', this._handlers.keydown); this._input.removeEventListener('blur', this._handlers.blur); this._handlers = null; } if (this._dropdown && this._dropdown.parentNode) { this._dropdown.parentNode.removeChild(this._dropdown); } this._dropdown = null; this._input = null; this._visible = false; };
 
 export function info() { return { moduleId: MODULE_ID, version: VERSION }; }
